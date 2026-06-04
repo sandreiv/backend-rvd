@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -22,6 +23,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(name = "FECHASCONVOCATORIA", schema = "RVD")
 public class FechasConvocatoriaEntity implements Serializable, Cloneable{
     @Id

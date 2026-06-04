@@ -15,11 +15,13 @@ import java.util.Date;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(name = "TIPOACTIVIDADES", schema = "RVD")
 public class TipoActividadesEntity implements Serializable, Cloneable{
     @Id

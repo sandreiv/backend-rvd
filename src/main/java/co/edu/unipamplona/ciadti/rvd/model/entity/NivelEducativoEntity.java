@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.util.Date;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(name = "NIVELEDUCATIVO", schema = "ACADEMICO")
 public class NivelEducativoEntity implements Serializable, Cloneable {
 

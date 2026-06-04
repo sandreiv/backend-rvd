@@ -25,3 +25,7 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
   show-actuator: false
+
+server:
+  servlet:
+    context-path: /rvd

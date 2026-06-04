@@ -18,11 +18,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(name = "RESTRICCIONPORCOORDINACION", schema = "RVD")
 public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable{
     @Id

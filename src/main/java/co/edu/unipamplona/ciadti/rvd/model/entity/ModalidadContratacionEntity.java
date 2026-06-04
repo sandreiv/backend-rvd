@@ -15,11 +15,13 @@ import java.util.Date;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Entity
 @Table(name = "MODALIDADCONTRATACION", schema = "CONTRATOS")
 public class ModalidadContratacionEntity implements Serializable, Cloneable{
     @Id
@@ -38,7 +40,7 @@ public class ModalidadContratacionEntity implements Serializable, Cloneable{
     @Column(name = "MOCO_FECHACAMBIO")
     private Date fechaCambio;
 
-    @Column(name = "MOCO_PORCENTAJEMAXIMOANTIC")
+    @Column(name = "MOCO_PORCENTAJEMAXIMOANTICIPO")
     private Long porcentajeMaximoAntic;
     
     @Column(name = "MOCO_INSTRUCTIVO")
@@ -47,7 +49,7 @@ public class ModalidadContratacionEntity implements Serializable, Cloneable{
     @Column(name = "CLMO_ID")
     private Long idClasificacionModalidad;
 
-    @Column(name = "MOCO_PORCENTAJEMINIMOANTIC")
+    @Column(name = "MOCO_PORCENTAJEMINIMOANTICIPO")
     private Long porcentajeMinimoAntic;
 
     @Column(name = "MOCO_ESTADO")
@@ -59,7 +61,7 @@ public class ModalidadContratacionEntity implements Serializable, Cloneable{
     /* TODO: 
     @OneToMany
     @JoinColumn(name = "CLMO_ID",  insertable = false, updatable = false)
-    private List<ConvocatoriaEntity> convocatorias;*/
+    private List<ClaseModalidadEntity> convocatorias;*/
 
     @Override
     public Object clone() throws CloneNotSupportedException {

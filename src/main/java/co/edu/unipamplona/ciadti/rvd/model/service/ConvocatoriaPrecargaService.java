@@ -9,7 +9,17 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
-public class ConvocatoriaPrecargaService {
-    
+import java.util.List;
+
+import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
+
+public interface ConvocatoriaPrecargaService {
+
+    List<ConvocatoriaDTO> findCallListWithDates();
+
+    List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(
+            String nombre,
+            String documento);
 }
 /* 02/06/2026 @:Sebastian Jaimes */
