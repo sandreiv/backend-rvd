@@ -11,14 +11,13 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,6 +27,7 @@ import lombok.Setter;
 @Table(name = "TIPOPERIODOACADEMICO", schema = "ACADEMICO")
 public class TipoPeriodoAcademicoEntity implements Serializable, Cloneable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TPPA_ID", nullable = false)
     private Long id;
 

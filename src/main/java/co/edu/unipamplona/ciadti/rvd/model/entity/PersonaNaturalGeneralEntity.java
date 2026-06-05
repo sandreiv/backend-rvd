@@ -10,6 +10,8 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +25,7 @@ import java.util.Date;
 public class PersonaNaturalGeneralEntity implements Serializable, Cloneable {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PEGE_ID", nullable = false)
     private Long idPersonaGeneral;
 

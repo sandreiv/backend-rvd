@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,6 +34,12 @@ public class CiudadGeneralEntity implements Serializable, Cloneable{
 
     @Column(name = "CIGE_NOMBRE")
     private String nombre;
+
+    @Column(name = "CIGE_REGISTRADOPOR")
+    private String registradoPor;
+
+    @Column(name = "CIGE_FECHACAMBIO")
+    private Date fechaCambio;
 }
 
 /* 02/06/2026 @:Sebastian Jaimes */

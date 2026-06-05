@@ -16,6 +16,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +27,7 @@ import lombok.Setter;
 @Table(name = "TIPOACTIVIDADES", schema = "RVD")
 public class TipoActividadesEntity implements Serializable, Cloneable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TIAC_ID", nullable = false)
     private Long id;
 

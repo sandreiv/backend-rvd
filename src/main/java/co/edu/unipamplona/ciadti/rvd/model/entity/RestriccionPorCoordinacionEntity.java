@@ -19,6 +19,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,6 +30,7 @@ import lombok.Setter;
 @Table(name = "RESTRICCIONPORCOORDINACION", schema = "RVD")
 public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "REXC_ID", nullable = false)
     private Long id;
 

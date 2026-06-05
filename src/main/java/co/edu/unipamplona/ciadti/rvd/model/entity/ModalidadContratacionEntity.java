@@ -16,6 +16,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +27,7 @@ import lombok.Setter;
 @Table(name = "MODALIDADCONTRATACION", schema = "CONTRATOS")
 public class ModalidadContratacionEntity implements Serializable, Cloneable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "MOCO_ID", nullable = false)
     private Long id;
 
@@ -57,6 +60,8 @@ public class ModalidadContratacionEntity implements Serializable, Cloneable{
 
     @Column(name = "MOCO_SIGLA")
     private String sigla;
+
+    
 
     /* TODO: 
     @OneToMany

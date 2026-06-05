@@ -15,6 +15,8 @@ import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -28,6 +30,7 @@ import lombok.Setter;
 @Table(name = "CONVOCATORIA", schema = "RVD")
 public class ConvocatoriaEntity implements Serializable, Cloneable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CONV_ID", nullable = false)
     private Long id;
 

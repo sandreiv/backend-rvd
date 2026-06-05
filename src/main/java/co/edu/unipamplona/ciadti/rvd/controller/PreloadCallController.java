@@ -14,15 +14,23 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NivelEducativoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ModalidadContratacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.NivelEducativoService;
+import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +41,8 @@ public class PreloadCallController {
 
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final ModalidadContratacionService modalidadContratacionService;
+    private final PeriodoUniversidadService periodoUniversidadService;
+    private final NivelEducativoService nivelEducativoService;
 
     @Operation(
         summary = "Obtiene la lista de convocatorias", 
@@ -41,7 +51,6 @@ public class PreloadCallController {
     @GetMapping("/list")
     public ResponseEntity<?> callList() throws Exception {
         List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListWithDates();
-        System.out.println("[DEBUG] LISTA CONVOCATORIA:" + callList);
         return new ResponseEntity<>(callList, HttpStatus.OK);
     }
 
@@ -68,17 +77,48 @@ public class PreloadCallController {
         return new ResponseEntity<>(modalities, HttpStatus.OK);
     }
 
-    //TODO
-    /*@Operation(
+    @Operation(
+        summary = "Obtiene la lista de periodos de universidad",
+        description = "Obtiene la lista de periodos de universidad"
+    )
+    @GetMapping("/list-university-period")
+    public ResponseEntity<List<PeriodoUniversidadDTO>> listUniversityPeriod() {
+        List<PeriodoUniversidadDTO> periods =
+                periodoUniversidadService.findUniversityPeriodList();
+        return new ResponseEntity<>(periods, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene la lista de niveles educativos",
+        description = "Obtiene la lista de niveles educativos"
+    )
+    @GetMapping("/list-educational-level")
+    public ResponseEntity<List<NivelEducativoDTO>> listEducationalLevel() {
+        List<NivelEducativoDTO> levels =
+                nivelEducativoService.findEducationalLevelList();
+        return new ResponseEntity<>(levels, HttpStatus.OK);
+    }
+
+    
+    @Operation(
         summary = "Guarda una nueva convocatoria", 
         description = "Guarda una nueva convocatoria"
     )
     @PostMapping("/save")
-    public ResponseEntity<?> saveCall() throws Exception {
-        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListWithDates();
-        System.out.println("[DEBUG] LISTA CONVOCATORIA:" + callList);
-        return new ResponseEntity<>(callList, HttpStatus.OK);
-    }*/
-    
+    public ResponseEntity<Void> saveCall(@RequestBody ConvocatoriaFormularioDTO ConvocatoriaFormularioDTO) {
+        System.out.println("[DEBUG] Guardando convocatoria: " + ConvocatoriaFormularioDTO);
+        convocatoriaPrecargaService.save(ConvocatoriaFormularioDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Obtiene el detalle de una convocatoria", 
+        description = "Obtiene el detalle de una convocatoria"
+    )
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<ConvocatoriaFormularioDTO> detailCall(@PathVariable Long id) {
+        ConvocatoriaFormularioDTO detail = convocatoriaPrecargaService.findCallDetail(id);
+        return ResponseEntity.ok(detail);
+    }
 }
 /* 02/06/2026 @:Sebastian Jaimes */

@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 import java.util.List;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 
 public interface ConvocatoriaPrecargaService {
@@ -21,5 +22,9 @@ public interface ConvocatoriaPrecargaService {
     List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(
             String nombre,
             String documento);
+
+    void save(ConvocatoriaFormularioDTO ConvocatoriaFormularioDTO);
+
+    ConvocatoriaFormularioDTO findCallDetail(Long id);
 }
 /* 02/06/2026 @:Sebastian Jaimes */

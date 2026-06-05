@@ -10,6 +10,8 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 

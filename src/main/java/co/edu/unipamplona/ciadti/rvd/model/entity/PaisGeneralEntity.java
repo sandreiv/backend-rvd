@@ -10,8 +10,11 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import jakarta.persistence.*;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,6 +30,12 @@ public class PaisGeneralEntity implements Serializable, Cloneable{
 
     @Column(name = "PAGE_NOMBRE")
     private String nombre;
+
+    @Column(name = "PAGE_REGISTRADOPOR")
+    private String registradoPor;
+
+    @Column(name = "PAGE_FECHACAMBIO")
+    private Date fechaCambio;
 }
 
 /* 02/06/2026 @:Sebastian Jaimes */

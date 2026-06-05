@@ -1,6 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,13 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
 
 public interface PersonaGeneralRepository
         extends JpaRepository<PersonaGeneralEntity, Long> {
+
+    @Query("""
+            SELECT pege FROM PersonaGeneralEntity pege
+            INNER JOIN FETCH pege.personaNaturalGeneral peng
+            WHERE pege.id = :id
+            """)
+    Optional<PersonaGeneralEntity> findByIdWithNatural(@Param("id") Long id);
 
     @Query("""
             SELECT DISTINCT pege FROM PersonaGeneralEntity pege

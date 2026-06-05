@@ -9,7 +9,11 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
+import java.util.Date;
+
 import jakarta.persistence.*;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +29,12 @@ public class EstadoCivilGeneralEntity {
 
     @Column(name = "ESCG_DESCRIPCION")
     private String descripcion;
+
+    @Column(name = "ESCG_REGISTRADOPOR")
+    private String registradoPor;
+
+    @Column(name = "ESCG_FECHACAMBIO")
+    private Date fechaCambio;
 }
 
 /* 02/06/2026 @:Sebastian Jaimes */

@@ -12,7 +12,10 @@ package co.edu.unipamplona.ciadti.rvd.model.dto;
 import java.util.Date;
 
 public record ConvocatoriaDTO(
+    Long id,
     String descripcion,
+    String periodoUniversidad,
+    String nivelEducativo,
     Date fechaInicio,
     Date fechaFin,
     String nombreCompleto
