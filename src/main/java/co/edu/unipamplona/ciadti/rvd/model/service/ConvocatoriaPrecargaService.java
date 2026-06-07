@@ -23,8 +23,14 @@ public interface ConvocatoriaPrecargaService {
             String nombre,
             String documento);
 
-    void save(ConvocatoriaFormularioDTO ConvocatoriaFormularioDTO);
+    void save(ConvocatoriaFormularioDTO dto);
+
+    void update(Long id, ConvocatoriaFormularioDTO dto);
 
     ConvocatoriaFormularioDTO findCallDetail(Long id);
+
+    void delete(Long id, ConvocatoriaFormularioDTO dto);
+
+    void bulkDelete(List<ConvocatoriaFormularioDTO> listaConvocatorias);
 }
 /* 02/06/2026 @:Sebastian Jaimes */

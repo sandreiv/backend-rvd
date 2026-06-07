@@ -18,6 +18,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
         })
 public interface ConvocatoriaDatosInsertarMapper {
 
+    @Mapping(source = "convocatoria.id", target = "id")
     @Mapping(source = "convocatoria.nombre", target = "nombre")
     @Mapping(source = "convocatoria.descripcion", target = "descripcion")
     @Mapping(source = "autoriza", target = "autoriza")

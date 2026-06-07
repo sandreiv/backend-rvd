@@ -9,6 +9,6 @@ public record ModalidadContratacionInsertarDTO(
     Long id,
     Long vacaciones, 
     Date fechaInicio,
-    Date fechaFin,
+    Date fechaFin, 
     String semanas
 ) {}

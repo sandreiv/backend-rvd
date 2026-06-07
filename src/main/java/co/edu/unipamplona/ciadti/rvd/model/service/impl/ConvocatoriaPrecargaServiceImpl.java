@@ -2,9 +2,9 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -15,14 +15,15 @@ import org.springframework.util.StringUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.ConvocatoriaDatosInsertarMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ConvocatoriaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.ConvocatoriaTipoContratacionFormularioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
-import co.edu.unipamplona.ciadti.rvd.mapper.ModalidadContratacionInsertarMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.PersonaAutorizaConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDatosInsertarDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaTipoContratacionFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionInsertarDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaTipoContratacionEntity;
@@ -47,7 +48,8 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private final PersonaAutorizaConvocatoriaMapper personaAutorizaConvocatoriaMapper;
     private final ConvocatoriaDatosInsertarMapper convocatoriaDatosInsertarMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
-    private final ModalidadContratacionInsertarMapper modalidadContratacionInsertarMapper;
+    private final ConvocatoriaTipoContratacionFormularioMapper
+            convocatoriaTipoContratacionFormularioMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,7 +63,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                                 convocatoria.getId()),
                         convocatoriaRepository.findFechaCnvByConvocatoriaId(
                                 convocatoria.getId()),
-                        personaGeneralRepository.findByIdWithNatural(
+                        personaGeneralRepository.findGeneralPersonById(
                                         convocatoria.getIdPersonaGeneral())
                                 .orElse(null)))
                 .collect(Collectors.toList());
@@ -75,127 +77,208 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
             return Collections.emptyList();
         }
         return personaAutorizaConvocatoriaMapper.toDtoList(
-                personaGeneralRepository.searchGeneralPerson(
-                        nombreParam,
-                        documentoParam));
+                personaGeneralRepository.searchGeneralPerson(nombreParam, documentoParam));
     }
 
     @Override
     @Transactional
     public void save(ConvocatoriaFormularioDTO dto) {
-        
-        ConvocatoriaEntity convocatoria = buildConvocatoria(dto.convocatoriaDatosInsertar());
-        convocatoriaRepository.save(convocatoria);
-        Long convId = convocatoria.getId();
-        Map<Long, Long> convocatoriaTipoContratacion = saveModalidades(dto.modalidades(), convId);
-        saveFechasGenerales(dto.fechas(), convId);
-        saveFechasModalidad(dto.modalidades(), convId, convocatoriaTipoContratacion);
+        ConvocatoriaDatosInsertarDTO datos = dto.convocatoriaDatosInsertar();
+        if (datos.id() != null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La convocatoria no debe incluir id al crear");
+        }
+
+        ConvocatoriaEntity convocatoria = new ConvocatoriaEntity();
+        convocatoria.setNombre(datos.nombre().trim());
+        convocatoria.setDescripcion(datos.descripcion().trim());
+        convocatoria.setIdPersonaGeneral(datos.autoriza().id());
+        convocatoria.setIdPeriodoUniversidad(datos.periodo().id());
+        convocatoria.setIdNivelEducativo(datos.nivelEducativo().id());
+        convocatoria.setEstado("1");
+        convocatoria.setFechaCambio(new Date());
+        convocatoria.setRegistradoPor("REGISTRO_WEB");
+        Long convId = convocatoriaRepository.save(convocatoria).getId();
+
+        if (dto.fechas() != null) {
+            for (FechasConvocatoriaFormularioDTO fecha : dto.fechas()) {
+                FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
+                entity.setIdConvocatoria(convId);
+                entity.setCodigo(fecha.codigo());
+                entity.setFechaInicio(fecha.fechaInicio());
+                entity.setFechaFin(fecha.fechaFin());
+                entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMeses(fecha.fechaInicio(), fecha.fechaFin()));
+                entity.setFechaCambio(new Date());
+                entity.setRegistradoPor("REGISTRO_WEB");
+                fechasConvocatoriaRepository.save(entity);
+            }
+        }
+
+        if (dto.convocatoriaTipoContratacion() != null) {
+            for (ConvocatoriaTipoContratacionFormularioDTO cotcDto: dto.convocatoriaTipoContratacion()) {
+                ConvocatoriaTipoContratacionEntity cotc =new ConvocatoriaTipoContratacionEntity();
+                cotc.setIdConvocatoria(convId);
+                cotc.setIdModalidadContratacion(cotcDto.idModalidadContratacion());
+                cotc.setFechaCambio(new Date());
+                cotc.setRegistradoPor("REGISTRO_WEB");
+                Long cotcId = convocatoriaTipoContratacionRepository.save(cotc).getId();
+
+                if (cotcDto.fechas() != null) {
+                    for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
+                        FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
+                        entity.setIdConvocatoria(convId);
+                        entity.setIdConvocatoriaTipoContratacion(cotcId);
+                        entity.setFechaInicio(fecha.fechaInicio());
+                        entity.setFechaFin(fecha.fechaFin());
+                        entity.setSemanas(fecha.semanas());
+                        entity.setVacaciones(String.valueOf(
+                                fecha.vacaciones() != null ? fecha.vacaciones() : 0L));
+                        entity.setOnceMeses(
+                                FechasConvocatoriaCalculator.calcularOnceMeses(
+                                        fecha.fechaInicio(),
+                                        fecha.fechaFin()));
+                        entity.setFechaCambio(new Date());
+                        entity.setRegistradoPor("REGISTRO_WEB");
+                        fechasConvocatoriaRepository.save(entity);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void update(Long id, ConvocatoriaFormularioDTO dto) {
+        ConvocatoriaDatosInsertarDTO datos = dto.convocatoriaDatosInsertar();
+        if (datos.id() == null || !datos.id().equals(id)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,  "El id de la convocatoria no coincide con la ruta");
+        }
+
+        int updated = convocatoriaRepository.update(
+                datos.nombre().trim(),
+                datos.descripcion().trim(),
+                datos.autoriza().id(),
+                datos.periodo().id(),
+                datos.nivelEducativo().id(),
+                new Date(),
+                id);
+        if (updated == 0) {
+            throw new ApiException(HttpStatus.NOT_FOUND,  "Convocatoria no encontrada");
+        }
+
+        Set<Long> fechaIds = new HashSet<>();
+        if (dto.fechas() != null) {
+            for (FechasConvocatoriaFormularioDTO fecha : dto.fechas()) {
+                String onceMeses = FechasConvocatoriaCalculator.calcularOnceMeses(fecha.fechaInicio(), fecha.fechaFin());
+                if (fecha.id() != null) {
+                    fechasConvocatoriaRepository.updateGeneral(
+                            fecha.codigo(),
+                            fecha.fechaInicio(),
+                            fecha.fechaFin(),
+                            onceMeses,
+                            new Date(),
+                            fecha.id());
+                    fechaIds.add(fecha.id());
+                } else {
+                    FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
+                    entity.setIdConvocatoria(id);
+                    entity.setCodigo(fecha.codigo());
+                    entity.setFechaInicio(fecha.fechaInicio());
+                    entity.setFechaFin(fecha.fechaFin());
+                    entity.setOnceMeses(onceMeses);
+                    entity.setFechaCambio(new Date());
+                    fechaIds.add(fechasConvocatoriaRepository.save(entity).getId());
+                }
+            }
+        }
+        convocatoriaRepository.findFechasGeneralesByConvocatoriaId(id).stream()
+                .map(FechasConvocatoriaEntity::getId)
+                .filter(fechaId -> !fechaIds.contains(fechaId))
+                .forEach(fechasConvocatoriaRepository::deleteById);
+
+        Set<Long> cotcIds = new HashSet<>();
+        if (dto.convocatoriaTipoContratacion() != null) {
+            for (ConvocatoriaTipoContratacionFormularioDTO cotcDto: dto.convocatoriaTipoContratacion()) {
+                Long cotcId;
+                if (cotcDto.id() != null) {
+                    convocatoriaTipoContratacionRepository.update(
+                            cotcDto.idModalidadContratacion(),
+                            new Date(),
+                            cotcDto.id());
+                    cotcId = cotcDto.id();
+                } else {
+                    ConvocatoriaTipoContratacionEntity cotc =
+                            new ConvocatoriaTipoContratacionEntity();
+                    cotc.setIdConvocatoria(id);
+                    cotc.setIdModalidadContratacion(cotcDto.idModalidadContratacion());
+                    cotc.setFechaCambio(new Date());
+                    cotcId = convocatoriaTipoContratacionRepository.save(cotc).getId();
+                }
+                cotcIds.add(cotcId);
+
+                Set<Long> fechaModalidadIds = new HashSet<>();
+                if (cotcDto.fechas() != null) {
+                    for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
+                        String onceMeses =
+                                FechasConvocatoriaCalculator.calcularOnceMeses(
+                                        fecha.fechaInicio(),
+                                        fecha.fechaFin());
+                        String vacaciones = String.valueOf(
+                                fecha.vacaciones() != null ? fecha.vacaciones() : 0L);
+                        if (fecha.id() != null) {
+                            fechasConvocatoriaRepository.updateModalidad(
+                                    fecha.fechaInicio(),
+                                    fecha.fechaFin(),
+                                    fecha.semanas(),
+                                    vacaciones,
+                                    onceMeses,
+                                    new Date(),
+                                    fecha.id());
+                            fechaModalidadIds.add(fecha.id());
+                        } else {
+                            FechasConvocatoriaEntity entity =
+                                    new FechasConvocatoriaEntity();
+                            entity.setIdConvocatoria(id);
+                            entity.setIdConvocatoriaTipoContratacion(cotcId);
+                            entity.setFechaInicio(fecha.fechaInicio());
+                            entity.setFechaFin(fecha.fechaFin());
+                            entity.setSemanas(fecha.semanas());
+                            entity.setVacaciones(vacaciones);
+                            entity.setOnceMeses(onceMeses);
+                            entity.setFechaCambio(new Date());
+                            fechaModalidadIds.add(
+                                    fechasConvocatoriaRepository.save(entity).getId());
+                        }
+                    }
+                }
+                fechasConvocatoriaRepository
+                        .findByIdConvocatoriaTipoContratacion(cotcId).stream()
+                        .map(FechasConvocatoriaEntity::getId)
+                        .filter(fechaId -> !fechaModalidadIds.contains(fechaId))
+                        .forEach(fechasConvocatoriaRepository::deleteById);
+            }
+        }
+        convocatoriaTipoContratacionRepository.findByConvocatoriaId(id).stream()
+                .filter(cotc -> !cotcIds.contains(cotc.getId()))
+                .forEach(cotc -> {
+                    fechasConvocatoriaRepository
+                            .deleteByIdConvocatoriaTipoContratacion(cotc.getId());
+                    convocatoriaTipoContratacionRepository.deleteById(cotc.getId());
+                });
     }
 
     @Override
     @Transactional(readOnly = true)
     public ConvocatoriaFormularioDTO findCallDetail(Long id) {
-        ConvocatoriaEntity convocatoria = convocatoriaRepository.findConvocatoriaByIdNative(id)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "Convocatoria no encontrada"));
+        ConvocatoriaEntity convocatoria = convocatoriaRepository.findConvocatoriaByIdNative(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada"));
+        
         return new ConvocatoriaFormularioDTO(
                 convocatoriaDatosInsertarMapper.toDto(
                         convocatoria,
-                        personaGeneralRepository.findByIdWithNatural(
-                                        convocatoria.getIdPersonaGeneral())
-                                .orElseThrow(() -> new ApiException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Persona autorizadora no encontrada")),
+                        personaGeneralRepository.findGeneralPersonById(convocatoria.getIdPersonaGeneral()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Persona autorizadora no encontrada")),
                         convocatoriaRepository.findPeriodoEntityByConvocatoriaId(id),
                         convocatoriaRepository.findNivelEntityByConvocatoriaId(id)),
-                fechasConvocatoriaMapper.toFormularioDtoList(
-                        convocatoriaRepository.findFechasGeneralesByConvocatoriaId(id)),
-                modalidadContratacionInsertarMapper.toDtoList(
-                        convocatoriaRepository.findModalidadesByConvocatoriaId(id)));
-    }
-
-    private ConvocatoriaEntity buildConvocatoria(ConvocatoriaDatosInsertarDTO datos) {
-        ConvocatoriaEntity entity = new ConvocatoriaEntity();
-        entity.setNombre(datos.nombre().trim());
-        entity.setDescripcion(datos.descripcion().trim());
-        entity.setIdPersonaGeneral(datos.autoriza().id());
-        entity.setIdPeriodoUniversidad(datos.periodo().id());
-        entity.setIdNivelEducativo(datos.nivelEducativo().id());
-        entity.setEstado("1");
-        entity.setFechaCambio(new Date());
-        return entity;
-    }
-
-    private Map<Long, Long> saveModalidades(
-            List<ModalidadContratacionInsertarDTO> modalidades,
-            Long convId) {
-        Map<Long, Long> cotcByModalidad = new HashMap<>();
-        for (ModalidadContratacionInsertarDTO modalidad : modalidades) {
-            Long modalidadId = modalidad.id();
-            if (modalidadId == null || cotcByModalidad.containsKey(modalidadId)) {
-                continue;
-            }
-            ConvocatoriaTipoContratacionEntity entity =
-                    new ConvocatoriaTipoContratacionEntity();
-            entity.setIdConvocatoria(convId);
-            entity.setIdModalidadContratacion(modalidadId);
-            entity.setFechaCambio(new Date());
-            convocatoriaTipoContratacionRepository.save(entity);
-            cotcByModalidad.put(modalidadId, entity.getId());
-        }
-        return cotcByModalidad;
-    }
-
-    private void saveFechasGenerales(List<FechasConvocatoriaFormularioDTO> fechas, Long convId) {
-        for (FechasConvocatoriaFormularioDTO fecha : fechas) {
-            FechasConvocatoriaEntity entity = buildFechaBase(
-                    convId,
-                    null,
-                    fecha.fechaInicio(),
-                    fecha.fechaFin(),
-                    null);
-            entity.setCodigo(fecha.codigo());
-            fechasConvocatoriaRepository.save(entity);
-        }
-    }
-
-    private void saveFechasModalidad(List<ModalidadContratacionInsertarDTO> modalidades, Long convId, Map<Long, Long> convocatoriaTipoContratacion) {
-        for (ModalidadContratacionInsertarDTO modalidad : modalidades) {
-            Long cotcId = convocatoriaTipoContratacion.get(modalidad.id());
-            if (cotcId == null) {
-                continue;
-            }
-            FechasConvocatoriaEntity entity = buildFechaBase(
-                    convId,
-                    cotcId,
-                    modalidad.fechaInicio(),
-                    modalidad.fechaFin(),
-                    modalidad.semanas()
-                );
-            entity.setVacaciones(String.valueOf(modalidad.vacaciones()));
-            fechasConvocatoriaRepository.save(entity);
-        }
-    }
-
-    private FechasConvocatoriaEntity buildFechaBase(
-            Long convId,
-            Long cotcId,
-            Date fechaInicio,
-            Date fechaFin,
-            String semanas
-        ) {
-        FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
-        entity.setIdConvocatoria(convId);
-        entity.setIdConvocatoriaTipoContratacion(cotcId);
-        entity.setFechaInicio(fechaInicio);
-        entity.setFechaFin(fechaFin);
-        entity.setSemanas(semanas);
-        entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMeses(
-                fechaInicio,
-                fechaFin));
-        entity.setFechaCambio(new Date());
-        return entity;
+                fechasConvocatoriaMapper.toFormularioDtoList(convocatoriaRepository.findFechasGeneralesByConvocatoriaId(id)),
+                convocatoriaTipoContratacionFormularioMapper.toFormularioDtoList(convocatoriaTipoContratacionRepository.findByConvocatoriaId(id), convocatoriaRepository.findModalidadesFechasByConvocatoriaId(id)));
     }
 
     private String normalizeParam(String value) {
@@ -203,5 +286,31 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
             return null;
         }
         return value.trim();
+    }
+
+    @Override
+    public void delete(Long id, ConvocatoriaFormularioDTO dto) {
+        ConvocatoriaDatosInsertarDTO datos = dto.convocatoriaDatosInsertar();
+        if (datos.id() == null || !datos.id().equals(id)) {
+            throw new ApiException(HttpStatus.NOT_FOUND,  "El id de la convocatoria no existe");
+        }
+        convocatoriaRepository.deleteById(id);
+        for(FechasConvocatoriaFormularioDTO fecha : dto.fechas()) {
+            fechasConvocatoriaRepository.deleteById(fecha.id());
+        }
+        for(ConvocatoriaTipoContratacionFormularioDTO cotc : dto.convocatoriaTipoContratacion()) {
+            for(FechaModalidadFormularioDTO fecha : cotc.fechas()) {
+                fechasConvocatoriaRepository.deleteById(fecha.id());
+            }
+            convocatoriaTipoContratacionRepository.deleteById(cotc.id());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void bulkDelete(List<ConvocatoriaFormularioDTO> listaConvocatorias) {
+        for(ConvocatoriaFormularioDTO dto : listaConvocatorias) {
+            delete(dto.convocatoriaDatosInsertar().id(), dto);
+        }
     }
 }

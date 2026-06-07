@@ -1,16 +1,18 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NivelEducativoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
-
-import jakarta.persistence.Tuple;
 
 public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity, Long> {
 
@@ -132,20 +134,52 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
 
     @Query(value = """
             SELECT
-                COTC.MOCO_ID AS id,
-                TO_NUMBER(NVL(FECO.FECO_VACACIONES, '0')) AS vacaciones,
-                FECO.FECO_FECHAINICIO AS fechaInicio,
-                FECO.FECO_FECHAFIN AS fechaFin,
-                FECO.FECO_SEMANAS AS semanas
+                FECO.FECO_ID,
+                FECO.COTC_ID,
+                FECO.CONV_ID,
+                FECO.FECO_VACACIONES,
+                FECO.FECO_SEMANAS,
+                FECO.FECO_ONCEMESES,
+                FECO.FECO_FECHAINICIO,
+                FECO.FECO_FECHAFIN,
+                FECO.FECO_CODIGO,
+                FECO.FECO_REGISTRADOPOR,
+                FECO.FECO_FECHACAMBIO
             FROM RVD.FECHASCONVOCATORIA FECO
-            INNER JOIN RVD.CONVOCATORIATIPOCONTRATACION COTC
-                ON FECO.COTC_ID = COTC.COTC_ID
             WHERE FECO.CONV_ID = :id
                 AND FECO.COTC_ID IS NOT NULL
             ORDER BY FECO.FECO_ID
             """, nativeQuery = true)
+    List<FechasConvocatoriaEntity> findModalidadesFechasByConvocatoriaId(
+            @Param("id") Long id);
 
-    List<Tuple> findModalidadesByConvocatoriaId(@Param("id") Long id);
+    @Modifying
+    @Query("""
+            update ConvocatoriaEntity c set
+            c.nombre = :nombre,
+            c.descripcion = :descripcion,
+            c.idPersonaGeneral = :idPersonaGeneral,
+            c.idPeriodoUniversidad = :idPeriodoUniversidad,
+            c.idNivelEducativo = :idNivelEducativo,
+            c.fechaCambio = :fechaCambio
+            where c.id = :id
+            """)
+    int update(
+            @Param("nombre") String nombre,
+            @Param("descripcion") String descripcion,
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
+            @Param("idNivelEducativo") Long idNivelEducativo,
+            @Param("fechaCambio") Date fechaCambio,
+            @Param("id") Long id);
+
+    
+
+    @Modifying
+    @Query(value = """
+            DELETE FROM RVD.CONVOCATORIA WHERE CONV_ID = :id
+            """, nativeQuery = true)
+    void deleteById(@Param("id") Long id);
 
 }
 

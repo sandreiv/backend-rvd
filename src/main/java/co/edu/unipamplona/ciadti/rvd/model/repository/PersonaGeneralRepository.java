@@ -17,7 +17,7 @@ public interface PersonaGeneralRepository
             INNER JOIN FETCH pege.personaNaturalGeneral peng
             WHERE pege.id = :id
             """)
-    Optional<PersonaGeneralEntity> findByIdWithNatural(@Param("id") Long id);
+    Optional<PersonaGeneralEntity> findGeneralPersonById(@Param("id") Long id);
 
     @Query("""
             SELECT DISTINCT pege FROM PersonaGeneralEntity pege

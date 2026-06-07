@@ -8,5 +8,5 @@ public record ConvocatoriaFormularioDTO(
     @JsonProperty("convocatoria")
     ConvocatoriaDatosInsertarDTO convocatoriaDatosInsertar,
     List<FechasConvocatoriaFormularioDTO> fechas,
-    List<ModalidadContratacionInsertarDTO> modalidades
+    List<ConvocatoriaTipoContratacionFormularioDTO> convocatoriaTipoContratacion
 ) {}

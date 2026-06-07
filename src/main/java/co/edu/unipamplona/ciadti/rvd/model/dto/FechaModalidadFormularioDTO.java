@@ -2,9 +2,10 @@ package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 import java.util.Date;
 
-public record FechasConvocatoriaFormularioDTO(
+public record FechaModalidadFormularioDTO(
     Long id,
-    String codigo,
+    Long vacaciones,
     Date fechaInicio,
-    Date fechaFin
+    Date fechaFin,
+    String semanas
 ) {}

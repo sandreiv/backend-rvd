@@ -1,30 +1,42 @@
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.mapstruct.Mapper;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionInsertarDTO;
-
-import jakarta.persistence.Tuple;
+import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 
 @Mapper(componentModel = "spring")
 public interface ModalidadContratacionInsertarMapper {
 
-    default ModalidadContratacionInsertarDTO toDto(Tuple row) {
+    default ModalidadContratacionInsertarDTO toDto(
+            FechasConvocatoriaEntity feco,
+            Long idModalidadContratacion) {
         return new ModalidadContratacionInsertarDTO(
-                row.get("id", Number.class).longValue(),
-                row.get("vacaciones", Number.class).longValue(),
-                row.get("fechaInicio", Date.class),
-                row.get("fechaFin", Date.class),
-                row.get("semanas", String.class));
+                idModalidadContratacion,
+                parseVacaciones(feco.getVacaciones()),
+                feco.getFechaInicio(),
+                feco.getFechaFin(),
+                feco.getSemanas());
     }
 
-    default List<ModalidadContratacionInsertarDTO> toDtoList(List<Tuple> rows) {
-        return rows.stream()
-                .map(this::toDto)
+    default List<ModalidadContratacionInsertarDTO> toDtoList(
+            List<FechasConvocatoriaEntity> fechas,
+            Map<Long, Long> mocoByCotc) {
+        return fechas.stream()
+                .map(feco -> toDto(
+                        feco,
+                        mocoByCotc.get(feco.getIdConvocatoriaTipoContratacion())))
                 .collect(Collectors.toList());
+    }
+
+    default Long parseVacaciones(String vacaciones) {
+        if (vacaciones == null || vacaciones.isBlank()) {
+            return 0L;
+        }
+        return Long.valueOf(vacaciones.trim());
     }
 }
