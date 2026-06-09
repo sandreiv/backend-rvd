@@ -1,3 +1,12 @@
+/**
+ * Aplicación: rvd
+ * Archivo: ConvocatoriaPrecargaServiceImpl.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.service.impl
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 04/06/2026
+ * Modificaciones:
+ * 04/06/2026 - Sebastian Jaimes - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.util.Collections;
@@ -48,8 +57,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private final PersonaAutorizaConvocatoriaMapper personaAutorizaConvocatoriaMapper;
     private final ConvocatoriaDatosInsertarMapper convocatoriaDatosInsertarMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
-    private final ConvocatoriaTipoContratacionFormularioMapper
-            convocatoriaTipoContratacionFormularioMapper;
+    private final ConvocatoriaTipoContratacionFormularioMapper convocatoriaTipoContratacionFormularioMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -294,15 +302,15 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         if (datos.id() == null || !datos.id().equals(id)) {
             throw new ApiException(HttpStatus.NOT_FOUND,  "El id de la convocatoria no existe");
         }
-        convocatoriaRepository.deleteById(id);
+        convocatoriaRepository.deleteByProcedure(id, "REGISTRO_WEB");
         for(FechasConvocatoriaFormularioDTO fecha : dto.fechas()) {
-            fechasConvocatoriaRepository.deleteById(fecha.id());
+            fechasConvocatoriaRepository.deleteByProcedure(fecha.id(), "REGISTRO_WEB");
         }
         for(ConvocatoriaTipoContratacionFormularioDTO cotc : dto.convocatoriaTipoContratacion()) {
             for(FechaModalidadFormularioDTO fecha : cotc.fechas()) {
-                fechasConvocatoriaRepository.deleteById(fecha.id());
+                fechasConvocatoriaRepository.deleteByProcedure(fecha.id(), "REGISTRO_WEB");
             }
-            convocatoriaTipoContratacionRepository.deleteById(cotc.id());
+            convocatoriaTipoContratacionRepository.deleteByProcedure(cotc.id(), "REGISTRO_WEB");
         }
     }
 
@@ -314,3 +322,5 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         }
     }
 }
+
+ /* 04/06/2026 @:Sebastian Jaimes*/

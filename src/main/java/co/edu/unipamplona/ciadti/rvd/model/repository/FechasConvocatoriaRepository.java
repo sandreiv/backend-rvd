@@ -1,11 +1,13 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
@@ -61,5 +63,11 @@ public interface FechasConvocatoriaRepository
     @Query(value = """
             DELETE FROM RVD.FECHASCONVOCATORIA WHERE CONV_ID = :id
             """, nativeQuery = true)
-    void deleteByConvocatoriaId(@Param("id") Long id);
+    void deleteByConvocatoriaId(@Param("id") Long id); 
+    
+    
+    @Procedure(name = "FechasConvocatoriaEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(@Param("P_FECO_ID") Long id, @Param("P_FECO_REGISTRADOPOR") String registradoPor);
+
+
 }

@@ -1,11 +1,13 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaTipoContratacionEntity;
@@ -44,4 +46,7 @@ public interface ConvocatoriaTipoContratacionRepository
             DELETE FROM RVD.CONVOCATORIATIPOCONTRATACION WHERE CONV_ID = :id
             """, nativeQuery = true)
     void deleteByConvocatoriaId(@Param("id") Long id);
+
+    @Procedure(name = "ConvocatoriaTipoContratacionEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(@Param("P_COTC_ID") Long id, @Param("P_COTC_REGISTRADOPOR") String registradoPor);
 }

@@ -21,9 +21,22 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.StoredProcedureParameter;
+import jakarta.persistence.ParameterMode;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
+@NamedStoredProcedureQuery(
+    name = "ConvocatoriaEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_CONVOCATORIA",
+    parameters = {
+        @StoredProcedureParameter(name = "P_CONV_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_CONV_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
+    }
+)
 @Getter
 @Setter
 @Entity
