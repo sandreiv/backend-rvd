@@ -17,7 +17,7 @@ public interface ModalidadContratacionInsertarMapper {
             Long idModalidadContratacion) {
         return new ModalidadContratacionInsertarDTO(
                 idModalidadContratacion,
-                parseVacaciones(feco.getVacaciones()),
+                feco.getVacaciones(),
                 feco.getFechaInicio(),
                 feco.getFechaFin(),
                 feco.getSemanas());
@@ -33,10 +33,4 @@ public interface ModalidadContratacionInsertarMapper {
                 .collect(Collectors.toList());
     }
 
-    default Long parseVacaciones(String vacaciones) {
-        if (vacaciones == null || vacaciones.isBlank()) {
-            return 0L;
-        }
-        return Long.valueOf(vacaciones.trim());
-    }
 }

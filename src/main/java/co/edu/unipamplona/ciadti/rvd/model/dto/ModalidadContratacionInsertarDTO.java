@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record ModalidadContratacionInsertarDTO(
     @JsonProperty("idModalidadContratacion")
     Long id,
-    Long vacaciones, 
+    String vacaciones, 
     Date fechaInicio,
     Date fechaFin, 
     String semanas

@@ -17,7 +17,7 @@ public interface ConvocatoriaTipoContratacionFormularioMapper {
     default FechaModalidadFormularioDTO toFechaDto(FechasConvocatoriaEntity entity) {
         return new FechaModalidadFormularioDTO(
                 entity.getId(),
-                parseVacaciones(entity.getVacaciones()),
+                entity.getVacaciones(),
                 entity.getFechaInicio(),
                 entity.getFechaFin(),
                 entity.getSemanas());
@@ -38,12 +38,5 @@ public interface ConvocatoriaTipoContratacionFormularioMapper {
                                 .map(this::toFechaDto)
                                 .collect(Collectors.toList())))
                 .collect(Collectors.toList());
-    }
-
-    default Long parseVacaciones(String vacaciones) {
-        if (vacaciones == null || vacaciones.isBlank()) {
-            return 0L;
-        }
-        return Long.valueOf(vacaciones.trim());
     }
 }

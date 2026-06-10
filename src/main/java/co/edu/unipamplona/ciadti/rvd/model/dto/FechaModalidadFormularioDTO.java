@@ -4,7 +4,7 @@ import java.util.Date;
 
 public record FechaModalidadFormularioDTO(
     Long id,
-    Long vacaciones,
+    String vacaciones,
     Date fechaInicio,
     Date fechaFin,
     String semanas

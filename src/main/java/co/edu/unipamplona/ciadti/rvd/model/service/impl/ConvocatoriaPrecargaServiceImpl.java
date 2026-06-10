@@ -138,8 +138,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                         entity.setFechaInicio(fecha.fechaInicio());
                         entity.setFechaFin(fecha.fechaFin());
                         entity.setSemanas(fecha.semanas());
-                        entity.setVacaciones(String.valueOf(
-                                fecha.vacaciones() != null ? fecha.vacaciones() : 0L));
+                        entity.setVacaciones(fecha.vacaciones());
                         entity.setOnceMeses(
                                 FechasConvocatoriaCalculator.calcularOnceMeses(
                                         fecha.fechaInicio(),
@@ -230,14 +229,12 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                                 FechasConvocatoriaCalculator.calcularOnceMeses(
                                         fecha.fechaInicio(),
                                         fecha.fechaFin());
-                        String vacaciones = String.valueOf(
-                                fecha.vacaciones() != null ? fecha.vacaciones() : 0L);
                         if (fecha.id() != null) {
                             fechasConvocatoriaRepository.updateModalidad(
                                     fecha.fechaInicio(),
                                     fecha.fechaFin(),
                                     fecha.semanas(),
-                                    vacaciones,
+                                    fecha.vacaciones(),
                                     onceMeses,
                                     new Date(),
                                     fecha.id());
@@ -250,7 +247,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                             entity.setFechaInicio(fecha.fechaInicio());
                             entity.setFechaFin(fecha.fechaFin());
                             entity.setSemanas(fecha.semanas());
-                            entity.setVacaciones(vacaciones);
+                            entity.setVacaciones(fecha.vacaciones());
                             entity.setOnceMeses(onceMeses);
                             entity.setFechaCambio(new Date());
                             fechaModalidadIds.add(

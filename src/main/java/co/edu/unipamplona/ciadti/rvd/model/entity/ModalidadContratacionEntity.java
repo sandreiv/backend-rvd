@@ -26,6 +26,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "MODALIDADCONTRATACION", schema = "CONTRATOS")
 public class ModalidadContratacionEntity implements Serializable, Cloneable{
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "MOCO_ID", nullable = false)
