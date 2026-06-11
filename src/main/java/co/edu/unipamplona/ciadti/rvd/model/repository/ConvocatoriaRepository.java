@@ -186,5 +186,22 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
     @Procedure(name = "ConvocatoriaEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(@Param("P_CONV_ID") Long id, @Param("P_CONV_REGISTRADOPOR") String registradoPor);
 
+    @Query(value = """
+            SELECT
+                CONV.CONV_ID,
+                CONV.PEUN_ID,
+                CONV.NIED_ID,
+                CONV.PEGE_IDAUTORIZA,
+                CONV.CONV_NOMBRE,
+                CONV.CONV_DESCRIPCION,
+                CONV.CONV_ESTADO,
+                CONV.CONV_REGISTRADOPOR,
+                CONV.CONV_FECHACAMBIO
+            FROM RVD.CONVOCATORIA CONV
+            WHERE CONV.CONV_ESTADO = '1'
+            ORDER BY CONV.CONV_ID
+            """, nativeQuery = true)
+    List<ConvocatoriaEntity> findActivePreloadCalls();
+
 }
 

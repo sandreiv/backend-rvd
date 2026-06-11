@@ -318,6 +318,23 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
             delete(dto.convocatoriaDatosInsertar().id(), dto);
         }
     }
+
+    @Override
+    public List<ConvocatoriaDTO> findActivePreloadCalls() {
+        return convocatoriaRepository.findActivePreloadCalls().stream()
+                .map(convocatoria -> convocatoriaMapper.toListDto(
+                        convocatoria,
+                        convocatoriaRepository.findPeriodoEntityByConvocatoriaId(
+                                convocatoria.getId()),
+                        convocatoriaRepository.findNivelEntityByConvocatoriaId(
+                                convocatoria.getId()),
+                        convocatoriaRepository.findFechaCnvByConvocatoriaId(
+                                convocatoria.getId()),
+                        personaGeneralRepository.findGeneralPersonById(
+                                        convocatoria.getIdPersonaGeneral())
+                                .orElse(null)))
+                .collect(Collectors.toList());
+    }
 }
 
  /* 04/06/2026 @:Sebastian Jaimes*/

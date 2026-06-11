@@ -29,19 +29,19 @@ public class EstadoCargaEntity implements Serializable, Cloneable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ESTA_ID", nullable = false)
+    @Column(name = "ESCA_ID", nullable = false)
     private Long id;
 
-    @Column(name = "ESTA_NOMBRE")
+    @Column(name = "ESCA_NOMBRE")
     private String nombre;
 
-    @Column(name = "ESTA_DESCRIPCION")
+    @Column(name = "ESCA_DESCRIPCION")
     private String descripcion;
 
-    @Column(name = "ESTA_REGISTRADOPOR")
+    @Column(name = "ESCA_REGISTRADOPOR")
     private String registradoPor;
 
-    @Column(name = "ESTA_FECHACAMBIO")
+    @Column(name = "ESCA_FECHACAMBIO")
     private Date fechaCambio;
 
     @Override

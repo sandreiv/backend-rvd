@@ -50,6 +50,12 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
     @Column(name = "MODA_ID")
     private Long idModalidad;
 
+    @Column(name = "COOR_NOMBRE")
+    private String nombre;
+
+    @Column(name = "COOR_DESCRIPCION")
+    private String descripcion;
+
     @Column(name = "COOR_ESACADEMICA")
     private String esAcademica;
 
@@ -96,6 +102,8 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
                 ", idArea=" + idArea +
                 ", idMetodologia=" + idMetodologia +
                 ", idModalidad=" + idModalidad +
+                ", nombre=" + nombre +
+                ", descripcion=" + descripcion +
                 ", esAcademica=" + esAcademica +
                 ", codigo=" + codigo +
                 ", registradoPor=" + registradoPor +

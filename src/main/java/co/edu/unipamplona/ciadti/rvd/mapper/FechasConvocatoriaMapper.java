@@ -13,6 +13,5 @@ public interface FechasConvocatoriaMapper {
     FechasConvocatoriaFormularioDTO toFormularioDto(
             FechasConvocatoriaEntity entity);
 
-    List<FechasConvocatoriaFormularioDTO> toFormularioDtoList(
-            List<FechasConvocatoriaEntity> entities);
+    List<FechasConvocatoriaFormularioDTO> toFormularioDtoList(List<FechasConvocatoriaEntity> entities);
 }

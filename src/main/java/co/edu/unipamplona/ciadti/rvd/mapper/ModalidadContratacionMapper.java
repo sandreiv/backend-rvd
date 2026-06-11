@@ -12,6 +12,5 @@ public interface ModalidadContratacionMapper {
 
     ModalidadContratacionDTO toDto(ModalidadContratacionEntity entity);
 
-    List<ModalidadContratacionDTO> toDtoList(
-            List<ModalidadContratacionEntity> entities);
+    List<ModalidadContratacionDTO> toDtoList(List<ModalidadContratacionEntity> entities);
 }
