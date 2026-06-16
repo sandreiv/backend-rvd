@@ -6,6 +6,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EstadoCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MetodologiaDTO;
@@ -25,9 +27,8 @@ public interface CoordinacionMapper {
     @Mapping(target = "unidadArea", source = ".", qualifiedByName = "toUnidadArea")
     @Mapping(target = "metodologia", source = ".", qualifiedByName = "toMetodologia")
     @Mapping(target = "modalidad", source = ".", qualifiedByName = "toModalidad")
-    @Mapping(target = "nivelEducativo", source = ".", qualifiedByName = "toNivelEducativo")
-    @Mapping(target = "periodoUniversidad", source = ".", qualifiedByName = "toPeriodoUniversidad")
-    @Mapping(target = "estadoCarga", source = ".", qualifiedByName = "toEstadoCarga")
+    @Mapping(target = "convocatoria", source = ".", qualifiedByName = "toConvocatoria")
+    @Mapping(target = "carga", source = ".", qualifiedByName = "toCarga")
     CoordinacionDTO toDto(CoordinacionListadoProjection projection);
 
     List<CoordinacionDTO> toDtoList(List<CoordinacionListadoProjection> projections);
@@ -60,8 +61,33 @@ public interface CoordinacionMapper {
                 projection.getDescripcionModalidad());
     }
 
-    @Named("toNivelEducativo")
-    default NivelEducativoDTO toNivelEducativo(CoordinacionListadoProjection projection) {
+    @Named("toConvocatoria")
+    default ConvocatoriaListadoDTO toConvocatoria(
+            CoordinacionListadoProjection projection) {
+        if (projection.getIdConvocatoria() == null) {
+            return null;
+        }
+        return new ConvocatoriaListadoDTO(
+                projection.getIdConvocatoria(),
+                projection.getNombreConvocatoria(),
+                projection.getDescripcionConvocatoria(),
+                projection.getEstadoConvocatoria(),
+                toNivelEducativo(projection),
+                toPeriodoUniversidad(projection));
+    }
+
+    @Named("toCarga")
+    default CargaListadoDTO toCarga(CoordinacionListadoProjection projection) {
+        if (projection.getIdCarga() == null) {
+            return null;
+        }
+        return new CargaListadoDTO(
+                projection.getIdCarga(),
+                toEstadoCarga(projection));
+    }
+
+    default NivelEducativoDTO toNivelEducativo(
+            CoordinacionListadoProjection projection) {
         if (projection.getIdNivelEducativo() == null) {
             return null;
         }
@@ -70,7 +96,6 @@ public interface CoordinacionMapper {
                 projection.getDescripcionNivelEducativo());
     }
 
-    @Named("toPeriodoUniversidad")
     default PeriodoUniversidadDTO toPeriodoUniversidad(
             CoordinacionListadoProjection projection) {
         if (projection.getIdPeriodoUniversidad() == null) {
@@ -82,13 +107,13 @@ public interface CoordinacionMapper {
                 projection.getDescripcionPeriodo());
     }
 
-    @Named("toEstadoCarga")
     default EstadoCargaDTO toEstadoCarga(CoordinacionListadoProjection projection) {
         if (projection.getIdEstadoCarga() == null) {
             return null;
         }
         return new EstadoCargaDTO(
                 projection.getIdEstadoCarga(),
+                projection.getNombreEstadoCarga(),
                 projection.getDescripcionEstadoCarga());
     }
 }

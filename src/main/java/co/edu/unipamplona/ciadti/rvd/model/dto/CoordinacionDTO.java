@@ -10,8 +10,6 @@ public record CoordinacionDTO(
     UnidadDTO unidadArea,
     MetodologiaDTO metodologia,
     ModalidadDTO modalidad,
-    NivelEducativoDTO nivelEducativo,
-    PeriodoUniversidadDTO periodoUniversidad,
-    EstadoCargaDTO estadoCarga,
-    Long idConvocatoria
+    ConvocatoriaListadoDTO convocatoria,
+    CargaListadoDTO carga
 ) {}

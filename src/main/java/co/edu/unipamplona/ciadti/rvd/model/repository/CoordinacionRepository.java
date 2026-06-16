@@ -26,14 +26,19 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 METO.METO_DESCRIPCION AS descripcionMetodologia,
                 MODA.MODA_ID AS idModalidad,
                 MODA.MODA_DESCRIPCION AS descripcionModalidad,
+                CONV.CONV_ID AS idConvocatoria,
+                CONV.CONV_NOMBRE AS nombreConvocatoria,
+                CONV.CONV_DESCRIPCION AS descripcionConvocatoria,
+                CONV.CONV_ESTADO AS estadoConvocatoria,
                 NIED.NIED_ID AS idNivelEducativo,
                 NIED.NIED_DESCRIPCION AS descripcionNivelEducativo,
                 PEUN.PEUN_ID AS idPeriodoUniversidad,
                 PEUN.PEUN_ANO AS anioPeriodo,
                 PEUN.PEUN_PERIODO AS descripcionPeriodo,
+                CARG.CARG_ID AS idCarga,
                 ESCA.ESCA_ID AS idEstadoCarga,
-                ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga,
-                CONV.CONV_ID AS idConvocatoria
+                ESCA.ESCA_NOMBRE AS nombreEstadoCarga,
+                ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
                 ON NIED.NIED_ID = CONV.NIED_ID
@@ -53,14 +58,19 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON METO.METO_ID = COOR.METO_ID
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
+            INNER JOIN RVD.PERSONACOORDINACION PECO
+                ON PECO.COOR_ID = COOR.COOR_ID
             WHERE CONV.CONV_ID = :convId
+                AND PECO.PEGE_ID = :idPersonaGeneral
+                AND CONV.CONV_ESTADO = '1'
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
                 COOR.COOR_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findByConvocatoriaWithCarga(
-            @Param("convId") Long convId);
+            @Param("convId") Long convId,
+            @Param("idPersonaGeneral") Long idPersonaGeneral);
 
     @Query(value = """
             SELECT DISTINCT
@@ -77,14 +87,19 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 METO.METO_DESCRIPCION AS descripcionMetodologia,
                 MODA.MODA_ID AS idModalidad,
                 MODA.MODA_DESCRIPCION AS descripcionModalidad,
+                CAST(NULL AS NUMBER) AS idConvocatoria,
+                CAST(NULL AS VARCHAR2(4000)) AS nombreConvocatoria,
+                CAST(NULL AS VARCHAR2(4000)) AS descripcionConvocatoria,
+                CAST(NULL AS VARCHAR2(4000)) AS estadoConvocatoria,
                 CAST(NULL AS NUMBER) AS idNivelEducativo,
                 CAST(NULL AS VARCHAR2(4000)) AS descripcionNivelEducativo,
                 CAST(NULL AS NUMBER) AS idPeriodoUniversidad,
                 CAST(NULL AS NUMBER) AS anioPeriodo,
                 CAST(NULL AS VARCHAR2(4000)) AS descripcionPeriodo,
+                CAST(NULL AS NUMBER) AS idCarga,
                 CAST(NULL AS NUMBER) AS idEstadoCarga,
-                CAST(NULL AS VARCHAR2(4000)) AS descripcionEstadoCarga,
-                CAST(NULL AS NUMBER) AS idConvocatoria
+                CAST(NULL AS VARCHAR2(4000)) AS nombreEstadoCarga,
+                CAST(NULL AS VARCHAR2(4000)) AS descripcionEstadoCarga
             FROM RVD.COORDINACIONES COOR
             INNER JOIN ACADEMICO.UNIDAD UNID_REG
                 ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
@@ -94,15 +109,18 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON METO.METO_ID = COOR.METO_ID
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
+            INNER JOIN RVD.PERSONACOORDINACION PECO
+                ON COOR.COOR_ID = PECO.COOR_ID
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM RVD.CARGA CARG
                 WHERE CARG.COOR_ID = COOR.COOR_ID
-            )
+            ) AND PECO.PEGE_ID = :idPersonaGeneral
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
                 COOR.COOR_NOMBRE
             """, nativeQuery = true)
-    List<CoordinacionListadoProjection> findWithoutCarga();
+    List<CoordinacionListadoProjection> findWithoutCarga(
+            @Param("idPersonaGeneral") Long idPersonaGeneral);
 }
