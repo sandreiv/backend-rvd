@@ -14,6 +14,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,6 +82,32 @@ public class CoordinationController {
         System.out.println("[DEBUG] DTO: " + dto);
         coordinacionService.savePreload(dto);
         return ResponseEntity.ok().build();
+    }
+
+
+    /* -------------------------------------------------------------- */
+    /* SE DEBE CORREGIR CUANDO EXISTA TABLA DE COMITE DE PUNTAJES
+    /* -------------------------------------------------------------- */
+    @Operation(
+        summary = "Busca persona general para autorizar una convocatoria",
+        description = "Busca por documento y/o fragmento de nombre o apellido"
+    )
+    @GetMapping("/search-general-person")
+    public ResponseEntity<List<PersonaAutorizaConvocatoriaDTO>> searchGeneralPerson(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String documento) {
+        List<PersonaAutorizaConvocatoriaDTO> personas = convocatoriaPrecargaService.searchGeneralPerson(nombre, documento);
+        return new ResponseEntity<>(personas, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Busca los docentes de carrera de una coordinacion",
+        description = "Busca los docentes de carrera de una coordinacion por el id de la coordinacion"
+    )
+    @GetMapping("/list-career-professors/{idCoordinacion}")
+    public ResponseEntity<List<DocentePlantaCoordinacionDTO>> listCareerProfessors(@PathVariable Long idCoordinacion) {
+        List<DocentePlantaCoordinacionDTO> docentesCarrera = coordinacionService.listCareerProfessors(idCoordinacion);
+        return new ResponseEntity<>(docentesCarrera, HttpStatus.OK);
     }
 
     

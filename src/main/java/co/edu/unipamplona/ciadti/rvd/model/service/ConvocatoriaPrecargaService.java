@@ -19,9 +19,7 @@ public interface ConvocatoriaPrecargaService {
 
     List<ConvocatoriaDTO> findCallListWithDates();
 
-    List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(
-            String nombre,
-            String documento);
+    List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(String nombre, String documento);
 
     void save(ConvocatoriaFormularioDTO dto);
 

@@ -1,6 +1,9 @@
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -11,6 +14,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EstadoCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MetodologiaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NivelEducativoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
@@ -27,11 +31,45 @@ public interface CoordinacionMapper {
     @Mapping(target = "unidadArea", source = ".", qualifiedByName = "toUnidadArea")
     @Mapping(target = "metodologia", source = ".", qualifiedByName = "toMetodologia")
     @Mapping(target = "modalidad", source = ".", qualifiedByName = "toModalidad")
-    @Mapping(target = "convocatoria", source = ".", qualifiedByName = "toConvocatoria")
+    @Mapping(target = "convocatoria", ignore = true)
     @Mapping(target = "carga", source = ".", qualifiedByName = "toCarga")
     CoordinacionDTO toDto(CoordinacionListadoProjection projection);
 
-    List<CoordinacionDTO> toDtoList(List<CoordinacionListadoProjection> projections);
+    default List<CoordinacionDTO> toDtoList(
+            List<CoordinacionListadoProjection> projections) {
+        if (projections == null || projections.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, List<CoordinacionListadoProjection>> grouped =
+                new LinkedHashMap<>();
+        for (CoordinacionListadoProjection projection : projections) {
+            grouped.computeIfAbsent(
+                    projection.getIdCoordinacion(),
+                    key -> new ArrayList<>())
+                    .add(projection);
+        }
+        return grouped.values().stream()
+                .map(this::toDtoFromGroup)
+                .toList();
+    }
+
+    default CoordinacionDTO toDtoFromGroup(
+            List<CoordinacionListadoProjection> group) {
+        CoordinacionListadoProjection first = group.getFirst();
+        CoordinacionDTO dto = toDto(first);
+        return new CoordinacionDTO(
+                dto.id(),
+                dto.nombre(),
+                dto.descripcion(),
+                dto.codigo(),
+                dto.esAcademica(),
+                dto.unidadRegional(),
+                dto.unidadArea(),
+                dto.metodologia(),
+                dto.modalidad(),
+                toConvocatoria(first, collectModalidadesContratacion(group)),
+                dto.carga());
+    }
 
     @Named("toUnidadRegional")
     default UnidadDTO toUnidadRegional(CoordinacionListadoProjection projection) {
@@ -61,9 +99,9 @@ public interface CoordinacionMapper {
                 projection.getDescripcionModalidad());
     }
 
-    @Named("toConvocatoria")
     default ConvocatoriaListadoDTO toConvocatoria(
-            CoordinacionListadoProjection projection) {
+            CoordinacionListadoProjection projection,
+            List<ModalidadContratacionListadoDTO> modalidadesContratacion) {
         if (projection.getIdConvocatoria() == null) {
             return null;
         }
@@ -73,7 +111,25 @@ public interface CoordinacionMapper {
                 projection.getDescripcionConvocatoria(),
                 projection.getEstadoConvocatoria(),
                 toNivelEducativo(projection),
-                toPeriodoUniversidad(projection));
+                toPeriodoUniversidad(projection),
+                modalidadesContratacion);
+    }
+
+    default List<ModalidadContratacionListadoDTO> collectModalidadesContratacion(
+            List<CoordinacionListadoProjection> group) {
+        Map<Long, ModalidadContratacionListadoDTO> modalidades =
+                new LinkedHashMap<>();
+        for (CoordinacionListadoProjection projection : group) {
+            if (projection.getIdModalidadContratacion() == null) {
+                continue;
+            }
+            modalidades.putIfAbsent(
+                    projection.getIdModalidadContratacion(),
+                    new ModalidadContratacionListadoDTO(
+                            projection.getIdModalidadContratacion(),
+                            projection.getNombreModalidadContratacion()));
+        }
+        return new ArrayList<>(modalidades.values());
     }
 
     @Named("toCarga")

@@ -13,6 +13,7 @@ import java.util.Date;
 
 public record ConvocatoriaDTO(
     Long id,
+    String nombre,
     String descripcion,
     String periodoUniversidad,
     String nivelEducativo,

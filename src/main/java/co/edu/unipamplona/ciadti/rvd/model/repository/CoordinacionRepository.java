@@ -12,7 +12,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionLis
 public interface CoordinacionRepository extends JpaRepository<CoordinacionesEntity, Long> {
 
     @Query(value = """
-            SELECT DISTINCT
+            SELECT
                 COOR.COOR_ID AS idCoordinacion,
                 COOR.COOR_NOMBRE AS nombreCoordinacion,
                 COOR.COOR_DESCRIPCION AS descripcionCoordinacion,
@@ -38,12 +38,18 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 CARG.CARG_ID AS idCarga,
                 ESCA.ESCA_ID AS idEstadoCarga,
                 ESCA.ESCA_NOMBRE AS nombreEstadoCarga,
-                ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga
+                ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga,
+                MOCO.MOCO_ID AS idModalidadContratacion,
+                MOCO.MOCO_NOMBRE AS nombreModalidadContratacion
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
                 ON NIED.NIED_ID = CONV.NIED_ID
             INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
                 ON PEUN.PEUN_ID = CONV.PEUN_ID
+            LEFT JOIN RVD.CONVOCATORIATIPOCONTRATACION COTC
+                ON COTC.CONV_ID = CONV.CONV_ID
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = COTC.MOCO_ID
             INNER JOIN RVD.CARGA CARG
                 ON CARG.CONV_ID = CONV.CONV_ID
             INNER JOIN RVD.ESTADOCARGA ESCA
@@ -59,14 +65,15 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
             INNER JOIN RVD.PERSONACOORDINACION PECO
-                ON PECO.COOR_ID = COOR.COOR_ID
+                ON COOR.COOR_ID = PECO.COOR_ID
             WHERE CONV.CONV_ID = :convId
-                AND PECO.PEGE_ID = :idPersonaGeneral
-                AND CONV.CONV_ESTADO = '1'
+            AND PECO.PEGE_ID = :idPersonaGeneral
+            AND CONV.CONV_ESTADO = '1'
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
-                COOR.COOR_NOMBRE
+                COOR.COOR_NOMBRE,
+                MOCO.MOCO_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findByConvocatoriaWithCarga(
             @Param("convId") Long convId,
@@ -99,7 +106,9 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 CAST(NULL AS NUMBER) AS idCarga,
                 CAST(NULL AS NUMBER) AS idEstadoCarga,
                 CAST(NULL AS VARCHAR2(4000)) AS nombreEstadoCarga,
-                CAST(NULL AS VARCHAR2(4000)) AS descripcionEstadoCarga
+                CAST(NULL AS VARCHAR2(4000)) AS descripcionEstadoCarga,
+                CAST(NULL AS NUMBER) AS idModalidadContratacion,
+                CAST(NULL AS VARCHAR2(4000)) AS nombreModalidadContratacion
             FROM RVD.COORDINACIONES COOR
             INNER JOIN ACADEMICO.UNIDAD UNID_REG
                 ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
