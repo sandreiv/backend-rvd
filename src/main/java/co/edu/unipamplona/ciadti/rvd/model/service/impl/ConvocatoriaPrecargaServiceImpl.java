@@ -84,8 +84,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         if (nombreParam == null && documentoParam == null) {
             return Collections.emptyList();
         }
-        return personaAutorizaConvocatoriaMapper.toDtoList(
-                personaGeneralRepository.searchGeneralPerson(nombreParam, documentoParam));
+        return personaAutorizaConvocatoriaMapper.toDtoList(personaGeneralRepository.searchGeneralPerson(nombreParam, documentoParam));
     }
 
     @Override

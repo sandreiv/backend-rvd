@@ -4,6 +4,7 @@ import java.util.List;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 
 public interface CoordinacionService {
@@ -13,4 +14,6 @@ public interface CoordinacionService {
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 
     List<DocentePlantaCoordinacionDTO> listCareerProfessors(Long idCoordinacion);
+
+    List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento);
 }

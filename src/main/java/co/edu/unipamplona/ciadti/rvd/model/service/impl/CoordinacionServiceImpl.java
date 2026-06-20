@@ -6,21 +6,26 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.CoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePlantaCoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,9 +39,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CargaRepository cargaRepository;
     private final EstadoCargaRepository estadoCargaRepository;
     private final DocentesPlantaCoordinacionRepository docentesPlantaCoordinacionRepository;
+    private final PersonaGeneralRepository personaGeneralRepository;
     private final CoordinacionMapper coordinacionMapper;
     private final RelacionConvocatoriaCoordinacionMapper relacionMapper;
     private final DocentePlantaCoordinacionMapper docentePlantaCoordinacionMapper;
+    private final DocentePreasignacionMapper docentePreasignacionMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -84,5 +91,25 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional(readOnly = true)
     public List<DocentePlantaCoordinacionDTO> listCareerProfessors(Long idCoordinacion) {
         return docentePlantaCoordinacionMapper.toDtoList(docentesPlantaCoordinacionRepository.findByIdCoordinacion(idCoordinacion));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento) {
+        String nombreParam = normalizeParam(nombre);
+        String documentoParam = normalizeParam(documento);
+        if (nombreParam == null && documentoParam == null) {
+            return Collections.emptyList();
+        }
+        return docentePreasignacionMapper.toDtoList(
+                personaGeneralRepository.searchProfessorsForPreassignment(
+                        nombreParam, documentoParam));
+    }
+
+    private String normalizeParam(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
     }
 }

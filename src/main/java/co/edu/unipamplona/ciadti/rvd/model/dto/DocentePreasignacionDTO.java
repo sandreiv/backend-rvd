@@ -4,6 +4,5 @@ public record DocentePreasignacionDTO(
     Long id,
     String documentoIdentidad,
     String nombreCompleto,
-    //CategoriaCatedraticoDTO categoriaCatedratico,
-    ConvocatoriaDTO convocatoria
+    CategoriaCatedraticoDTO categoriaCatedratico
 ) {}

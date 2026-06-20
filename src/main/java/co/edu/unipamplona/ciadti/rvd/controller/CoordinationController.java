@@ -25,7 +25,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionD
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,15 +89,15 @@ public class CoordinationController {
     /* SE DEBE CORREGIR CUANDO EXISTA TABLA DE COMITE DE PUNTAJES
     /* -------------------------------------------------------------- */
     @Operation(
-        summary = "Busca persona general para autorizar una convocatoria",
-        description = "Busca por documento y/o fragmento de nombre o apellido"
+        summary = "Busca docentes para preasignacion",
+        description = "Busca por documento y/o fragmento de nombre o apellido, incluyendo su categoria de catedratico"
     )
-    @GetMapping("/search-general-person")
-    public ResponseEntity<List<PersonaAutorizaConvocatoriaDTO>> searchGeneralPerson(
+    @GetMapping("/search-professor")
+    public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String documento) {
-        List<PersonaAutorizaConvocatoriaDTO> personas = convocatoriaPrecargaService.searchGeneralPerson(nombre, documento);
-        return new ResponseEntity<>(personas, HttpStatus.OK);
+        List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento);
+        return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
 
     @Operation(
