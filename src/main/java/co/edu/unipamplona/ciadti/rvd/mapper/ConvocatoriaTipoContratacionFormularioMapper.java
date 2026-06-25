@@ -20,7 +20,8 @@ public interface ConvocatoriaTipoContratacionFormularioMapper {
                 entity.getVacaciones(),
                 entity.getFechaInicio(),
                 entity.getFechaFin(),
-                entity.getSemanas());
+                entity.getSemanas(),
+                null);
     }
 
     default List<ConvocatoriaTipoContratacionFormularioDTO> toFormularioDtoList(List<ConvocatoriaTipoContratacionEntity> cotcList, List<FechasConvocatoriaEntity> fechasModalidad) {

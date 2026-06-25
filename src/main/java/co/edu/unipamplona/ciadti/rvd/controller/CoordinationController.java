@@ -22,10 +22,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -72,7 +76,6 @@ public class CoordinationController {
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
     }
 
-
     @Operation(
         summary = "Guarda la relacion coordinacion-convocatoria en carga",
         description = "Crea un registro en RVD.CARGA con COOR_ID y CONV_ID"
@@ -84,19 +87,17 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
-
-    /* -------------------------------------------------------------- */
-    /* SE DEBE CORREGIR CUANDO EXISTA TABLA DE COMITE DE PUNTAJES
-    /* -------------------------------------------------------------- */
     @Operation(
         summary = "Busca docentes para preasignacion",
-        description = "Busca por documento y/o fragmento de nombre o apellido, incluyendo su categoria de catedratico"
+        description = "Busca por documento y/o fragmento de nombre o apellido y la modalidad de contratacion"
     )
     @GetMapping("/search-professor")
     public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) String documento) {
-        List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento);
+        @RequestParam(required = false) String nombre, 
+        @RequestParam(required = false) String documento,
+        @RequestParam(required = true) Long idModalidadContratacion
+    ) {
+        List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
 
@@ -109,6 +110,52 @@ public class CoordinationController {
         List<DocentePlantaCoordinacionDTO> docentesCarrera = coordinacionService.listCareerProfessors(idCoordinacion);
         return new ResponseEntity<>(docentesCarrera, HttpStatus.OK);
     }
+
+    @Operation(
+        summary = "Obtiene las fechas de convocatoria por coordinación y modalidad de contratación",
+        description = "Retorna las fechas de la convocatoria en carga para la coordinación (coorId) y la modalidad de contratación (mocoId)"
+    )
+    @GetMapping("/work-date")
+    public ResponseEntity<List<FechaModalidadFormularioDTO>> getWorkDate(@RequestParam Long idCoordinacion, @RequestParam Long idModalidadContratacion) {
+        List<FechaModalidadFormularioDTO> fechas = coordinacionService.getWorkDate(idCoordinacion, idModalidadContratacion);
+        return new ResponseEntity<>(fechas, HttpStatus.OK);
+    }
+
+    @GetMapping("/value-points-preload")
+    public ResponseEntity<ValorPuntosPrecargaDTO> getValuePointsPreload(@RequestParam Long anio, @RequestParam Long idCategoriaCatedratico, @RequestParam(required = false) String idPersonaGeneral) {
+        Long idPersona = parseNullableLong(idPersonaGeneral);
+        ValorPuntosPrecargaDTO valores = coordinacionService.getValuePointsPreload(anio, idCategoriaCatedratico, idPersona);
+        return new ResponseEntity<>(valores, HttpStatus.OK);
+    }
+    private Long parseNullableLong(String value) {
+        if (value == null || value.isBlank() || "null".equalsIgnoreCase(value.trim())) {
+            return null;
+        }
+        return Long.valueOf(value.trim());
+    }
+
+    @Operation(
+        summary = "Obtiene una lista de las categorias de catedratico",
+        description = "Obtiene una lista de las categorias de catedratico"
+    )
+    @GetMapping("/professor-category")
+    public ResponseEntity<List<CategoriaCatedraticoDTO>> listProfessorCategory() {
+        List<CategoriaCatedraticoDTO> categorias = coordinacionService.listProfessorCategory();
+        return new ResponseEntity<>(categorias, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Agrega un docente a la modalidad de contratacion de una coordinacion",
+        description = "Agrega un docente a la modalidad de contratacion de una coordinacion"
+    )
+    @PostMapping("/add-professor")
+    public ResponseEntity<?> addProfessor(@RequestBody CargaDocenteFormularioDTO dto) {
+        /*coordinacionService.addProfessor(dto);
+        return ResponseEntity.ok().build();*/
+        return null;
+    }
+
+
 
     
 }

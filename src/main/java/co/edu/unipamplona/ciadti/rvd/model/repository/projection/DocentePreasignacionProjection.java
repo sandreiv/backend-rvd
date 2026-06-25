@@ -10,4 +10,7 @@ public interface DocentePreasignacionProjection {
     String getSegundoApellido();
     Long getIdCategoriaCatedratico();
     String getDescripcionCategoriaCatedratico();
+    Long getIdEscalafon();
+    Long getIdModalidadContratacion();
+    String getPuntos();
 }

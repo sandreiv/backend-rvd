@@ -7,5 +7,6 @@ public record FechaModalidadFormularioDTO(
     String vacaciones,
     Date fechaInicio,
     Date fechaFin,
-    String semanas
+    String semanas,
+    String rangoHoras
 ) {}

@@ -49,15 +49,20 @@ public interface PersonaGeneralRepository
                 PENG.PENG_PRIMERAPELLIDO AS primerApellido,
                 PENG.PENG_SEGUNDOAPELLIDO AS segundoApellido,
                 CACA.CACA_ID AS idCategoriaCatedratico,
-                CACA.CACA_DESCRIPCION AS descripcionCategoriaCatedratico
+                CACA.CACA_DESCRIPCION AS descripcionCategoriaCatedratico,
+                ESCA.ESCA_ID AS idEscalafon,
+                ESCA.MOCO_ID AS idModalidadContratacion,
+                ESCA.ESCA_PUNTOS AS puntos
             FROM GENERAL.PERSONAGENERAL PEGE
             INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
                 ON PENG.PEGE_ID = PEGE.PEGE_ID
-            LEFT JOIN TALENTOV3.TRABAJADOR TRABA
-                ON PENG.PEGE_ID = TRABA.PEGE_ID
+            LEFT JOIN COMITES.ESCALAFON ESCA
+                ON PEGE.PEGE_ID = ESCA.PEGE_ID
             LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
-                ON TRABA.CACA_ID = CACA.CACA_ID
+                ON ESCA.CACA_ID = CACA.CACA_ID
             WHERE
+                ESCA.MOCO_ID = :idModalidadContratacion
+            AND
                 (:documento IS NULL
                     OR UPPER(PEGE.PEGE_DOCUMENTOIDENTIDAD)
                         LIKE UPPER('%' || :documento || '%'))
@@ -79,5 +84,6 @@ public interface PersonaGeneralRepository
             """, nativeQuery = true)
     List<DocentePreasignacionProjection> searchProfessorsForPreassignment(
             @Param("nombre") String nombre,
-            @Param("documento") String documento);
+            @Param("documento") String documento,
+            @Param("idModalidadContratacion") Long idModalidadContratacion);
 }

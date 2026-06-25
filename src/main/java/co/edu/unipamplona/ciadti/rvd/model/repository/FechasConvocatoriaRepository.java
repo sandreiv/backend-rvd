@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
 
 public interface FechasConvocatoriaRepository
         extends JpaRepository<FechasConvocatoriaEntity, Long> {
@@ -70,4 +71,26 @@ public interface FechasConvocatoriaRepository
     BigDecimal deleteByProcedure(@Param("P_FECO_ID") Long id, @Param("P_FECO_REGISTRADOPOR") String registradoPor);
 
 
+    @Query("""
+            SELECT
+                feco.id AS id,
+                feco.vacaciones AS vacaciones,
+                feco.fechaInicio AS fechaInicio,
+                feco.fechaFin AS fechaFin,
+                feco.semanas AS semanas,
+                reca.minimo AS minimo,
+                reca.maximo AS maximo
+            FROM CargaEntity carg
+            JOIN ConvocatoriaTipoContratacionEntity cotc
+                ON cotc.idConvocatoria = carg.idConvocatoria
+            JOIN RestriccionCargaEntity reca
+                ON reca.idModalidadContratacion = cotc.idModalidadContratacion
+            JOIN FechasConvocatoriaEntity feco
+                ON feco.idConvocatoriaTipoContratacion = cotc.id
+            WHERE carg.idCoordinacion = :coorId
+                AND cotc.idModalidadContratacion = :mocoId
+            """)
+    List<FechaModalidadProjection> findByCoordinationAndModality(
+            @Param("coorId") Long coorId,
+            @Param("mocoId") Long mocoId);
 }

@@ -73,8 +73,7 @@ public class PreloadCallController {
     )
     @GetMapping("/list-modality")
     public ResponseEntity<List<ModalidadContratacionDTO>> listModality() {
-        List<ModalidadContratacionDTO> modalities =
-                modalidadContratacionService.findModalityList();
+        List<ModalidadContratacionDTO> modalities = modalidadContratacionService.findModalityList();
         return new ResponseEntity<>(modalities, HttpStatus.OK);
     }
 
@@ -84,8 +83,7 @@ public class PreloadCallController {
     )
     @GetMapping("/list-university-period")
     public ResponseEntity<List<PeriodoUniversidadDTO>> listUniversityPeriod() {
-        List<PeriodoUniversidadDTO> periods =
-                periodoUniversidadService.findUniversityPeriodList();
+        List<PeriodoUniversidadDTO> periods = periodoUniversidadService.findUniversityPeriodList();
         return new ResponseEntity<>(periods, HttpStatus.OK);
     }
 
@@ -95,8 +93,7 @@ public class PreloadCallController {
     )
     @GetMapping("/list-educational-level")
     public ResponseEntity<List<NivelEducativoDTO>> listEducationalLevel() {
-        List<NivelEducativoDTO> levels =
-                nivelEducativoService.findEducationalLevelList();
+        List<NivelEducativoDTO> levels = nivelEducativoService.findEducationalLevelList();
         return new ResponseEntity<>(levels, HttpStatus.OK);
     }
 

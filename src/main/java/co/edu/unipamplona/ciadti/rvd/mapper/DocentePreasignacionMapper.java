@@ -10,6 +10,7 @@ import org.mapstruct.Named;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.EscalafonDTO;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionProjection;
 
 @Mapper(componentModel = "spring")
@@ -19,6 +20,7 @@ public interface DocentePreasignacionMapper {
     @Mapping(target = "documentoIdentidad", source = "documentoIdentidad")
     @Mapping(target = "nombreCompleto", source = ".", qualifiedByName = "buildNombreCompleto")
     @Mapping(target = "categoriaCatedratico", source = ".", qualifiedByName = "toCategoria")
+    @Mapping(target = "escalafon", source = ".", qualifiedByName = "toEscalafon")
     DocentePreasignacionDTO toDto(DocentePreasignacionProjection projection);
 
     List<DocentePreasignacionDTO> toDtoList(
@@ -44,5 +46,18 @@ public interface DocentePreasignacionMapper {
         return new CategoriaCatedraticoDTO(
                 projection.getIdCategoriaCatedratico(),
                 projection.getDescripcionCategoriaCatedratico());
+    }
+
+    @Named("toEscalafon")
+    default EscalafonDTO toEscalafon(DocentePreasignacionProjection projection) {
+        if (projection.getIdEscalafon() == null) {
+            return null;
+        }
+        return new EscalafonDTO(
+                projection.getIdEscalafon(),
+                projection.getIdCategoriaCatedratico(),
+                projection.getIdModalidadContratacion(),
+                projection.getIdPersonaGeneral(),
+                projection.getPuntos());
     }
 }
