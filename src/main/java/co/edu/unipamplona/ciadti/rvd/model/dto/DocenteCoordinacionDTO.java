@@ -1,14 +1,17 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 import java.util.Date;
-import java.util.List;
 
-public record CargaDocenteFormularioDTO(
+public record DocenteCoordinacionDTO(
+    Long idCargaDocente,
     Long idPersonaGeneral,
+    String nombreCompleto,
+    String estado,
     Long idModalidadContratacion,
     Long idCategoriaCatedratico,
     Long idCarga,
-    FechasConvocatoriaFormularioDTO fechasConvocatoria,
+    Long idFechasConvocatoria,
+    String fechaConvocatoriaCodigo,
     Date fechaInicio,
     Date fechaFin,
     String valorContrato,
@@ -19,6 +22,4 @@ public record CargaDocenteFormularioDTO(
     String puntos,
     String valorPunto,
     String semanas
-    //String nivelFormacion, --- de donde se obtiene?
-    //String momento --- aun no está definido
 ) {}

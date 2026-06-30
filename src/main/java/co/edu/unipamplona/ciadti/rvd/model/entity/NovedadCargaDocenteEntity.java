@@ -41,7 +41,7 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "PEGE_ID")
     private Long idPersonaGeneral;
 
-    @Column(name = "MODO_ID")
+    @Column(name = "MOCO_ID")
     private Long idModalidadContratacion;
 
     @Column(name = "CACA_ID")
@@ -119,7 +119,7 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     private List<PersonaGeneralEntity> personasGenerales;
 
     @OneToMany
-    @JoinColumn(name = "MODO_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "MOCO_ID", insertable = false, updatable = false)
     private List<ModalidadContratacionEntity> modalidadesContratacion;
 
     @OneToMany

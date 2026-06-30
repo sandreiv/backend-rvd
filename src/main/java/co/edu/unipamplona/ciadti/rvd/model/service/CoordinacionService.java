@@ -2,8 +2,10 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import java.util.List;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
@@ -24,5 +26,13 @@ public interface CoordinacionService {
 
     ValorPuntosPrecargaDTO getValuePointsPreload(Long anio, Long idCategoriaCatedratico, Long idPersonaGeneral);
 
-    List<CategoriaCatedraticoDTO> listProfessorCategory();
+    List<CategoriaCatedraticoDTO> listProfessorCategory(Long idModalidadContratacion);
+
+    void addProfessor(CargaDocenteFormularioDTO dto);
+
+    List<DocenteCoordinacionDTO> listProfessors(Long idCoordinacion, Long idModalidadContratacion);
+
+    void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto);
+
+    void deleteProfessor(Long idCargaDocente);
 }

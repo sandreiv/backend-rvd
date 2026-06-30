@@ -13,9 +13,11 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,6 +29,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
@@ -82,7 +85,6 @@ public class CoordinationController {
     )
     @PostMapping("/save-preload")
     public ResponseEntity<Void> savePreload(@RequestBody RelacionConvocatoriaCoordinacionDTO dto) {
-        System.out.println("[DEBUG] DTO: " + dto);
         coordinacionService.savePreload(dto);
         return ResponseEntity.ok().build();
     }
@@ -139,8 +141,8 @@ public class CoordinationController {
         description = "Obtiene una lista de las categorias de catedratico"
     )
     @GetMapping("/professor-category")
-    public ResponseEntity<List<CategoriaCatedraticoDTO>> listProfessorCategory() {
-        List<CategoriaCatedraticoDTO> categorias = coordinacionService.listProfessorCategory();
+    public ResponseEntity<List<CategoriaCatedraticoDTO>> listProfessorCategory(@RequestParam Long idModalidadContratacion) {
+        List<CategoriaCatedraticoDTO> categorias = coordinacionService.listProfessorCategory(idModalidadContratacion);
         return new ResponseEntity<>(categorias, HttpStatus.OK);
     }
 
@@ -149,13 +151,39 @@ public class CoordinationController {
         description = "Agrega un docente a la modalidad de contratacion de una coordinacion"
     )
     @PostMapping("/add-professor")
-    public ResponseEntity<?> addProfessor(@RequestBody CargaDocenteFormularioDTO dto) {
-        /*coordinacionService.addProfessor(dto);
-        return ResponseEntity.ok().build();*/
-        return null;
+    public ResponseEntity<Void> addProfessor(@RequestBody CargaDocenteFormularioDTO dto) {
+        coordinacionService.addProfessor(dto);
+        return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Lista los docentes de una coordinacion según la modalidad de contratacion",
+        description = "Lista los docentes de una coordinacion según la modalidad de contratacion"
+    )
+    @GetMapping("/list-professors-modality")
+    public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCoordinacion, @RequestParam Long idModalidadContratacion) {
+        List<DocenteCoordinacionDTO> docentes = coordinacionService.listProfessors(idCoordinacion, idModalidadContratacion);
+        return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
 
+    @Operation(
+        summary = "Edita un docente de una coordinacion por el id de la carga docente",
+        description = "Edita el registro de CARGADOCENTE"
+    )
+    @PutMapping("/update-professor/{idCargaDocente}")
+    public ResponseEntity<Void> updateProfessor(@PathVariable Long idCargaDocente, @RequestBody CargaDocenteFormularioDTO dto) {
+        coordinacionService.updateProfessor(idCargaDocente, dto);
+        return ResponseEntity.ok().build();
+    }
 
-    
+    @Operation(
+        summary = "Elimina un docente de una coordinacion por el id de la carga docente",
+        description = "Elimina el registro de CARGADOCENTE"
+    )
+    @DeleteMapping("/delete-professor/{idCargaDocente}")
+    public ResponseEntity<Void> deleteProfessor(@PathVariable Long idCargaDocente) {
+        coordinacionService.deleteProfessor(idCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
 }

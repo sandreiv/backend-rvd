@@ -11,23 +11,29 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
+import co.edu.unipamplona.ciadti.rvd.mapper.CargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CategoriaCatedraticoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.DocenteCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePlantaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
@@ -67,6 +73,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final DocentePreasignacionMapper docentePreasignacionMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
     private final CategoriaCatedraticoMapper categoriaCatedraticoMapper;
+    private final CargaDocenteRepository cargaDocenteRepository;
+    private final CargaDocenteMapper cargaDocenteMapper;
+    private final DocenteCoordinacionMapper docenteCoordinacionMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -188,7 +197,49 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoriaCatedraticoDTO> listProfessorCategory() {
-        return categoriaCatedraticoMapper.toDtoList(categoriaCatedraticoRepository.findAllCategories());
+    public List<CategoriaCatedraticoDTO> listProfessorCategory(Long idModalidadContratacion) {
+        return categoriaCatedraticoMapper.toDtoList(categoriaCatedraticoRepository.findAllCategories(idModalidadContratacion));
+    }
+
+    @Override
+    @Transactional
+    public void addProfessor(CargaDocenteFormularioDTO dto) {
+        if (dto.idPersonaGeneral() != null
+                && cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionAndIdFechasConvocatoria(
+                        dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion(), dto.fechasConvocatoria().id())) {
+            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta modalidad de contratacion");
+        }
+        CargaDocenteEntity entity = cargaDocenteMapper.toEntity(dto);
+        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setFechaCambio(new Date());
+        entity.setEstado("0");
+        entity.setVigente("1");
+        cargaDocenteRepository.save(entity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocenteCoordinacionDTO> listProfessors(Long idCoordinacion, Long idModalidadContratacion) {
+        return docenteCoordinacionMapper.toDtoList(cargaDocenteRepository.findProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion));
+    }
+
+    @Override
+    @Transactional
+    public void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto) {
+        CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
+        cargaDocenteMapper.updateEntity(dto, entity);
+        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setFechaCambio(new Date());
+        cargaDocenteRepository.save(entity);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProfessor(Long idCargaDocente) {
+        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
+        }
+        cargaDocenteRepository.deleteByProcedure(idCargaDocente, REGISTRADO_POR);
     }
 }

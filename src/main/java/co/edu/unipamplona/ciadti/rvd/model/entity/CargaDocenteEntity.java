@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -19,11 +20,23 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.NamedStoredProcedureQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+@NamedStoredProcedureQuery(
+    name = "CargaDocenteEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_CARGADOCENTE",
+    parameters = {
+        @StoredProcedureParameter(name = "P_CADO_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_CADO_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
+    }
+)
 @Getter
 @Setter
 @Entity
@@ -41,7 +54,7 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "PEGE_ID")
     private Long idPersonaGeneral;
 
-    @Column(name = "MODO_ID")
+    @Column(name = "MOCO_ID")
     private Long idModalidadContratacion;
 
     @Column(name = "CACA_ID")
@@ -95,6 +108,9 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "CADO_VALORPUNTO")
     private String valorPunto;
 
+    @Column(name = "CADO_TOTALCONTRATO")
+    private String totalContrato;
+
     @Column(name = "CADO_SEMANAS")
     private String semanas;
 
@@ -119,7 +135,7 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     private List<PersonaGeneralEntity> personasGenerales;
 
     @OneToMany
-    @JoinColumn(name = "MODO_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "MOCO_ID", insertable = false, updatable = false)
     private List<ModalidadContratacionEntity> modalidadesContratacion;
 
     @OneToMany
@@ -160,6 +176,7 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
                 ", fechaFin=" + fechaFin +
                 ", valorContrato=" + valorContrato +
                 ", valorPrestaciones=" + valorPrestaciones +
+                ", totalContrato=" + totalContrato +
                 ", salario=" + salario +
                 ", estado=" + estado +
                 ", vigente=" + vigente +
