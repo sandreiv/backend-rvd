@@ -9,7 +9,12 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 
 public interface CoordinacionService {
@@ -35,4 +40,14 @@ public interface CoordinacionService {
     void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto);
 
     void deleteProfessor(Long idCargaDocente);
+
+    List<UnidadDTO> listRegionalUnits(Long idCoordinacion);
+
+    List<ProgramaDTO> listProgramsByRegionalUnit(Long idUnidadRegional, Long idNivelEducativo);
+
+    List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad);
+
+    List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion);
+
+    List<GrupoDTO> listSubjectGroup(String codigoMateria);
 }

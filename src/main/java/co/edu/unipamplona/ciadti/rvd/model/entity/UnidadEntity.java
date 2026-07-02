@@ -42,6 +42,9 @@ public class UnidadEntity implements Serializable, Cloneable {
     @Column(name = "UNID_NOMBRE")
     private String nombre;
 
+    @Column(name = "UNID_REGIONAL")
+    private String regional;
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -55,6 +58,7 @@ public class UnidadEntity implements Serializable, Cloneable {
                 ", codigo=" + codigo +
                 ", email=" + email +
                 ", nombre=" + nombre +
+                ", regional=" + regional +
                 '}';
     }
 }

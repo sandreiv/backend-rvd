@@ -18,7 +18,12 @@ import co.edu.unipamplona.ciadti.rvd.mapper.DocenteCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePlantaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
@@ -26,13 +31,20 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.TipoActividadesEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoRepository;
@@ -41,9 +53,14 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosCategoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosVigenciaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import java.util.Collections;
@@ -76,6 +93,17 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CargaDocenteRepository cargaDocenteRepository;
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
+    private final UnidadRepository unidadRepository;
+    private final ProgramaRepository programaRepository;
+    private final UnidadMapper unidadMapper;
+    private final ProgramaMapper programaMapper;
+    private final TipoActividadesRepository tipoActividadesRepository;
+    private final TipoActividadCriterioMapper tipoActividadCriterioMapper;
+    private final MateriaRepository materiaRepository;
+    private final MateriaMapper materiaMapper;
+    private final AsociacionCoordinacionRepository asociacionCoordinacionRepository;
+    private final GrupoRepository grupoRepository;
+    private final GrupoMapper grupoMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -226,8 +254,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto) {
-        CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
+        CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
+        
         cargaDocenteMapper.updateEntity(dto, entity);
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
@@ -241,5 +269,38 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
         }
         cargaDocenteRepository.deleteByProcedure(idCargaDocente, REGISTRADO_POR);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UnidadDTO> listRegionalUnits(Long idCoordinacion) {
+        return unidadMapper.toDtoList(unidadRepository.findRegionalUnits(idCoordinacion));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProgramaDTO> listProgramsByRegionalUnit(Long idUnidadRegional, Long idNivelEducativo) {
+        return programaMapper.toDtoList(programaRepository.findByUnidadRegionalAndNivelEducativo(idUnidadRegional, idNivelEducativo));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad) {
+        return tipoActividadCriterioMapper.toDtoList(tipoActividadesRepository.findCriteriaByParentId(idTipoActividad));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion) {
+        if (asociacionCoordinacionRepository.existsByIdCoordinacion(idCoordinacion)) {
+            return materiaMapper.toDtoList(materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma));
+        }
+        return materiaMapper.toDtoList(materiaRepository.findNoTransversalesByPrograma(idPrograma));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<GrupoDTO> listSubjectGroup(String codigoMateria) {
+        return grupoMapper.toDtoList(grupoRepository.findByCodigoMateria(codigoMateria));
     }
 }

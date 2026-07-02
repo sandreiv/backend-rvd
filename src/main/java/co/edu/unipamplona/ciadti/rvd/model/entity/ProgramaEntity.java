@@ -59,6 +59,7 @@ public class ProgramaEntity implements Serializable, Cloneable {
     @Column(name = "PROG_NUMPERIODOS", nullable = false)
     private Long numPeriodos;
 
+
     @Column(name = "PROG_REGISTRADOPOR", nullable = false)
     private String registradoPor;
 
@@ -86,7 +87,7 @@ public class ProgramaEntity implements Serializable, Cloneable {
     @Column(name = "PROG_TIENECONVENIO")
     private String tieneConvenio;
 
-    @Column(name = "PROG_TIPOPROGRAMA", nullable = false)
+    @Column(name = "PROG_TIPOPROGRAMA")
     private String tipoPrograma;
 
     @Column(name = "PROG_ABREVIATURA")

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
@@ -33,6 +34,10 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -186,4 +191,53 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Lista los criterios",
+        description = "Lista los criterios, los cuales son el nivel mas bajo de un tipo actividad"
+    )
+    @GetMapping("/list-criteria")
+    public ResponseEntity<List<TipoActividadCriterioDTO>> listCriteria(@RequestParam Long idTipoActividad) {
+        List<TipoActividadCriterioDTO> criterios = coordinacionService.listCriteria(idTipoActividad);
+        return new ResponseEntity<>(criterios, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista las unidades regionales de una coordinación",
+        description = "Lista todas las unidades academicas marcadas como regionales de una coordinación"
+    )
+    @GetMapping("/list-regional-unit")
+    public ResponseEntity<List<UnidadDTO>> listRegionalUnits(@RequestParam Long idCoordinacion) {
+        List<UnidadDTO> unidades = coordinacionService.listRegionalUnits(idCoordinacion);
+        return new ResponseEntity<>(unidades, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los programas de una unidad regional según el nivel educativo",
+        description = "Lista los programas academicos asociados a una unidad regional según el nivel educativo"
+    )
+    @GetMapping("/list-program")
+    public ResponseEntity<List<ProgramaDTO>> listPrograms(@RequestParam Long idUnidadRegional, @RequestParam Long idNivelEducativo) {
+        List<ProgramaDTO> programas = coordinacionService.listProgramsByRegionalUnit(idUnidadRegional, idNivelEducativo);
+        return new ResponseEntity<>(programas, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista las materias de un programa según la coordinación",
+        description = "Lista las materias de un programa según la coordinación. (Se revisa si es transversal o no)"
+    )
+    @GetMapping("/list-subject")
+    public ResponseEntity<List<MateriaDTO>> listSubjects(@RequestParam Long idPrograma, @RequestParam Long idCoordinacion) {
+        List<MateriaDTO> materias = coordinacionService.listSubjects(idPrograma, idCoordinacion);
+        return new ResponseEntity<>(materias, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los grupos de una materia",
+        description = "Lista los grupos de una materia"
+    )
+    @GetMapping("/list-subject-group")
+    public ResponseEntity<List<GrupoDTO>> listSubjectGroup(@RequestParam String codigoMateria) {
+        List<GrupoDTO> grupos = coordinacionService.listSubjectGroup(codigoMateria);
+        return new ResponseEntity<>(grupos, HttpStatus.OK);
+    }
 }
