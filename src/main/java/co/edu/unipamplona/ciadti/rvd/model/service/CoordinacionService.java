@@ -12,8 +12,10 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 
@@ -47,7 +49,11 @@ public interface CoordinacionService {
 
     List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad);
 
+    List<TipoActividadDTO> listActivityTypes();
+
     List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion);
 
     List<GrupoDTO> listSubjectGroup(String codigoMateria);
+
+    List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral);
 }

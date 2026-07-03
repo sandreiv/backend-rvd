@@ -12,7 +12,12 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoP
 public interface MateriaMapper {
 
     @Mapping(target = "horasDirectas", expression = "java(calcularHorasDirectas(projection))")
+    @Mapping(target = "tieneGrupo", ignore = true)
     MateriaDTO toDto(MateriaListadoProjection projection);
+
+    @Mapping(target = "horasDirectas", expression = "java(calcularHorasDirectas(projection))")
+    @Mapping(target = "tieneGrupo", source = "tieneGrupo")
+    MateriaDTO toDto(MateriaListadoProjection projection, boolean tieneGrupo);
 
     List<MateriaDTO> toDtoList(List<MateriaListadoProjection> projections);
 

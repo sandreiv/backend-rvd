@@ -22,4 +22,12 @@ public interface GrupoRepository extends JpaRepository<GrupoEntity, Long> {
             """, nativeQuery = true)
     List<GrupoListadoProjection> findByCodigoMateria(
             @Param("codigoMateria") String codigoMateria);
+
+    @Query(value = """
+            SELECT DISTINCT grup.MATE_CODIGOMATERIA
+            FROM ACADEMICO.GRUPO grup
+            WHERE grup.MATE_CODIGOMATERIA IN (:codigosMateria)
+            """, nativeQuery = true)
+    List<String> findCodigosMateriaConGrupo(
+            @Param("codigosMateria") List<String> codigosMateria);
 }

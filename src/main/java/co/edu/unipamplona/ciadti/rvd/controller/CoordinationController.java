@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
@@ -37,6 +38,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -202,6 +204,16 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Lista los tipos de actividad padre",
+        description = "Lista los tipos de actividad que no tienen TIAC_IDPADRE"
+    )
+    @GetMapping("/list-activity-types")
+    public ResponseEntity<List<TipoActividadDTO>> listActivityTypes() {
+        List<TipoActividadDTO> tiposActividad = coordinacionService.listActivityTypes();
+        return new ResponseEntity<>(tiposActividad, HttpStatus.OK);
+    }
+
+    @Operation(
         summary = "Lista las unidades regionales de una coordinación",
         description = "Lista todas las unidades academicas marcadas como regionales de una coordinación"
     )
@@ -239,5 +251,15 @@ public class CoordinationController {
     public ResponseEntity<List<GrupoDTO>> listSubjectGroup(@RequestParam String codigoMateria) {
         List<GrupoDTO> grupos = coordinacionService.listSubjectGroup(codigoMateria);
         return new ResponseEntity<>(grupos, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los proyectos asociados a un docente",
+        description = "Lista los proyectos asociados a un docente"
+    )
+    @GetMapping("/list-projects-professor")
+    public ResponseEntity<List<ProyectoDTO>> listProjectsProfessor(@RequestParam Long idPersonaGeneral) {
+        List<ProyectoDTO> proyectos = coordinacionService.listProjectsProfessor(idPersonaGeneral);
+        return new ResponseEntity<>(proyectos, HttpStatus.OK);
     }
 }

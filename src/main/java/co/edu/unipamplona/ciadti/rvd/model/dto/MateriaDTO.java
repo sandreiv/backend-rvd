@@ -18,5 +18,6 @@ public record MateriaDTO(
     Long periodo,
     Long ponderacionAcademica,
     Long horasDirectas,
-    Long capacidad
+    Long capacidad,
+    Boolean tieneGrupo
 ) {}

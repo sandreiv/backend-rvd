@@ -7,9 +7,24 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.TipoActividadesEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TipoActividadListadoProjection;
 
 public interface TipoActividadesRepository
         extends JpaRepository<TipoActividadesEntity, Long> {
+
+    @Query(value = """
+            SELECT
+                tiac.TIAC_ID AS id,
+                tiac.TIAC_IDPADRE AS idPadre,
+                tiac.TIAC_NOMBRE AS nombre,
+                tiac.TIAC_DESCRIPCION AS descripcion,
+                tiac.TIAC_ORDEN AS orden,
+                tiac.TIAC_CODIGO AS codigo
+            FROM RVD.TIPOACTIVIDADES tiac
+            WHERE tiac.TIAC_IDPADRE IS NULL
+            ORDER BY tiac.TIAC_ORDEN, tiac.TIAC_NOMBRE
+            """, nativeQuery = true)
+    List<TipoActividadListadoProjection> findParentActivityTypes();
 
     @Query(value = """
             SELECT

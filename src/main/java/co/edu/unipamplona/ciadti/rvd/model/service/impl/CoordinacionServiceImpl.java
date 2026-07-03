@@ -3,7 +3,9 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,8 +23,10 @@ import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
@@ -34,8 +38,10 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
@@ -55,6 +61,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosCategoriaRepository;
@@ -62,6 +69,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosVigenciaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
@@ -99,11 +107,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final ProgramaMapper programaMapper;
     private final TipoActividadesRepository tipoActividadesRepository;
     private final TipoActividadCriterioMapper tipoActividadCriterioMapper;
+    private final TipoActividadMapper tipoActividadMapper;
     private final MateriaRepository materiaRepository;
     private final MateriaMapper materiaMapper;
     private final AsociacionCoordinacionRepository asociacionCoordinacionRepository;
     private final GrupoRepository grupoRepository;
     private final GrupoMapper grupoMapper;
+    private final PersonaProyectoRepository personaProyectoRepository;
+    private final ProyectoMapper proyectoMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -286,21 +297,57 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad) {
-        return tipoActividadCriterioMapper.toDtoList(tipoActividadesRepository.findCriteriaByParentId(idTipoActividad));
+        return tipoActividadCriterioMapper.toDtoList(
+                tipoActividadesRepository.findCriteriaByParentId(idTipoActividad));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TipoActividadDTO> listActivityTypes() {
+        return tipoActividadMapper.toDtoList(
+                tipoActividadesRepository.findParentActivityTypes());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion) {
         if (asociacionCoordinacionRepository.existsByIdCoordinacion(idCoordinacion)) {
-            return materiaMapper.toDtoList(materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma));
+            return mapMateriasConGrupo(
+                    materiaRepository.findTransversalesByCoordinacionAndPrograma(
+                            idCoordinacion, idPrograma));
         }
-        return materiaMapper.toDtoList(materiaRepository.findNoTransversalesByPrograma(idPrograma));
+        return mapMateriasConGrupo(
+                materiaRepository.findNoTransversalesByPrograma(idPrograma));
+    }
+
+    private List<MateriaDTO> mapMateriasConGrupo(
+            List<MateriaListadoProjection> projections) {
+        if (projections.isEmpty()) {
+            return List.of();
+        }
+        List<String> codigos = projections.stream()
+                .map(MateriaListadoProjection::getCodigoMateria)
+                .distinct()
+                .toList();
+        Set<String> codigosConGrupo = new HashSet<>(
+                grupoRepository.findCodigosMateriaConGrupo(codigos));
+        return projections.stream()
+                .map(p -> materiaMapper.toDto(
+                        p, codigosConGrupo.contains(p.getCodigoMateria())))
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<GrupoDTO> listSubjectGroup(String codigoMateria) {
         return grupoMapper.toDtoList(grupoRepository.findByCodigoMateria(codigoMateria));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral) {
+        return proyectoMapper.toDtoList(
+                personaProyectoRepository.findProyectosByIdPersonaGeneral(
+                        idPersonaGeneral));
     }
 }
