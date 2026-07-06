@@ -33,6 +33,7 @@ public interface CargaDocenteMapper {
     @Mapping(target = "fechasConvocatoria", ignore = true)
     @Mapping(target = "tiposNovedad", ignore = true)
     @Mapping(target = "novedades", ignore = true)
+    @Mapping(target = "horas", ignore = true)
     CargaDocenteEntity toEntity(CargaDocenteFormularioDTO dto);
 
     @InheritConfiguration(name = "toEntity")
