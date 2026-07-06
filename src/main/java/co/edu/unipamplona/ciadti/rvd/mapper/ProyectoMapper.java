@@ -11,6 +11,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoProyectoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ProyectoDocenteListadoProjection;
 
 @Mapper(componentModel = "spring")
@@ -122,5 +123,72 @@ public interface ProyectoMapper {
                 projection.getDescripcionTipoActividad(),
                 projection.getOrdenTipoActividad(),
                 projection.getCodigoTipoActividad());
+    }
+
+    default List<ProyectoDTO> toArbolDesdeDetalle(
+            DetalleCargaDocenteListadoProjection projection) {
+        if (projection.getIdProyecto() == null) {
+            return List.of();
+        }
+        ProyectoDTO vinculado = toProyectoNodoDesdeDetalle(projection, false);
+        if (projection.getIdProyectoPadre() == null) {
+            return List.of(vinculado);
+        }
+        ProyectoDTO padre = toProyectoNodoDesdeDetalle(projection, true);
+        return List.of(new ProyectoDTO(
+                padre.id(),
+                padre.idProyecto(),
+                padre.nombre(),
+                padre.descripcion(),
+                padre.tipoProyecto(),
+                List.of(),
+                List.of(vinculado)));
+    }
+
+    default ProyectoDTO toProyectoNodoDesdeDetalle(
+            DetalleCargaDocenteListadoProjection projection,
+            boolean esPadre) {
+        if (esPadre) {
+            return new ProyectoDTO(
+                    projection.getIdProyectoPadreEntidad(),
+                    null,
+                    projection.getNombreProyectoPadre(),
+                    projection.getDescripcionProyectoPadre(),
+                    mapTipoProyectoPadreDesdeDetalle(projection),
+                    List.of(),
+                    List.of());
+        }
+        return new ProyectoDTO(
+                projection.getIdProyecto(),
+                projection.getIdProyectoPadre(),
+                projection.getNombreProyecto(),
+                projection.getDescripcionProyecto(),
+                mapTipoProyectoDesdeDetalle(projection),
+                List.of(),
+                List.of());
+    }
+
+    default List<TipoProyectoDTO> mapTipoProyectoDesdeDetalle(
+            DetalleCargaDocenteListadoProjection projection) {
+        if (projection.getIdTipoProyecto() == null) {
+            return List.of();
+        }
+        return List.of(new TipoProyectoDTO(
+                projection.getIdTipoProyecto(),
+                projection.getNombreTipoProyecto(),
+                projection.getDescripcionTipoProyecto(),
+                projection.getTipoTipoProyecto()));
+    }
+
+    default List<TipoProyectoDTO> mapTipoProyectoPadreDesdeDetalle(
+            DetalleCargaDocenteListadoProjection projection) {
+        if (projection.getIdTipoProyectoPadre() == null) {
+            return List.of();
+        }
+        return List.of(new TipoProyectoDTO(
+                projection.getIdTipoProyectoPadre(),
+                projection.getNombreTipoProyectoPadre(),
+                projection.getDescripcionTipoProyectoPadre(),
+                projection.getTipoTipoProyectoPadre()));
     }
 }

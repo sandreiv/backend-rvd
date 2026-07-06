@@ -40,7 +40,9 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ESCA.ESCA_NOMBRE AS nombreEstadoCarga,
                 ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga,
                 MOCO.MOCO_ID AS idModalidadContratacion,
-                MOCO.MOCO_NOMBRE AS nombreModalidadContratacion
+                MOCO.MOCO_NOMBRE AS nombreModalidadContratacion,
+                CECO.CECO_ID AS idCentroCosto,
+                CECO.CECO_DESCRIPCION AS descripcionCentroCosto
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
                 ON NIED.NIED_ID = CONV.NIED_ID
@@ -66,6 +68,10 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON MODA.MODA_ID = COOR.MODA_ID
             INNER JOIN RVD.PERSONACOORDINACION PECO
                 ON COOR.COOR_ID = PECO.COOR_ID
+            LEFT JOIN RVD.ASIGNARCENTROCOSTO ASCC
+                ON ASCC.COOR_ID = COOR.COOR_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO CECO
+                ON CECO.CECO_ID = ASCC.CECO_ID
             WHERE CONV.CONV_ID = :convId
             AND PECO.PEGE_ID = :idPersonaGeneral
             AND CONV.CONV_ESTADO = '1'
@@ -108,7 +114,9 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 CAST(NULL AS VARCHAR2(4000)) AS nombreEstadoCarga,
                 CAST(NULL AS VARCHAR2(4000)) AS descripcionEstadoCarga,
                 CAST(NULL AS NUMBER) AS idModalidadContratacion,
-                CAST(NULL AS VARCHAR2(4000)) AS nombreModalidadContratacion
+                CAST(NULL AS VARCHAR2(4000)) AS nombreModalidadContratacion,
+                CECO.CECO_ID AS idCentroCosto,
+                CECO.CECO_DESCRIPCION AS descripcionCentroCosto
             FROM RVD.COORDINACIONES COOR
             INNER JOIN ACADEMICO.UNIDAD UNID_REG
                 ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
@@ -120,6 +128,10 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON MODA.MODA_ID = COOR.MODA_ID
             INNER JOIN RVD.PERSONACOORDINACION PECO
                 ON COOR.COOR_ID = PECO.COOR_ID
+            LEFT JOIN RVD.ASIGNARCENTROCOSTO ASCC
+                ON ASCC.COOR_ID = COOR.COOR_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO CECO
+                ON CECO.CECO_ID = ASCC.CECO_ID
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM RVD.CARGA CARG

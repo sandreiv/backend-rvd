@@ -10,6 +10,6 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 public record RelacionCargaProyectoDTO(
-    Long idCarga,
-    Long idPersonaProyecto
+    Long idPersonaProyecto,
+    Long idProyecto
 ) {}

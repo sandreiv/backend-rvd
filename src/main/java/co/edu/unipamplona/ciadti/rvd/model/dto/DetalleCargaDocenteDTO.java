@@ -1,17 +1,17 @@
 /**
  * Aplicación: rvd
- * Archivo: DetalleCargaDocenteFormularioDTO.java
+ * Archivo: DetalleCargaDocenteDTO.java
  * Paquete: co.edu.unipamplona.ciadti.rvd.model.dto
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
- * Fecha de creación: 30/06/2026
+ * Fecha de creación: 06/07/2026
  * Modificaciones:
- * 30/06/2026 - Sebastian Jaimes - Creación inicial
+ * 06/07/2026 - Sebastian Jaimes - Creación inicial
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 import java.util.List;
 
-public record DetalleCargaDocenteFormularioDTO(
+public record DetalleCargaDocenteDTO(
     Long idCargaDocente,
-    List<DetalleCargaDocenteItemDTO> detalles
-) {}
+    List<DetalleCargaDocenteActividadDTO> detalles
+){}

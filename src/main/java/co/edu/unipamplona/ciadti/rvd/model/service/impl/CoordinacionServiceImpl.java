@@ -16,6 +16,7 @@ import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.CargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CategoriaCatedraticoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.DetalleCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocenteCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePlantaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
@@ -24,11 +25,15 @@ import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
@@ -39,6 +44,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
@@ -46,15 +52,18 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TipoActividadesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
@@ -66,6 +75,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosCategoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosVigenciaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.RelacionCargaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
@@ -115,6 +125,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final GrupoMapper grupoMapper;
     private final PersonaProyectoRepository personaProyectoRepository;
     private final ProyectoMapper proyectoMapper;
+    private final DetalleCargaDocenteRepository detalleCargaDocenteRepository;
+    private final RelacionCargaProyectoRepository relacionCargaProyectoRepository;
+    private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
+    private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -349,5 +363,88 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return proyectoMapper.toDtoList(
                 personaProyectoRepository.findProyectosByIdPersonaGeneral(
                         idPersonaGeneral));
+    }
+
+    @Override
+    @Transactional
+    public void saveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto) {
+        validateSaveDetailProfessorPreload(dto);
+        
+        for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
+            DetalleCargaDocenteEntity entity = detalleCargaDocenteMapper.toEntity(dto.idCargaDocente(), detalle);
+            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setFechaCambio(new Date());
+            DetalleCargaDocenteEntity saved = detalleCargaDocenteRepository.save(entity);
+            saveRelacionesCargaProyecto(saved.getId(), detalle.relacionCargaProyecto());
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DetalleCargaDocenteDTO listDetailProfessorPreload(Long idCargaDocente) {
+        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la carga docente con id " + idCargaDocente);
+        }
+        List<DetalleCargaDocenteDTO> list = detalleCargaDocenteMapper.toDtoList(detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente), proyectoMapper);
+        if (list.isEmpty()) {
+            return new DetalleCargaDocenteDTO(idCargaDocente, List.of());
+        }
+        return list.get(0);
+    }
+
+    private void validateSaveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto) {
+        if (dto.idCargaDocente() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,"La carga docente es obligatoria");
+        }
+        if (!cargaDocenteRepository.existsById(dto.idCargaDocente())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + dto.idCargaDocente());
+        }
+        for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
+            validateDetalleItem(detalle);
+        }
+    }
+
+    private void validateDetalleItem(DetalleCargaDocenteItemDTO detalle) {
+        if (detalle.horas() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Las horas del detalle son obligatorias");
+        }
+        if (detalle.idCentroCosto() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El centro de costo del detalle es obligatorio");
+        }
+        Long tipoActividad = detalle.idTipoActividadHija() != null ? detalle.idTipoActividadHija() : detalle.idTipoActividad();
+        if (tipoActividad == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El tipo de actividad del detalle es obligatorio");
+        }
+        if (detalle.relacionCargaProyecto() != null) {
+            for (RelacionCargaProyectoDTO relacion : detalle.relacionCargaProyecto()) {
+                validateRelacionCargaProyecto(relacion);
+            }
+        }
+    }
+
+    private void validateRelacionCargaProyecto(RelacionCargaProyectoDTO relacion) {
+        if (relacion.idPersonaProyecto() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La persona proyecto es obligatoria");
+        }
+        if (relacion.idProyecto() != null && !personaProyectoRepository.existsByIdAndIdProyecto(relacion.idPersonaProyecto(), relacion.idProyecto())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La persona proyecto no corresponde al proyecto indicado");
+        }
+        if (!personaProyectoRepository.existsById(relacion.idPersonaProyecto())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la persona proyecto con id " + relacion.idPersonaProyecto());
+        }
+    }
+
+    private void saveRelacionesCargaProyecto(Long idDetalleCargaDocente, List<RelacionCargaProyectoDTO> relaciones) {
+        if (relaciones == null || relaciones.isEmpty()) {
+            return;
+        }
+        for (RelacionCargaProyectoDTO relacion : relaciones) {
+            RelacionCargaProyectoEntity entity = relacionCargaProyectoMapper.toEntity(idDetalleCargaDocente, relacion);
+            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setFechaCambio(new Date());
+            relacionCargaProyectoRepository.save(entity);
+        }
     }
 }

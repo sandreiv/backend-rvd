@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EstadoCargaDTO;
@@ -33,6 +34,7 @@ public interface CoordinacionMapper {
     @Mapping(target = "modalidad", source = ".", qualifiedByName = "toModalidad")
     @Mapping(target = "convocatoria", ignore = true)
     @Mapping(target = "carga", source = ".", qualifiedByName = "toCarga")
+    @Mapping(target = "centroCosto", source = ".", qualifiedByName = "toCentroCosto")
     CoordinacionDTO toDto(CoordinacionListadoProjection projection);
 
     default List<CoordinacionDTO> toDtoList(
@@ -68,7 +70,18 @@ public interface CoordinacionMapper {
                 dto.metodologia(),
                 dto.modalidad(),
                 toConvocatoria(first, collectModalidadesContratacion(group)),
-                dto.carga());
+                dto.carga(),
+                dto.centroCosto());
+    }
+
+    @Named("toCentroCosto")
+    default CentroCostoDTO toCentroCosto(CoordinacionListadoProjection projection) {
+        if (projection.getIdCentroCosto() == null) {
+            return null;
+        }
+        return new CentroCostoDTO(
+                projection.getIdCentroCosto(),
+                projection.getDescripcionCentroCosto());
     }
 
     @Named("toUnidadRegional")

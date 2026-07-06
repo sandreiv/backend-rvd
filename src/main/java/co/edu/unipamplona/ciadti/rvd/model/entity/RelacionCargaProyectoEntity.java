@@ -34,10 +34,10 @@ public class RelacionCargaProyectoEntity implements Serializable, Cloneable{
     @Column(name = "DECD_ID")
     private Long idDetalleCargaDocente;
 
-    @Column(name = "DECD_REGISTRADOPOR")
+    @Column(name = "RECP_REGISTRADOPOR")
     private String registradoPor;
 
-    @Column(name = "DECD_FECHACAMBIO")
+    @Column(name = "RECP_FECHACAMBIO")
     private Date fechaCambio;
 }
 /* 02/06/2026 @:Sebastian Jaimes */

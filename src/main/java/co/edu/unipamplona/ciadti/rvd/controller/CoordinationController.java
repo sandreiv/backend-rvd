@@ -31,6 +31,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
@@ -261,5 +263,25 @@ public class CoordinationController {
     public ResponseEntity<List<ProyectoDTO>> listProjectsProfessor(@RequestParam Long idPersonaGeneral) {
         List<ProyectoDTO> proyectos = coordinacionService.listProjectsProfessor(idPersonaGeneral);
         return new ResponseEntity<>(proyectos, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Guarda un detalle de carga docente",
+        description = "Guarda un detalle de carga docente"
+    )
+    @PostMapping("/save-detail-professor-preload")
+    public ResponseEntity<Void> saveDetailProfessorPreload(@RequestBody DetalleCargaDocenteFormularioDTO dto) {
+        coordinacionService.saveDetailProfessorPreload(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Lista el detalle de carga de un docente",
+        description = "Lista el detalle de carga por idCargaDocente"
+    )
+    @GetMapping("/list-detail-professor-preload")
+    public ResponseEntity<DetalleCargaDocenteDTO> listDetailProfessorPreload(@RequestParam Long idCargaDocente) {
+        DetalleCargaDocenteDTO detalle = coordinacionService.listDetailProfessorPreload(idCargaDocente);
+        return new ResponseEntity<>(detalle, HttpStatus.OK);
     }
 }
