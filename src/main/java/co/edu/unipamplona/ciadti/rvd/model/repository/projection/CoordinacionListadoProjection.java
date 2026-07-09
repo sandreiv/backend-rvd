@@ -30,4 +30,6 @@ public interface CoordinacionListadoProjection {
     String getDescripcionEstadoCarga();
     Long getIdModalidadContratacion();
     String getNombreModalidadContratacion();
+    Long getIdCentroCosto();
+    String getDescripcionCentroCosto();
 }

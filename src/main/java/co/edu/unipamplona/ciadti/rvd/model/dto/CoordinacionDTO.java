@@ -11,5 +11,6 @@ public record CoordinacionDTO(
     MetodologiaDTO metodologia,
     ModalidadDTO modalidad,
     ConvocatoriaListadoDTO convocatoria,
-    CargaListadoDTO carga
+    CargaListadoDTO carga,
+    CentroCostoDTO centroCosto
 ) {}

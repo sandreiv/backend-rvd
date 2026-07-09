@@ -3,6 +3,8 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 import java.util.List;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
@@ -56,4 +58,8 @@ public interface CoordinacionService {
     List<GrupoDTO> listSubjectGroup(String codigoMateria);
 
     List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral);
+
+    void saveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto);
+
+    DetalleCargaDocenteDTO listDetailProfessorPreload(Long idCargaDocente);
 }

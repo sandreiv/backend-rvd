@@ -45,4 +45,6 @@ public interface PersonaProyectoRepository
             """, nativeQuery = true)
     List<ProyectoDocenteListadoProjection> findProyectosByIdPersonaGeneral(
             @Param("idPersonaGeneral") Long idPersonaGeneral);
+
+    boolean existsByIdAndIdProyecto(Long id, Long idProyecto);
 }
