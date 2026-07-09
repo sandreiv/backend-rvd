@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 
 public interface CoordinacionRepository extends JpaRepository<CoordinacionesEntity, Long> {
@@ -132,4 +133,20 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findWithoutCarga(
             @Param("idPersonaGeneral") Long idPersonaGeneral);
+
+
+    @Query(value = """
+            SELECT
+                COOR.COOR_ID AS id,
+                COALESCE(COOR.COOR_NOMBRE, COOR.COOR_DESCRIPCION) AS label,
+                COOR.COOR_CODIGO AS codigo
+            FROM RVD.COORDINACIONES COOR
+            ORDER BY COALESCE(COOR.COOR_NOMBRE, COOR.COOR_DESCRIPCION)
+            """, nativeQuery = true)
+    List<CatalogoAdministracionProjection> findAdministrationOptions();
+
+
+
+
+
 }

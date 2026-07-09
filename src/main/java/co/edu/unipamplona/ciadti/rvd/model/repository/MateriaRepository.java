@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.MateriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaCatalogoAdministracionProjection;
 
 public interface MateriaRepository extends JpaRepository<MateriaEntity, String> {
 
@@ -64,4 +65,20 @@ public interface MateriaRepository extends JpaRepository<MateriaEntity, String> 
     List<MateriaListadoProjection> findTransversalesByCoordinacionAndPrograma(
             @Param("idCoordinacion") Long idCoordinacion,
             @Param("idPrograma") Long idPrograma);
+
+
+
+
+    @Query(value = """
+            SELECT
+                MATE.MATE_CODIGOMATERIA AS codigoMateria,
+                MATE.MATE_NOMBRE AS label
+            FROM ACADEMICO.MATERIA MATE
+            WHERE MATE.MATE_NOMBRE IS NOT NULL
+            ORDER BY MATE.MATE_NOMBRE
+            """, nativeQuery = true)
+    List<MateriaCatalogoAdministracionProjection> findAdministrationOptions();
+
+
+
 }

@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.ProgramaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ProgramaListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 
 public interface ProgramaRepository extends JpaRepository<ProgramaEntity, Long> {
 
@@ -31,4 +32,19 @@ public interface ProgramaRepository extends JpaRepository<ProgramaEntity, Long> 
     List<ProgramaListadoProjection> findByUnidadRegionalAndNivelEducativo(
             @Param("idUnidadRegional") Long idUnidadRegional,
             @Param("idNivelEducativo") Long idNivelEducativo);
+
+
+
+    @Query(value = """
+            SELECT
+                PROG.PROG_ID AS id,
+                PROG.PROG_NOMBRE AS label,
+                PROG.PROG_CODIGOPROGRAMA AS codigo
+            FROM ACADEMICO.PROGRAMA PROG
+            WHERE PROG.PROG_NOMBRE IS NOT NULL
+            ORDER BY PROG.PROG_NOMBRE
+            """, nativeQuery = true)
+    List<CatalogoAdministracionProjection> findAdministrationOptions();        
+
+
 }

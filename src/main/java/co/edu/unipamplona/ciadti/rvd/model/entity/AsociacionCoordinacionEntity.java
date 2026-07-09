@@ -44,6 +44,9 @@ public class AsociacionCoordinacionEntity implements Serializable, Cloneable {
     @Column(name = "MATE_CODIGOMATERIA")
     private String codigoMateria;
 
+    @Column(name = "CECO_ID")
+    private Long idCentroCosto;
+
     @Column(name = "ASCO_ESTADO")
     private String estado;
 

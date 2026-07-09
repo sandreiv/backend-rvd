@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 
 public interface PersonaGeneralRepository
         extends JpaRepository<PersonaGeneralEntity, Long> {
@@ -86,4 +87,28 @@ public interface PersonaGeneralRepository
             @Param("nombre") String nombre,
             @Param("documento") String documento,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
+
+    @Query(value = """
+            SELECT
+                PEGE.PEGE_ID AS id,
+                TRIM(
+                    PEGE.PEGE_DOCUMENTOIDENTIDAD || ' - ' ||
+                    PENG.PENG_PRIMERAPELLIDO || ' ' ||
+                    NVL(PENG.PENG_SEGUNDOAPELLIDO, '') || ' ' ||
+                    PENG.PENG_PRIMERNOMBRE || ' ' ||
+                    NVL(PENG.PENG_SEGUNDONOMBRE, '')
+                ) AS label,
+                PEGE.PEGE_DOCUMENTOIDENTIDAD AS codigo
+            FROM GENERAL.PERSONAGENERAL PEGE
+            INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+            WHERE PEGE.PEGE_DOCUMENTOIDENTIDAD IS NOT NULL
+            ORDER BY PENG.PENG_PRIMERAPELLIDO,
+                    PENG.PENG_SEGUNDOAPELLIDO,
+                    PENG.PENG_PRIMERNOMBRE,
+                    PENG.PENG_SEGUNDONOMBRE
+            """, nativeQuery = true)
+    List<CatalogoAdministracionProjection> findAdministrationOptions();
+
+
 }
