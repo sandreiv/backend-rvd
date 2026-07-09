@@ -10,9 +10,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEnti
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PersonaCoordinacionListadoProjection;
 
-public interface DocentesPlantaCoordinacionRepository extends
-        JpaRepository<DocentesPlantaCoordinacionEntity,
-                DocentesPlantaCoordinacionEntityId> {
+public interface DocentesPlantaCoordinacionRepository extends JpaRepository<DocentesPlantaCoordinacionEntity, DocentesPlantaCoordinacionEntityId> {
 
     @Query("""
             SELECT dopc FROM DocentesPlantaCoordinacionEntity dopc
@@ -22,8 +20,7 @@ public interface DocentesPlantaCoordinacionRepository extends
             ORDER BY peng.primerApellido, peng.segundoApellido,
                 peng.primerNombre, peng.segundoNombre
             """)
-    List<DocentesPlantaCoordinacionEntity> findByIdCoordinacion(
-            @Param("idCoordinacion") Long idCoordinacion);
+    List<DocentesPlantaCoordinacionEntity> findByIdCoordinacion(@Param("idCoordinacion") Long idCoordinacion);
 
    @Query(value = """
                 SELECT

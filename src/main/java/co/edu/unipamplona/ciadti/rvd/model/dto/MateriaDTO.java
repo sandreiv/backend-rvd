@@ -19,5 +19,6 @@ public record MateriaDTO(
     Long ponderacionAcademica,
     Long horasDirectas,
     Long capacidad,
-    Boolean tieneGrupo
+    Boolean tieneGrupo,
+    CentroCostoDTO centroCosto
 ) {}

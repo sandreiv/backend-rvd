@@ -47,7 +47,7 @@ public interface CoordinacionService {
 
     List<UnidadDTO> listRegionalUnits(Long idCoordinacion);
 
-    List<ProgramaDTO> listProgramsByRegionalUnit(Long idUnidadRegional, Long idNivelEducativo);
+    List<ProgramaDTO> listProgramsByRegionalUnit(Long idCoordinacion, Long idUnidadRegional, Long idNivelEducativo);
 
     List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad);
 
@@ -61,5 +61,7 @@ public interface CoordinacionService {
 
     void saveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto);
 
-    DetalleCargaDocenteDTO listDetailProfessorPreload(Long idCargaDocente);
+    List<DetalleCargaDocenteDTO> listDetailProfessorPreload(Long idCargaDocente);
+
+    void updateDetailProfessorPreload(DetalleCargaDocenteDTO dto);
 }

@@ -92,8 +92,8 @@ public class GrupoEntity implements Serializable, Cloneable {
     @Column(name = "GRUP_PEUNDESTINO")
     private Long idPeriodoUniversidadDestino;
 
-    @Column(name = "GRUP_CREADOPRE")
-    private String creadoPre;
+    @Column(name = "MATE_CREADOPRE")
+    private String matePre;
 
     @Override
     public Object clone() throws CloneNotSupportedException {
@@ -124,7 +124,7 @@ public class GrupoEntity implements Serializable, Cloneable {
                 ", idPadre=" + idPadre +
                 ", copiado=" + copiado +
                 ", idPeriodoUniversidadDestino=" + idPeriodoUniversidadDestino +
-                ", creadoPre=" + creadoPre +
+                ", creadoPre=" + matePre +
                 '}';
     }
 }

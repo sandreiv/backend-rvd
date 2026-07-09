@@ -10,4 +10,6 @@ public interface MateriaListadoProjection {
     Long getPeriodo();
     Long getPonderacionAcademica();
     Long getCapacidad();
+    Long getIdCentroCosto();
+    String getDescripcionCentroCosto();
 }
