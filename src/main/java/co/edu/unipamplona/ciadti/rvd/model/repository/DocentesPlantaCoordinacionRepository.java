@@ -10,9 +10,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEnti
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PersonaCoordinacionListadoProjection;
 
-public interface DocentesPlantaCoordinacionRepository extends
-        JpaRepository<DocentesPlantaCoordinacionEntity,
-                DocentesPlantaCoordinacionEntityId> {
+public interface DocentesPlantaCoordinacionRepository extends JpaRepository<DocentesPlantaCoordinacionEntity, DocentesPlantaCoordinacionEntityId> {
 
     @Query("""
             SELECT dopc FROM DocentesPlantaCoordinacionEntity dopc

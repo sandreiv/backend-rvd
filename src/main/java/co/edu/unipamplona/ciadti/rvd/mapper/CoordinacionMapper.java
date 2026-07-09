@@ -109,7 +109,8 @@ public interface CoordinacionMapper {
     default ModalidadDTO toModalidad(CoordinacionListadoProjection projection) {
         return new ModalidadDTO(
                 projection.getIdModalidad(),
-                projection.getDescripcionModalidad());
+                projection.getDescripcionModalidad(),
+                null);
     }
 
     default ConvocatoriaListadoDTO toConvocatoria(
@@ -140,9 +141,19 @@ public interface CoordinacionMapper {
                     projection.getIdModalidadContratacion(),
                     new ModalidadContratacionListadoDTO(
                             projection.getIdModalidadContratacion(),
-                            projection.getNombreModalidadContratacion()));
+                            projection.getNombreModalidadContratacion(),
+                            esModalidadPlanta(
+                                    projection.getNombreModalidadContratacion())));
         }
         return new ArrayList<>(modalidades.values());
+    }
+
+    default boolean esModalidadPlanta(String nombreModalidadContratacion) {
+        if (nombreModalidadContratacion == null
+                || nombreModalidadContratacion.isBlank()) {
+            return false;
+        }
+        return "planta".equalsIgnoreCase(nombreModalidadContratacion.trim());
     }
 
     @Named("toCarga")

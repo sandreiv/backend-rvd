@@ -31,9 +31,11 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
@@ -57,7 +59,6 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.TipoActividadesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
@@ -304,38 +305,64 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProgramaDTO> listProgramsByRegionalUnit(Long idUnidadRegional, Long idNivelEducativo) {
-        return programaMapper.toDtoList(programaRepository.findByUnidadRegionalAndNivelEducativo(idUnidadRegional, idNivelEducativo));
+    public List<ProgramaDTO> listProgramsByRegionalUnit(Long idCoordinacion, Long idUnidadRegional, Long idNivelEducativo) {
+        return programaMapper.toDtoList(programaRepository.findByCoordinacionUnidadRegionalAndNivelEducativo(idCoordinacion, idUnidadRegional, idNivelEducativo));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad) {
-        return tipoActividadCriterioMapper.toDtoList(
-                tipoActividadesRepository.findCriteriaByParentId(idTipoActividad));
+        return tipoActividadCriterioMapper.toDtoList(tipoActividadesRepository.findCriteriaByParentId(idTipoActividad));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadDTO> listActivityTypes() {
-        return tipoActividadMapper.toDtoList(
-                tipoActividadesRepository.findParentActivityTypes());
+        return tipoActividadMapper.toDtoList(tipoActividadesRepository.findParentActivityTypes());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion) {
-        if (asociacionCoordinacionRepository.existsByIdCoordinacion(idCoordinacion)) {
-            return mapMateriasConGrupo(
-                    materiaRepository.findTransversalesByCoordinacionAndPrograma(
-                            idCoordinacion, idPrograma));
+        Long idUnidadRegional = coordinacionRepository.findById(idCoordinacion)
+                .map(c -> c.getIdRegional())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND, "No existe la coordinación con id " + idCoordinacion));
+
+        boolean esProgramaTransversal = asociacionCoordinacionRepository
+                .isProgramaTransversal(
+                        idCoordinacion,
+                        idPrograma,
+                        idUnidadRegional);
+
+        if (esProgramaTransversal) {
+            return mapMateriasConGrupo(materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma));
         }
-        return mapMateriasConGrupo(
-                materiaRepository.findNoTransversalesByPrograma(idPrograma));
+
+        List<MateriaListadoProjection> normales = materiaRepository.findNoTransversalesByProgramaAndCoordinacion(idPrograma, idCoordinacion);
+        List<MateriaListadoProjection> transversales = materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma);
+
+        List<MateriaListadoProjection> combinadas = combinarSinDuplicados(normales, transversales);
+
+        return mapMateriasConGrupo(combinadas);
     }
 
-    private List<MateriaDTO> mapMateriasConGrupo(
-            List<MateriaListadoProjection> projections) {
+    private List<MateriaListadoProjection> combinarSinDuplicados(List<MateriaListadoProjection> normales, List<MateriaListadoProjection> transversales) {
+        java.util.Map<String, MateriaListadoProjection> porClave = new java.util.LinkedHashMap<>();
+        for (MateriaListadoProjection materia : normales) {
+            porClave.putIfAbsent(claveMateria(materia), materia);
+        }
+        for (MateriaListadoProjection materia : transversales) {
+            porClave.putIfAbsent(claveMateria(materia), materia);
+        }
+        return new java.util.ArrayList<>(porClave.values());
+    }
+
+    private String claveMateria(MateriaListadoProjection materia) {
+        return materia.getCodigoMateria() + ":" + materia.getPeriodo();
+    }
+
+    private List<MateriaDTO> mapMateriasConGrupo(List<MateriaListadoProjection> projections) {
         if (projections.isEmpty()) {
             return List.of();
         }
@@ -343,8 +370,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 .map(MateriaListadoProjection::getCodigoMateria)
                 .distinct()
                 .toList();
-        Set<String> codigosConGrupo = new HashSet<>(
-                grupoRepository.findCodigosMateriaConGrupo(codigos));
+        Set<String> codigosConGrupo = new HashSet<>(grupoRepository.findCodigosMateriaConGrupo(codigos));
         return projections.stream()
                 .map(p -> materiaMapper.toDto(
                         p, codigosConGrupo.contains(p.getCodigoMateria())))
@@ -360,9 +386,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral) {
-        return proyectoMapper.toDtoList(
-                personaProyectoRepository.findProyectosByIdPersonaGeneral(
-                        idPersonaGeneral));
+        return proyectoMapper.toDtoList(personaProyectoRepository.findProyectosByIdPersonaGeneral(idPersonaGeneral));
     }
 
     @Override
@@ -381,17 +405,35 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public DetalleCargaDocenteDTO listDetailProfessorPreload(Long idCargaDocente) {
+    public List<DetalleCargaDocenteDTO> listDetailProfessorPreload(Long idCargaDocente) {
         if (!cargaDocenteRepository.existsById(idCargaDocente)) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la carga docente con id " + idCargaDocente);
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
         }
-        List<DetalleCargaDocenteDTO> list = detalleCargaDocenteMapper.toDtoList(detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente), proyectoMapper);
-        if (list.isEmpty()) {
-            return new DetalleCargaDocenteDTO(idCargaDocente, List.of());
-        }
-        return list.get(0);
+
+        return detalleCargaDocenteMapper.toDtoList(
+                detalleCargaDocenteRepository.findByIdCargaDocente(
+                        idCargaDocente),
+                proyectoMapper);
+    }
+
+    @Override
+    @Transactional
+    public void updateDetailProfessorPreload(DetalleCargaDocenteDTO dto) {
+        validateUpdateDetailProfessorPreload(dto);
+
+        Long idDetalleCargaDocente = dto.idDetalleCargaDocente();
+        DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
+        DetalleCargaDocenteEntity entity = detalleCargaDocenteMapper.toEntityFromDto(dto);
+        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setFechaCambio(new Date());
+        detalleCargaDocenteRepository.save(entity);
+
+        relacionCargaProyectoRepository.deleteByIdDetalleCargaDocente(
+                idDetalleCargaDocente);
+        saveRelacionesCargaProyecto(
+                idDetalleCargaDocente,
+                detalleCargaDocenteMapper.toRelacionesCargaProyecto(
+                        actividad.relacionCargaProyecto()));
     }
 
     private void validateSaveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto) {
@@ -406,11 +448,78 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
     }
 
+    private void validateUpdateDetailProfessorPreload(DetalleCargaDocenteDTO dto) {
+        if (dto.idDetalleCargaDocente() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id del detalle de carga docente es obligatorio");
+        }
+        if (dto.idCargaDocente() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente es obligatoria");
+        }
+        if (dto.detalles() == null || dto.detalles().size() != 1) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La actualizacion requiere exactamente un detalle");
+        }
+        if (!cargaDocenteRepository.existsById(dto.idCargaDocente())) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la carga docente con id " + dto.idCargaDocente());
+        }
+
+        DetalleCargaDocenteEntity detallePersistido = detalleCargaDocenteRepository
+                .findById(dto.idDetalleCargaDocente())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe el detalle de carga docente con id "
+                                + dto.idDetalleCargaDocente()));
+
+        if (!detallePersistido.getIdCargaDocente().equals(dto.idCargaDocente())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El detalle no pertenece a la carga docente enviada");
+        }
+
+        validateDetalleActividad(dto.detalles().get(0));
+    }
+
+    private void validateDetalleActividad(DetalleCargaDocenteActividadDTO actividad) {
+        if (actividad.horas() == null || actividad.horas().isBlank()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Las horas del detalle son obligatorias");
+        }
+        if (actividad.centroCosto() == null || actividad.centroCosto().id() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El centro de costo del detalle es obligatorio");
+        }
+        Long tipoActividad = detalleCargaDocenteMapper
+                .resolveTipoActividadFromActividad(actividad);
+        if (tipoActividad == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El tipo de actividad del detalle es obligatorio");
+        }
+        if (actividad.relacionCargaProyecto() != null) {
+            for (RelacionCargaProyectoListadoDTO relacion
+                    : actividad.relacionCargaProyecto()) {
+                validateRelacionCargaProyecto(new RelacionCargaProyectoDTO(
+                        relacion.idPersonaProyecto(),
+                        relacion.idProyecto()));
+            }
+        }
+    }
+
     private void validateDetalleItem(DetalleCargaDocenteItemDTO detalle) {
         if (detalle.horas() == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Las horas del detalle son obligatorias");
         }
-        if (detalle.idCentroCosto() == null) {
+        Long idCentroCostoResuelto = resolveIdCentroCosto(detalle);
+        if (idCentroCostoResuelto == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El centro de costo del detalle es obligatorio");
         }
         Long tipoActividad = detalle.idTipoActividadHija() != null ? detalle.idTipoActividadHija() : detalle.idTipoActividad();
@@ -422,6 +531,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 validateRelacionCargaProyecto(relacion);
             }
         }
+    }
+
+    private Long resolveIdCentroCosto(DetalleCargaDocenteItemDTO detalle) {
+        if (detalle.materia() != null && detalle.materia().idCentroCosto() != null) {
+            // Prioridad: centro de costo principal de la materia.
+            return detalle.materia().idCentroCosto();
+        }
+        return detalle.idCentroCosto();
     }
 
     private void validateRelacionCargaProyecto(RelacionCargaProyectoDTO relacion) {

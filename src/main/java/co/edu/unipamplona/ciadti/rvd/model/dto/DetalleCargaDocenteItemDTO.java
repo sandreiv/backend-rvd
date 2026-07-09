@@ -9,7 +9,7 @@ public record DetalleCargaDocenteItemDTO(
     Long horas,
     Long idUnidadRegional,
     Long idPrograma,
-    String codigoMateria,
+    MateriaFormularioDTO materia,
     Long idGrupo,
     Long idCentroCosto,
     List<RelacionCargaProyectoDTO> relacionCargaProyecto

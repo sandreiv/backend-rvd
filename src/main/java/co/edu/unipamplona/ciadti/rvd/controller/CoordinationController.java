@@ -103,10 +103,7 @@ public class CoordinationController {
         description = "Busca por documento y/o fragmento de nombre o apellido y la modalidad de contratacion"
     )
     @GetMapping("/search-professor")
-    public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(
-        @RequestParam(required = false) String nombre, 
-        @RequestParam(required = false) String documento,
-        @RequestParam(required = true) Long idModalidadContratacion
+    public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(@RequestParam(required = false) String nombre,  @RequestParam(required = false) String documento, @RequestParam(required = true) Long idModalidadContratacion
     ) {
         List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
@@ -138,6 +135,7 @@ public class CoordinationController {
         ValorPuntosPrecargaDTO valores = coordinacionService.getValuePointsPreload(anio, idCategoriaCatedratico, idPersona);
         return new ResponseEntity<>(valores, HttpStatus.OK);
     }
+
     private Long parseNullableLong(String value) {
         if (value == null || value.isBlank() || "null".equalsIgnoreCase(value.trim())) {
             return null;
@@ -227,11 +225,11 @@ public class CoordinationController {
 
     @Operation(
         summary = "Lista los programas de una unidad regional según el nivel educativo",
-        description = "Lista los programas academicos asociados a una unidad regional según el nivel educativo"
+        description = "Lista los programas asociados a la coordinación en ASOCIACIONCOORDINACION, filtrados por unidad regional y nivel educativo"
     )
     @GetMapping("/list-program")
-    public ResponseEntity<List<ProgramaDTO>> listPrograms(@RequestParam Long idUnidadRegional, @RequestParam Long idNivelEducativo) {
-        List<ProgramaDTO> programas = coordinacionService.listProgramsByRegionalUnit(idUnidadRegional, idNivelEducativo);
+    public ResponseEntity<List<ProgramaDTO>> listPrograms(@RequestParam Long idCoordinacion, @RequestParam Long idUnidadRegional, @RequestParam Long idNivelEducativo) {
+        List<ProgramaDTO> programas = coordinacionService.listProgramsByRegionalUnit(idCoordinacion, idUnidadRegional, idNivelEducativo);
         return new ResponseEntity<>(programas, HttpStatus.OK);
     }
 
@@ -271,6 +269,7 @@ public class CoordinationController {
     )
     @PostMapping("/save-detail-professor-preload")
     public ResponseEntity<Void> saveDetailProfessorPreload(@RequestBody DetalleCargaDocenteFormularioDTO dto) {
+        System.out.println("Guardar detalle: " + dto);
         coordinacionService.saveDetailProfessorPreload(dto);
         return ResponseEntity.ok().build();
     }
@@ -280,8 +279,20 @@ public class CoordinationController {
         description = "Lista el detalle de carga por idCargaDocente"
     )
     @GetMapping("/list-detail-professor-preload")
-    public ResponseEntity<DetalleCargaDocenteDTO> listDetailProfessorPreload(@RequestParam Long idCargaDocente) {
-        DetalleCargaDocenteDTO detalle = coordinacionService.listDetailProfessorPreload(idCargaDocente);
+    public ResponseEntity<List<DetalleCargaDocenteDTO>> listDetailProfessorPreload(@RequestParam Long idCargaDocente) {
+        List<DetalleCargaDocenteDTO> detalle = coordinacionService.listDetailProfessorPreload(idCargaDocente);
         return new ResponseEntity<>(detalle, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Edita un detalle de carga docente",
+        description = "Actualiza un detalle de carga docente usando DetalleCargaDocenteDTO"
+    )
+    @PutMapping("/update-detail-professor-preload")
+    public ResponseEntity<Void> updateDetailProfessorPreload(@RequestBody DetalleCargaDocenteDTO dto) {
+        System.out.println("-------------------------------");
+        System.out.println("Actualizar detalle: " + dto);
+        coordinacionService.updateDetailProfessorPreload(dto);
+        return ResponseEntity.ok().build();
     }
 }
