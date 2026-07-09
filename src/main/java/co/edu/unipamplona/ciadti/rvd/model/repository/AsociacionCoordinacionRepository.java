@@ -44,4 +44,32 @@ public interface AsociacionCoordinacionRepository
             ORDER BY COALESCE(COOR.COOR_NOMBRE, COOR.COOR_DESCRIPCION), PROG.PROG_NOMBRE, MATE.MATE_NOMBRE
             """, nativeQuery = true)
     List<AsociacionCoordinacionListadoProjection> findAdministrationList();
+
+    @Query(value = """
+            SELECT
+                COUNT(*)
+            FROM RVD.ASOCIACIONCOORDINACION asco
+            WHERE asco.COOR_ID = :idCoordinacion
+                AND asco.PROG_ID = :idPrograma
+                AND asco.MATE_CODIGOMATERIA IS NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM ACADEMICO.UNIDADPROGRAMA unpr
+                    WHERE unpr.PROG_ID = asco.PROG_ID
+                        AND unpr.UNID_ID = :idUnidadRegional
+                )
+            """, nativeQuery = true)
+    Long countProgramaTransversal(
+            @Param("idCoordinacion") Long idCoordinacion,
+            @Param("idPrograma") Long idPrograma,
+            @Param("idUnidadRegional") Long idUnidadRegional);
+
+    default boolean isProgramaTransversal(
+            Long idCoordinacion,
+            Long idPrograma,
+            Long idUnidadRegional) {
+        Long count = countProgramaTransversal(
+                idCoordinacion, idPrograma, idUnidadRegional);
+        return count != null && count > 0;
+    }
 }

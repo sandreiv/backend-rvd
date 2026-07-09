@@ -20,8 +20,7 @@ public interface DocentesPlantaCoordinacionRepository extends JpaRepository<Doce
             ORDER BY peng.primerApellido, peng.segundoApellido,
                 peng.primerNombre, peng.segundoNombre
             """)
-    List<DocentesPlantaCoordinacionEntity> findByIdCoordinacion(
-            @Param("idCoordinacion") Long idCoordinacion);
+    List<DocentesPlantaCoordinacionEntity> findByIdCoordinacion(@Param("idCoordinacion") Long idCoordinacion);
 
    @Query(value = """
                 SELECT

@@ -124,7 +124,7 @@ public class GrupoEntity implements Serializable, Cloneable {
                 ", idPadre=" + idPadre +
                 ", copiado=" + copiado +
                 ", idPeriodoUniversidadDestino=" + idPeriodoUniversidadDestino +
-                ", creadoPre=" + creadoPre +
+                ", creadoPre=" + matePre +
                 '}';
     }
 }
