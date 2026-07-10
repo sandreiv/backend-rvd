@@ -53,7 +53,13 @@ public interface PersonaGeneralRepository
                 CACA.CACA_DESCRIPCION AS descripcionCategoriaCatedratico,
                 ESCA.ESCA_ID AS idEscalafon,
                 ESCA.MOCO_ID AS idModalidadContratacion,
-                ESCA.ESCA_PUNTOS AS puntos
+                ESCA.ESCA_PUNTOS AS puntos,
+                CADO.CADO_ID AS idCargaDocente,
+                CADO.CARG_ID AS idCarga,
+                CARG.CONV_ID AS idConvocatoria,
+                CARG.COOR_ID AS idCoordinacion,
+                CADO.MOCO_ID AS idModalidadContratacionCarga,
+                CADO.FECO_ID AS idFechasConvocatoria
             FROM GENERAL.PERSONAGENERAL PEGE
             INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
                 ON PENG.PEGE_ID = PEGE.PEGE_ID
@@ -61,6 +67,17 @@ public interface PersonaGeneralRepository
                 ON PEGE.PEGE_ID = ESCA.PEGE_ID
             LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
                 ON ESCA.CACA_ID = CACA.CACA_ID
+            LEFT JOIN RVD.CARGADOCENTE CADO
+                ON CADO.PEGE_ID = PEGE.PEGE_ID
+                AND CADO.MOCO_ID = :idModalidadContratacion
+                AND CADO.CADO_ID = (
+                    SELECT MAX(CADO2.CADO_ID)
+                    FROM RVD.CARGADOCENTE CADO2
+                    WHERE CADO2.PEGE_ID = PEGE.PEGE_ID
+                        AND CADO2.MOCO_ID = :idModalidadContratacion
+                )
+            LEFT JOIN RVD.CARGA CARG
+                ON CARG.CARG_ID = CADO.CARG_ID
             WHERE
                 ESCA.MOCO_ID = :idModalidadContratacion
             AND

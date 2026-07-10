@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EscalafonDTO;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionProjection;
@@ -21,6 +22,7 @@ public interface DocentePreasignacionMapper {
     @Mapping(target = "nombreCompleto", source = ".", qualifiedByName = "buildNombreCompleto")
     @Mapping(target = "categoriaCatedratico", source = ".", qualifiedByName = "toCategoria")
     @Mapping(target = "escalafon", source = ".", qualifiedByName = "toEscalafon")
+    @Mapping(target = "cargaDocente", source = ".", qualifiedByName = "toCargaDocente")
     DocentePreasignacionDTO toDto(DocentePreasignacionProjection projection);
 
     List<DocentePreasignacionDTO> toDtoList(
@@ -59,5 +61,20 @@ public interface DocentePreasignacionMapper {
                 projection.getIdModalidadContratacion(),
                 projection.getIdPersonaGeneral(),
                 projection.getPuntos());
+    }
+
+    @Named("toCargaDocente")
+    default CargaDocenteBusquedaDTO toCargaDocente(
+            DocentePreasignacionProjection projection) {
+        if (projection.getIdCargaDocente() == null) {
+            return null;
+        }
+        return new CargaDocenteBusquedaDTO(
+                projection.getIdCargaDocente(),
+                projection.getIdCarga(),
+                projection.getIdConvocatoria(),
+                projection.getIdCoordinacion(),
+                projection.getIdModalidadContratacionCarga(),
+                projection.getIdFechasConvocatoria());
     }
 }

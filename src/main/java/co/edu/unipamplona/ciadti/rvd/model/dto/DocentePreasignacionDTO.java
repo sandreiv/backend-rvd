@@ -5,6 +5,6 @@ public record DocentePreasignacionDTO(
     String documentoIdentidad,
     String nombreCompleto,
     CategoriaCatedraticoDTO categoriaCatedratico,
-    EscalafonDTO escalafon
-
+    EscalafonDTO escalafon,
+    CargaDocenteBusquedaDTO cargaDocente
 ) {}

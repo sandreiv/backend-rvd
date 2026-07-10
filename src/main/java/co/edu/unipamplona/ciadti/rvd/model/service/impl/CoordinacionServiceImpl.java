@@ -362,8 +362,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<GrupoDTO> listSubjectGroup(String codigoMateria) {
-        return grupoMapper.toDtoList(grupoRepository.findByCodigoMateria(codigoMateria));
+    public List<GrupoDTO> listSubjectGroup(String codigoMateria, Long idPeriodoUniversidad) {
+        return grupoMapper.toDtoList(grupoRepository.findByCodigoMateriaAndIdPeriodoUniversidad(codigoMateria, idPeriodoUniversidad));
     }
 
     @Override

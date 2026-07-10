@@ -55,7 +55,7 @@ public interface CoordinacionService {
 
     List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion);
 
-    List<GrupoDTO> listSubjectGroup(String codigoMateria);
+    List<GrupoDTO> listSubjectGroup(String codigoMateria, Long idPeriodoUniversidad);
 
     List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral);
 

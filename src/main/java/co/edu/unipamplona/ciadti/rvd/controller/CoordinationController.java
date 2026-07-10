@@ -103,8 +103,10 @@ public class CoordinationController {
         description = "Busca por documento y/o fragmento de nombre o apellido y la modalidad de contratacion"
     )
     @GetMapping("/search-professor")
-    public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(@RequestParam(required = false) String nombre,  @RequestParam(required = false) String documento, @RequestParam(required = true) Long idModalidadContratacion
-    ) {
+    public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(
+        @RequestParam(required = false) String nombre,  
+        @RequestParam(required = false) String documento, 
+        @RequestParam(required = true) Long idModalidadContratacion) {
         List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
@@ -245,11 +247,11 @@ public class CoordinationController {
 
     @Operation(
         summary = "Lista los grupos de una materia",
-        description = "Lista los grupos de una materia"
+        description = "Lista los grupos de una materia filtrados por el periodo universitario de la convocatoria"
     )
     @GetMapping("/list-subject-group")
-    public ResponseEntity<List<GrupoDTO>> listSubjectGroup(@RequestParam String codigoMateria) {
-        List<GrupoDTO> grupos = coordinacionService.listSubjectGroup(codigoMateria);
+    public ResponseEntity<List<GrupoDTO>> listSubjectGroup(@RequestParam String codigoMateria, @RequestParam Long idPeriodoUniversidad) {
+        List<GrupoDTO> grupos = coordinacionService.listSubjectGroup(codigoMateria, idPeriodoUniversidad);
         return new ResponseEntity<>(grupos, HttpStatus.OK);
     }
 
