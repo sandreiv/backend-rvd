@@ -1,4 +1,4 @@
-package co.edu.unipamplona.ciadti.rvd.controller.basic_tables;
+package co.edu.unipamplona.ciadti.rvd.controller.basicTables;
 
 import java.util.List;
 

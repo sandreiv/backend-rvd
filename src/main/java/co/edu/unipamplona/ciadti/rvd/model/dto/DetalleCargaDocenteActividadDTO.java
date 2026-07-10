@@ -7,6 +7,7 @@ public record DetalleCargaDocenteActividadDTO(
     List<TipoActividadDTO> tipoActividadHija,
     UnidadDTO unidadRegional,
     ProgramaDTO programa,
+    MateriaDetalleDTO materia,
     GrupoDTO grupo,
     CentroCostoDTO centroCosto,
     String horas,

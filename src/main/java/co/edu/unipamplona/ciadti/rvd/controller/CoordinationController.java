@@ -269,7 +269,6 @@ public class CoordinationController {
     )
     @PostMapping("/save-detail-professor-preload")
     public ResponseEntity<Void> saveDetailProfessorPreload(@RequestBody DetalleCargaDocenteFormularioDTO dto) {
-        System.out.println("Guardar detalle: " + dto);
         coordinacionService.saveDetailProfessorPreload(dto);
         return ResponseEntity.ok().build();
     }
@@ -290,8 +289,6 @@ public class CoordinationController {
     )
     @PutMapping("/update-detail-professor-preload")
     public ResponseEntity<Void> updateDetailProfessorPreload(@RequestBody DetalleCargaDocenteDTO dto) {
-        System.out.println("-------------------------------");
-        System.out.println("Actualizar detalle: " + dto);
         coordinacionService.updateDetailProfessorPreload(dto);
         return ResponseEntity.ok().build();
     }

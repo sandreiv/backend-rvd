@@ -388,7 +388,7 @@ public class AdministracionServiceImpl implements AdministracionService {
     @Transactional
     public void savePlantProfessorCoordination(PersonaCoordinacionFormularioDTO dto) {
         validatePersonCoordination(dto);
-
+        
         DocentesPlantaCoordinacionEntity entity = new DocentesPlantaCoordinacionEntity();
         fillPlantProfessorCoordination(entity, dto);
         docentesPlantaCoordinacionRepository.save(entity);

@@ -21,27 +21,17 @@ public interface MateriaRepository extends JpaRepository<MateriaEntity, String> 
                 mate.MATE_HORASTEORICOPRACTICAS AS horasTeoricoPracticas,
                 pema.PEMA_PERIODO AS periodo,
                 mate.MATE_PONDERACIONACADEMICA AS ponderacionAcademica,
-                grup.GRUP_CAPACIDAD AS capacidad,
+                CAST(NULL AS NUMBER) AS capacidad,
                 CAST(NULL AS NUMBER) AS idCentroCosto,
                 CAST(NULL AS VARCHAR2(255)) AS descripcionCentroCosto
             FROM ACADEMICO.MATERIA mate
             INNER JOIN ACADEMICO.PENSUMMATERIA pema
                 ON mate.MATE_CODIGOMATERIA = pema.MATE_CODIGOMATERIA
-            LEFT JOIN ACADEMICO.GRUPO grup
-                ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
             WHERE pema.PROG_ID = :idPrograma
-                AND mate.MATE_CODIGOMATERIA NOT IN (
-                    SELECT asco.MATE_CODIGOMATERIA
-                    FROM RVD.ASOCIACIONCOORDINACION asco
-                    WHERE asco.COOR_ID = :idCoordinacion
-                        AND asco.MATE_CODIGOMATERIA IS NOT NULL
-                        AND asco.PROG_ID IS NULL
-                )
-            ORDER BY mate.MATE_NOMBRE, pema.PEMA_PERIODO, grup.GRUP_NOMBRE
+            ORDER BY mate.MATE_NOMBRE, pema.PEMA_PERIODO
             """, nativeQuery = true)
-    List<MateriaListadoProjection> findNoTransversalesByProgramaAndCoordinacion(
-            @Param("idPrograma") Long idPrograma,
-            @Param("idCoordinacion") Long idCoordinacion);
+    List<MateriaListadoProjection> findByPrograma(
+            @Param("idPrograma") Long idPrograma);
 
     @Query(value = """
             SELECT
@@ -52,7 +42,34 @@ public interface MateriaRepository extends JpaRepository<MateriaEntity, String> 
                 mate.MATE_HORASTEORICOPRACTICAS AS horasTeoricoPracticas,
                 pema.PEMA_PERIODO AS periodo,
                 mate.MATE_PONDERACIONACADEMICA AS ponderacionAcademica,
-                grup.GRUP_CAPACIDAD AS capacidad,
+                CAST(NULL AS NUMBER) AS capacidad,
+                CAST(NULL AS NUMBER) AS idCentroCosto,
+                CAST(NULL AS VARCHAR2(255)) AS descripcionCentroCosto
+            FROM ACADEMICO.MATERIA mate
+            INNER JOIN ACADEMICO.PENSUMMATERIA pema
+                ON mate.MATE_CODIGOMATERIA = pema.MATE_CODIGOMATERIA
+            WHERE pema.PROG_ID = :idPrograma
+                AND mate.MATE_CODIGOMATERIA NOT IN (
+                    SELECT asco.MATE_CODIGOMATERIA
+                    FROM RVD.ASOCIACIONCOORDINACION asco
+                    WHERE asco.MATE_CODIGOMATERIA IS NOT NULL
+                        AND asco.PROG_ID IS NULL
+                )
+            ORDER BY mate.MATE_NOMBRE, pema.PEMA_PERIODO
+            """, nativeQuery = true)
+    List<MateriaListadoProjection> findPensumExcluyendoTransversales(
+            @Param("idPrograma") Long idPrograma);
+
+    @Query(value = """
+            SELECT
+                mate.MATE_CODIGOMATERIA AS codigoMateria,
+                mate.MATE_NOMBRE AS nombre,
+                mate.MATE_HORASPRACTICAS AS horasPracticas,
+                mate.MATE_HORASTEORICAS AS horasTeoricas,
+                mate.MATE_HORASTEORICOPRACTICAS AS horasTeoricoPracticas,
+                pema.PEMA_PERIODO AS periodo,
+                mate.MATE_PONDERACIONACADEMICA AS ponderacionAcademica,
+                CAST(NULL AS NUMBER) AS capacidad,
                 ceco.CECO_ID AS idCentroCosto,
                 ceco.CECO_DESCRIPCION AS descripcionCentroCosto
             FROM ACADEMICO.MATERIA mate
@@ -61,14 +78,12 @@ public interface MateriaRepository extends JpaRepository<MateriaEntity, String> 
             INNER JOIN ACADEMICO.PENSUMMATERIA pema
                 ON mate.MATE_CODIGOMATERIA = pema.MATE_CODIGOMATERIA
                 AND pema.PROG_ID = :idPrograma
-            LEFT JOIN ACADEMICO.GRUPO grup
-                ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
             LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
                 ON asco.CECO_ID = ceco.CECO_ID
             WHERE asco.COOR_ID = :idCoordinacion
                 AND asco.MATE_CODIGOMATERIA IS NOT NULL
                 AND asco.PROG_ID IS NULL
-            ORDER BY mate.MATE_NOMBRE, pema.PEMA_PERIODO, grup.GRUP_NOMBRE
+            ORDER BY mate.MATE_NOMBRE, pema.PEMA_PERIODO
             """, nativeQuery = true)
     List<MateriaListadoProjection> findTransversalesByCoordinacionAndPrograma(
             @Param("idCoordinacion") Long idCoordinacion,

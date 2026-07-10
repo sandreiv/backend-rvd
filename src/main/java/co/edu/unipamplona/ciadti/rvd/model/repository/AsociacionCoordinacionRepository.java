@@ -2,12 +2,9 @@ package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
 
-import java.util.List;
-
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.AsociacionCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.AsociacionCoordinacionListadoProjection;
@@ -46,30 +43,32 @@ public interface AsociacionCoordinacionRepository
     List<AsociacionCoordinacionListadoProjection> findAdministrationList();
 
     @Query(value = """
-            SELECT
-                COUNT(*)
+            SELECT COUNT(*)
             FROM RVD.ASOCIACIONCOORDINACION asco
             WHERE asco.COOR_ID = :idCoordinacion
-                AND asco.PROG_ID = :idPrograma
+                AND asco.PROG_ID IS NOT NULL
                 AND asco.MATE_CODIGOMATERIA IS NULL
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM ACADEMICO.UNIDADPROGRAMA unpr
-                    WHERE unpr.PROG_ID = asco.PROG_ID
-                        AND unpr.UNID_ID = :idUnidadRegional
-                )
             """, nativeQuery = true)
-    Long countProgramaTransversal(
-            @Param("idCoordinacion") Long idCoordinacion,
-            @Param("idPrograma") Long idPrograma,
-            @Param("idUnidadRegional") Long idUnidadRegional);
+    Long countProgramasByCoordinacion(
+            @Param("idCoordinacion") Long idCoordinacion);
 
-    default boolean isProgramaTransversal(
-            Long idCoordinacion,
-            Long idPrograma,
-            Long idUnidadRegional) {
-        Long count = countProgramaTransversal(
-                idCoordinacion, idPrograma, idUnidadRegional);
+    default boolean existsProgramasByCoordinacion(Long idCoordinacion) {
+        Long count = countProgramasByCoordinacion(idCoordinacion);
+        return count != null && count > 0;
+    }
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM RVD.ASOCIACIONCOORDINACION asco
+            WHERE asco.COOR_ID = :idCoordinacion
+                AND asco.MATE_CODIGOMATERIA IS NOT NULL
+                AND asco.PROG_ID IS NULL
+            """, nativeQuery = true)
+    Long countMateriasByCoordinacion(
+            @Param("idCoordinacion") Long idCoordinacion);
+
+    default boolean existsMateriasByCoordinacion(Long idCoordinacion) {
+        Long count = countMateriasByCoordinacion(idCoordinacion);
         return count != null && count > 0;
     }
 }

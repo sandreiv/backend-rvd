@@ -278,7 +278,9 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         return new ConvocatoriaFormularioDTO(
                 convocatoriaDatosInsertarMapper.toDto(
                         convocatoria,
-                        personaGeneralRepository.findGeneralPersonById(convocatoria.getIdPersonaGeneral()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Persona autorizadora no encontrada")),
+                        personaGeneralRepository.findGeneralPersonById(
+                                        convocatoria.getIdPersonaGeneral())
+                                .orElse(null),
                         convocatoriaRepository.findPeriodoEntityByConvocatoriaId(id),
                         convocatoriaRepository.findNivelEntityByConvocatoriaId(id)),
                 fechasConvocatoriaMapper.toFormularioDtoList(convocatoriaRepository.findFechasGeneralesByConvocatoriaId(id)),
