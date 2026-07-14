@@ -3,6 +3,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.math.BigDecimal;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -103,7 +104,9 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
             );
         }
 
-        tipoActividadesRepository.deleteById(id);
+        BigDecimal result = tipoActividadesRepository.deleteByProcedure(id, REGISTRADO_POR);
+
+        validateProcedureResult(result, "No se pudo eliminar el tipo de actividad");
     }
 
     @Override
@@ -239,4 +242,11 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
                 ? "0"
                 : "1";
     }
+
+    private void validateProcedureResult(BigDecimal result, String message) {
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+    
 }

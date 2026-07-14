@@ -1,10 +1,13 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.math.BigDecimal;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.query.Procedure;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEntityId;
@@ -52,6 +55,14 @@ public interface DocentesPlantaCoordinacionRepository extends JpaRepository<Doce
                         PENG.PENG_PRIMERNOMBRE,
                         PENG.PENG_SEGUNDONOMBRE
                 """, nativeQuery = true)
-        List<PersonaCoordinacionListadoProjection> findAdministrationList();            
+        List<PersonaCoordinacionListadoProjection> findAdministrationList();    
+        
+        
+        @Procedure(name = "DocentesPlantaCoordinacionEntity.deleteByProcedure")
+        BigDecimal deleteByProcedure(
+                @Param("P_PEGE_ID") Long idPersonaGeneral,
+                @Param("P_COOR_ID") Long idCoordinacion,
+                @Param("P_COOR_REGISTRADOPOR") String registradoPor
+        );        
 
 }

@@ -2,6 +2,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.math.BigDecimal;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -134,8 +135,30 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
             );
         }
 
-        asignarCentroCostoRepository.deleteByIdCoordinacion(id);
-        coordinacionRepository.deleteById(id);
+        /*
+        * Primero eliminamos por procedimiento las asignaciones de centro de costo
+        * asociadas a esta coordinación.
+        */
+        List<Long> costCenterAssignmentIds = asignarCentroCostoRepository.findIdsByIdCoordinacion(id);
+
+        for (Long assignmentId : costCenterAssignmentIds) {
+            BigDecimal assignmentResult = asignarCentroCostoRepository.deleteByProcedure(
+                    assignmentId,
+                    REGISTRADO_POR
+            );
+
+            validateProcedureResult(
+                    assignmentResult,
+                    "No se pudo eliminar el centro de costo asignado a la coordinación"
+            );
+        }
+
+        /*
+        * Luego eliminamos la coordinación por procedimiento.
+        */
+        BigDecimal result = coordinacionRepository.deleteByProcedure(id, REGISTRADO_POR);
+
+        validateProcedureResult(result, "No se pudo eliminar la coordinación");
     }
 
     @Override
@@ -308,5 +331,12 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
                 || "S".equals(normalized)
                 ? "1"
                 : "0";
+    }
+
+
+    private void validateProcedureResult(BigDecimal result, String message) {
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, message);
+        }
     }
 }

@@ -1,10 +1,13 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.math.BigDecimal;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.query.Procedure;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
@@ -258,7 +261,11 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
     boolean existsByIdCoordinacionPadre(Long idCoordinacionPadre);    
 
 
-
+    @Procedure(name = "CoordinacionesEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(
+            @Param("P_COOR_ID") Long id,
+            @Param("P_COOR_REGISTRADOPOR") String registradoPor
+    );
 
 
 }

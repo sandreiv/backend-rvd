@@ -11,6 +11,8 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.math.BigDecimal;
+
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,8 +22,22 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureParameter;
 import lombok.Getter;
 import lombok.Setter;
+
+@NamedStoredProcedureQuery(
+    name = "DocentesPlantaCoordinacionEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_DOCENTESPLANTACOORD",
+    parameters = {
+        @StoredProcedureParameter(name = "P_PEGE_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_COOR_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_COOR_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
+    }
+)
 
 @Getter
 @Setter

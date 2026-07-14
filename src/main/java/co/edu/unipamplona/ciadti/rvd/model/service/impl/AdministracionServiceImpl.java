@@ -2,6 +2,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.math.BigDecimal;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -117,7 +118,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la asociación con id " + id);
         }
 
-        asociacionCoordinacionRepository.deleteById(id);
+        BigDecimal result = asociacionCoordinacionRepository.deleteByProcedure(id, REGISTRADO_POR);
+
+        validateProcedureResult(result, "No se pudo eliminar la asociación coordinación");
     }
 
     @Override
@@ -127,7 +130,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             return;
         }
 
-        asociacionCoordinacionRepository.deleteAllById(ids);
+        for (Long id : ids) {
+            deleteCoordinationAssociation(id);
+        }
     }
 
     private void fillAssociation(AsociacionCoordinacionEntity association, AsociacionCoordinacionFormularioDTO dto) {
@@ -248,7 +253,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el centro de costo asignado con id " + id);
         }
 
-        asignarCentroCostoRepository.deleteById(id);
+        BigDecimal result = asignarCentroCostoRepository.deleteByProcedure(id, REGISTRADO_POR);
+
+        validateProcedureResult(result, "No se pudo eliminar el centro de costo asignado");
     }
 
     @Override
@@ -258,7 +265,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             return;
         }
 
-        asignarCentroCostoRepository.deleteAllById(ids);
+        for (Long id : ids) {
+            deleteCostCenterAssignment(id);
+        }
     }
 
     private void fillCostCenterAssignment(
@@ -335,7 +344,13 @@ public class AdministracionServiceImpl implements AdministracionService {
                 || !oldIdCoordinacion.equals(dto.idCoordinacion());
 
         if (keyChanged) {
-            personaCoordinacionRepository.deleteById(oldId);
+            BigDecimal result = personaCoordinacionRepository.deleteByProcedure(
+                    oldIdPersonaGeneral,
+                    oldIdCoordinacion,
+                    REGISTRADO_POR
+            );
+
+            validateProcedureResult(result, "No se pudo eliminar la persona asociada anterior");
         }
 
         PersonaCoordinacionEntity entity = new PersonaCoordinacionEntity();
@@ -352,7 +367,13 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la persona asociada a la coordinación");
         }
 
-        personaCoordinacionRepository.deleteById(id);
+        BigDecimal result = personaCoordinacionRepository.deleteByProcedure(
+                idPersonaGeneral,
+                idCoordinacion,
+                REGISTRADO_POR
+        );
+
+        validateProcedureResult(result, "No se pudo eliminar la persona asociada a la coordinación");
     }
 
     @Override
@@ -362,11 +383,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             return;
         }
 
-        personaCoordinacionRepository.deleteAllById(
-                registros.stream()
-                        .map(item -> personaCoordinationId(item.idPersonaGeneral(), item.idCoordinacion()))
-                        .toList()
-        );
+        for (PersonaCoordinacionClaveDTO item : registros) {
+            deletePeopleCoordination(item.idPersonaGeneral(), item.idCoordinacion());
+        }
     }
 
     @Override
@@ -410,7 +429,13 @@ public class AdministracionServiceImpl implements AdministracionService {
                 || !oldIdCoordinacion.equals(dto.idCoordinacion());
 
         if (keyChanged) {
-            docentesPlantaCoordinacionRepository.deleteById(oldId);
+            BigDecimal result = docentesPlantaCoordinacionRepository.deleteByProcedure(
+                    oldIdPersonaGeneral,
+                    oldIdCoordinacion,
+                    REGISTRADO_POR
+            );
+
+            validateProcedureResult(result, "No se pudo eliminar el docente planta asociado anterior");
         }
 
         DocentesPlantaCoordinacionEntity entity = new DocentesPlantaCoordinacionEntity();
@@ -427,7 +452,13 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el docente planta asociado a la coordinación");
         }
 
-        docentesPlantaCoordinacionRepository.deleteById(id);
+        BigDecimal result = docentesPlantaCoordinacionRepository.deleteByProcedure(
+                idPersonaGeneral,
+                idCoordinacion,
+                REGISTRADO_POR
+        );
+
+        validateProcedureResult(result, "No se pudo eliminar el docente planta asociado a la coordinación");
     }
 
     @Override
@@ -437,11 +468,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             return;
         }
 
-        docentesPlantaCoordinacionRepository.deleteAllById(
-                registros.stream()
-                        .map(item -> plantProfessorCoordinationId(item.idPersonaGeneral(), item.idCoordinacion()))
-                        .toList()
-        );
+        for (PersonaCoordinacionClaveDTO item : registros) {
+            deletePlantProfessorCoordination(item.idPersonaGeneral(), item.idCoordinacion());
+        }
     }
 
     private void fillPeopleCoordination(PersonaCoordinacionEntity entity, PersonaCoordinacionFormularioDTO dto) {
@@ -494,7 +523,13 @@ public class AdministracionServiceImpl implements AdministracionService {
         id.setIdPersonaGeneral(idPersonaGeneral);
         id.setIdCoordinacion(idCoordinacion);
         return id;
-    }    
+    }  
+    
+    private void validateProcedureResult(BigDecimal result, String message) {
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
 
 
 

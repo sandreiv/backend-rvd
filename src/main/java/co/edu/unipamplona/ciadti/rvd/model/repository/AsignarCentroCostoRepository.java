@@ -2,9 +2,13 @@ package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.math.BigDecimal;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
+import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.AsignarCentroCostoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CentroCostoAsignadoListadoProjection;
@@ -33,6 +37,17 @@ public interface AsignarCentroCostoRepository extends JpaRepository<AsignarCentr
     List<CentroCostoAsignadoListadoProjection> findAdministrationList();
 
 
+    @Procedure(name = "AsignarCentroCostoEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(
+            @Param("P_ASCC_ID") Long id,
+            @Param("P_COOR_REGISTRADOPOR") String registradoPor
+    );
 
+    @Query(value = """
+            SELECT ASCC.ASCC_ID
+            FROM RVD.ASIGNARCENTROCOSTO ASCC
+            WHERE ASCC.COOR_ID = :idCoordinacion
+            """, nativeQuery = true)
+    List<Long> findIdsByIdCoordinacion(@Param("idCoordinacion") Long idCoordinacion);
 
 }

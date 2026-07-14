@@ -1,10 +1,13 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.math.BigDecimal;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.query.Procedure;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.TipoActividadesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TipoActividadAdministracionListadoProjection;
@@ -142,4 +145,11 @@ public interface TipoActividadesRepository
     String findNextOrderByParent(@Param("idPadre") Long idPadre);
 
     boolean existsByIdPadre(Long idPadre);
+
+
+    @Procedure(name = "TipoActividadesEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(
+            @Param("P_TIAC_ID") Long id,
+            @Param("P_TIAC_REGISTRADOPOR") String registradoPor
+    );    
 }
