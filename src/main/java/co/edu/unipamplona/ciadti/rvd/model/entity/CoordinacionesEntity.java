@@ -35,6 +35,9 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
     @Column(name = "COOR_ID", nullable = false)
     private Long id;
 
+    @Column(name = "COOR_IDPADRE")
+    private Long idCoordinacionPadre;
+
     @Column(name = "UNID_IDPADRE")
     private Long idUnidadPadre;
 
@@ -61,9 +64,6 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
 
     @Column(name = "COOR_CODIGO")
     private String codigo;
-
-    @Column(name = "COOR_ESTRANSVERSAL")
-    private String esTransversal;
 
     @Column(name = "COOR_REGISTRADOPOR")
     private String registradoPor;
@@ -100,6 +100,7 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
     public String toString() {
         return "CoordinacionesEntity{" +
                 "id=" + id +
+                ", idCoordinacionPadre=" + idCoordinacionPadre +
                 ", idUnidadPadre=" + idUnidadPadre +
                 ", idRegional=" + idRegional +
                 ", idArea=" + idArea +
@@ -109,7 +110,6 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
                 ", descripcion=" + descripcion +
                 ", esAcademica=" + esAcademica +
                 ", codigo=" + codigo +
-                ", esTransversal=" + esTransversal +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

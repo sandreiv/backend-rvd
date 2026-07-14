@@ -13,6 +13,8 @@ public interface AsignarCentroCostoRepository extends JpaRepository<AsignarCentr
 
     Optional<AsignarCentroCostoEntity> findFirstByIdCoordinacion(Long idCoordinacion);
 
+    void deleteByIdCoordinacion(Long idCoordinacion);
+
     @Query(value = """
             SELECT
                 ASCC.ASCC_ID AS id,
@@ -29,4 +31,8 @@ public interface AsignarCentroCostoRepository extends JpaRepository<AsignarCentr
             ORDER BY COALESCE(COOR.COOR_NOMBRE, COOR.COOR_DESCRIPCION), CECO.CECO_DESCRIPCION
             """, nativeQuery = true)
     List<CentroCostoAsignadoListadoProjection> findAdministrationList();
+
+
+
+
 }

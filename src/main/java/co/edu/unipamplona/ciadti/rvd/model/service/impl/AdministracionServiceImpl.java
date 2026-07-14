@@ -131,10 +131,15 @@ public class AdministracionServiceImpl implements AdministracionService {
     }
 
     private void fillAssociation(AsociacionCoordinacionEntity association, AsociacionCoordinacionFormularioDTO dto) {
+        String codigoMateria = normalizeText(dto.codigoMateria());
+        boolean hasProgram = dto.idPrograma() != null;
+        boolean hasSubject = StringUtils.hasText(codigoMateria);
+
         association.setIdCoordinacion(dto.idCoordinacion());
-        association.setIdPrograma(dto.idPrograma());
-        association.setCodigoMateria(normalizeText(dto.codigoMateria()));
-        association.setIdCentroCosto(dto.idCentroCosto());
+        association.setIdPrograma(hasProgram ? dto.idPrograma() : null);
+        association.setCodigoMateria(hasSubject ? codigoMateria : null);
+        association.setIdCentroCosto(hasProgram ? dto.idCentroCosto() : null);
+
         association.setEstado(normalizeStatus(dto.estado()));
         association.setRegistradoPor(REGISTRADO_POR);
         association.setFechaCambio(new Date());
@@ -149,11 +154,9 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La coordinación es obligatoria");
         }
 
-        if (dto.idCentroCosto() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El centro de costo es obligatorio");
-        }
+        String codigoMateria = normalizeText(dto.codigoMateria());
 
-        if (dto.idPrograma() != null && StringUtils.hasText(dto.codigoMateria())) {
+        if (dto.idPrograma() != null && StringUtils.hasText(codigoMateria)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Debe seleccionar programa o materia, no ambos");
         }
 
@@ -161,18 +164,16 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "La coordinación no existe");
         }
 
-        if (!centroCostoRepository.existsById(dto.idCentroCosto())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "El centro de costo no existe");
-        }
-
         if (dto.idPrograma() != null && !programaRepository.existsById(dto.idPrograma())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "El programa no existe");
         }
 
-        String codigoMateria = normalizeText(dto.codigoMateria());
-
         if (StringUtils.hasText(codigoMateria) && !materiaRepository.existsById(codigoMateria)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "La materia no existe");
+        }
+
+        if (dto.idCentroCosto() != null && !centroCostoRepository.existsById(dto.idCentroCosto())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "El centro de costo no existe");
         }
     }
 

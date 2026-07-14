@@ -21,6 +21,12 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.EliminacionMasivaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminacionMasivaPersonaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaCoordinacionFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaCoordinacionListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CatalogoAdministracionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionAdministracionCatalogosDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionAdministracionFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionAdministracionListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionAdministracionService;
+import org.springframework.web.bind.annotation.RequestParam;
 import co.edu.unipamplona.ciadti.rvd.model.service.AdministracionService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class CoordinationManagementController {
 
     private final AdministracionService administracionService;
+    private final CoordinacionAdministracionService coordinacionAdministracionService;
 
     @Operation(
         summary = "Obtiene catálogos para asociación de coordinaciones",
@@ -210,4 +217,100 @@ public class CoordinationManagementController {
         administracionService.deleteBulkPlantProfessorCoordinations(dto.registros());
         return ResponseEntity.ok().build();
     }    
+
+    @Operation(
+        summary = "Obtiene catálogos para coordinaciones",
+        description = "Lista modalidades, metodologías y centros de costo para el formulario de coordinaciones"
+    )
+    @GetMapping("/coordinations/catalogs")
+    public ResponseEntity<CoordinacionAdministracionCatalogosDTO> getCoordinationCatalogs() {
+        return ResponseEntity.ok(coordinacionAdministracionService.getCatalogs());
+    }
+
+    @Operation(
+        summary = "Busca unidades",
+        description = "Busca unidades por nombre o código para el formulario de coordinaciones"
+    )
+    @GetMapping("/coordinations/units/search")
+    public ResponseEntity<List<CatalogoAdministracionDTO>> searchUnits(
+            @RequestParam(required = false) String term) {
+        return ResponseEntity.ok(coordinacionAdministracionService.searchUnits(term));
+    }
+
+    @Operation(
+        summary = "Lista coordinaciones padre",
+        description = "Lista únicamente coordinaciones con COOR_IDPADRE NULL"
+    )
+    @GetMapping("/coordinations/parents/list")
+    public ResponseEntity<List<CoordinacionAdministracionListadoDTO>> listParentCoordinations() {
+        return ResponseEntity.ok(coordinacionAdministracionService.listParentCoordinations());
+    }
+
+    @Operation(
+        summary = "Lista coordinaciones hijas",
+        description = "Lista las coordinaciones hijas de la coordinación padre seleccionada"
+    )
+    @GetMapping("/coordinations/{idPadre}/children/list")
+    public ResponseEntity<List<CoordinacionAdministracionListadoDTO>> listChildCoordinations(
+            @PathVariable Long idPadre) {
+        return ResponseEntity.ok(coordinacionAdministracionService.listChildCoordinations(idPadre));
+    }
+
+    @Operation(
+        summary = "Guarda coordinación padre",
+        description = "Crea una coordinación padre con COOR_IDPADRE NULL"
+    )
+    @PostMapping("/coordinations/parents/save")
+    public ResponseEntity<Void> saveParentCoordination(
+            @RequestBody CoordinacionAdministracionFormularioDTO dto) {
+        coordinacionAdministracionService.saveParentCoordination(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Guarda coordinación hija",
+        description = "Crea una coordinación hija asociada a la coordinación padre seleccionada"
+    )
+    @PostMapping("/coordinations/{idPadre}/children/save")
+    public ResponseEntity<Void> saveChildCoordination(
+            @PathVariable Long idPadre,
+            @RequestBody CoordinacionAdministracionFormularioDTO dto) {
+        coordinacionAdministracionService.saveChildCoordination(idPadre, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Actualiza coordinación",
+        description = "Actualiza una coordinación sin cambiar su COOR_IDPADRE"
+    )
+    @PutMapping("/coordinations/update/{id}")
+    public ResponseEntity<Void> updateCoordination(
+            @PathVariable Long id,
+            @RequestBody CoordinacionAdministracionFormularioDTO dto) {
+        coordinacionAdministracionService.updateCoordination(id, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Elimina coordinación",
+        description = "Elimina una coordinación si no tiene coordinaciones hijas asociadas"
+    )
+    @DeleteMapping("/coordinations/delete/{id}")
+    public ResponseEntity<Void> deleteCoordination(@PathVariable Long id) {
+        coordinacionAdministracionService.deleteCoordination(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Elimina coordinaciones",
+        description = "Elimina varias coordinaciones seleccionadas"
+    )
+    @PostMapping("/coordinations/delete-bulk")
+    public ResponseEntity<Void> deleteBulkCoordinations(@RequestBody EliminacionMasivaDTO dto) {
+        coordinacionAdministracionService.deleteBulkCoordinations(dto.ids());
+        return ResponseEntity.ok().build();
+    }
+
+
+
 }

@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 
 public interface CoordinacionRepository extends JpaRepository<CoordinacionesEntity, Long> {
@@ -156,6 +157,105 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             ORDER BY COALESCE(COOR.COOR_NOMBRE, COOR.COOR_DESCRIPCION)
             """, nativeQuery = true)
     List<CatalogoAdministracionProjection> findAdministrationOptions();
+
+
+    @Query(value = """
+            SELECT
+                COOR.COOR_ID AS id,
+                COOR.COOR_IDPADRE AS idCoordinacionPadre,
+                COOR.COOR_NOMBRE AS nombre,
+                COOR.COOR_DESCRIPCION AS descripcion,
+
+                UNID_PADRE.UNID_ID AS idUnidadPadre,
+                UNID_PADRE.UNID_NOMBRE AS unidadPadre,
+
+                UNID_REG.UNID_ID AS idUnidadRegional,
+                UNID_REG.UNID_NOMBRE AS unidadRegional,
+
+                UNID_AREA.UNID_ID AS idUnidad,
+                UNID_AREA.UNID_NOMBRE AS unidad,
+
+                MODA.MODA_ID AS idModalidad,
+                MODA.MODA_DESCRIPCION AS modalidad,
+
+                METO.METO_ID AS idMetodologia,
+                METO.METO_DESCRIPCION AS metodologia,
+
+                CECO.CECO_ID AS idCentroCosto,
+                CECO.CECO_DESCRIPCION AS centroCosto,
+
+                COOR.COOR_CODIGO AS codigo,
+                COOR.COOR_ESACADEMICA AS esAcademica
+            FROM RVD.COORDINACIONES COOR
+            LEFT JOIN ACADEMICO.UNIDAD UNID_PADRE
+                ON UNID_PADRE.UNID_ID = COOR.UNID_IDPADRE
+            LEFT JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            LEFT JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            LEFT JOIN ACADEMICO.MODALIDAD MODA
+                ON MODA.MODA_ID = COOR.MODA_ID
+            LEFT JOIN ACADEMICO.METODOLOGIA METO
+                ON METO.METO_ID = COOR.METO_ID
+            LEFT JOIN RVD.ASIGNARCENTROCOSTO ASCC
+                ON ASCC.COOR_ID = COOR.COOR_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO CECO
+                ON CECO.CECO_ID = ASCC.CECO_ID
+            WHERE COOR.COOR_IDPADRE IS NULL
+            ORDER BY COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionAdministracionListadoProjection> findAdministrationParentCoordinations();
+
+    @Query(value = """
+            SELECT
+                COOR.COOR_ID AS id,
+                COOR.COOR_IDPADRE AS idCoordinacionPadre,
+                COOR.COOR_NOMBRE AS nombre,
+                COOR.COOR_DESCRIPCION AS descripcion,
+
+                UNID_PADRE.UNID_ID AS idUnidadPadre,
+                UNID_PADRE.UNID_NOMBRE AS unidadPadre,
+
+                UNID_REG.UNID_ID AS idUnidadRegional,
+                UNID_REG.UNID_NOMBRE AS unidadRegional,
+
+                UNID_AREA.UNID_ID AS idUnidad,
+                UNID_AREA.UNID_NOMBRE AS unidad,
+
+                MODA.MODA_ID AS idModalidad,
+                MODA.MODA_DESCRIPCION AS modalidad,
+
+                METO.METO_ID AS idMetodologia,
+                METO.METO_DESCRIPCION AS metodologia,
+
+                CECO.CECO_ID AS idCentroCosto,
+                CECO.CECO_DESCRIPCION AS centroCosto,
+
+                COOR.COOR_CODIGO AS codigo,
+                COOR.COOR_ESACADEMICA AS esAcademica
+            FROM RVD.COORDINACIONES COOR
+            LEFT JOIN ACADEMICO.UNIDAD UNID_PADRE
+                ON UNID_PADRE.UNID_ID = COOR.UNID_IDPADRE
+            LEFT JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            LEFT JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            LEFT JOIN ACADEMICO.MODALIDAD MODA
+                ON MODA.MODA_ID = COOR.MODA_ID
+            LEFT JOIN ACADEMICO.METODOLOGIA METO
+                ON METO.METO_ID = COOR.METO_ID
+            LEFT JOIN RVD.ASIGNARCENTROCOSTO ASCC
+                ON ASCC.COOR_ID = COOR.COOR_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO CECO
+                ON CECO.CECO_ID = ASCC.CECO_ID
+            WHERE COOR.COOR_IDPADRE = :idPadre
+            ORDER BY COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionAdministracionListadoProjection> findAdministrationChildCoordinations(
+            @Param("idPadre") Long idPadre
+    );
+
+    boolean existsByIdCoordinacionPadre(Long idCoordinacionPadre);    
 
 
 
