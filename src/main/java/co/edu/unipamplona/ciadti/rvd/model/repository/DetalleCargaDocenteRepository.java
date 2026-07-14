@@ -35,6 +35,7 @@ public interface DetalleCargaDocenteRepository
                 grup.GRUP_NOMBRE AS nombreGrupo,
                 grup.GRUP_CAPACIDAD AS capacidadGrupo,
                 grup.MATE_CODIGOMATERIA AS codigoMateria,
+                mate.MATE_NOMBRE AS nombreMateria,
                 ceco.CECO_ID AS idCentroCosto,
                 ceco.CECO_DESCRIPCION AS descripcionCentroCosto,
                 pepr.PEPR_ID AS idPersonaProyecto,
@@ -62,6 +63,8 @@ public interface DetalleCargaDocenteRepository
                 ON tiac_padre.TIAC_ID = tiac.TIAC_IDPADRE
             LEFT JOIN ACADEMICO.GRUPO grup
                 ON grup.GRUP_ID = decd.GRUP_ID
+            LEFT JOIN ACADEMICO.MATERIA mate
+                ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
             LEFT JOIN ACADEMICO.UNIDAD unid
                 ON unid.UNID_ID = grup.UNID_IDREGIONAL
             LEFT JOIN ACADEMICO.PROGRAMA prog

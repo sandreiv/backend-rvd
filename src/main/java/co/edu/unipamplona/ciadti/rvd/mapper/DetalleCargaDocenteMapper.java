@@ -13,6 +13,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDetalleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
@@ -21,6 +22,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 
 @Mapper(componentModel = "spring")
@@ -43,7 +45,10 @@ public interface DetalleCargaDocenteMapper {
     DetalleCargaDocenteEntity toEntity(
             Long idCargaDocente, DetalleCargaDocenteItemDTO detalle);
 
-    default List<DetalleCargaDocenteDTO> toDtoList(List<DetalleCargaDocenteListadoProjection> projections, ProyectoMapper proyectoMapper) {
+    default List<DetalleCargaDocenteDTO> toDtoList(List<DetalleCargaDocenteListadoProjection> projections,
+            ProyectoMapper proyectoMapper,
+            TipoActividadMapper tipoActividadMapper,
+            TipoActividadesRepository tipoActividadesRepository) {
         if (projections == null || projections.isEmpty()) {
             return List.of();
         }
@@ -53,7 +58,11 @@ public interface DetalleCargaDocenteMapper {
         for (Map.Entry<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>>
                 cargaEntry : agrupados.entrySet()) {
             for (Map.Entry<Long, List<DetalleCargaDocenteListadoProjection>> detalleEntry : cargaEntry.getValue().entrySet()) {
-                DetalleCargaDocenteActividadDTO detalleActividad = toActividadDto(detalleEntry.getValue(), proyectoMapper);
+                DetalleCargaDocenteActividadDTO detalleActividad = toActividadDto(
+                        detalleEntry.getValue(),
+                        proyectoMapper,
+                        tipoActividadMapper,
+                        tipoActividadesRepository);
                 resultado.add(new DetalleCargaDocenteDTO(
                         detalleEntry.getKey(),
                         cargaEntry.getKey(),
@@ -103,26 +112,48 @@ public interface DetalleCargaDocenteMapper {
 
     default DetalleCargaDocenteActividadDTO toActividadDto(
             List<DetalleCargaDocenteListadoProjection> filas,
-            ProyectoMapper proyectoMapper) {
+            ProyectoMapper proyectoMapper,
+            TipoActividadMapper tipoActividadMapper,
+            TipoActividadesRepository tipoActividadesRepository) {
         DetalleCargaDocenteListadoProjection primera = filas.get(0);
-        TipoActividadDTO tipoActividad;
-        List<TipoActividadDTO> tipoActividadHija;
-        if (primera.getIdTipoActividadPadre() != null) {
-            tipoActividad = mapTipoActividadPadre(primera);
-            tipoActividadHija = List.of(mapTipoActividadResuelto(primera));
-        } else {
-            tipoActividad = mapTipoActividadResuelto(primera);
-            tipoActividadHija = List.of();
-        }
+        TipoActividadDTO tipoActividad = primera.getIdTipoActividadPadre() != null
+                ? mapTipoActividadPadre(primera)
+                : mapTipoActividadResuelto(primera);
+        List<TipoActividadDTO> tipoActividadHija = resolveTipoActividadesHijas(
+                tipoActividad,
+                tipoActividadMapper,
+                tipoActividadesRepository);
         return new DetalleCargaDocenteActividadDTO(
                 tipoActividad,
                 tipoActividadHija,
                 mapUnidad(primera),
                 mapPrograma(primera),
+                mapMateria(primera),
                 mapGrupo(primera),
                 mapCentroCosto(primera),
                 primera.getHoras(),
                 collectRelacionesListado(filas, proyectoMapper));
+    }
+
+    default List<TipoActividadDTO> resolveTipoActividadesHijas(
+            TipoActividadDTO tipoActividad,
+            TipoActividadMapper tipoActividadMapper,
+            TipoActividadesRepository tipoActividadesRepository) {
+        if (tipoActividad == null || tipoActividad.id() == null) {
+            return List.of();
+        }
+        return tipoActividadMapper.toDtoList(
+                tipoActividadesRepository.findByIdPadre(tipoActividad.id()));
+    }
+
+    default MateriaDetalleDTO mapMateria(
+            DetalleCargaDocenteListadoProjection projection) {
+        if (projection.getCodigoMateria() == null) {
+            return null;
+        }
+        return new MateriaDetalleDTO(
+                projection.getCodigoMateria(),
+                projection.getNombreMateria());
     }
 
     default TipoActividadDTO mapTipoActividadResuelto(
@@ -287,10 +318,24 @@ public interface DetalleCargaDocenteMapper {
 
     default Long resolveTipoActividadFromActividad(
             DetalleCargaDocenteActividadDTO actividad) {
-        if (actividad.tipoActividadHija() != null
-                && !actividad.tipoActividadHija().isEmpty()
-                && actividad.tipoActividadHija().get(0) != null) {
-            return actividad.tipoActividadHija().get(0).id();
+        return resolveTipoActividadFromActividad(actividad, null);
+    }
+
+    default Long resolveTipoActividadFromActividad(
+            DetalleCargaDocenteActividadDTO actividad,
+            Long idTipoActividadPersistido) {
+        List<TipoActividadDTO> hijas = actividad.tipoActividadHija();
+        if (hijas != null && hijas.size() == 1 && hijas.get(0) != null) {
+            return hijas.get(0).id();
+        }
+        if (hijas != null
+                && hijas.size() > 1
+                && idTipoActividadPersistido != null) {
+            for (TipoActividadDTO hija : hijas) {
+                if (idTipoActividadPersistido.equals(hija.id())) {
+                    return idTipoActividadPersistido;
+                }
+            }
         }
         if (actividad.tipoActividad() != null) {
             return actividad.tipoActividad().id();

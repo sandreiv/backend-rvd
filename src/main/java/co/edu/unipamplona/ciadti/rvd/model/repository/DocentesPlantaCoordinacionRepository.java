@@ -17,8 +17,13 @@ public interface DocentesPlantaCoordinacionRepository extends JpaRepository<Doce
             INNER JOIN FETCH dopc.personaGeneral pege
             INNER JOIN FETCH pege.personaNaturalGeneral peng
             WHERE dopc.idCoordinacion = :idCoordinacion
-            ORDER BY peng.primerApellido, peng.segundoApellido,
-                peng.primerNombre, peng.segundoNombre
+            ORDER BY
+                CASE WHEN peng.primerApellido IS NULL
+                    AND peng.primerNombre IS NULL THEN 1 ELSE 0 END,
+                UPPER(peng.primerNombre),
+                UPPER(peng.segundoNombre),
+                UPPER(peng.primerApellido),
+                UPPER(peng.segundoApellido)
             """)
     List<DocentesPlantaCoordinacionEntity> findByIdCoordinacion(@Param("idCoordinacion") Long idCoordinacion);
 

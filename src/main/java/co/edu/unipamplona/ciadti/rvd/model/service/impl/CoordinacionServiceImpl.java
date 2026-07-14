@@ -306,7 +306,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<ProgramaDTO> listProgramsByRegionalUnit(Long idCoordinacion, Long idUnidadRegional, Long idNivelEducativo) {
-        return programaMapper.toDtoList(programaRepository.findByCoordinacionUnidadRegionalAndNivelEducativo(idCoordinacion, idUnidadRegional, idNivelEducativo));
+        if (asociacionCoordinacionRepository.existsProgramasByCoordinacion(idCoordinacion)) {
+            return programaMapper.toDtoList(
+                    programaRepository.findByCoordinacionUnidadRegionalAndNivelEducativo(
+                            idCoordinacion, idUnidadRegional, idNivelEducativo));
+        }
+        return programaMapper.toDtoList(
+                programaRepository.findByUnidadRegionalAndNivelEducativo(
+                        idUnidadRegional, idNivelEducativo));
     }
 
     @Override
@@ -324,42 +331,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion) {
-        Long idUnidadRegional = coordinacionRepository.findById(idCoordinacion)
-                .map(c -> c.getIdRegional())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND, "No existe la coordinación con id " + idCoordinacion));
+        List<MateriaListadoProjection> materias;
 
-        boolean esProgramaTransversal = asociacionCoordinacionRepository
-                .isProgramaTransversal(
-                        idCoordinacion,
-                        idPrograma,
-                        idUnidadRegional);
-
-        if (esProgramaTransversal) {
-            return mapMateriasConGrupo(materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma));
+        if (asociacionCoordinacionRepository.existsProgramasByCoordinacion(idCoordinacion)) {
+            materias = materiaRepository.findPensumExcluyendoTransversales(idPrograma);
+        } else if (asociacionCoordinacionRepository.existsMateriasByCoordinacion(idCoordinacion)) {
+            materias = materiaRepository.findTransversalesByCoordinacionAndPrograma(
+                    idCoordinacion, idPrograma);
+        } else {
+            materias = materiaRepository.findByPrograma(idPrograma);
         }
 
-        List<MateriaListadoProjection> normales = materiaRepository.findNoTransversalesByProgramaAndCoordinacion(idPrograma, idCoordinacion);
-        List<MateriaListadoProjection> transversales = materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma);
-
-        List<MateriaListadoProjection> combinadas = combinarSinDuplicados(normales, transversales);
-
-        return mapMateriasConGrupo(combinadas);
-    }
-
-    private List<MateriaListadoProjection> combinarSinDuplicados(List<MateriaListadoProjection> normales, List<MateriaListadoProjection> transversales) {
-        java.util.Map<String, MateriaListadoProjection> porClave = new java.util.LinkedHashMap<>();
-        for (MateriaListadoProjection materia : normales) {
-            porClave.putIfAbsent(claveMateria(materia), materia);
-        }
-        for (MateriaListadoProjection materia : transversales) {
-            porClave.putIfAbsent(claveMateria(materia), materia);
-        }
-        return new java.util.ArrayList<>(porClave.values());
-    }
-
-    private String claveMateria(MateriaListadoProjection materia) {
-        return materia.getCodigoMateria() + ":" + materia.getPeriodo();
+        return mapMateriasConGrupo(materias);
     }
 
     private List<MateriaDTO> mapMateriasConGrupo(List<MateriaListadoProjection> projections) {
@@ -379,8 +362,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<GrupoDTO> listSubjectGroup(String codigoMateria) {
-        return grupoMapper.toDtoList(grupoRepository.findByCodigoMateria(codigoMateria));
+    public List<GrupoDTO> listSubjectGroup(String codigoMateria, Long idPeriodoUniversidad) {
+        return grupoMapper.toDtoList(grupoRepository.findByCodigoMateriaAndIdPeriodoUniversidad(codigoMateria, idPeriodoUniversidad));
     }
 
     @Override
@@ -411,9 +394,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         return detalleCargaDocenteMapper.toDtoList(
-                detalleCargaDocenteRepository.findByIdCargaDocente(
-                        idCargaDocente),
-                proyectoMapper);
+                detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente),
+                proyectoMapper,
+                tipoActividadMapper,
+                tipoActividadesRepository);
     }
 
     @Override
@@ -423,7 +407,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         Long idDetalleCargaDocente = dto.idDetalleCargaDocente();
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
+        DetalleCargaDocenteEntity detallePersistido = detalleCargaDocenteRepository
+                .findById(idDetalleCargaDocente)
+                .orElseThrow();
         DetalleCargaDocenteEntity entity = detalleCargaDocenteMapper.toEntityFromDto(dto);
+        entity.setIdTipoActividad(detalleCargaDocenteMapper
+                .resolveTipoActividadFromActividad(
+                        actividad,
+                        detallePersistido.getIdTipoActividad()));
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
         detalleCargaDocenteRepository.save(entity);
@@ -483,26 +474,30 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                     "El detalle no pertenece a la carga docente enviada");
         }
 
-        validateDetalleActividad(dto.detalles().get(0));
+        validateDetalleActividad(
+                dto.detalles().get(0),
+                detallePersistido.getIdTipoActividad());
     }
 
     private void validateDetalleActividad(DetalleCargaDocenteActividadDTO actividad) {
+        validateDetalleActividad(actividad, null);
+    }
+
+    private void validateDetalleActividad(
+            DetalleCargaDocenteActividadDTO actividad,
+            Long idTipoActividadPersistido) {
         if (actividad.horas() == null || actividad.horas().isBlank()) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "Las horas del detalle son obligatorias");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Las horas del detalle son obligatorias");
         }
         if (actividad.centroCosto() == null || actividad.centroCosto().id() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El centro de costo del detalle es obligatorio");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El centro de costo del detalle es obligatorio");
         }
         Long tipoActividad = detalleCargaDocenteMapper
-                .resolveTipoActividadFromActividad(actividad);
+                .resolveTipoActividadFromActividad(
+                        actividad,
+                        idTipoActividadPersistido);
         if (tipoActividad == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El tipo de actividad del detalle es obligatorio");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El tipo de actividad del detalle es obligatorio");
         }
         if (actividad.relacionCargaProyecto() != null) {
             for (RelacionCargaProyectoListadoDTO relacion

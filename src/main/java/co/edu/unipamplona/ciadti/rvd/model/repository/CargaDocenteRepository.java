@@ -62,9 +62,20 @@ public interface CargaDocenteRepository
                 WHERE CARG.COOR_ID = :idCoordinacion
                 AND CADO.MOCO_ID = :idModalidadContratacion
                 ORDER BY
-                CASE WHEN PEGE.PEGE_ID IS NULL THEN 1 ELSE 0 END,
-                PENG.PENG_PRIMERAPELLIDO, PENG.PENG_SEGUNDOAPELLIDO,
-                PENG.PENG_PRIMERNOMBRE, PENG.PENG_SEGUNDONOMBRE
+                CASE
+                    WHEN PEGE.PEGE_ID IS NULL THEN 1
+                    WHEN TRIM(
+                        TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                        || ' ' ||
+                        TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                    ) IS NULL THEN 1
+                    ELSE 0
+                END,
+                UPPER(TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                )) NULLS LAST
             """, nativeQuery = true)
     List<DocenteCargaCoordinacionProjection> findProfessorsByCoordinationAndModality(
             @Param("idCoordinacion") Long idCoordinacion,

@@ -13,4 +13,10 @@ public interface DocentePreasignacionProjection {
     Long getIdEscalafon();
     Long getIdModalidadContratacion();
     String getPuntos();
+    Long getIdCargaDocente();
+    Long getIdCarga();
+    Long getIdConvocatoria();
+    Long getIdCoordinacion();
+    Long getIdModalidadContratacionCarga();
+    Long getIdFechasConvocatoria();
 }

@@ -29,6 +29,21 @@ public interface TipoActividadesRepository
 
     @Query(value = """
             SELECT
+                tiac.TIAC_ID AS id,
+                tiac.TIAC_IDPADRE AS idPadre,
+                tiac.TIAC_NOMBRE AS nombre,
+                tiac.TIAC_DESCRIPCION AS descripcion,
+                tiac.TIAC_ORDEN AS orden,
+                tiac.TIAC_CODIGO AS codigo
+            FROM RVD.TIPOACTIVIDADES tiac
+            WHERE tiac.TIAC_IDPADRE = :idPadre
+            ORDER BY tiac.TIAC_ORDEN, tiac.TIAC_NOMBRE
+            """, nativeQuery = true)
+    List<TipoActividadListadoProjection> findByIdPadre(
+            @Param("idPadre") Long idPadre);
+
+    @Query(value = """
+            SELECT
                 tiac.TIAC_ID,
                 tiac.TIAC_IDPADRE,
                 tiac.TIAC_NOMBRE,

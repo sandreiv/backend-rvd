@@ -25,6 +25,7 @@ public interface DetalleCargaDocenteListadoProjection {
     String getNombreGrupo();
     Long getCapacidadGrupo();
     String getCodigoMateria();
+    String getNombreMateria();
     Long getIdCentroCosto();
     String getDescripcionCentroCosto();
 

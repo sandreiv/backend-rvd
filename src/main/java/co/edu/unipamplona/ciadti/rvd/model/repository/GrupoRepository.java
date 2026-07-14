@@ -18,10 +18,12 @@ public interface GrupoRepository extends JpaRepository<GrupoEntity, Long> {
                 grup.GRUP_CAPACIDAD AS capacidad
             FROM ACADEMICO.GRUPO grup
             WHERE grup.MATE_CODIGOMATERIA = :codigoMateria
+                AND grup.PEUN_ID = :idPeriodoUniversidad
             ORDER BY grup.GRUP_NOMBRE
             """, nativeQuery = true)
-    List<GrupoListadoProjection> findByCodigoMateria(
-            @Param("codigoMateria") String codigoMateria);
+    List<GrupoListadoProjection> findByCodigoMateriaAndIdPeriodoUniversidad(
+            @Param("codigoMateria") String codigoMateria,
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
     @Query(value = """
             SELECT DISTINCT grup.MATE_CODIGOMATERIA
