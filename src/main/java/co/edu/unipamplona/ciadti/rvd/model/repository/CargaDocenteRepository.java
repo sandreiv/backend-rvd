@@ -88,4 +88,8 @@ public interface CargaDocenteRepository
 
     boolean existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionAndIdFechasConvocatoria(
             Long idPersonaGeneral, Long idCarga, Long idModalidadContratacion, Long idFechasConvocatoria);
+
+    boolean existsByIdCarga(Long idCarga);    
+
+
 }

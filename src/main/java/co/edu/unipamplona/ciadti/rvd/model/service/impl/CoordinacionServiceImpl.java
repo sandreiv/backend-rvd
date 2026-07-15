@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -82,6 +83,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 
@@ -95,6 +97,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     private final CoordinacionRepository coordinacionRepository;
     private final CargaRepository cargaRepository;
+    private final ConvocatoriaRepository convocatoriaRepository;
     private final EstadoCargaRepository estadoCargaRepository;
     private final DocentesPlantaCoordinacionRepository docentesPlantaCoordinacionRepository;
     private final PersonaGeneralRepository personaGeneralRepository;
@@ -141,13 +144,47 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void savePreload(RelacionConvocatoriaCoordinacionDTO dto) {
+        validateSavePreload(dto);
 
-        CargaEntity carga = relacionMapper.toEntity(dto);
-        carga.setIdEstadoCarga(resolveEstadoCargaInicialId());
+        CargaEntity carga = cargaRepository
+                .findFirstByIdCoordinacionOrderByIdDesc(dto.idCoordinacion())
+                .orElseGet(CargaEntity::new);
+
+        validatePreloadCallChangeAllowed(carga, dto.idConvocatoria());
+
+        carga.setIdCoordinacion(dto.idCoordinacion());
+        carga.setIdConvocatoria(dto.idConvocatoria());
+
+        if (carga.getIdEstadoCarga() == null) {
+            carga.setIdEstadoCarga(resolveEstadoCargaInicialId());
+        }
+
         carga.setRegistradoPor(REGISTRADO_POR);
         carga.setFechaCambio(new Date());
+
         cargaRepository.save(carga);
     }
+
+    private void validatePreloadCallChangeAllowed(
+            CargaEntity carga,
+            Long newPreloadCallId
+    ) {
+        if (carga.getId() == null) {
+            return;
+        }
+
+        if (Objects.equals(carga.getIdConvocatoria(), newPreloadCallId)) {
+            return;
+        }
+
+        if (cargaDocenteRepository.existsByIdCarga(carga.getId())) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "No se puede cambiar la convocatoria porque ya existen docentes cargados en la preasignación"
+            );
+        }
+    }
+
 
     private Long resolveEstadoCargaInicialId() {
         return estadoCargaRepository.findByNombre(ESTADO_CARGA_INICIAL)
@@ -156,20 +193,26 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     private void validateSavePreload(RelacionConvocatoriaCoordinacionDTO dto) {
+        if (dto == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La información de la preasignación es obligatoria"
+            );
+        }
+
         if (dto.idCoordinacion() == null || dto.idConvocatoria() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,"La coordinacion y la convocatoria son obligatorias");
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La coordinación y la convocatoria son obligatorias"
+            );
         }
 
         if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
-            throw new ApiException(HttpStatus.NOT_FOUND,"Coordinacion no encontrada");
+            throw new ApiException(HttpStatus.NOT_FOUND, "Coordinación no encontrada");
         }
 
-        if (cargaRepository.existsByIdCoordinacion(dto.idCoordinacion())) {
-            throw new ApiException(HttpStatus.CONFLICT,"La coordinacion ya tiene una carga asignada");
-        }
-
-        if (cargaRepository.existsByIdCoordinacionAndIdConvocatoria(dto.idCoordinacion(), dto.idConvocatoria())) {
-            throw new ApiException(HttpStatus.CONFLICT,"La coordinacion ya tiene carga en esta convocatoria");
+        if (!convocatoriaRepository.existsById(dto.idConvocatoria())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada");
         }
     }
 
