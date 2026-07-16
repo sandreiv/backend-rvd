@@ -13,7 +13,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 import jakarta.persistence.*;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,5 +38,14 @@ public class RelacionCargaProyectoEntity implements Serializable, Cloneable{
 
     @Column(name = "RECP_FECHACAMBIO")
     private Date fechaCambio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PEPR_ID", insertable = false, updatable = false)
+    private PersonaProyectoEntity personaProyecto;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DECD_ID", insertable = false, updatable = false)
+    private DetalleCargaDocenteEntity detalleCargaDocente;
+    
 }
 /* 02/06/2026 @:Sebastian Jaimes */

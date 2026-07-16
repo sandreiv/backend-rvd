@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,8 +40,8 @@ public class ObservacionesEntity implements Serializable, Cloneable {
     @Column(name = "CADO_ID")
     private Long idCargaDocente;
 
-    @Column(name = "PEGE_ID")
-    private Long idPersonaGeneral;
+    @Column(name = "PEGE_IDREGISTRA")
+    private Long idPersonaGeneralRegistra;
 
     @Column(name = "OBSE_TEXTO")
     private String texto;
@@ -53,13 +55,13 @@ public class ObservacionesEntity implements Serializable, Cloneable {
     @Column(name = "OBSE_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CADO_ID", insertable = false, updatable = false)
-    private List<CargaDocenteEntity> cargasDocente;
+    private CargaDocenteEntity cargaDocente;
 
-    @OneToMany
-    @JoinColumn(name = "PEGE_ID", insertable = false, updatable = false)
-    private List<PersonaGeneralEntity> personasGenerales;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PEGE_IDREGISTRA", insertable = false, updatable = false)
+    private PersonaGeneralEntity personaRegistra;
 
     @Override
     public Object clone() throws CloneNotSupportedException {
@@ -71,7 +73,7 @@ public class ObservacionesEntity implements Serializable, Cloneable {
         return "ObservacionesEntity{" +
                 "id=" + id +
                 ", idCargaDocente=" + idCargaDocente +
-                ", idPersonaGeneral=" + idPersonaGeneral +
+                ", idPersonaGeneralRegistra=" + idPersonaGeneralRegistra +
                 ", texto=" + texto +
                 ", fecha=" + fecha +
                 ", registradoPor=" + registradoPor +

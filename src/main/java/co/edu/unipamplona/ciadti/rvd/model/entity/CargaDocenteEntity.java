@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -126,33 +128,33 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "CADO_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CARG_ID", insertable = false, updatable = false)
-    private List<CargaEntity> cargas;
+    private CargaEntity carga;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PEGE_ID", insertable = false, updatable = false)
-    private List<PersonaGeneralEntity> personasGenerales;
+    private PersonaGeneralEntity personaGeneral;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MOCO_ID", insertable = false, updatable = false)
-    private List<ModalidadContratacionEntity> modalidadesContratacion;
+    private ModalidadContratacionEntity modalidadContratacion;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CACA_ID", insertable = false, updatable = false)
-    private List<CategoriaCatedraticoEntity> categoriasCatedratico;
+    private CategoriaCatedraticoEntity categoriaCatedratico;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "FECO_ID", insertable = false, updatable = false)
-    private List<FechasConvocatoriaEntity> fechasConvocatoria;
+    private FechasConvocatoriaEntity fechaConvocatoria;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TINO_ID", insertable = false, updatable = false)
-    private List<TipoNovedadEntity> tiposNovedad;
+    private TipoNovedadEntity tipoNovedad;
 
-    @OneToMany
-    @JoinColumn(name = "CADO_IDNOVEDAD", insertable = false, updatable = false)
-    private List<CargaDocenteEntity> novedades;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CADO_IDNOVEDAD", referencedColumnName = "CADO_ID", insertable = false, updatable = false)
+    private CargaDocenteEntity novedad;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

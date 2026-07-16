@@ -15,10 +15,12 @@ import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.NamedStoredProcedureQuery;
@@ -79,17 +81,17 @@ public class FechasConvocatoriaEntity implements Serializable, Cloneable{
     @Column(name = "FECO_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
-    @JoinColumn(name = "COTC_ID",  insertable = false, updatable = false)
-    private List<ConvocatoriaTipoContratacionEntity> convocatoriaTipoContratacion;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "COTC_ID", insertable = false, updatable = false)
+    private ConvocatoriaTipoContratacionEntity convocatoriaTipoContratacion;
 
     /*@OneToMany
     @JoinColumn(name = "TIAC_ID",  insertable = false, updatable = false)
     private List<TipoActividadesEntity> tipoActividades;*/
 
-    @OneToMany
-    @JoinColumn(name = "CONV_ID",  insertable = false, updatable = false)
-    private List<ConvocatoriaEntity> convocatorias;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CONV_ID", insertable = false, updatable = false)
+    private ConvocatoriaEntity convocatoria;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

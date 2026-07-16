@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -99,13 +101,13 @@ public class ProgramaEntity implements Serializable, Cloneable {
     @Column(name = "PROG_CICLOPROPEDEUTICO")
     private Long cicloPropedeutico;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MODA_ID", insertable = false, updatable = false)
-    private List<ModalidadEntity> modalidades;
+    private ModalidadEntity modalidad;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "METO_ID", insertable = false, updatable = false)
-    private List<MetodologiaEntity> metodologias;
+    private MetodologiaEntity metodologia;
 
     /*@OneToMany
     @JoinColumn(name = "PROM_ID", insertable = false, updatable = false)

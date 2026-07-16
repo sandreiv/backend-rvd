@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -59,13 +61,13 @@ public class ConvocatoriaTipoContratacionEntity implements Serializable, Cloneab
     @Column(name = "COTC_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
-    @JoinColumn(name = "CONV_ID",  insertable = false, updatable = false)
-    private List<ConvocatoriaEntity> convocatorias;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CONV_ID", insertable = false, updatable = false)
+    private ConvocatoriaEntity convocatoria;
 
-    @OneToMany
-    @JoinColumn(name = "MOCO_ID",  insertable = false, updatable = false)
-    private List<ModalidadContratacionEntity> modalidadesContratacion;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "MOCO_ID", insertable = false, updatable = false)
+    private ModalidadContratacionEntity modalidadContratacion;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

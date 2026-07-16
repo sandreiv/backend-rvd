@@ -16,9 +16,9 @@ public interface RelacionConvocatoriaCoordinacionMapper {
     @Mapping(target = "valorAutorizado", ignore = true)
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
-    @Mapping(target = "convocatorias", ignore = true)
-    @Mapping(target = "coordinaciones", ignore = true)
-    @Mapping(target = "centrosCosto", ignore = true)
-    @Mapping(target = "estadosCarga", ignore = true)
+    @Mapping(target = "convocatoria", ignore = true)
+    @Mapping(target = "coordinacion", ignore = true)
+    @Mapping(target = "centroCosto", ignore = true)
+    @Mapping(target = "estadoCarga", ignore = true)
     CargaEntity toEntity(RelacionConvocatoriaCoordinacionDTO dto);
 }

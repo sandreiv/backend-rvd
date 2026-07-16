@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -37,7 +39,7 @@ public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable
     @Column(name = "FECO_ID", nullable = false)
     private Long idFechasConvocatoria;
 
-    @Column(name = "COORD_ID", nullable = false)
+    @Column(name = "COOR_ID", nullable = false)
     private Long idCoordinacion;
 
     @Column(name = "REXC_REGISTRADOPOR")
@@ -46,9 +48,13 @@ public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable
     @Column(name = "REXC_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "FECO_ID", insertable = false, updatable = false)
-    private List<FechasConvocatoriaEntity> fechasConvocatoria;
+    private FechasConvocatoriaEntity fechaConvocatoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "COOR_ID", insertable = false, updatable = false)
+    private CoordinacionesEntity coordinacion;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

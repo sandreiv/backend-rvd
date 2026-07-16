@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -59,25 +61,25 @@ public class DetalleCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "DECD_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CADO_ID", insertable = false, updatable = false)
-    private List<CargaDocenteEntity> cargasDocente;
+    private CargaDocenteEntity cargaDocente;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PROG_ID", insertable = false, updatable = false)
-    private List<ProgramaEntity> programas;
+    private ProgramaEntity programa;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "GRUP_ID", insertable = false, updatable = false)
-    private List<GrupoEntity> grupos;
+    private GrupoEntity grupo;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TIAC_ID", insertable = false, updatable = false)
-    private List<TipoActividadesEntity> tiposActividad;
+    private TipoActividadesEntity tipoActividad;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CECO_ID", insertable = false, updatable = false)
-    private List<CentroCostoEntity> centrosCosto;
+    private CentroCostoEntity centroCosto;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -69,9 +71,9 @@ public class PeriodoUniversidadEntity implements Serializable, Cloneable{
     private Date fechaCambio;
 
     
-    @OneToMany
-    @JoinColumn(name = "TPPA_ID",  insertable = false, updatable = false)
-    private List<TipoPeriodoAcademicoEntity> tipoPeriodoAcademico;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "TPPA_ID", insertable = false, updatable = false)
+    private TipoPeriodoAcademicoEntity tipoPeriodoAcademico;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

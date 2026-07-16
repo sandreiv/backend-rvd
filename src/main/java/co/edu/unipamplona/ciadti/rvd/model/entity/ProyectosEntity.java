@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -68,21 +70,21 @@ public class ProyectosEntity implements Serializable, Cloneable {
     @Column(name = "PROY_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COPR_ID", insertable = false, updatable = false)
-    private List<ConvocatoriaProyectosEntity> convocatoriasProyectos;
+    private ConvocatoriaProyectosEntity convocatoriaProyecto;
 
-    @OneToMany
-    @JoinColumn(name = "PROY_IDPROYECTO", insertable = false, updatable = false)
-    private List<ProyectosEntity> proyectosPadre;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PROY_IDPROYECTO", referencedColumnName = "PROY_ID", insertable = false, updatable = false)
+    private ProyectosEntity proyectoPadre;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TIPR_ID", insertable = false, updatable = false)
-    private List<TipoProyectoEntity> tiposProyecto;
+    private TipoProyectoEntity tipoProyecto;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COOR_ID", insertable = false, updatable = false)
-    private List<CoordinacionesEntity> coordinaciones;
+    private CoordinacionesEntity coordinacion;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -46,13 +48,13 @@ public class TipoActividadModalidadEntity implements Serializable, Cloneable{
     @Column(name = "TIAM_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MOCO_ID", insertable = false, updatable = false)
-    private List<ModalidadContratacionEntity> modalidadesContratacion;
+    private ModalidadContratacionEntity modalidadContratacion;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TIAC_ID", insertable = false, updatable = false)
-    private List<TipoActividadesEntity> tipoActividades;
+    private TipoActividadesEntity tipoActividad;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

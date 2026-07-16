@@ -13,6 +13,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -62,21 +64,21 @@ public class PersonaProyectoEntity implements Serializable, Cloneable {
     @Column(name = "PEPR_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PEGE_ID", insertable = false, updatable = false)
-    private List<PersonaGeneralEntity> personasGenerales;
+    private PersonaGeneralEntity personaGeneral;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PROY_ID", insertable = false, updatable = false)
-    private List<ProyectosEntity> proyectos;
+    private ProyectosEntity proyecto;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TIAC_ID", insertable = false, updatable = false)
-    private List<TipoActividadesEntity> tiposActividad;
+    private TipoActividadesEntity tipoActividad;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PEGE_IDFUNCIONARIO", insertable = false, updatable = false)
-    private List<PersonaGeneralEntity> funcionarios;
+    private PersonaGeneralEntity funcionario;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

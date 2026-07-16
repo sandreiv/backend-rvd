@@ -14,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.math.BigDecimal;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -85,25 +87,29 @@ public class CoordinacionesEntity implements Serializable, Cloneable {
     @Column(name = "COOR_FECHACAMBIO")
     private Date fechaCambio;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "COOR_IDPADRE", referencedColumnName = "COOR_ID", insertable = false, updatable = false)
+    private CoordinacionesEntity coordinacionPadre;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UNID_IDPADRE", insertable = false, updatable = false)
-    private List<UnidadEntity> unidadesPadre;
+    private UnidadEntity unidadPadre;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UNID_IDREGIONAL", insertable = false, updatable = false)
-    private List<UnidadEntity> unidadesRegional;
+    private UnidadEntity unidadRegional;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UNID_IDAREA", insertable = false, updatable = false)
-    private List<UnidadEntity> unidadesArea;
+    private UnidadEntity unidadArea;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "METO_ID", insertable = false, updatable = false)
-    private List<MetodologiaEntity> metodologias;
+    private MetodologiaEntity metodologia;
 
-    @OneToMany
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MODA_ID", insertable = false, updatable = false)
-    private List<ModalidadEntity> modalidades;
+    private ModalidadEntity modalidad;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

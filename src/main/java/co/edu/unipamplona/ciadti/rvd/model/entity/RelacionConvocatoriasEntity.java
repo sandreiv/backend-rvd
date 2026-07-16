@@ -12,6 +12,9 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 import java.io.Serializable;
 import java.util.Date;
 
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -43,6 +46,14 @@ public class RelacionConvocatoriasEntity implements Serializable, Cloneable {
 
     @Column(name = "RECO_FECHACAMBIO")
     private Date fechaCambio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "COPR_ID", insertable = false, updatable = false)
+    private ConvocatoriaProyectosEntity convocatoriaProyecto;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CONV_ID", insertable = false, updatable = false)
+    private ConvocatoriaEntity convocatoria;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

@@ -37,11 +37,11 @@ public interface DetalleCargaDocenteMapper {
     @Mapping(target = "horas", expression = "java(toHoras(detalle.horas()))")
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
-    @Mapping(target = "cargasDocente", ignore = true)
-    @Mapping(target = "programas", ignore = true)
-    @Mapping(target = "grupos", ignore = true)
-    @Mapping(target = "tiposActividad", ignore = true)
-    @Mapping(target = "centrosCosto", ignore = true)
+    @Mapping(target = "cargaDocente", ignore = true)
+    @Mapping(target = "programa", ignore = true)
+    @Mapping(target = "grupo", ignore = true)
+    @Mapping(target = "tipoActividad", ignore = true)
+    @Mapping(target = "centroCosto", ignore = true)
     DetalleCargaDocenteEntity toEntity(
             Long idCargaDocente, DetalleCargaDocenteItemDTO detalle);
 
