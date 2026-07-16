@@ -3,10 +3,14 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 import java.util.List;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
@@ -64,4 +68,20 @@ public interface CoordinacionService {
     List<DetalleCargaDocenteDTO> listDetailProfessorPreload(Long idCargaDocente);
 
     void updateDetailProfessorPreload(DetalleCargaDocenteDTO dto);
+
+    void saveCareerProfessorPreload(CargaDocentePlantaDTO dto);
+
+    void deleteProfessorActivity(Long idDetalleCargaDocente);
+
+    List<CoordinacionBusquedaDTO> searchCoordination(String nombre);
+
+    void saveCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto);
+
+    List<CoordinacionRestriccionDTO> listCoordinationRestriction(Long idConvocatoria);
+
+    void updateCoordinationRestriction(Long id, CoordinacionRestriccionFormularioDTO dto);
+
+    void deleteCoordinationRestriction(Long id, CoordinacionRestriccionDTO dto);
+
+    void bulkDeleteCoordinationRestriction(List<CoordinacionRestriccionDTO> restricciones);
 }

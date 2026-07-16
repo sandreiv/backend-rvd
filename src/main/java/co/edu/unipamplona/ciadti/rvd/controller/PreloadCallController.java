@@ -24,11 +24,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NivelEducativoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
+import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ModalidadContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NivelEducativoService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -44,14 +48,15 @@ public class PreloadCallController {
     private final ModalidadContratacionService modalidadContratacionService;
     private final PeriodoUniversidadService periodoUniversidadService;
     private final NivelEducativoService nivelEducativoService;
-
+    private final CoordinacionService coordinacionService;
+    
     @Operation(
         summary = "Obtiene la lista de convocatorias", 
         description = "Obtiene la lista de convocatorias"
     )
     @GetMapping("/list")
-    public ResponseEntity<?> callList() throws Exception {
-        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListWithDates();
+    public ResponseEntity<List<ConvocatoriaDTO>> callList(@RequestParam Long idPeriodoUniversidad) {
+        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListWithDates(idPeriodoUniversidad);
         return new ResponseEntity<>(callList, HttpStatus.OK);
     }
 
@@ -60,9 +65,7 @@ public class PreloadCallController {
         description = "Busca por documento y/o fragmento de nombre o apellido"
     )
     @GetMapping("/search-general-person")
-    public ResponseEntity<List<PersonaAutorizaConvocatoriaDTO>> searchGeneralPerson(
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) String documento) {
+    public ResponseEntity<List<PersonaAutorizaConvocatoriaDTO>> searchGeneralPerson(@RequestParam(required = false) String nombre, @RequestParam(required = false) String documento) {
         List<PersonaAutorizaConvocatoriaDTO> personas = convocatoriaPrecargaService.searchGeneralPerson(nombre, documento);
         return new ResponseEntity<>(personas, HttpStatus.OK);
     }
@@ -146,6 +149,65 @@ public class PreloadCallController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Busca coordinaciones",
+        description = "Busca coordinaciones"
+    )
+    @GetMapping("/search-coordination")
+    public ResponseEntity<List<CoordinacionBusquedaDTO>> searchCoordination(@RequestParam(required = false) String nombre) {
+        List<CoordinacionBusquedaDTO> coordinations = coordinacionService.searchCoordination(nombre);
+        return new ResponseEntity<>(coordinations, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Guarda una restricción por coordinación",
+        description = "Guarda una restricción por coordinación"
+    )
+    @PostMapping("/save-coordination-restriction")
+    public ResponseEntity<Void> saveCoordinationRestriction(@RequestBody CoordinacionRestriccionFormularioDTO dto){
+        coordinacionService.saveCoordinationRestriction(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Lista las restricciones por coordinación",
+        description = "Lista las restricciones por coordinación"
+    )
+    @GetMapping("/list-coordination-restriction")
+    public ResponseEntity<List<CoordinacionRestriccionDTO>> listCoordinationRestriction(@RequestParam Long idConvocatoria) {
+        List<CoordinacionRestriccionDTO> restrictions = coordinacionService.listCoordinationRestriction(idConvocatoria);
+        return new ResponseEntity<>(restrictions, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Actualiza una restricción por coordinación",
+        description = "Actualiza una restricción por coordinación"
+    )
+    @PutMapping("/update-coordination-restriction/{id}")
+    public ResponseEntity<Void> updateCoordinationRestriction(@PathVariable Long id, @RequestBody CoordinacionRestriccionFormularioDTO dto) {
+        coordinacionService.updateCoordinationRestriction(id, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Elimina una restricción por coordinación",
+        description = "Elimina una restricción por coordinación"
+    )
+    @PostMapping("/delete-coordination-restriction/{id}")
+    public ResponseEntity<Void> deleteCoordinationRestriction(@PathVariable Long id, @RequestBody CoordinacionRestriccionDTO dto) {
+        coordinacionService.deleteCoordinationRestriction(id, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Elimina restricciones por coordinación masivas",
+        description = "Elimina restricciones por coordinación masivas"
+    )
+    @PostMapping("/delete-bulk-coordination-restriction")
+    public ResponseEntity<Void> bulkDeleteCoordinationRestriction(@RequestBody List<CoordinacionRestriccionDTO> restricciones) {
+        coordinacionService.bulkDeleteCoordinationRestriction(restricciones);
+        return ResponseEntity.ok().build();
+    }
 
 }
 /* 02/06/2026 @:Sebastian Jaimes */

@@ -17,7 +17,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 
 public interface ConvocatoriaPrecargaService {
 
-    List<ConvocatoriaDTO> findCallListWithDates();
+    List<ConvocatoriaDTO> findCallListWithDates(Long idPeriodoUniversidad);
 
     List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(String nombre, String documento);
 

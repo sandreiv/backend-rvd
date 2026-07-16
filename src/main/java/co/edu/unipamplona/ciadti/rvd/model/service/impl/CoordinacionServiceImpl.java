@@ -27,19 +27,23 @@ import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
-import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.RestriccionPorCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
@@ -55,15 +59,19 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CategoriaModalidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionPorCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaModalidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
@@ -72,15 +80,18 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosCategoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosVigenciaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RelacionCargaProyectoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionPorCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
@@ -105,9 +116,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final PuntosVigenciaRepository puntosVigenciaRepository;
     private final PuntosCategoriaRepository puntosCategoriaRepository;
     private final CategoriaCatedraticoRepository categoriaCatedraticoRepository;
+    private final CategoriaModalidadRepository categoriaModalidadRepository;
     private final EscalafonRepository escalafonRepository;
     private final CoordinacionMapper coordinacionMapper;
-    private final RelacionConvocatoriaCoordinacionMapper relacionMapper;
     private final DocentePlantaCoordinacionMapper docentePlantaCoordinacionMapper;
     private final DocentePreasignacionMapper docentePreasignacionMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
@@ -123,6 +134,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final TipoActividadCriterioMapper tipoActividadCriterioMapper;
     private final TipoActividadMapper tipoActividadMapper;
     private final MateriaRepository materiaRepository;
+    private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final MateriaMapper materiaMapper;
     private final AsociacionCoordinacionRepository asociacionCoordinacionRepository;
     private final GrupoRepository grupoRepository;
@@ -133,6 +145,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final RelacionCargaProyectoRepository relacionCargaProyectoRepository;
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
+    private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
+    private final RestriccionPorCoordinacionMapper restriccionPorCoordinacionMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -317,7 +331,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<DocenteCoordinacionDTO> listProfessors(Long idCoordinacion, Long idModalidadContratacion) {
-        return docenteCoordinacionMapper.toDtoList(cargaDocenteRepository.findProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion));
+        List<DocenteCargaCoordinacionProjection> projections;
+        if (isModalidadPlanta(idModalidadContratacion)) {
+            projections = cargaDocenteRepository.findPlantProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion);
+        } else {
+            projections = cargaDocenteRepository.findProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion);
+        }
+        return docenteCoordinacionMapper.toDtoList(projections);
+    }
+
+    private boolean isModalidadPlanta(Long idModalidadContratacion) {
+        return modalidadContratacionRepository.findById(idModalidadContratacion)
+                .map(modalidad -> modalidad.getNombre() != null
+                        && "planta".equalsIgnoreCase(modalidad.getNombre().trim()))
+                .orElse(false);
     }
 
     @Override
@@ -522,9 +549,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 detallePersistido.getIdTipoActividad());
     }
 
-    private void validateDetalleActividad(DetalleCargaDocenteActividadDTO actividad) {
-        validateDetalleActividad(actividad, null);
-    }
 
     private void validateDetalleActividad(
             DetalleCargaDocenteActividadDTO actividad,
@@ -602,4 +626,185 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             relacionCargaProyectoRepository.save(entity);
         }
     }
+
+    @Override
+    @Transactional
+    public void saveCareerProfessorPreload(CargaDocentePlantaDTO dto) {
+        validateCareerProfessorPreload(dto);
+
+        if (cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
+                dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion())) {
+            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta carga y modalidad");
+        }
+
+        FechasConvocatoriaEntity fecha = fechasConvocatoriaRepository
+                .findByConvocatoriaAndModalidad(
+                        dto.idConvocatoria(), dto.idModalidadContratacion())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe fecha de convocatoria para la modalidad seleccionada"));
+
+        CategoriaModalidadEntity categoriaModalidad = categoriaModalidadRepository
+                .findByIdModalidadContratacion(dto.idModalidadContratacion())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe categoria asociada a la modalidad de contratacion"));
+
+        CargaDocenteEntity entity = cargaDocenteMapper.toEntityFromPlanta(dto);
+        entity.setIdFechasConvocatoria(fecha.getId());
+        entity.setIdCategoriaCatedratico(categoriaModalidad.getIdCategoriaCatedratico());
+        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setFechaCambio(new Date());
+        entity.setEstado("0");
+        entity.setVigente("1");
+        cargaDocenteRepository.save(entity);
+    }
+
+    private void validateCareerProfessorPreload(CargaDocentePlantaDTO dto) {
+        if (dto == null
+                || dto.idCarga() == null
+                || dto.idConvocatoria() == null
+                || dto.idPersonaGeneral() == null
+                || dto.idModalidadContratacion() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga, convocatoria, persona y modalidad son obligatorias");
+        }
+
+        if (!cargaRepository.existsByIdAndIdConvocatoria(
+                dto.idCarga(), dto.idConvocatoria())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga no pertenece a la convocatoria indicada");
+        }
+
+        if (!personaGeneralRepository.existsById(dto.idPersonaGeneral())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la persona general con id " + dto.idPersonaGeneral());
+        }
+    }
+
+    @Override
+    public void deleteProfessorActivity(Long idDetalleCargaDocente) {
+        if (idDetalleCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
+        }
+        if (!detalleCargaDocenteRepository.existsById(idDetalleCargaDocente)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + idDetalleCargaDocente);
+        }
+        detalleCargaDocenteRepository.deleteByProcedure(idDetalleCargaDocente, REGISTRADO_POR);
+    }
+
+    @Override
+    public List<CoordinacionBusquedaDTO> searchCoordination(String nombre) {
+        String param = normalizeParam(nombre);
+        if(param == null || param.length() < 2) {
+            return Collections.emptyList();
+        }
+
+        return coordinacionMapper.toBusquedaDtoList(coordinacionRepository.searchCoordination(param));
+    }
+
+    @Override
+    @Transactional
+    public void saveCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto) {
+
+        if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinacion con id " + dto.idCoordinacion());
+        }
+
+        if (!fechasConvocatoriaRepository.existsById(dto.idFechasConvocatoria())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la fecha de convocatoria con id " + dto.idFechasConvocatoria());
+        }
+
+        if (restriccionPorCoordinacionRepository.existsByIdCoordinacionAndIdFechasConvocatoria(dto.idCoordinacion(), dto.idFechasConvocatoria())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Ya existe una restriccion para la coordinacion y fecha indicadas");
+        }
+
+        RestriccionPorCoordinacionEntity restriccion = restriccionPorCoordinacionMapper.toEntity(dto);
+        restriccion.setRegistradoPor(REGISTRADO_POR);
+        restriccion.setFechaCambio(new Date());
+        restriccionPorCoordinacionRepository.save(restriccion);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CoordinacionRestriccionDTO> listCoordinationRestriction(Long idConvocatoria) {
+        return restriccionPorCoordinacionMapper.toDtoList(
+                restriccionPorCoordinacionRepository.findAllWithCoordinacion(idConvocatoria));
+    }
+
+    @Override
+    @Transactional
+    public void updateCoordinationRestriction(
+            Long id,
+            CoordinacionRestriccionFormularioDTO dto) {
+        validateCoordinationRestriction(dto);
+
+        RestriccionPorCoordinacionEntity entity = restriccionPorCoordinacionRepository
+                .findById(id)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la restriccion con id " + id));
+
+        if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la coordinacion con id " + dto.idCoordinacion());
+        }
+        if (!fechasConvocatoriaRepository.existsById(dto.idFechasConvocatoria())) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la fecha de convocatoria con id "
+                            + dto.idFechasConvocatoria());
+        }
+        if (restriccionPorCoordinacionRepository
+                .existsByIdCoordinacionAndIdFechasConvocatoriaAndIdNot(
+                        dto.idCoordinacion(),
+                        dto.idFechasConvocatoria(),
+                        id)) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "Ya existe una restriccion para la coordinacion y fecha indicadas");
+        }
+
+        restriccionPorCoordinacionMapper.updateEntity(dto, entity);
+        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setFechaCambio(new Date());
+        restriccionPorCoordinacionRepository.save(entity);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCoordinationRestriction(Long id, CoordinacionRestriccionDTO dto) {
+        if (dto == null || dto.id() == null || !dto.id().equals(id)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id de la restriccion no coincide");
+        }
+        if (!restriccionPorCoordinacionRepository.existsById(id)) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la restriccion con id " + id);
+        }
+        restriccionPorCoordinacionRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void bulkDeleteCoordinationRestriction(
+            List<CoordinacionRestriccionDTO> restricciones) {
+        if (restricciones == null || restricciones.isEmpty()) {
+            return;
+        }
+        for (CoordinacionRestriccionDTO restriccion : restricciones) {
+            deleteCoordinationRestriction(restriccion.id(), restriccion);
+        }
+    }
+
+    private void validateCoordinationRestriction(
+            CoordinacionRestriccionFormularioDTO dto) {
+        if (dto == null
+                || dto.idCoordinacion() == null
+                || dto.idFechasConvocatoria() == null
+                || dto.fechaInicio() == null
+                || dto.fechaFin() == null
+                || !StringUtils.hasText(dto.estado())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La coordinacion, fecha de convocatoria, fechas y estado son obligatorios");
+        }
+    }
+
 }

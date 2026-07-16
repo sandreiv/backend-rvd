@@ -10,6 +10,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NivelEducativoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
+import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 
 @Mapper(
         componentModel = "spring",
@@ -30,6 +31,10 @@ public interface ConvocatoriaMapper {
             source = "autoriza.personaNaturalGeneral",
             target = "nombreCompleto",
             qualifiedByName = "buildNombreCompleto")
+    @Mapping(
+            source = "fechaCnv",
+            target = "estado",
+            qualifiedByName = "resolveEstadoByFechas")
     ConvocatoriaDTO toListDto(
             ConvocatoriaEntity convocatoria,
             PeriodoUniversidadEntity periodo,
@@ -46,5 +51,14 @@ public interface ConvocatoriaMapper {
                 ? periodo.getPeriodo()
                 : "";
         return periodo.getAno() + " - " + periodoStr;
+    }
+
+    @Named("resolveEstadoByFechas")
+    default String resolveEstadoByFechas(FechasConvocatoriaEntity fechaCnv) {
+        if (fechaCnv == null) {
+            return "1";
+        }
+        return FechasConvocatoriaCalculator.resolveEstadoByFechaFin(
+                fechaCnv.getFechaFin());
     }
 }

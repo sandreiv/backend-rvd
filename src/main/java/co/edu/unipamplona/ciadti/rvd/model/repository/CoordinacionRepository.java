@@ -268,4 +268,13 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
     );
 
 
+    @Query(value = """
+            SELECT
+                COOR.*
+            FROM RVD.COORDINACIONES COOR
+            WHERE UPPER(COOR.COOR_NOMBRE) LIKE UPPER('%' || :nombre || '%')
+            ORDER BY COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionesEntity> searchCoordination(String nombre);
+
 }

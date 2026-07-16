@@ -1,8 +1,18 @@
+/**
+ * Aplicación: rvd
+ * Archivo: FechasConvocatoriaRepository.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 14/07/2026
+ * Modificaciones:
+ * 14/07/2026 - Sebastian Jaimes - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -93,4 +103,16 @@ public interface FechasConvocatoriaRepository
     List<FechaModalidadProjection> findByCoordinationAndModality(
             @Param("coorId") Long coorId,
             @Param("mocoId") Long mocoId);
+
+    @Query("""
+            SELECT feco
+            FROM FechasConvocatoriaEntity feco
+            JOIN ConvocatoriaTipoContratacionEntity cotc
+                ON feco.idConvocatoriaTipoContratacion = cotc.id
+            WHERE cotc.idConvocatoria = :idConvocatoria
+                AND cotc.idModalidadContratacion = :idModalidadContratacion
+            """)
+    Optional<FechasConvocatoriaEntity> findByConvocatoriaAndModalidad(
+            @Param("idConvocatoria") Long idConvocatoria,
+            @Param("idModalidadContratacion") Long idModalidadContratacion);
 }

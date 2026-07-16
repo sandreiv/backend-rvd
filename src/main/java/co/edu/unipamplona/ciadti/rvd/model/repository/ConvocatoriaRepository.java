@@ -33,9 +33,10 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             INNER JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.CONV_ID = CONV.CONV_ID
             WHERE FECO.FECO_CODIGO = 'CNV'
+                AND CONV.PEUN_ID = :idPeriodoUniversidad
             ORDER BY CONV.CONV_ID
             """, nativeQuery = true)
-    List<ConvocatoriaEntity> findCallListWithDates();
+    List<ConvocatoriaEntity> findCallListWithDates(@Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
     @Query(value = """
             SELECT
@@ -153,6 +154,18 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             ORDER BY FECO.FECO_ID
             """, nativeQuery = true)
     List<FechasConvocatoriaEntity> findModalidadesFechasByConvocatoriaId(
+            @Param("id") Long id);
+
+    @Modifying
+    @Query("""
+            update ConvocatoriaEntity c set
+            c.estado = :estado,
+            c.fechaCambio = :fechaCambio
+            where c.id = :id
+            """)
+    int updateEstado(
+            @Param("estado") String estado,
+            @Param("fechaCambio") Date fechaCambio,
             @Param("id") Long id);
 
     @Modifying

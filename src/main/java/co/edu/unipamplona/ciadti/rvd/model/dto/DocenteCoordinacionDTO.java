@@ -21,5 +21,6 @@ public record DocenteCoordinacionDTO(
     String valorHora,
     String puntos,
     String valorPunto,
-    String semanas
+    String semanas,
+    Boolean tieneCarga
 ) {}

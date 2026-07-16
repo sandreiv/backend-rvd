@@ -19,7 +19,6 @@ public class PeriodoUniversidadServiceImpl implements PeriodoUniversidadService 
 
     @Override
     public List<PeriodoUniversidadDTO> findUniversityPeriodList() {
-        return periodoUniversidadMapper.toDtoList(
-                periodoUniversidadRepository.findAllUniversityPeriods());
+        return periodoUniversidadMapper.toDtoList(periodoUniversidadRepository.findAllUniversityPeriods());
     }
 }
