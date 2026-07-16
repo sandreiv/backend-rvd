@@ -12,6 +12,7 @@ import org.mapstruct.Named;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EstadoCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MetodologiaDTO;
@@ -20,6 +21,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NivelEducativoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 
 @Mapper(componentModel = "spring")
@@ -196,4 +198,8 @@ public interface CoordinacionMapper {
                 projection.getNombreEstadoCarga(),
                 projection.getDescripcionEstadoCarga());
     }
+
+    CoordinacionBusquedaDTO toBusquedaDto(CoordinacionesEntity entity);
+
+    List<CoordinacionBusquedaDTO> toBusquedaDtoList(List<CoordinacionesEntity> entities);
 }

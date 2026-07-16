@@ -1,9 +1,11 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
@@ -88,4 +90,8 @@ public interface DetalleCargaDocenteRepository
             """, nativeQuery = true)
     List<DetalleCargaDocenteListadoProjection> findByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
+
+    
+    @Procedure(name = "DetalleCargaDocenteEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(@Param("P_DECD_ID") Long id, @Param("P_DECD_REGISTRADOPOR") String registradoPor);
 }

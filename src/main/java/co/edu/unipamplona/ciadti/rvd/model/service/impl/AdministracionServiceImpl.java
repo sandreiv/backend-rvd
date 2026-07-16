@@ -38,7 +38,6 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaCoordinacionRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service

@@ -20,8 +20,7 @@ import org.springframework.data.repository.query.Param;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 
-public interface CargaDocenteRepository
-        extends JpaRepository<CargaDocenteEntity, Long> {
+public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity, Long> {
 
     @Query(value = """
                 SELECT
@@ -81,6 +80,61 @@ public interface CargaDocenteRepository
             @Param("idCoordinacion") Long idCoordinacion,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
 
+    @Query(value = """
+                SELECT
+                PEGE.PEGE_ID AS idPersonaGeneral,
+                TRIM(
+                TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                || ' ' ||
+                TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                ) AS nombreCompleto,
+                CADO.CADO_ID AS idCargaDocente,
+                CADO.CADO_ESTADO AS estado,
+                CADO.CARG_ID AS idCarga,
+                CADO.MOCO_ID AS idModalidadContratacion,
+                CADO.CACA_ID AS idCategoriaCatedratico,
+                CADO.CADO_FECHAINICIO AS cargaFechaInicio,
+                CADO.CADO_FECHAFIN AS cargaFechaFin,
+                CADO.CADO_VALORCONTRATO AS valorContrato,
+                CADO.CADO_VALORPRESTACIONES AS valorPrestaciones,
+                CADO.CADO_SALARIO AS asignacionSalarial,
+                CADO.CADO_TOTALCONTRATO AS totalContrato,
+                CADO.CADO_VALORHORA AS valorHora,
+                CADO.CADO_PUNTOS AS puntos,
+                CADO.CADO_VALORPUNTO AS valorPunto,
+                CADO.CADO_SEMANAS AS semanas,
+                FECO.FECO_ID AS idFechasConvocatoria,
+                FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
+                FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
+                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin
+                FROM RVD.DOCENTESPLANTACOORDINACION DOPC
+                INNER JOIN GENERAL.PERSONAGENERAL PEGE
+                ON PEGE.PEGE_ID = DOPC.PEGE_ID
+                INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+                LEFT JOIN RVD.CARGADOCENTE CADO
+                ON CADO.PEGE_ID = DOPC.PEGE_ID
+                AND CADO.MOCO_ID = :idModalidadContratacion
+                AND EXISTS (
+                    SELECT 1
+                    FROM RVD.CARGA CARG
+                    WHERE CARG.CARG_ID = CADO.CARG_ID
+                        AND CARG.COOR_ID = DOPC.COOR_ID
+                )
+                LEFT JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = CADO.FECO_ID
+                WHERE DOPC.COOR_ID = :idCoordinacion
+                ORDER BY
+                UPPER(TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                )) NULLS LAST
+            """, nativeQuery = true)
+    List<DocenteCargaCoordinacionProjection> findPlantProfessorsByCoordinationAndModality(
+            @Param("idCoordinacion") Long idCoordinacion,
+            @Param("idModalidadContratacion") Long idModalidadContratacion);
+
     @Procedure(name = "CargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(
             @Param("P_CADO_ID") Long id,
@@ -92,4 +146,7 @@ public interface CargaDocenteRepository
     boolean existsByIdCarga(Long idCarga);    
 
 
+
+    boolean existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
+            Long idPersonaGeneral, Long idCarga, Long idModalidadContratacion);
 }

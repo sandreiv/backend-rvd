@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.query.Procedure;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdministracionListadoProjection;
@@ -267,5 +269,14 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             @Param("P_COOR_REGISTRADOPOR") String registradoPor
     );
 
+
+    @Query(value = """
+            SELECT
+                COOR.*
+            FROM RVD.COORDINACIONES COOR
+            WHERE UPPER(COOR.COOR_NOMBRE) LIKE UPPER('%' || :nombre || '%')
+            ORDER BY COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionesEntity> searchCoordination(String nombre);
 
 }

@@ -13,8 +13,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PersonaCoordinacionListadoProjection;
 
-public interface PersonaCoordinacionRepository
-        extends JpaRepository<PersonaCoordinacionEntity, PersonaCoordinacionEntityId> {
+public interface PersonaCoordinacionRepository extends JpaRepository<PersonaCoordinacionEntity, PersonaCoordinacionEntityId> {
 
     @Query(value = """
             SELECT

@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -24,6 +25,19 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureParameter;
+
+@NamedStoredProcedureQuery(
+    name = "DetalleCargaDocenteEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_DETALLECARGADOCENTE",
+    parameters = {
+        @StoredProcedureParameter(name = "P_DECD_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_DECD_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
+    }
+)
 @Getter
 @Setter
 @Entity

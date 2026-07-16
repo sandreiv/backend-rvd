@@ -27,7 +27,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "RESTRICCIONPORCOORDINACION", schema = "RVD")
+@Table(name = "RESTRICCIONXCOORDINACION", schema = "RVD")
 public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,8 +37,17 @@ public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable
     @Column(name = "FECO_ID", nullable = false)
     private Long idFechasConvocatoria;
 
-    @Column(name = "COORD_ID", nullable = false)
+    @Column(name = "COOR_ID", nullable = false)
     private Long idCoordinacion;
+
+    @Column(name = "REXC_FECHAINICIO", nullable = false)
+    private Date fechaInicio;
+
+    @Column(name = "REXC_FECHAFIN", nullable = false)
+    private Date fechaFin;
+
+    @Column(name = "REXC_ESTADO", nullable = false)
+    private String estado;
 
     @Column(name = "REXC_REGISTRADOPOR")
     private String registradoPor;
@@ -61,6 +70,9 @@ public class RestriccionPorCoordinacionEntity implements Serializable, Cloneable
                 "id=" + id +
                 ", idFechasConvocatoria=" + idFechasConvocatoria +
                 ", idCoordinacion=" + idCoordinacion +
+                ", fechaInicio=" + fechaInicio +
+                ", fechaFin=" + fechaFin +
+                ", estado=" + estado +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

@@ -28,6 +28,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
@@ -167,7 +168,10 @@ public class CoordinationController {
 
     @Operation(
         summary = "Lista los docentes de una coordinacion según la modalidad de contratacion",
-        description = "Lista los docentes de una coordinacion según la modalidad de contratacion"
+        description = """
+            Si la modalidad es planta: lista todos los de DOCENTESPLANTACOORDINACION
+            Para otras modalidades: solo docentes con registro en CARGADOCENTE.
+            """
     )
     @GetMapping("/list-professors-modality")
     public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCoordinacion, @RequestParam Long idModalidadContratacion) {
@@ -294,4 +298,29 @@ public class CoordinationController {
         coordinacionService.updateDetailProfessorPreload(dto);
         return ResponseEntity.ok().build();
     }
+
+    @Operation(
+        summary = "Guarda la carga de un docente de planta de una coordinacion",
+        description = "Guarda la carga de un docente de planta de una coordinacion"
+    )
+    @PostMapping("/save-career-professor-preload")
+    public ResponseEntity<Void> saveCareerProfessorPreload(@RequestBody CargaDocentePlantaDTO dto) {
+        coordinacionService.saveCareerProfessorPreload(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Elimina un detalle carga docente (actividad) de un docente",
+        description = "Elimina un detalle carga docente (actividad) de un docente"
+    )
+    @DeleteMapping("/delete-professor-activity/{idDetalleCargaDocente}")
+    public ResponseEntity<Void> deleteProfessorActivity(@PathVariable Long idDetalleCargaDocente) {
+        coordinacionService.deleteProfessorActivity(idDetalleCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
+
+
+
+
 }
