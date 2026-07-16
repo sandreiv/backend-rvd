@@ -60,21 +60,44 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private final ConvocatoriaTipoContratacionFormularioMapper convocatoriaTipoContratacionFormularioMapper;
 
     @Override
-    @Transactional(readOnly = true)
-    public List<ConvocatoriaDTO> findCallListWithDates() {
-        return convocatoriaRepository.findCallListWithDates().stream()
-                .map(convocatoria -> convocatoriaMapper.toListDto(
-                        convocatoria,
-                        convocatoriaRepository.findPeriodoEntityByConvocatoriaId(
-                                convocatoria.getId()),
-                        convocatoriaRepository.findNivelEntityByConvocatoriaId(
-                                convocatoria.getId()),
-                        convocatoriaRepository.findFechaCnvByConvocatoriaId(
-                                convocatoria.getId()),
-                        personaGeneralRepository.findGeneralPersonById(
-                                        convocatoria.getIdPersonaGeneral())
-                                .orElse(null)))
+    @Transactional
+    public List<ConvocatoriaDTO> findCallListWithDates(Long idPeriodoUniversidad) {
+        return convocatoriaRepository.findCallListWithDates(idPeriodoUniversidad)
+                .stream()
+                .map(this::toListDtoAndSyncEstado)
                 .collect(Collectors.toList());
+    }
+
+    private ConvocatoriaDTO toListDtoAndSyncEstado(ConvocatoriaEntity convocatoria) {
+        FechasConvocatoriaEntity fechaCnv = convocatoriaRepository
+                .findFechaCnvByConvocatoriaId(convocatoria.getId());
+        syncEstadoVencido(convocatoria, fechaCnv);
+        return convocatoriaMapper.toListDto(
+                convocatoria,
+                convocatoriaRepository.findPeriodoEntityByConvocatoriaId(
+                        convocatoria.getId()),
+                convocatoriaRepository.findNivelEntityByConvocatoriaId(
+                        convocatoria.getId()),
+                fechaCnv,
+                personaGeneralRepository.findGeneralPersonById(
+                                convocatoria.getIdPersonaGeneral())
+                        .orElse(null));
+    }
+
+    private void syncEstadoVencido(
+            ConvocatoriaEntity convocatoria,
+            FechasConvocatoriaEntity fechaCnv) {
+        if (fechaCnv == null
+                || !FechasConvocatoriaCalculator.isVencida(fechaCnv.getFechaFin())) {
+            return;
+        }
+        if ("0".equals(convocatoria.getEstado())) {
+            return;
+        }
+        Date ahora = new Date();
+        convocatoriaRepository.updateEstado("0", ahora, convocatoria.getId());
+        convocatoria.setEstado("0");
+        convocatoria.setFechaCambio(ahora);
     }
 
     @Override

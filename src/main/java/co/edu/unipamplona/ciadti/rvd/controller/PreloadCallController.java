@@ -49,13 +49,14 @@ public class PreloadCallController {
     private final PeriodoUniversidadService periodoUniversidadService;
     private final NivelEducativoService nivelEducativoService;
     private final CoordinacionService coordinacionService;
+    
     @Operation(
         summary = "Obtiene la lista de convocatorias", 
         description = "Obtiene la lista de convocatorias"
     )
     @GetMapping("/list")
-    public ResponseEntity<?> callList() throws Exception {
-        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListWithDates();
+    public ResponseEntity<List<ConvocatoriaDTO>> callList(@RequestParam Long idPeriodoUniversidad) {
+        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListWithDates(idPeriodoUniversidad);
         return new ResponseEntity<>(callList, HttpStatus.OK);
     }
 
@@ -64,9 +65,7 @@ public class PreloadCallController {
         description = "Busca por documento y/o fragmento de nombre o apellido"
     )
     @GetMapping("/search-general-person")
-    public ResponseEntity<List<PersonaAutorizaConvocatoriaDTO>> searchGeneralPerson(
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) String documento) {
+    public ResponseEntity<List<PersonaAutorizaConvocatoriaDTO>> searchGeneralPerson(@RequestParam(required = false) String nombre, @RequestParam(required = false) String documento) {
         List<PersonaAutorizaConvocatoriaDTO> personas = convocatoriaPrecargaService.searchGeneralPerson(nombre, documento);
         return new ResponseEntity<>(personas, HttpStatus.OK);
     }

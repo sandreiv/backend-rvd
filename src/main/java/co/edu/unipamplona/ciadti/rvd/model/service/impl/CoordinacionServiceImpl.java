@@ -27,7 +27,6 @@ import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
-import co.edu.unipamplona.ciadti.rvd.mapper.RelacionConvocatoriaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RestriccionPorCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
@@ -120,7 +119,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CategoriaModalidadRepository categoriaModalidadRepository;
     private final EscalafonRepository escalafonRepository;
     private final CoordinacionMapper coordinacionMapper;
-    private final RelacionConvocatoriaCoordinacionMapper relacionMapper;
     private final DocentePlantaCoordinacionMapper docentePlantaCoordinacionMapper;
     private final DocentePreasignacionMapper docentePreasignacionMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;

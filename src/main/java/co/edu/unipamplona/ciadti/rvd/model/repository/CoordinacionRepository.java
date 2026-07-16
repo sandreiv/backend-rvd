@@ -9,8 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.query.Procedure;
 
-import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdministracionListadoProjection;

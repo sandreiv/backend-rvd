@@ -19,6 +19,7 @@ public record ConvocatoriaDTO(
     String nivelEducativo,
     Date fechaInicio,
     Date fechaFin,
-    String nombreCompleto
+    String nombreCompleto,
+    String estado
 ) {}
 /* 03/06/2026 @:Sebastian Jaimes */
