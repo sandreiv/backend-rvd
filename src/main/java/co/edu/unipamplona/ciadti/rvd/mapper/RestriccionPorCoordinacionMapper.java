@@ -19,7 +19,8 @@ public interface RestriccionPorCoordinacionMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
-    @Mapping(target = "fechasConvocatoria", ignore = true)
+    @Mapping(target = "fechaConvocatoria", ignore = true)
+    @Mapping(target = "coordinacion", ignore = true)
     RestriccionPorCoordinacionEntity toEntity(CoordinacionRestriccionFormularioDTO dto);
 
     @InheritConfiguration(name = "toEntity")
