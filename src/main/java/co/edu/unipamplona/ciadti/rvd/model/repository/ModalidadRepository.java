@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: ModalidadRepository.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 17/07/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
@@ -21,3 +31,5 @@ public interface ModalidadRepository extends JpaRepository<ModalidadEntity, Long
             """, nativeQuery = true)
     List<CatalogoAdministracionProjection> findAdministrationOptions();
 }
+
+/* 17/07/2026 @:Daniel Arias */

@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: DetalleCargaDocenteMapper.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.mapper
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 17/07/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
 import java.util.ArrayList;
@@ -385,3 +395,5 @@ public interface DetalleCargaDocenteMapper {
         return Long.valueOf(horas.trim());
     }
 }
+
+/* 17/07/2026 @:Daniel Arias */

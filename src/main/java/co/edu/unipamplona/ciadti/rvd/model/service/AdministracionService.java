@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: AdministracionService.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.service
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 17/07/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import java.util.List;
@@ -56,3 +66,5 @@ public interface AdministracionService {
     void deleteBulkPlantProfessorCoordinations(List<PersonaCoordinacionClaveDTO> registros);
     
 }
+
+/* 17/07/2026 @:Daniel Arias */

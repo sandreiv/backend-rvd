@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: CoordinationManagementController.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.controller
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 17/07/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.controller.basicTables;
 
 import java.util.List;
@@ -314,3 +324,5 @@ public class CoordinationManagementController {
 
 
 }
+
+/* 17/07/2026 @:Daniel Arias */

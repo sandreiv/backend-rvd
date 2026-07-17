@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: AdministracionServiceImpl.java
+ * Paquete: Paquete: co.edu.unipamplona.ciadti.rvd.model.service.impl
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 17/07/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.util.Date;
@@ -533,3 +543,5 @@ public class AdministracionServiceImpl implements AdministracionService {
 
 
 }
+
+/* 17/07/2026 @:Daniel Arias */

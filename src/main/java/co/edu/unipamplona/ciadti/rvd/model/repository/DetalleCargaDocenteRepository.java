@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: DetalleCargaDocenteRepository.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 17/07/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.math.BigDecimal;
@@ -95,3 +105,5 @@ public interface DetalleCargaDocenteRepository
     @Procedure(name = "DetalleCargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(@Param("P_DECD_ID") Long id, @Param("P_DECD_REGISTRADOPOR") String registradoPor);
 }
+
+/* 17/07/2026 @:Daniel Arias */
