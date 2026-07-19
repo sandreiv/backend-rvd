@@ -29,3 +29,16 @@ springdoc:
 server:
   servlet:
     context-path: /rvd
+
+logging:
+  level:
+    root: INFO
+    co.edu.unipamplona.ciadti.rvd: DEBUG
+  file:
+    path: C:/rvd/logs #TODO: Cambiar a la ruta de logs !!!!!!
+  size-alert:
+    threshold-bytes: 1073741824 # 1 GB
+    check-ms: 3600000 # cada 1 hora
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

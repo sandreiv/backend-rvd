@@ -319,6 +319,16 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+    /*@Operation(
+        summary = "Obtiene el total de una preasignación para una coordinación en una convocatoria",
+        description = "Obtiene el total de una preasignación para una coordinación en una convocatoria"
+    )
+    @GetMapping("/total-preassignment")
+    public ResponseEntity<TotalPreassignmentDTO> getTotalPreassignment(@RequestParam Long idCoordinacion, @RequestParam Long idConvocatoria) {
+        TotalPreassignmentDTO total = coordinacionService.getTotalPreassignment(idCoordinacion, idConvocatoria);
+        return new ResponseEntity<>(total, HttpStatus.OK);
+    }*/
+
 
 
 
