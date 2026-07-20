@@ -322,16 +322,11 @@ public class CoordinationController {
 
     @Operation(
         summary = "Obtiene el total de una preasignación por carga",
-        description = """
-            Retorna totales de docentes, prestaciones, contratos y preasignación,
-            además de las horas agrupadas por tipo de actividad (FAD, FAI, CTEI, ISU, AC)
-            y el total de horas.
-            """
+        description = "Retorna totales de docentes, prestaciones, contratos y preasignación,además de las horas agrupadas por tipo de actividad y el total de horas"
     )
-    @GetMapping("/total-preassignment")
-    public ResponseEntity<TotalPreasignacionDTO> getTotalPreassignment(
-            @RequestParam Long idCarga) {
-        TotalPreasignacionDTO total = coordinacionService.getTotalPreassignment(idCarga);
+    @GetMapping("/total-preload")
+    public ResponseEntity<TotalPreasignacionDTO> getTotalPreload(@RequestParam Long idCarga) {
+        TotalPreasignacionDTO total = coordinacionService.getTotalPreload(idCarga);
         return new ResponseEntity<>(total, HttpStatus.OK);
     }
 

@@ -817,7 +817,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public TotalPreasignacionDTO getTotalPreassignment(Long idCarga) {
+    public TotalPreasignacionDTO getTotalPreload(Long idCarga) {
         log.debug("Obteniendo total de preasignacion. idCarga={}", idCarga);
         if (idCarga == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
@@ -826,13 +826,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<Object[]> totalesRows =
-                cargaDocenteRepository.findTotalPreasignacionByCargaId(idCarga);
+        List<Object[]> totalesRows = cargaDocenteRepository.findTotalPreasignacionByCargaId(idCarga);
         Object[] totales = extractTotalRow(totalesRows);
 
-        List<TotalHorasPreasignacionDTO> horasPorTipo =
-                totalPreasignacionMapper.toHorasDtoList(
-                        detalleCargaDocenteRepository.findTotalHorasPreasignacionByCargaId(idCarga));
+        List<TotalHorasPreasignacionDTO> horasPorTipo =totalPreasignacionMapper.toHorasDtoList(detalleCargaDocenteRepository.findTotalHorasPreasignacionByCargaId(idCarga));
 
         BigDecimal sumaHoras = horasPorTipo.stream()
                 .map(item -> item.horas() != null ? item.horas() : BigDecimal.ZERO)
@@ -940,28 +937,19 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void updateCoordinationRestriction(
-            Long id,
-            CoordinacionRestriccionFormularioDTO dto) {
+    public void updateCoordinationRestriction(Long id, CoordinacionRestriccionFormularioDTO dto) {
         log.info("Actualizando restricción id={}", id);
         validateCoordinationRestriction(dto);
 
         RestriccionPorCoordinacionEntity entity = restriccionPorCoordinacionRepository
                 .findById(id)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la restriccion con id " + id));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la restriccion con id " + id));
 
         if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la coordinacion con id " + dto.idCoordinacion());
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinacion con id " + dto.idCoordinacion());
         }
         if (!fechasConvocatoriaRepository.existsById(dto.idFechasConvocatoria())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la fecha de convocatoria con id "
-                            + dto.idFechasConvocatoria());
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la fecha de convocatoria con id " + dto.idFechasConvocatoria());
         }
         if (restriccionPorCoordinacionRepository
                 .existsByIdCoordinacionAndIdFechasConvocatoriaAndIdNot(
@@ -970,9 +958,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                         id)) {
             log.warn("Conflicto al actualizar restricción. id={}, idCoordinacion={}",
                     id, dto.idCoordinacion());
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "Ya existe una restriccion para la coordinacion y fecha indicadas");
+            throw new ApiException(HttpStatus.CONFLICT, "Ya existe una restriccion para la coordinacion y fecha indicadas");
         }
 
         restriccionPorCoordinacionMapper.updateEntity(dto, entity);
@@ -987,15 +973,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     public void deleteCoordinationRestriction(Long id, CoordinacionRestriccionDTO dto) {
         log.info("Eliminando restricción id={}", id);
         if (dto == null || dto.id() == null || !dto.id().equals(id)) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El id de la restriccion no coincide");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la restriccion no coincide");
         }
         if (!restriccionPorCoordinacionRepository.existsById(id)) {
             log.warn("Restricción no encontrada al eliminar. id={}", id);
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la restriccion con id " + id);
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la restriccion con id " + id);
         }
         restriccionPorCoordinacionRepository.deleteById(id);
         log.info("Restricción eliminada. id={}", id);
@@ -1024,9 +1006,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 || dto.fechaInicio() == null
                 || dto.fechaFin() == null
                 || !StringUtils.hasText(dto.estado())) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La coordinacion, fecha de convocatoria, fechas y estado son obligatorios");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La coordinacion, fecha de convocatoria, fechas y estado son obligatorios");
         }
     }
 

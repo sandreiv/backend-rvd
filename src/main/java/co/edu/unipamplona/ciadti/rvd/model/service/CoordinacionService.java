@@ -74,7 +74,7 @@ public interface CoordinacionService {
 
     void deleteProfessorActivity(Long idDetalleCargaDocente);
 
-    TotalPreasignacionDTO getTotalPreassignment(Long idCarga);
+    TotalPreasignacionDTO getTotalPreload(Long idCarga);
 
     List<CoordinacionBusquedaDTO> searchCoordination(String nombre);
 
