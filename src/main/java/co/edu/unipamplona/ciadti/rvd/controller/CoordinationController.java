@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
@@ -319,18 +320,19 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
-    /*@Operation(
-        summary = "Obtiene el total de una preasignación para una coordinación en una convocatoria",
-        description = "Obtiene el total de una preasignación para una coordinación en una convocatoria"
+    @Operation(
+        summary = "Obtiene el total de una preasignación por carga",
+        description = """
+            Retorna totales de docentes, prestaciones, contratos y preasignación,
+            además de las horas agrupadas por tipo de actividad (FAD, FAI, CTEI, ISU, AC)
+            y el total de horas.
+            """
     )
     @GetMapping("/total-preassignment")
-    public ResponseEntity<TotalPreassignmentDTO> getTotalPreassignment(@RequestParam Long idCoordinacion, @RequestParam Long idConvocatoria) {
-        TotalPreassignmentDTO total = coordinacionService.getTotalPreassignment(idCoordinacion, idConvocatoria);
+    public ResponseEntity<TotalPreasignacionDTO> getTotalPreassignment(
+            @RequestParam Long idCarga) {
+        TotalPreasignacionDTO total = coordinacionService.getTotalPreassignment(idCarga);
         return new ResponseEntity<>(total, HttpStatus.OK);
-    }*/
-
-
-
-
+    }
 
 }

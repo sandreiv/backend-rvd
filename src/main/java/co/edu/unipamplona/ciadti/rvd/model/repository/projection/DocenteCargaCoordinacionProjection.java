@@ -1,5 +1,6 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public interface DocenteCargaCoordinacionProjection {
@@ -13,13 +14,13 @@ public interface DocenteCargaCoordinacionProjection {
     Long getIdCategoriaCatedratico();
     Date getCargaFechaInicio();
     Date getCargaFechaFin();
-    String getValorContrato();
-    String getValorPrestaciones();
-    String getAsignacionSalarial();
-    String getTotalContrato();
-    String getValorHora();
+    BigDecimal getValorContrato();
+    BigDecimal getValorPrestaciones();
+    BigDecimal getAsignacionSalarial();
+    BigDecimal getTotalContrato();
+    BigDecimal getValorHora();
     String getPuntos();
-    String getValorPunto();
+    BigDecimal getValorPunto();
     String getSemanas();
     Long getIdFechasConvocatoria();
     String getFechaConvocatoriaCodigo();

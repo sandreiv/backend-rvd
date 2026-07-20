@@ -20,6 +20,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TotalHorasPreasignacionProjection;
 
 public interface DetalleCargaDocenteRepository
         extends JpaRepository<DetalleCargaDocenteEntity, Long> {
@@ -101,7 +102,38 @@ public interface DetalleCargaDocenteRepository
     List<DetalleCargaDocenteListadoProjection> findByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
 
-    
+    @Query(value = """
+            SELECT
+                TA.TIAC_ID AS idTipoActividad,
+                TA.TIAC_CODIGO AS codigo,
+                TA.TIAC_NOMBRE AS nombre,
+                SUM(
+                    NVL(
+                        TO_NUMBER(
+                            REPLACE(TRIM(DECD.DECD_HORAS), ',', '.')
+                            DEFAULT NULL ON CONVERSION ERROR
+                        ),
+                        0
+                    )
+                ) AS horas
+            FROM RVD.CARGA CARG
+            INNER JOIN RVD.CARGADOCENTE CADO
+                ON CADO.CARG_ID = CARG.CARG_ID
+            INNER JOIN RVD.DETALLECARGADOCENTE DECD
+                ON DECD.CADO_ID = CADO.CADO_ID
+            INNER JOIN RVD.TIPOACTIVIDADES TA
+                ON TA.TIAC_ID = DECD.TIAC_ID
+            WHERE CARG.CARG_ID = :cargId
+            GROUP BY
+                TA.TIAC_ID,
+                TA.TIAC_CODIGO,
+                TA.TIAC_NOMBRE
+            ORDER BY
+                TA.TIAC_NOMBRE
+            """, nativeQuery = true)
+    List<TotalHorasPreasignacionProjection> findTotalHorasPreasignacionByCargaId(
+            @Param("cargId") Long cargId);
+
     @Procedure(name = "DetalleCargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(@Param("P_DECD_ID") Long id, @Param("P_DECD_REGISTRADOPOR") String registradoPor);
 }

@@ -6,12 +6,15 @@
  * Fecha de creación: 23/06/2026
  * Modificaciones:
  * 23/06/2026 - Sebastian Jaimes - Creación inicial
+ * 20/07/2026 - Sebastian Jaimes - Campos monetarios a BigDecimal
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
+import java.math.BigDecimal;
+
 public record ValorPuntosPrecargaDTO(
-    String valorHora,
-    String valorPunto,
-    String puntosDocente,
-    String asignacionSalarial
+    BigDecimal valorHora,
+    BigDecimal valorPunto,
+    BigDecimal puntosDocente,
+    BigDecimal asignacionSalarial
 ) {}

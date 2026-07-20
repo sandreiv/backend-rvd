@@ -22,6 +22,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 
@@ -72,6 +73,8 @@ public interface CoordinacionService {
     void saveCareerProfessorPreload(CargaDocentePlantaDTO dto);
 
     void deleteProfessorActivity(Long idDetalleCargaDocente);
+
+    TotalPreasignacionDTO getTotalPreassignment(Long idCarga);
 
     List<CoordinacionBusquedaDTO> searchCoordination(String nombre);
 

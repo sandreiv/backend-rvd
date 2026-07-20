@@ -1,5 +1,6 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public record DocenteCoordinacionDTO(
@@ -14,13 +15,13 @@ public record DocenteCoordinacionDTO(
     String fechaConvocatoriaCodigo,
     Date fechaInicio,
     Date fechaFin,
-    String valorContrato,
-    String valorPrestaciones,
-    String asignacionSalarial,
-    String totalContrato,
-    String valorHora,
+    BigDecimal valorContrato,
+    BigDecimal valorPrestaciones,
+    BigDecimal asignacionSalarial,
+    BigDecimal totalContrato,
+    BigDecimal valorHora,
     String puntos,
-    String valorPunto,
+    BigDecimal valorPunto,
     String semanas,
     Boolean tieneCarga
 ) {}

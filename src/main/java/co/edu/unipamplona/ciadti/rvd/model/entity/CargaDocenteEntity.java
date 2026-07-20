@@ -6,13 +6,13 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 20/07/2026 - Sebastian Jaimes - Campos monetarios a BigDecimal
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
@@ -23,7 +23,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.NamedStoredProcedureQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.Table;
@@ -84,13 +83,13 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     private Date fechaFin;
 
     @Column(name = "CADO_VALORCONTRATO")
-    private String valorContrato;
+    private BigDecimal valorContrato;
 
     @Column(name = "CADO_VALORPRESTACIONES")
-    private String valorPrestaciones;
+    private BigDecimal valorPrestaciones;
 
     @Column(name = "CADO_SALARIO")
-    private String salario;
+    private BigDecimal salario;
 
     @Column(name = "CADO_ESTADO")
     private String estado;
@@ -102,16 +101,16 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     private String horas;
 
     @Column(name = "CADO_VALORHORA")
-    private String valorHora;
+    private BigDecimal valorHora;
 
     @Column(name = "CADO_PUNTOS")
     private String puntos;
 
     @Column(name = "CADO_VALORPUNTO")
-    private String valorPunto;
+    private BigDecimal valorPunto;
 
     @Column(name = "CADO_TOTALCONTRATO")
-    private String totalContrato;
+    private BigDecimal totalContrato;
 
     @Column(name = "CADO_SEMANAS")
     private String semanas;

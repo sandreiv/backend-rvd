@@ -30,6 +30,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RestriccionPorCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
@@ -55,6 +56,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TotalHorasPreasignacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
@@ -149,6 +152,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
     private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
     private final RestriccionPorCoordinacionMapper restriccionPorCoordinacionMapper;
+    private final TotalPreasignacionMapper totalPreasignacionMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -311,15 +315,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         BigDecimal valorPunto = parseValor(vigencia.getValorPunto(), "valor del punto de la vigencia");
         BigDecimal puntosCategoriaValor = parseValor(puntosCategoria.getPuntos(), "puntos de la categoria");
         BigDecimal valorHora = valorPunto.multiply(puntosCategoriaValor).setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-        String valorPuntoTexto = valorPunto.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP).toPlainString();
-  
-        
+        BigDecimal valorPuntoEscalado = valorPunto.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
         if (idPersonaGeneral == null) {
             log.info("Valor puntos precarga calculado sin persona. anio={}, valorHora={}",
                     anio, valorHora);
-            return new ValorPuntosPrecargaDTO(valorHora.toPlainString(), valorPuntoTexto, null, null);
+            return new ValorPuntosPrecargaDTO(valorHora, valorPuntoEscalado, null, null);
         }
-        
+
         EscalafonEntity escalafon = escalafonRepository.findByIdCategoriaCatedratico(idCategoriaCatedratico, idPersonaGeneral);
         if (escalafon == null) {
             log.warn("Escalafón no encontrado. idPersona={}, idCategoria={}",
@@ -333,11 +336,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.info("Valor puntos precarga calculado. anio={}, idPersona={}, valorHora={}",
                 anio, idPersonaGeneral, valorHora);
         return new ValorPuntosPrecargaDTO(
-                valorHora.toPlainString(),
-                valorPuntoTexto,
-                puntosDocente.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP)
-                        .toPlainString(),
-                asignacionSalarial.toPlainString());
+                valorHora,
+                valorPuntoEscalado,
+                puntosDocente.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP),
+                asignacionSalarial);
     }
 
     private BigDecimal parseValor(String valor, String campo) {
@@ -811,6 +813,76 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
         detalleCargaDocenteRepository.deleteByProcedure(idDetalleCargaDocente, REGISTRADO_POR);
         log.info("Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TotalPreasignacionDTO getTotalPreassignment(Long idCarga) {
+        log.debug("Obteniendo total de preasignacion. idCarga={}", idCarga);
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
+
+        List<Object[]> totalesRows =
+                cargaDocenteRepository.findTotalPreasignacionByCargaId(idCarga);
+        Object[] totales = extractTotalRow(totalesRows);
+
+        List<TotalHorasPreasignacionDTO> horasPorTipo =
+                totalPreasignacionMapper.toHorasDtoList(
+                        detalleCargaDocenteRepository.findTotalHorasPreasignacionByCargaId(idCarga));
+
+        BigDecimal sumaHoras = horasPorTipo.stream()
+                .map(item -> item.horas() != null ? item.horas() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        TotalPreasignacionDTO result = new TotalPreasignacionDTO(
+                toLongValue(totales, 0),
+                toBigDecimalValue(totales, 1),
+                toBigDecimalValue(totales, 2),
+                toBigDecimalValue(totales, 3),
+                horasPorTipo,
+                sumaHoras);
+
+        log.info("Total de preasignacion obtenido. idCarga={}, totalDocentes={}, totalPreasignacion={}",
+                idCarga, result.totalDocentes(), result.totalPreasignacion());
+        return result;
+    }
+
+    private Object[] extractTotalRow(List<Object[]> totalesRows) {
+        if (totalesRows == null || totalesRows.isEmpty()) {
+            return null;
+        }
+        Object first = totalesRows.get(0);
+        if (first instanceof Object[] row) {
+            return row;
+        }
+        return totalesRows.toArray();
+    }
+
+    private Long toLongValue(Object[] row, int index) {
+        BigDecimal value = toBigDecimalValue(row, index);
+        return value.longValue();
+    }
+
+    private BigDecimal toBigDecimalValue(Object[] row, int index) {
+        if (row == null || index >= row.length || row[index] == null) {
+            return BigDecimal.ZERO;
+        }
+        if (row[index] instanceof BigDecimal value) {
+            return value;
+        }
+        if (row[index] instanceof Number value) {
+            return new BigDecimal(value.toString());
+        }
+        try {
+            return new BigDecimal(row[index].toString().trim());
+        } catch (NumberFormatException ex) {
+            log.warn("Valor numérico inválido en total preasignación: {}", row[index]);
+            return BigDecimal.ZERO;
+        }
     }
 
     @Override

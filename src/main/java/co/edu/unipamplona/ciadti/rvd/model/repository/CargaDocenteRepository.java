@@ -149,4 +149,26 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
 
     boolean existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
             Long idPersonaGeneral, Long idCarga, Long idModalidadContratacion);
+
+    @Query(value = """
+            SELECT
+                COUNT(DISTINCT CADO.PEGE_ID)
+                + SUM(
+                    CASE
+                        WHEN CADO.PEGE_ID IS NULL THEN 1
+                        ELSE 0
+                    END
+                ),
+                SUM(NVL(CADO.CADO_VALORPRESTACIONES, 0)),
+                SUM(NVL(CADO.CADO_VALORCONTRATO, 0)),
+                SUM(
+                    NVL(CADO.CADO_VALORPRESTACIONES, 0)
+                    + NVL(CADO.CADO_VALORCONTRATO, 0)
+                )
+            FROM RVD.CARGA CARG
+            INNER JOIN RVD.CARGADOCENTE CADO
+                ON CADO.CARG_ID = CARG.CARG_ID
+            WHERE CARG.CARG_ID = :cargId
+            """, nativeQuery = true)
+    List<Object[]> findTotalPreasignacionByCargaId(@Param("cargId") Long cargId);
 }
