@@ -1,3 +1,12 @@
+/**
+ * Aplicación: rvd
+ * Archivo: CoordinacionService.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.controller
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 10/06/2026
+ * Modificaciones:
+ * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import java.util.List;

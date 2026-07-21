@@ -1,3 +1,12 @@
+/**
+ * Aplicación: rvd
+ * Archivo: CoordinacionServiceImpl.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.controller
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 10/06/2026
+ * Modificaciones:
+ * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
@@ -157,14 +166,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<CoordinacionDTO> findCoordinationsByIdConvocatoria(Long idConvocatoria, Long idUsuario) {
-        log.debug("Listando coordinaciones. idConvocatoria={}, idUsuario={}",
+        log.debug("findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idUsuario={}",
                 idConvocatoria, idUsuario);
         List<CoordinacionListadoProjection> projections = idConvocatoria == null
                 ? coordinacionRepository.findWithoutCarga(idUsuario)
                 : coordinacionRepository.findByConvocatoriaWithCarga(
                         idConvocatoria, idUsuario);
         List<CoordinacionDTO> result = coordinacionMapper.toDtoList(projections);
-        log.info("Coordinaciones listadas. idConvocatoria={}, total={}",
+        log.info("findCoordinationsByIdConvocatoria ===> Coordinaciones listadas. idConvocatoria={}, total={}",
                 idConvocatoria, result.size());
         return result;
     }
@@ -172,14 +181,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void savePreload(RelacionConvocatoriaCoordinacionDTO dto) {
-        log.info("Guardando preasignación. idCoordinacion={}, idConvocatoria={}",
+        log.info("savePreload ===> Guardando preasignación. idCoordinacion={}, idConvocatoria={}",
                 dto != null ? dto.idCoordinacion() : null,
                 dto != null ? dto.idConvocatoria() : null);
         validateSavePreload(dto);
 
-        CargaEntity carga = cargaRepository
-                .findFirstByIdCoordinacionOrderByIdDesc(dto.idCoordinacion())
-                .orElseGet(CargaEntity::new);
+        CargaEntity carga = cargaRepository.findFirstByIdCoordinacionOrderByIdDesc(dto.idCoordinacion()).orElseGet(CargaEntity::new);
 
         validatePreloadCallChangeAllowed(carga, dto.idConvocatoria());
 
@@ -194,14 +201,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         carga.setFechaCambio(new Date());
 
         cargaRepository.save(carga);
-        log.info("Preasignación guardada. idCarga={}, idCoordinacion={}, idConvocatoria={}",
-                carga.getId(), dto.idCoordinacion(), dto.idConvocatoria());
+        log.info("savePreload ===> Preasignación guardada. idCarga={}, idCoordinacion={}, idConvocatoria={}", carga.getId(), dto.idCoordinacion(), dto.idConvocatoria());
     }
 
-    private void validatePreloadCallChangeAllowed(
-            CargaEntity carga,
-            Long newPreloadCallId
-    ) {
+    private void validatePreloadCallChangeAllowed(CargaEntity carga, Long newPreloadCallId) {
         if (carga.getId() == null) {
             return;
         }
@@ -211,11 +214,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         if (cargaDocenteRepository.existsByIdCarga(carga.getId())) {
-            log.warn("Cambio de convocatoria bloqueado. idCarga={}, nuevaConvocatoria={}",
-                    carga.getId(), newPreloadCallId);
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "No se puede cambiar la convocatoria porque ya existen docentes cargados en la preasignación"
+            log.warn("validatePreloadCallChangeAllowed ===> Cambio de convocatoria bloqueado. idCarga={}, nuevaConvocatoria={}", carga.getId(), newPreloadCallId);
+            throw new ApiException(HttpStatus.CONFLICT, "No se puede cambiar la convocatoria porque ya existen docentes cargados en la preasignación"
             );
         }
     }
@@ -229,16 +229,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     private void validateSavePreload(RelacionConvocatoriaCoordinacionDTO dto) {
         if (dto == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La información de la preasignación es obligatoria"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La información de la preasignación es obligatoria"
             );
         }
 
         if (dto.idCoordinacion() == null || dto.idConvocatoria() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La coordinación y la convocatoria son obligatorias"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La coordinación y la convocatoria son obligatorias"
             );
         }
 
@@ -254,30 +250,28 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<DocentePlantaCoordinacionDTO> listCareerProfessors(Long idCoordinacion) {
-        log.debug("Listando docentes de planta. idCoordinacion={}", idCoordinacion);
-        List<DocentePlantaCoordinacionDTO> result = docentePlantaCoordinacionMapper
-                .toDtoList(docentesPlantaCoordinacionRepository
-                        .findByIdCoordinacion(idCoordinacion));
-        log.info("Docentes de planta listados. idCoordinacion={}, total={}",
-                idCoordinacion, result.size());
+        log.debug("listCareerProfessors ===> Listando docentes de planta. idCoordinacion={}", idCoordinacion);
+        
+        List<DocentePlantaCoordinacionDTO> result = docentePlantaCoordinacionMapper.toDtoList(docentesPlantaCoordinacionRepository.findByIdCoordinacion(idCoordinacion));
+        
+        log.info("listCareerProfessors ===> Docentes de planta listados. idCoordinacion={}, total={}",idCoordinacion, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion) {
-        log.debug("Buscando docente. nombre={}, documento={}, idModalidad={}",
-                nombre, documento, idModalidadContratacion);
+        log.debug("searchProfessor ===> Buscando docente. nombre={}, documento={}, idModalidad={}", nombre, documento, idModalidadContratacion);
         String nombreParam = normalizeParam(nombre);
         String documentoParam = normalizeParam(documento);
         if (nombreParam == null && documentoParam == null) {
-            log.debug("Búsqueda de docente sin criterios. Se retorna lista vacía");
+            log.debug("searchProfessor ===> Búsqueda de docente sin criterios. Se retorna lista vacía");
             return Collections.emptyList();
         }
         List<DocentePreasignacionDTO> result = docentePreasignacionMapper.toDtoList(
                 personaGeneralRepository.searchProfessorsForPreassignment(
                         nombreParam, documentoParam, idModalidadContratacion));
-        log.info("Docentes encontrados. total={}", result.size());
+        log.info("searchProfessor ===> Docentes encontrados. total={}", result.size());
         return result;
     }
 
@@ -291,24 +285,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<FechaModalidadFormularioDTO> getWorkDate(Long coorId, Long mocoId) {
-        log.debug("Consultando fechas de trabajo. idCoordinacion={}, idModalidad={}",
-                coorId, mocoId);
-        List<FechaModalidadFormularioDTO> result = fechasConvocatoriaMapper
-                .toModalidadDtoList(fechasConvocatoriaRepository
-                        .findByCoordinationAndModality(coorId, mocoId));
-        log.info("Fechas de trabajo consultadas. idCoordinacion={}, total={}",
-                coorId, result.size());
+        log.debug("getWorkDate ===> Consultando fechas de trabajo. idCoordinacion={}, idModalidad={}", coorId, mocoId);
+        
+        List<FechaModalidadFormularioDTO> result = fechasConvocatoriaMapper.toModalidadDtoList(fechasConvocatoriaRepository.findByCoordinationAndModality(coorId, mocoId));
+        
+        log.info("getWorkDate ===> Fechas de trabajo consultadas. idCoordinacion={}, total={}", coorId, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public ValorPuntosPrecargaDTO getValuePointsPreload(Long anio, Long idCategoriaCatedratico, Long idPersonaGeneral) {
-        log.debug("Calculando valor puntos precarga. anio={}, idCategoria={}, idPersona={}",
-                anio, idCategoriaCatedratico, idPersonaGeneral);
+        log.debug("getValuePointsPreload ===> Calculando valor puntos precarga. anio={}, idCategoria={}, idPersona={}", anio, idCategoriaCatedratico, idPersonaGeneral);
 
-        PuntosVigenciaEntity vigencia = puntosVigenciaRepository.findByAnio(anio)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"No existe valor de puntos para la vigencia " + anio));
+        PuntosVigenciaEntity vigencia = puntosVigenciaRepository.findByAnio(anio).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"No existe valor de puntos para la vigencia " + anio));
 
         PuntosCategoriaEntity puntosCategoria = puntosCategoriaRepository.findByIdCategoriaCatedratico(idCategoriaCatedratico);
 
@@ -318,23 +308,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         BigDecimal valorPuntoEscalado = valorPunto.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
 
         if (idPersonaGeneral == null) {
-            log.info("Valor puntos precarga calculado sin persona. anio={}, valorHora={}",
-                    anio, valorHora);
+            log.info("getValuePointsPreload ===> Valor puntos precarga calculado sin persona. anio={}, valorHora={}", anio, valorHora);
             return new ValorPuntosPrecargaDTO(valorHora, valorPuntoEscalado, null, null);
         }
 
         EscalafonEntity escalafon = escalafonRepository.findByIdCategoriaCatedratico(idCategoriaCatedratico, idPersonaGeneral);
         if (escalafon == null) {
-            log.warn("Escalafón no encontrado. idPersona={}, idCategoria={}",
-                    idPersonaGeneral, idCategoriaCatedratico);
+            log.warn("getValuePointsPreload ===> Escalafón no encontrado. idPersona={}, idCategoria={}",idPersonaGeneral, idCategoriaCatedratico);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe escalafon para la persona " + idPersonaGeneral + " y la categoria " + idCategoriaCatedratico);
         }
 
         BigDecimal puntosDocente = parseValor(escalafon.getPuntos(), "puntos del docente (escalafon)");
         BigDecimal asignacionSalarial = puntosDocente.multiply(valorPunto).setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
 
-        log.info("Valor puntos precarga calculado. anio={}, idPersona={}, valorHora={}",
-                anio, idPersonaGeneral, valorHora);
+        log.info("getValuePointsPreload ===> Valor puntos precarga calculado. anio={}, idPersona={}, valorHora={}", anio, idPersonaGeneral, valorHora);
         return new ValorPuntosPrecargaDTO(
                 valorHora,
                 valorPuntoEscalado,
@@ -356,25 +343,22 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<CategoriaCatedraticoDTO> listProfessorCategory(Long idModalidadContratacion) {
-        log.debug("Listando categorías catedrático. idModalidad={}",
-                idModalidadContratacion);
-        List<CategoriaCatedraticoDTO> result = categoriaCatedraticoMapper.toDtoList(
-                categoriaCatedraticoRepository.findAllCategories(idModalidadContratacion));
-        log.info("Categorías catedrático listadas. idModalidad={}, total={}",
-                idModalidadContratacion, result.size());
+        log.debug("listProfessorCategory ===> Listando categorías catedrático. idModalidad={}", idModalidadContratacion);
+        
+        List<CategoriaCatedraticoDTO> result = categoriaCatedraticoMapper.toDtoList(categoriaCatedraticoRepository.findAllCategories(idModalidadContratacion));
+        
+        log.info("listProfessorCategory ===> Categorías catedrático listadas. idModalidad={}, total={}", idModalidadContratacion, result.size());
         return result;
     }
 
     @Override
     @Transactional
     public void addProfessor(CargaDocenteFormularioDTO dto) {
-        log.info("Agregando docente. idPersona={}, idCarga={}, idModalidad={}",
-                dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion());
+        log.info("addProfessor ===> Agregando docente. idPersona={}, idCarga={}, idModalidad={}", dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion());
         if (dto.idPersonaGeneral() != null
                 && cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionAndIdFechasConvocatoria(
                         dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion(), dto.fechasConvocatoria().id())) {
-            log.warn("Docente duplicado en modalidad. idPersona={}, idCarga={}",
-                    dto.idPersonaGeneral(), dto.idCarga());
+            log.warn("addProfessor ===> Docente duplicado en modalidad. idPersona={}, idCarga={}", dto.idPersonaGeneral(), dto.idCarga());
             throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta modalidad de contratacion");
         }
         CargaDocenteEntity entity = cargaDocenteMapper.toEntity(dto);
@@ -383,14 +367,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setEstado("0");
         entity.setVigente("1");
         cargaDocenteRepository.save(entity);
-        log.info("Docente agregado. idCargaDocente={}", entity.getId());
+        log.info("addProfessor ===> Docente agregado. idCargaDocente={}", entity.getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DocenteCoordinacionDTO> listProfessors(Long idCoordinacion, Long idModalidadContratacion) {
-        log.debug("Listando docentes. idCoordinacion={}, idModalidad={}",
-                idCoordinacion, idModalidadContratacion);
+        log.debug("listProfessors ===> Listando docentes. idCoordinacion={}, idModalidad={}", idCoordinacion, idModalidadContratacion);
         List<DocenteCargaCoordinacionProjection> projections;
         if (isModalidadPlanta(idModalidadContratacion)) {
             projections = cargaDocenteRepository.findPlantProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion);
@@ -398,8 +381,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             projections = cargaDocenteRepository.findProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion);
         }
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
-        log.info("Docentes listados. idCoordinacion={}, total={}",
-                idCoordinacion, result.size());
+        log.info("listProfessors ===> Docentes listados. idCoordinacion={}, total={}", idCoordinacion, result.size());
         return result;
     }
 
@@ -413,45 +395,46 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto) {
-        log.info("Actualizando docente. idCargaDocente={}", idCargaDocente);
+        log.info("updateProfessor ===> Actualizando docente. idCargaDocente={}", idCargaDocente);
         CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
         
         cargaDocenteMapper.updateEntity(dto, entity);
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
         cargaDocenteRepository.save(entity);
-        log.info("Docente actualizado. idCargaDocente={}", idCargaDocente);
+        log.info("updateProfessor ===> Docente actualizado. idCargaDocente={}", idCargaDocente);
     }
 
     @Override
     @Transactional
     public void deleteProfessor(Long idCargaDocente) {
-        log.info("Eliminando docente. idCargaDocente={}", idCargaDocente);
+        log.info("deleteProfessor ===> Eliminando docente. idCargaDocente={}", idCargaDocente);
+        
         if (!cargaDocenteRepository.existsById(idCargaDocente)) {
-            log.warn("Carga docente no encontrada al eliminar. id={}", idCargaDocente);
+            log.warn("deleteProfessor ===> Carga docente no encontrada al eliminar. id={}", idCargaDocente);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
         }
+        
         cargaDocenteRepository.deleteByProcedure(idCargaDocente, REGISTRADO_POR);
-        log.info("Docente eliminado. idCargaDocente={}", idCargaDocente);
+        log.info("deleteProfessor ===> Docente eliminado. idCargaDocente={}", idCargaDocente);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UnidadDTO> listRegionalUnits(Long idCoordinacion) {
-        log.debug("Listando unidades regionales. idCoordinacion={}", idCoordinacion);
-        List<UnidadDTO> result = unidadMapper.toDtoList(
-                unidadRepository.findRegionalUnits(idCoordinacion));
-        log.info("Unidades regionales listadas. idCoordinacion={}, total={}",
-                idCoordinacion, result.size());
+        log.debug("listRegionalUnits ===> Listando unidades regionales. idCoordinacion={}", idCoordinacion);
+        List<UnidadDTO> result = unidadMapper.toDtoList(unidadRepository.findRegionalUnits(idCoordinacion));
+        log.info("listRegionalUnits ===> Unidades regionales listadas. idCoordinacion={}, total={}", idCoordinacion, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProgramaDTO> listProgramsByRegionalUnit(Long idCoordinacion, Long idUnidadRegional, Long idNivelEducativo) {
-        log.debug("Listando programas. idCoordinacion={}, idUnidad={}, idNivel={}",
-                idCoordinacion, idUnidadRegional, idNivelEducativo);
+        log.debug("listProgramsByRegionalUnit ===> Listando programas. idCoordinacion={}, idUnidad={}, idNivel={}", idCoordinacion, idUnidadRegional, idNivelEducativo);
+        
         List<ProgramaDTO> result;
+        
         if (asociacionCoordinacionRepository.existsProgramasByCoordinacion(idCoordinacion)) {
             result = programaMapper.toDtoList(
                     programaRepository.findByCoordinacionUnidadRegionalAndNivelEducativo(
@@ -461,51 +444,49 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                     programaRepository.findByUnidadRegionalAndNivelEducativo(
                             idUnidadRegional, idNivelEducativo));
         }
-        log.info("Programas listados. idCoordinacion={}, total={}",
-                idCoordinacion, result.size());
+        log.info("listProgramsByRegionalUnit ===> Programas listados. idCoordinacion={}, total={}", idCoordinacion, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad) {
-        log.debug("Listando criterios. idTipoActividad={}", idTipoActividad);
+        log.debug("listCriteria ===> Listando criterios. idTipoActividad={}", idTipoActividad);
+        
         List<TipoActividadCriterioDTO> result = tipoActividadCriterioMapper.toDtoList(
                 tipoActividadesRepository.findCriteriaByParentId(idTipoActividad));
-        log.info("Criterios listados. idTipoActividad={}, total={}",
-                idTipoActividad, result.size());
+        
+        log.info("listCriteria ===> Criterios listados. idTipoActividad={}, total={}", idTipoActividad, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadDTO> listActivityTypes() {
-        log.debug("Listando tipos de actividad");
-        List<TipoActividadDTO> result = tipoActividadMapper.toDtoList(
-                tipoActividadesRepository.findParentActivityTypes());
-        log.info("Tipos de actividad listados. total={}", result.size());
+        log.debug("listActivityTypes ===> Listando tipos de actividad");
+        
+        List<TipoActividadDTO> result = tipoActividadMapper.toDtoList(tipoActividadesRepository.findParentActivityTypes());
+        
+        log.info("listActivityTypes ===> Tipos de actividad listados. total={}", result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion) {
-        log.debug("Listando materias. idPrograma={}, idCoordinacion={}",
-                idPrograma, idCoordinacion);
+        log.debug("listSubjects ===> Listando materias. idPrograma={}, idCoordinacion={}", idPrograma, idCoordinacion);
         List<MateriaListadoProjection> materias;
 
         if (asociacionCoordinacionRepository.existsProgramasByCoordinacion(idCoordinacion)) {
             materias = materiaRepository.findPensumExcluyendoTransversales(idPrograma);
         } else if (asociacionCoordinacionRepository.existsMateriasByCoordinacion(idCoordinacion)) {
-            materias = materiaRepository.findTransversalesByCoordinacionAndPrograma(
-                    idCoordinacion, idPrograma);
+            materias = materiaRepository.findTransversalesByCoordinacionAndPrograma(idCoordinacion, idPrograma);
         } else {
             materias = materiaRepository.findByPrograma(idPrograma);
         }
 
         List<MateriaDTO> result = mapMateriasConGrupo(materias);
-        log.info("Materias listadas. idPrograma={}, total={}",
-                idPrograma, result.size());
+        log.info("listSubjects ===> Materias listadas. idPrograma={}, total={}", idPrograma, result.size());
         return result;
     }
 
@@ -527,33 +508,32 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<GrupoDTO> listSubjectGroup(String codigoMateria, Long idPeriodoUniversidad) {
-        log.debug("Listando grupos. codigoMateria={}, idPeriodo={}",
-                codigoMateria, idPeriodoUniversidad);
-        List<GrupoDTO> result = grupoMapper.toDtoList(
-                grupoRepository.findByCodigoMateriaAndIdPeriodoUniversidad(
-                        codigoMateria, idPeriodoUniversidad));
-        log.info("Grupos listados. codigoMateria={}, total={}",
-                codigoMateria, result.size());
+        log.debug("listSubjectGroup ===> Listando grupos. codigoMateria={}, idPeriodo={}", codigoMateria, idPeriodoUniversidad);
+        
+        List<GrupoDTO> result = grupoMapper.toDtoList(grupoRepository.findByCodigoMateriaAndIdPeriodoUniversidad(codigoMateria, idPeriodoUniversidad));
+        
+        log.info("listSubjectGroup ===> Grupos listados. codigoMateria={}, total={}",codigoMateria, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral) {
-        log.debug("Listando proyectos del docente. idPersona={}", idPersonaGeneral);
-        List<ProyectoDTO> result = proyectoMapper.toDtoList(
-                personaProyectoRepository.findProyectosByIdPersonaGeneral(idPersonaGeneral));
-        log.info("Proyectos del docente listados. idPersona={}, total={}",
-                idPersonaGeneral, result.size());
+        log.debug("listProjectsProfessor ===> Listando proyectos del docente. idPersona={}", idPersonaGeneral);
+        
+        List<ProyectoDTO> result = proyectoMapper.toDtoList(personaProyectoRepository.findProyectosByIdPersonaGeneral(idPersonaGeneral));
+        
+        log.info("listProjectsProfessor ===> Proyectos del docente listados. idPersona={}, total={}", idPersonaGeneral, result.size());
         return result;
     }
 
     @Override
     @Transactional
     public void saveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto) {
-        log.info("Guardando detalle precarga docente. idCargaDocente={}, detalles={}",
+        log.info("saveDetailProfessorPreload ===> Guardando detalle precarga docente. idCargaDocente={}, detalles={}",
                 dto.idCargaDocente(),
                 dto.detalles() != null ? dto.detalles().size() : 0);
+        
         validateSaveDetailProfessorPreload(dto);
         
         for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
@@ -563,8 +543,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             DetalleCargaDocenteEntity saved = detalleCargaDocenteRepository.save(entity);
             saveRelacionesCargaProyecto(saved.getId(), detalle.relacionCargaProyecto());
         }
-        log.info("Detalle precarga docente guardado. idCargaDocente={}",
-                dto.idCargaDocente());
+        log.info("saveDetailProfessorPreload ===> Detalle precarga docente guardado. idCargaDocente={}", dto.idCargaDocente());
     }
 
     @Override
@@ -581,23 +560,22 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 proyectoMapper,
                 tipoActividadMapper,
                 tipoActividadesRepository);
-        log.info("Detalle precarga docente listado. idCargaDocente={}, total={}",
-                idCargaDocente, result.size());
+        
+        log.info("listDetailProfessorPreload ===> Detalle precarga docente listado. idCargaDocente={}, total={}", idCargaDocente, result.size());
         return result;
     }
 
     @Override
     @Transactional
     public void updateDetailProfessorPreload(DetalleCargaDocenteDTO dto) {
-        log.info("Actualizando detalle precarga. idDetalle={}, idCargaDocente={}",
+        log.info("updateDetailProfessorPreload ===> Actualizando detalle precarga. idDetalle={}, idCargaDocente={}",
                 dto.idDetalleCargaDocente(), dto.idCargaDocente());
+        
         validateUpdateDetailProfessorPreload(dto);
 
         Long idDetalleCargaDocente = dto.idDetalleCargaDocente();
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
-        DetalleCargaDocenteEntity detallePersistido = detalleCargaDocenteRepository
-                .findById(idDetalleCargaDocente)
-                .orElseThrow();
+        DetalleCargaDocenteEntity detallePersistido = detalleCargaDocenteRepository.findById(idDetalleCargaDocente).orElseThrow();
         DetalleCargaDocenteEntity entity = detalleCargaDocenteMapper.toEntityFromDto(dto);
         entity.setIdTipoActividad(detalleCargaDocenteMapper
                 .resolveTipoActividadFromActividad(
@@ -613,7 +591,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 idDetalleCargaDocente,
                 detalleCargaDocenteMapper.toRelacionesCargaProyecto(
                         actividad.relacionCargaProyecto()));
-        log.info("Detalle precarga actualizado. idDetalle={}", idDetalleCargaDocente);
+        log.info("updateDetailProfessorPreload ===> Detalle precarga actualizado. idDetalle={}", idDetalleCargaDocente);
     }
 
     private void validateSaveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto) {
@@ -630,48 +608,31 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     private void validateUpdateDetailProfessorPreload(DetalleCargaDocenteDTO dto) {
         if (dto.idDetalleCargaDocente() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El id del detalle de carga docente es obligatorio");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
         }
         if (dto.idCargaDocente() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente es obligatoria");
+            throw new ApiException(HttpStatus.BAD_REQUEST,  "La carga docente es obligatoria");
         }
         if (dto.detalles() == null || dto.detalles().size() != 1) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La actualizacion requiere exactamente un detalle");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La actualizacion requiere exactamente un detalle");
         }
         if (!cargaDocenteRepository.existsById(dto.idCargaDocente())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la carga docente con id " + dto.idCargaDocente());
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + dto.idCargaDocente());
         }
 
         DetalleCargaDocenteEntity detallePersistido = detalleCargaDocenteRepository
                 .findById(dto.idDetalleCargaDocente())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe el detalle de carga docente con id "
-                                + dto.idDetalleCargaDocente()));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + dto.idDetalleCargaDocente()));
 
         if (!detallePersistido.getIdCargaDocente().equals(dto.idCargaDocente())) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El detalle no pertenece a la carga docente enviada");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El detalle no pertenece a la carga docente enviada");
         }
 
-        validateDetalleActividad(
-                dto.detalles().get(0),
-                detallePersistido.getIdTipoActividad());
+        validateDetalleActividad(dto.detalles().get(0), detallePersistido.getIdTipoActividad());
     }
 
 
-    private void validateDetalleActividad(
-            DetalleCargaDocenteActividadDTO actividad,
-            Long idTipoActividadPersistido) {
+    private void validateDetalleActividad(DetalleCargaDocenteActividadDTO actividad, Long idTipoActividadPersistido) {
         if (actividad.horas() == null || actividad.horas().isBlank()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Las horas del detalle son obligatorias");
         }
@@ -749,7 +710,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void saveCareerProfessorPreload(CargaDocentePlantaDTO dto) {
-        log.info("Guardando docente planta en precarga. idPersona={}, idCarga={}, idModalidad={}",
+        log.info("saveCareerProfessorPreload ===> Guardando docente planta en precarga. idPersona={}, idCarga={}, idModalidad={}",
                 dto != null ? dto.idPersonaGeneral() : null,
                 dto != null ? dto.idCarga() : null,
                 dto != null ? dto.idModalidadContratacion() : null);
@@ -757,7 +718,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         if (cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
                 dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion())) {
-            log.warn("Docente planta duplicado. idPersona={}, idCarga={}",
+            log.warn("saveCareerProfessorPreload ===> Docente planta duplicado. idPersona={}, idCarga={}",
                     dto.idPersonaGeneral(), dto.idCarga());
             throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta carga y modalidad");
         }
@@ -779,7 +740,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setEstado("0");
         entity.setVigente("1");
         cargaDocenteRepository.save(entity);
-        log.info("Docente planta guardado en precarga. idCargaDocente={}", entity.getId());
+        log.info("saveCareerProfessorPreload ===> Docente planta guardado en precarga. idCargaDocente={}", entity.getId());
     }
 
     private void validateCareerProfessorPreload(CargaDocentePlantaDTO dto) {
@@ -803,22 +764,22 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     public void deleteProfessorActivity(Long idDetalleCargaDocente) {
-        log.info("Eliminando actividad docente. idDetalle={}", idDetalleCargaDocente);
+        log.info("deleteProfessorActivity ===> Eliminando actividad docente. idDetalle={}", idDetalleCargaDocente);
         if (idDetalleCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
         }
         if (!detalleCargaDocenteRepository.existsById(idDetalleCargaDocente)) {
-            log.warn("Detalle carga docente no encontrado. id={}", idDetalleCargaDocente);
+            log.warn("deleteProfessorActivity ===> Detalle carga docente no encontrado. id={}", idDetalleCargaDocente);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + idDetalleCargaDocente);
         }
         detalleCargaDocenteRepository.deleteByProcedure(idDetalleCargaDocente, REGISTRADO_POR);
-        log.info("Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
+        log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TotalPreasignacionDTO getTotalPreload(Long idCarga) {
-        log.debug("Obteniendo total de preasignacion. idCarga={}", idCarga);
+        log.debug("getTotalPreload ===> Obteniendo total de preasignacion. idCarga={}", idCarga);
         if (idCarga == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
         }
@@ -843,8 +804,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 horasPorTipo,
                 sumaHoras);
 
-        log.info("Total de preasignacion obtenido. idCarga={}, totalDocentes={}, totalPreasignacion={}",
-                idCarga, result.totalDocentes(), result.totalPreasignacion());
+        log.info("getTotalPreload ===> Total de preasignacion obtenido. idCarga={}, totalDocentes={}, totalPreasignacion={}", idCarga, result.totalDocentes(), result.totalPreasignacion());
         return result;
     }
 
@@ -877,31 +837,29 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         try {
             return new BigDecimal(row[index].toString().trim());
         } catch (NumberFormatException ex) {
-            log.warn("Valor numérico inválido en total preasignación: {}", row[index]);
+            log.warn("toBigDecimalValue ===> Valor numérico inválido en total preasignación: {}", row[index]);
             return BigDecimal.ZERO;
         }
     }
 
     @Override
     public List<CoordinacionBusquedaDTO> searchCoordination(String nombre) {
-        log.debug("Buscando coordinación. nombre={}", nombre);
+        log.debug("searchCoordination ===> Buscando coordinación. nombre={}", nombre);
         String param = normalizeParam(nombre);
         if(param == null || param.length() < 2) {
-            log.debug("Búsqueda de coordinación sin criterios válidos");
+            log.debug("searchCoordination ===> Búsqueda de coordinación sin criterios válidos");
             return Collections.emptyList();
         }
 
-        List<CoordinacionBusquedaDTO> result = coordinacionMapper.toBusquedaDtoList(
-                coordinacionRepository.searchCoordination(param));
-        log.info("Coordinaciones encontradas. total={}", result.size());
+        List<CoordinacionBusquedaDTO> result = coordinacionMapper.toBusquedaDtoList(coordinacionRepository.searchCoordination(param));
+        log.info("searchCoordination ===> Coordinaciones encontradas. total={}", result.size());
         return result;
     }
 
     @Override
     @Transactional
     public void saveCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto) {
-        log.info("Guardando restricción. idCoordinacion={}, idFechasConvocatoria={}",
-                dto.idCoordinacion(), dto.idFechasConvocatoria());
+        log.info("saveCoordinationRestriction ===> Guardando restricción. idCoordinacion={}, idFechasConvocatoria={}", dto.idCoordinacion(), dto.idFechasConvocatoria());
 
         if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinacion con id " + dto.idCoordinacion());
@@ -912,8 +870,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         if (restriccionPorCoordinacionRepository.existsByIdCoordinacionAndIdFechasConvocatoria(dto.idCoordinacion(), dto.idFechasConvocatoria())) {
-            log.warn("Restricción duplicada. idCoordinacion={}, idFechas={}",
-                    dto.idCoordinacion(), dto.idFechasConvocatoria());
+            log.warn("saveCoordinationRestriction ===> Restricción duplicada. idCoordinacion={}, idFechas={}", dto.idCoordinacion(), dto.idFechasConvocatoria());
             throw new ApiException(HttpStatus.CONFLICT, "Ya existe una restriccion para la coordinacion y fecha indicadas");
         }
 
@@ -921,24 +878,23 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         restriccion.setRegistradoPor(REGISTRADO_POR);
         restriccion.setFechaCambio(new Date());
         restriccionPorCoordinacionRepository.save(restriccion);
-        log.info("Restricción guardada. id={}", restriccion.getId());
+        log.info("saveCoordinationRestriction ===> Restricción guardada. id={}", restriccion.getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CoordinacionRestriccionDTO> listCoordinationRestriction(Long idConvocatoria) {
-        log.debug("Listando restricciones. idConvocatoria={}", idConvocatoria);
-        List<CoordinacionRestriccionDTO> result = restriccionPorCoordinacionMapper.toDtoList(
-                restriccionPorCoordinacionRepository.findAllWithCoordinacion(idConvocatoria));
-        log.info("Restricciones listadas. idConvocatoria={}, total={}",
-                idConvocatoria, result.size());
+        log.debug("listCoordinationRestriction ===> Listando restricciones. idConvocatoria={}", idConvocatoria);
+        
+        List<CoordinacionRestriccionDTO> result = restriccionPorCoordinacionMapper.toDtoList(restriccionPorCoordinacionRepository.findAllWithCoordinacion(idConvocatoria));
+        log.info("listCoordinationRestriction ===> Restricciones listadas. idConvocatoria={}, total={}", idConvocatoria, result.size());
         return result;
     }
 
     @Override
     @Transactional
     public void updateCoordinationRestriction(Long id, CoordinacionRestriccionFormularioDTO dto) {
-        log.info("Actualizando restricción id={}", id);
+        log.info("updateCoordinationRestriction ===> Actualizando restricción id={}", id);
         validateCoordinationRestriction(dto);
 
         RestriccionPorCoordinacionEntity entity = restriccionPorCoordinacionRepository
@@ -956,8 +912,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                         dto.idCoordinacion(),
                         dto.idFechasConvocatoria(),
                         id)) {
-            log.warn("Conflicto al actualizar restricción. id={}, idCoordinacion={}",
-                    id, dto.idCoordinacion());
+            log.warn("updateCoordinationRestriction ===> Conflicto al actualizar restricción. id={}, idCoordinacion={}", id, dto.idCoordinacion());
             throw new ApiException(HttpStatus.CONFLICT, "Ya existe una restriccion para la coordinacion y fecha indicadas");
         }
 
@@ -965,29 +920,28 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
         restriccionPorCoordinacionRepository.save(entity);
-        log.info("Restricción actualizada. id={}", id);
+        log.info("updateCoordinationRestriction ===> Restricción actualizada. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteCoordinationRestriction(Long id, CoordinacionRestriccionDTO dto) {
-        log.info("Eliminando restricción id={}", id);
+        log.info("deleteCoordinationRestriction ===> Eliminando restricción id={}", id);
         if (dto == null || dto.id() == null || !dto.id().equals(id)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la restriccion no coincide");
         }
         if (!restriccionPorCoordinacionRepository.existsById(id)) {
-            log.warn("Restricción no encontrada al eliminar. id={}", id);
+            log.warn("deleteCoordinationRestriction ===> Restricción no encontrada al eliminar. id={}", id);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la restriccion con id " + id);
         }
         restriccionPorCoordinacionRepository.deleteById(id);
-        log.info("Restricción eliminada. id={}", id);
+        log.info("deleteCoordinationRestriction ===> Restricción eliminada. id={}", id);
     }
 
     @Override
     @Transactional
-    public void bulkDeleteCoordinationRestriction(
-            List<CoordinacionRestriccionDTO> restricciones) {
-        log.info("Eliminación masiva de restricciones. total={}",
+    public void bulkDeleteCoordinationRestriction(List<CoordinacionRestriccionDTO> restricciones) {
+        log.info("bulkDeleteCoordinationRestriction ===> Eliminación masiva de restricciones. total={}",
                 restricciones != null ? restricciones.size() : 0);
         if (restricciones == null || restricciones.isEmpty()) {
             return;
@@ -995,11 +949,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         for (CoordinacionRestriccionDTO restriccion : restricciones) {
             deleteCoordinationRestriction(restriccion.id(), restriccion);
         }
-        log.info("Eliminación masiva de restricciones finalizada");
+        log.info("bulkDeleteCoordinationRestriction ===> Eliminación masiva de restricciones finalizada");
     }
 
-    private void validateCoordinationRestriction(
-            CoordinacionRestriccionFormularioDTO dto) {
+    private void validateCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto) {
         if (dto == null
                 || dto.idCoordinacion() == null
                 || dto.idFechasConvocatoria() == null

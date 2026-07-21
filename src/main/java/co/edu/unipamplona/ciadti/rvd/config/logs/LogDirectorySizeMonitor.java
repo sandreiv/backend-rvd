@@ -1,3 +1,12 @@
+/**
+ * Aplicación: rvd
+ * Archivo: LogDirectorySizeMonitor.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.config.logs
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 20/07/2026
+ * Modificaciones:
+ * 20/07/2026 - Sebastian Jaimes - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.config.logs;
 
 import java.io.IOException;

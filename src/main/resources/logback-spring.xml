@@ -16,7 +16,6 @@
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- Archivo por día: rvd-2026-07-18.log (sin eliminación automática) -->
             <fileNamePattern>${LOG_PATH}/rvd-%d{yyyy-MM-dd}.log</fileNamePattern>
         </rollingPolicy>
         <encoder>
