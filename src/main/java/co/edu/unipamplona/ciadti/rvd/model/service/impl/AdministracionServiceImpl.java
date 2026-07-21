@@ -49,7 +49,9 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaCoordinacionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdministracionServiceImpl implements AdministracionService {
@@ -69,19 +71,26 @@ public class AdministracionServiceImpl implements AdministracionService {
     @Override
     @Transactional(readOnly = true)
     public AsociacionCoordinacionCatalogosDTO getAssociationCatalogs() {
-        return new AsociacionCoordinacionCatalogosDTO(
+        log.debug("getAssociationCatalogs ===> Consultando catálogos de administración");
+
+        AsociacionCoordinacionCatalogosDTO result = new AsociacionCoordinacionCatalogosDTO(
                 mapCatalog(coordinacionRepository.findAdministrationOptions()),
                 mapCatalog(programaRepository.findAdministrationOptions()),
                 mapSubjectCatalog(materiaRepository.findAdministrationOptions()),
                 mapCatalog(centroCostoRepository.findAdministrationOptions()),
                 mapCatalog(personaGeneralRepository.findAdministrationOptions())
         );
+
+        log.info("getAssociationCatalogs ===> Catálogos de administración consultados");
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AsociacionCoordinacionListadoDTO> listCoordinationAssociations() {
-        return asociacionCoordinacionRepository.findAdministrationList()
+        log.debug("listCoordinationAssociations ===> Listando asociaciones de coordinación");
+
+        List<AsociacionCoordinacionListadoDTO> result = asociacionCoordinacionRepository.findAdministrationList()
                 .stream()
                 .map(item -> new AsociacionCoordinacionListadoDTO(
                         item.getId(),
@@ -96,52 +105,92 @@ public class AdministracionServiceImpl implements AdministracionService {
                         item.getEstado()
                 ))
                 .toList();
+
+        log.info("listCoordinationAssociations ===> Asociaciones de coordinación listadas. total={}", result.size());
+        return result;
     }
 
     @Override
     @Transactional
     public void saveCoordinationAssociation(AsociacionCoordinacionFormularioDTO dto) {
+        log.info("saveCoordinationAssociation ===> Guardando asociación de coordinación. idCoordinacion={}, idPrograma={}, codigoMateria={}, idCentroCosto={}",
+                dto != null ? dto.idCoordinacion() : null,
+                dto != null ? dto.idPrograma() : null,
+                dto != null ? dto.codigoMateria() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         validateAssociation(dto);
 
         AsociacionCoordinacionEntity association = new AsociacionCoordinacionEntity();
         fillAssociation(association, dto);
-        asociacionCoordinacionRepository.save(association);
+        AsociacionCoordinacionEntity saved = asociacionCoordinacionRepository.save(association);
+
+        log.info("saveCoordinationAssociation ===> Asociación de coordinación guardada. id={}", saved.getId());
     }
 
     @Override
     @Transactional
     public void updateCoordinationAssociation(Long id, AsociacionCoordinacionFormularioDTO dto) {
+        log.info("updateCoordinationAssociation ===> Actualizando asociación de coordinación. id={}, idCoordinacion={}, idPrograma={}, codigoMateria={}, idCentroCosto={}",
+                id,
+                dto != null ? dto.idCoordinacion() : null,
+                dto != null ? dto.idPrograma() : null,
+                dto != null ? dto.codigoMateria() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         validateAssociation(dto);
 
         AsociacionCoordinacionEntity association = asociacionCoordinacionRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la asociación con id " + id));
+                .orElseThrow(() -> {
+                    log.warn("updateCoordinationAssociation ===> Asociación de coordinación no encontrada. id={}", id);
+                    return new ApiException(HttpStatus.NOT_FOUND, "No existe la asociación con id " + id);
+                });
 
         fillAssociation(association, dto);
         asociacionCoordinacionRepository.save(association);
+
+        log.info("updateCoordinationAssociation ===> Asociación de coordinación actualizada. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteCoordinationAssociation(Long id) {
+        log.info("deleteCoordinationAssociation ===> Eliminando asociación de coordinación. id={}", id);
+
         if (!asociacionCoordinacionRepository.existsById(id)) {
+            log.warn("deleteCoordinationAssociation ===> Asociación de coordinación no encontrada. id={}", id);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la asociación con id " + id);
         }
 
         BigDecimal result = asociacionCoordinacionRepository.deleteByProcedure(id, REGISTRADO_POR);
 
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            log.warn("deleteCoordinationAssociation ===> Procedimiento de eliminación falló. id={}, resultado={}",
+                    id, result);
+        }
+
         validateProcedureResult(result, "No se pudo eliminar la asociación coordinación");
+
+        log.info("deleteCoordinationAssociation ===> Asociación de coordinación eliminada. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteBulkCoordinationAssociations(List<Long> ids) {
+        log.info("deleteBulkCoordinationAssociations ===> Eliminación masiva de asociaciones de coordinación. total={}",
+                ids != null ? ids.size() : 0);
+
         if (ids == null || ids.isEmpty()) {
+            log.debug("deleteBulkCoordinationAssociations ===> Lista vacía. No se realiza eliminación");
             return;
         }
 
         for (Long id : ids) {
             deleteCoordinationAssociation(id);
         }
+
+        log.info("deleteBulkCoordinationAssociations ===> Eliminación masiva de asociaciones finalizada. total={}",
+                ids.size());
     }
 
     private void fillAssociation(AsociacionCoordinacionEntity association, AsociacionCoordinacionFormularioDTO dto) {
@@ -217,10 +266,12 @@ public class AdministracionServiceImpl implements AdministracionService {
                 .toList();
     }
 
-    @Override
+   @Override
     @Transactional(readOnly = true)
     public List<CentroCostoAsignadoListadoDTO> listCostCenterAssignments() {
-        return asignarCentroCostoRepository.findAdministrationList()
+        log.debug("listCostCenterAssignments ===> Listando centros de costo asignados");
+
+        List<CentroCostoAsignadoListadoDTO> result = asignarCentroCostoRepository.findAdministrationList()
                 .stream()
                 .map(item -> new CentroCostoAsignadoListadoDTO(
                         item.getId(),
@@ -231,52 +282,88 @@ public class AdministracionServiceImpl implements AdministracionService {
                         item.getEstado()
                 ))
                 .toList();
+
+        log.info("listCostCenterAssignments ===> Centros de costo asignados listados. total={}", result.size());
+        return result;
     }
 
     @Override
     @Transactional
     public void saveCostCenterAssignment(CentroCostoAsignadoFormularioDTO dto) {
+        log.info("saveCostCenterAssignment ===> Guardando centro de costo asignado. idCoordinacion={}, idCentroCosto={}",
+                dto != null ? dto.idCoordinacion() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         validateCostCenterAssignment(dto);
 
         AsignarCentroCostoEntity entity = new AsignarCentroCostoEntity();
         fillCostCenterAssignment(entity, dto);
-        asignarCentroCostoRepository.save(entity);
+        AsignarCentroCostoEntity saved = asignarCentroCostoRepository.save(entity);
+
+        log.info("saveCostCenterAssignment ===> Centro de costo asignado guardado. id={}", saved.getId());
     }
 
     @Override
     @Transactional
     public void updateCostCenterAssignment(Long id, CentroCostoAsignadoFormularioDTO dto) {
+        log.info("updateCostCenterAssignment ===> Actualizando centro de costo asignado. id={}, idCoordinacion={}, idCentroCosto={}",
+                id,
+                dto != null ? dto.idCoordinacion() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         validateCostCenterAssignment(dto);
 
         AsignarCentroCostoEntity entity = asignarCentroCostoRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el centro de costo asignado con id " + id));
+                .orElseThrow(() -> {
+                    log.warn("updateCostCenterAssignment ===> Centro de costo asignado no encontrado. id={}", id);
+                    return new ApiException(HttpStatus.NOT_FOUND, "No existe el centro de costo asignado con id " + id);
+                });
 
         fillCostCenterAssignment(entity, dto);
         asignarCentroCostoRepository.save(entity);
+
+        log.info("updateCostCenterAssignment ===> Centro de costo asignado actualizado. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteCostCenterAssignment(Long id) {
+        log.info("deleteCostCenterAssignment ===> Eliminando centro de costo asignado. id={}", id);
+
         if (!asignarCentroCostoRepository.existsById(id)) {
+            log.warn("deleteCostCenterAssignment ===> Centro de costo asignado no encontrado. id={}", id);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el centro de costo asignado con id " + id);
         }
 
         BigDecimal result = asignarCentroCostoRepository.deleteByProcedure(id, REGISTRADO_POR);
 
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            log.warn("deleteCostCenterAssignment ===> Procedimiento de eliminación falló. id={}, resultado={}",
+                    id, result);
+        }
+
         validateProcedureResult(result, "No se pudo eliminar el centro de costo asignado");
+
+        log.info("deleteCostCenterAssignment ===> Centro de costo asignado eliminado. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteBulkCostCenterAssignments(List<Long> ids) {
+        log.info("deleteBulkCostCenterAssignments ===> Eliminación masiva de centros de costo asignados. total={}",
+                ids != null ? ids.size() : 0);
+
         if (ids == null || ids.isEmpty()) {
+            log.debug("deleteBulkCostCenterAssignments ===> Lista vacía. No se realiza eliminación");
             return;
         }
 
         for (Long id : ids) {
             deleteCostCenterAssignment(id);
         }
+
+        log.info("deleteBulkCostCenterAssignments ===> Eliminación masiva de centros de costo finalizada. total={}",
+                ids.size());
     }
 
     private void fillCostCenterAssignment(
@@ -315,7 +402,9 @@ public class AdministracionServiceImpl implements AdministracionService {
     @Override
     @Transactional(readOnly = true)
     public List<PersonaCoordinacionListadoDTO> listPeopleCoordinations() {
-        return personaCoordinacionRepository.findAdministrationList()
+        log.debug("listPeopleCoordinations ===> Listando personas asociadas a coordinaciones");
+
+        List<PersonaCoordinacionListadoDTO> result = personaCoordinacionRepository.findAdministrationList()
                 .stream()
                 .map(item -> new PersonaCoordinacionListadoDTO(
                         item.getIdPersonaGeneral(),
@@ -326,26 +415,44 @@ public class AdministracionServiceImpl implements AdministracionService {
                         item.getEstado()
                 ))
                 .toList();
+
+        log.info("listPeopleCoordinations ===> Personas asociadas a coordinaciones listadas. total={}", result.size());
+        return result;
     }
 
     @Override
     @Transactional
     public void savePeopleCoordination(PersonaCoordinacionFormularioDTO dto) {
+        log.info("savePeopleCoordination ===> Guardando persona asociada a coordinación. idPersonaGeneral={}, idCoordinacion={}",
+                dto != null ? dto.idPersonaGeneral() : null,
+                dto != null ? dto.idCoordinacion() : null);
+
         validatePersonCoordination(dto);
 
         PersonaCoordinacionEntity entity = new PersonaCoordinacionEntity();
         fillPeopleCoordination(entity, dto);
         personaCoordinacionRepository.save(entity);
+
+        log.info("savePeopleCoordination ===> Persona asociada a coordinación guardada. idPersonaGeneral={}, idCoordinacion={}",
+                dto.idPersonaGeneral(), dto.idCoordinacion());
     }
 
     @Override
     @Transactional
     public void updatePeopleCoordination(Long oldIdPersonaGeneral, Long oldIdCoordinacion, PersonaCoordinacionFormularioDTO dto) {
+        log.info("updatePeopleCoordination ===> Actualizando persona asociada a coordinación. oldIdPersonaGeneral={}, oldIdCoordinacion={}, newIdPersonaGeneral={}, newIdCoordinacion={}",
+                oldIdPersonaGeneral,
+                oldIdCoordinacion,
+                dto != null ? dto.idPersonaGeneral() : null,
+                dto != null ? dto.idCoordinacion() : null);
+
         validatePersonCoordination(dto);
 
         PersonaCoordinacionEntityId oldId = personaCoordinationId(oldIdPersonaGeneral, oldIdCoordinacion);
 
         if (!personaCoordinacionRepository.existsById(oldId)) {
+            log.warn("updatePeopleCoordination ===> Persona asociada a coordinación no encontrada. idPersonaGeneral={}, idCoordinacion={}",
+                    oldIdPersonaGeneral, oldIdCoordinacion);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la persona asociada a la coordinación");
         }
 
@@ -353,11 +460,19 @@ public class AdministracionServiceImpl implements AdministracionService {
                 || !oldIdCoordinacion.equals(dto.idCoordinacion());
 
         if (keyChanged) {
+            log.info("updatePeopleCoordination ===> Cambio de llave detectado. Eliminando asociación anterior. oldIdPersonaGeneral={}, oldIdCoordinacion={}",
+                    oldIdPersonaGeneral, oldIdCoordinacion);
+
             BigDecimal result = personaCoordinacionRepository.deleteByProcedure(
                     oldIdPersonaGeneral,
                     oldIdCoordinacion,
                     REGISTRADO_POR
             );
+
+            if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+                log.warn("updatePeopleCoordination ===> Procedimiento de eliminación de asociación anterior falló. oldIdPersonaGeneral={}, oldIdCoordinacion={}, resultado={}",
+                        oldIdPersonaGeneral, oldIdCoordinacion, result);
+            }
 
             validateProcedureResult(result, "No se pudo eliminar la persona asociada anterior");
         }
@@ -365,14 +480,22 @@ public class AdministracionServiceImpl implements AdministracionService {
         PersonaCoordinacionEntity entity = new PersonaCoordinacionEntity();
         fillPeopleCoordination(entity, dto);
         personaCoordinacionRepository.save(entity);
+
+        log.info("updatePeopleCoordination ===> Persona asociada a coordinación actualizada. idPersonaGeneral={}, idCoordinacion={}",
+                dto.idPersonaGeneral(), dto.idCoordinacion());
     }
 
     @Override
     @Transactional
     public void deletePeopleCoordination(Long idPersonaGeneral, Long idCoordinacion) {
+        log.info("deletePeopleCoordination ===> Eliminando persona asociada a coordinación. idPersonaGeneral={}, idCoordinacion={}",
+                idPersonaGeneral, idCoordinacion);
+
         PersonaCoordinacionEntityId id = personaCoordinationId(idPersonaGeneral, idCoordinacion);
 
         if (!personaCoordinacionRepository.existsById(id)) {
+            log.warn("deletePeopleCoordination ===> Persona asociada a coordinación no encontrada. idPersonaGeneral={}, idCoordinacion={}",
+                    idPersonaGeneral, idCoordinacion);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la persona asociada a la coordinación");
         }
 
@@ -382,25 +505,42 @@ public class AdministracionServiceImpl implements AdministracionService {
                 REGISTRADO_POR
         );
 
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            log.warn("deletePeopleCoordination ===> Procedimiento de eliminación falló. idPersonaGeneral={}, idCoordinacion={}, resultado={}",
+                    idPersonaGeneral, idCoordinacion, result);
+        }
+
         validateProcedureResult(result, "No se pudo eliminar la persona asociada a la coordinación");
+
+        log.info("deletePeopleCoordination ===> Persona asociada a coordinación eliminada. idPersonaGeneral={}, idCoordinacion={}",
+                idPersonaGeneral, idCoordinacion);
     }
 
     @Override
     @Transactional
     public void deleteBulkPeopleCoordinations(List<PersonaCoordinacionClaveDTO> registros) {
+        log.info("deleteBulkPeopleCoordinations ===> Eliminación masiva de personas asociadas a coordinación. total={}",
+                registros != null ? registros.size() : 0);
+
         if (registros == null || registros.isEmpty()) {
+            log.debug("deleteBulkPeopleCoordinations ===> Lista vacía. No se realiza eliminación");
             return;
         }
 
         for (PersonaCoordinacionClaveDTO item : registros) {
             deletePeopleCoordination(item.idPersonaGeneral(), item.idCoordinacion());
         }
+
+        log.info("deleteBulkPeopleCoordinations ===> Eliminación masiva de personas asociadas finalizada. total={}",
+                registros.size());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PersonaCoordinacionListadoDTO> listPlantProfessorCoordinations() {
-        return docentesPlantaCoordinacionRepository.findAdministrationList()
+        log.debug("listPlantProfessorCoordinations ===> Listando docentes planta asociados a coordinaciones");
+
+        List<PersonaCoordinacionListadoDTO> result = docentesPlantaCoordinacionRepository.findAdministrationList()
                 .stream()
                 .map(item -> new PersonaCoordinacionListadoDTO(
                         item.getIdPersonaGeneral(),
@@ -411,26 +551,44 @@ public class AdministracionServiceImpl implements AdministracionService {
                         item.getEstado()
                 ))
                 .toList();
+
+        log.info("listPlantProfessorCoordinations ===> Docentes planta asociados listados. total={}", result.size());
+        return result;
     }
 
     @Override
     @Transactional
     public void savePlantProfessorCoordination(PersonaCoordinacionFormularioDTO dto) {
+        log.info("savePlantProfessorCoordination ===> Guardando docente planta asociado a coordinación. idPersonaGeneral={}, idCoordinacion={}",
+                dto != null ? dto.idPersonaGeneral() : null,
+                dto != null ? dto.idCoordinacion() : null);
+
         validatePersonCoordination(dto);
         
         DocentesPlantaCoordinacionEntity entity = new DocentesPlantaCoordinacionEntity();
         fillPlantProfessorCoordination(entity, dto);
         docentesPlantaCoordinacionRepository.save(entity);
+
+        log.info("savePlantProfessorCoordination ===> Docente planta asociado guardado. idPersonaGeneral={}, idCoordinacion={}",
+                dto.idPersonaGeneral(), dto.idCoordinacion());
     }
 
     @Override
     @Transactional
     public void updatePlantProfessorCoordination(Long oldIdPersonaGeneral, Long oldIdCoordinacion, PersonaCoordinacionFormularioDTO dto) {
+        log.info("updatePlantProfessorCoordination ===> Actualizando docente planta asociado. oldIdPersonaGeneral={}, oldIdCoordinacion={}, newIdPersonaGeneral={}, newIdCoordinacion={}",
+                oldIdPersonaGeneral,
+                oldIdCoordinacion,
+                dto != null ? dto.idPersonaGeneral() : null,
+                dto != null ? dto.idCoordinacion() : null);
+
         validatePersonCoordination(dto);
 
         DocentesPlantaCoordinacionEntityId oldId = plantProfessorCoordinationId(oldIdPersonaGeneral, oldIdCoordinacion);
 
         if (!docentesPlantaCoordinacionRepository.existsById(oldId)) {
+            log.warn("updatePlantProfessorCoordination ===> Docente planta asociado no encontrado. idPersonaGeneral={}, idCoordinacion={}",
+                    oldIdPersonaGeneral, oldIdCoordinacion);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el docente planta asociado a la coordinación");
         }
 
@@ -438,11 +596,19 @@ public class AdministracionServiceImpl implements AdministracionService {
                 || !oldIdCoordinacion.equals(dto.idCoordinacion());
 
         if (keyChanged) {
+            log.info("updatePlantProfessorCoordination ===> Cambio de llave detectado. Eliminando docente planta asociado anterior. oldIdPersonaGeneral={}, oldIdCoordinacion={}",
+                    oldIdPersonaGeneral, oldIdCoordinacion);
+
             BigDecimal result = docentesPlantaCoordinacionRepository.deleteByProcedure(
                     oldIdPersonaGeneral,
                     oldIdCoordinacion,
                     REGISTRADO_POR
             );
+
+            if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+                log.warn("updatePlantProfessorCoordination ===> Procedimiento de eliminación de docente planta anterior falló. oldIdPersonaGeneral={}, oldIdCoordinacion={}, resultado={}",
+                        oldIdPersonaGeneral, oldIdCoordinacion, result);
+            }
 
             validateProcedureResult(result, "No se pudo eliminar el docente planta asociado anterior");
         }
@@ -450,14 +616,22 @@ public class AdministracionServiceImpl implements AdministracionService {
         DocentesPlantaCoordinacionEntity entity = new DocentesPlantaCoordinacionEntity();
         fillPlantProfessorCoordination(entity, dto);
         docentesPlantaCoordinacionRepository.save(entity);
+
+        log.info("updatePlantProfessorCoordination ===> Docente planta asociado actualizado. idPersonaGeneral={}, idCoordinacion={}",
+                dto.idPersonaGeneral(), dto.idCoordinacion());
     }
 
     @Override
     @Transactional
     public void deletePlantProfessorCoordination(Long idPersonaGeneral, Long idCoordinacion) {
+        log.info("deletePlantProfessorCoordination ===> Eliminando docente planta asociado. idPersonaGeneral={}, idCoordinacion={}",
+                idPersonaGeneral, idCoordinacion);
+
         DocentesPlantaCoordinacionEntityId id = plantProfessorCoordinationId(idPersonaGeneral, idCoordinacion);
 
         if (!docentesPlantaCoordinacionRepository.existsById(id)) {
+            log.warn("deletePlantProfessorCoordination ===> Docente planta asociado no encontrado. idPersonaGeneral={}, idCoordinacion={}",
+                    idPersonaGeneral, idCoordinacion);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el docente planta asociado a la coordinación");
         }
 
@@ -467,19 +641,34 @@ public class AdministracionServiceImpl implements AdministracionService {
                 REGISTRADO_POR
         );
 
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            log.warn("deletePlantProfessorCoordination ===> Procedimiento de eliminación falló. idPersonaGeneral={}, idCoordinacion={}, resultado={}",
+                    idPersonaGeneral, idCoordinacion, result);
+        }
+
         validateProcedureResult(result, "No se pudo eliminar el docente planta asociado a la coordinación");
+
+        log.info("deletePlantProfessorCoordination ===> Docente planta asociado eliminado. idPersonaGeneral={}, idCoordinacion={}",
+                idPersonaGeneral, idCoordinacion);
     }
 
     @Override
     @Transactional
     public void deleteBulkPlantProfessorCoordinations(List<PersonaCoordinacionClaveDTO> registros) {
+        log.info("deleteBulkPlantProfessorCoordinations ===> Eliminación masiva de docentes planta asociados. total={}",
+                registros != null ? registros.size() : 0);
+
         if (registros == null || registros.isEmpty()) {
+            log.debug("deleteBulkPlantProfessorCoordinations ===> Lista vacía. No se realiza eliminación");
             return;
         }
 
         for (PersonaCoordinacionClaveDTO item : registros) {
             deletePlantProfessorCoordination(item.idPersonaGeneral(), item.idCoordinacion());
         }
+
+        log.info("deleteBulkPlantProfessorCoordinations ===> Eliminación masiva de docentes planta finalizada. total={}",
+                registros.size());
     }
 
     private void fillPeopleCoordination(PersonaCoordinacionEntity entity, PersonaCoordinacionFormularioDTO dto) {

@@ -36,7 +36,9 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdminis
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionAdministracionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CoordinacionAdministracionServiceImpl implements CoordinacionAdministracionService {
@@ -53,11 +55,16 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
     @Override
     @Transactional(readOnly = true)
     public CoordinacionAdministracionCatalogosDTO getCatalogs() {
-        return new CoordinacionAdministracionCatalogosDTO(
+        log.debug("getCatalogs ===> Consultando catálogos para administración de coordinaciones");
+
+        CoordinacionAdministracionCatalogosDTO result = new CoordinacionAdministracionCatalogosDTO(
                 mapCatalog(modalidadRepository.findAdministrationOptions()),
                 mapCatalog(metodologiaRepository.findAdministrationOptions()),
                 mapCatalog(centroCostoRepository.findAdministrationOptions())
         );
+
+        log.info("getCatalogs ===> Catálogos de administración de coordinaciones consultados");
+        return result;
     }
 
     @Override
@@ -65,80 +72,140 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
     public List<CatalogoAdministracionDTO> searchUnits(String term) {
         String normalizedTerm = StringUtils.hasText(term) ? term.trim() : null;
 
-        return mapCatalog(unidadRepository.searchAdministrationUnits(normalizedTerm));
+        log.debug("searchUnits ===> Buscando unidades para administración de coordinaciones. term={}",
+                normalizedTerm);
+
+        List<CatalogoAdministracionDTO> result = mapCatalog(
+                unidadRepository.searchAdministrationUnits(normalizedTerm)
+        );
+
+        log.info("searchUnits ===> Unidades encontradas. term={}, total={}",
+                normalizedTerm, result.size());
+
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CoordinacionAdministracionListadoDTO> listParentCoordinations() {
-        return coordinacionRepository.findAdministrationParentCoordinations()
+        log.debug("listParentCoordinations ===> Listando coordinaciones padre");
+
+        List<CoordinacionAdministracionListadoDTO> result = coordinacionRepository.findAdministrationParentCoordinations()
                 .stream()
                 .map(this::mapToDto)
                 .toList();
+
+        log.info("listParentCoordinations ===> Coordinaciones padre listadas. total={}", result.size());
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CoordinacionAdministracionListadoDTO> listChildCoordinations(Long idPadre) {
+        log.debug("listChildCoordinations ===> Listando coordinaciones hijas. idPadre={}", idPadre);
+
         if (idPadre == null || !coordinacionRepository.existsById(idPadre)) {
+            log.warn("listChildCoordinations ===> Coordinación padre no encontrada. idPadre={}", idPadre);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinación padre");
         }
 
-        return coordinacionRepository.findAdministrationChildCoordinations(idPadre)
+        List<CoordinacionAdministracionListadoDTO> result = coordinacionRepository.findAdministrationChildCoordinations(idPadre)
                 .stream()
                 .map(this::mapToDto)
                 .toList();
+
+        log.info("listChildCoordinations ===> Coordinaciones hijas listadas. idPadre={}, total={}",
+                idPadre, result.size());
+
+        return result;
     }
 
     @Override
     @Transactional
     public void saveParentCoordination(CoordinacionAdministracionFormularioDTO dto) {
+        log.info("saveParentCoordination ===> Guardando coordinación padre. nombre={}, idCentroCosto={}",
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         saveCoordinationWithParent(null, dto);
+
+        log.info("saveParentCoordination ===> Coordinación padre guardada. nombre={}, idCentroCosto={}",
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.idCentroCosto() : null);
     }
 
     @Override
     @Transactional
     public void saveChildCoordination(Long idPadre, CoordinacionAdministracionFormularioDTO dto) {
+        log.info("saveChildCoordination ===> Guardando coordinación hija. idPadre={}, nombre={}, idCentroCosto={}",
+                idPadre,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         if (idPadre == null || !coordinacionRepository.existsById(idPadre)) {
+            log.warn("saveChildCoordination ===> Coordinación padre no encontrada. idPadre={}", idPadre);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinación padre");
         }
 
         saveCoordinationWithParent(idPadre, dto);
+
+        log.info("saveChildCoordination ===> Coordinación hija guardada. idPadre={}, nombre={}, idCentroCosto={}",
+                idPadre,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.idCentroCosto() : null);
     }
 
     @Override
     @Transactional
     public void updateCoordination(Long id, CoordinacionAdministracionFormularioDTO dto) {
+        log.info("updateCoordination ===> Actualizando coordinación. id={}, nombre={}, idCentroCosto={}",
+                id,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         validateCoordination(dto);
 
         CoordinacionesEntity entity = coordinacionRepository.findById(id)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la coordinación con id " + id
-                ));
+                .orElseThrow(() -> {
+                    log.warn("updateCoordination ===> Coordinación no encontrada. id={}", id);
+                    return new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "No existe la coordinación con id " + id
+                    );
+                });
 
         /*
-         * No cambiamos COOR_IDPADRE en edición.
-         * Si era padre, sigue padre.
-         * Si era hija, sigue hija.
-         */
+        * No cambiamos COOR_IDPADRE en edición.
+        * Si era padre, sigue padre.
+        * Si era hija, sigue hija.
+        */
         fillCoordination(entity, dto);
 
         CoordinacionesEntity saved = coordinacionRepository.save(entity);
 
         saveOrUpdateCostCenter(saved.getId(), dto.idCentroCosto());
+
+        log.info("updateCoordination ===> Coordinación actualizada. id={}, idCentroCosto={}",
+                saved.getId(), dto.idCentroCosto());
     }
 
     @Override
     @Transactional
     public void deleteCoordination(Long id) {
+        log.info("deleteCoordination ===> Eliminando coordinación. id={}", id);
+
         CoordinacionesEntity entity = coordinacionRepository.findById(id)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la coordinación con id " + id
-                ));
+                .orElseThrow(() -> {
+                    log.warn("deleteCoordination ===> Coordinación no encontrada. id={}", id);
+                    return new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "No existe la coordinación con id " + id
+                    );
+                });
 
         if (coordinacionRepository.existsByIdCoordinacionPadre(entity.getId())) {
+            log.warn("deleteCoordination ===> Eliminación bloqueada. La coordinación tiene hijas asociadas. id={}",
+                    entity.getId());
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "No se puede eliminar la coordinación porque tiene coordinaciones hijas asociadas"
@@ -151,16 +218,27 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
         */
         List<Long> costCenterAssignmentIds = asignarCentroCostoRepository.findIdsByIdCoordinacion(id);
 
+        log.debug("deleteCoordination ===> Asignaciones de centro de costo encontradas para eliminar. idCoordinacion={}, total={}",
+                id, costCenterAssignmentIds.size());
+
         for (Long assignmentId : costCenterAssignmentIds) {
             BigDecimal assignmentResult = asignarCentroCostoRepository.deleteByProcedure(
                     assignmentId,
                     REGISTRADO_POR
             );
 
+            if (assignmentResult == null || BigDecimal.ONE.compareTo(assignmentResult) != 0) {
+                log.warn("deleteCoordination ===> Procedimiento de eliminación de centro costo falló. idCoordinacion={}, idAsignacion={}, resultado={}",
+                        id, assignmentId, assignmentResult);
+            }
+
             validateProcedureResult(
                     assignmentResult,
                     "No se pudo eliminar el centro de costo asignado a la coordinación"
             );
+
+            log.info("deleteCoordination ===> Centro de costo asignado eliminado. idCoordinacion={}, idAsignacion={}",
+                    id, assignmentId);
         }
 
         /*
@@ -168,25 +246,44 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
         */
         BigDecimal result = coordinacionRepository.deleteByProcedure(id, REGISTRADO_POR);
 
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            log.warn("deleteCoordination ===> Procedimiento de eliminación de coordinación falló. id={}, resultado={}",
+                    id, result);
+        }
+
         validateProcedureResult(result, "No se pudo eliminar la coordinación");
+
+        log.info("deleteCoordination ===> Coordinación eliminada. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteBulkCoordinations(List<Long> ids) {
+        log.info("deleteBulkCoordinations ===> Eliminación masiva de coordinaciones. total={}",
+                ids != null ? ids.size() : 0);
+
         if (ids == null || ids.isEmpty()) {
+            log.debug("deleteBulkCoordinations ===> Lista vacía. No se realiza eliminación");
             return;
         }
 
         for (Long id : ids) {
             deleteCoordination(id);
         }
+
+        log.info("deleteBulkCoordinations ===> Eliminación masiva de coordinaciones finalizada. total={}",
+                ids.size());
     }
 
     private void saveCoordinationWithParent(
             Long idPadre,
             CoordinacionAdministracionFormularioDTO dto
     ) {
+        log.debug("saveCoordinationWithParent ===> Iniciando creación de coordinación. idPadre={}, nombre={}, idCentroCosto={}",
+                idPadre,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.idCentroCosto() : null);
+
         validateCoordination(dto);
 
         CoordinacionesEntity entity = new CoordinacionesEntity();
@@ -197,6 +294,12 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
         CoordinacionesEntity saved = coordinacionRepository.save(entity);
 
         saveOrUpdateCostCenter(saved.getId(), dto.idCentroCosto());
+
+        log.info("saveCoordinationWithParent ===> Coordinación creada. id={}, idPadre={}, nombre={}, idCentroCosto={}",
+                saved.getId(),
+                idPadre,
+                saved.getNombre(),
+                dto.idCentroCosto());
     }
 
     private void fillCoordination(
@@ -219,6 +322,9 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
     }
 
     private void saveOrUpdateCostCenter(Long idCoordinacion, Long idCentroCosto) {
+        log.debug("saveOrUpdateCostCenter ===> Guardando centro de costo de coordinación. idCoordinacion={}, idCentroCosto={}",
+                idCoordinacion, idCentroCosto);
+
         AsignarCentroCostoEntity entity = asignarCentroCostoRepository
                 .findFirstByIdCoordinacion(idCoordinacion)
                 .orElseGet(AsignarCentroCostoEntity::new);
@@ -229,7 +335,12 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
 
-        asignarCentroCostoRepository.save(entity);
+        AsignarCentroCostoEntity saved = asignarCentroCostoRepository.save(entity);
+
+        log.info("saveOrUpdateCostCenter ===> Centro de costo de coordinación guardado. idAsignacion={}, idCoordinacion={}, idCentroCosto={}",
+                saved.getId(),
+                idCoordinacion,
+                idCentroCosto);
     }
 
     private void validateCoordination(CoordinacionAdministracionFormularioDTO dto) {

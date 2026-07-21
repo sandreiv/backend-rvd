@@ -28,7 +28,9 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TipoActividadAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.TipoActividadesAdministracionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TipoActividadesAdministracionServiceImpl implements TipoActividadesAdministracionService {
@@ -41,73 +43,116 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadAdministracionListadoDTO> listParentActivityTypes() {
-        return tipoActividadesRepository.findAdministrationParentList()
+        log.debug("listParentActivityTypes ===> Listando tipos de actividad padre");
+
+        List<TipoActividadAdministracionListadoDTO> result = tipoActividadesRepository.findAdministrationParentList()
                 .stream()
                 .map(this::mapToDto)
                 .toList();
+
+        log.info("listParentActivityTypes ===> Tipos de actividad padre listados. total={}", result.size());
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TipoActividadAdministracionListadoDTO> listChildActivityTypes(Long idPadre) {
+        log.debug("listChildActivityTypes ===> Listando tipos de actividad hijas. idPadre={}", idPadre);
+
         if (idPadre == null || !tipoActividadesRepository.existsById(idPadre)) {
+            log.warn("listChildActivityTypes ===> Tipo de actividad padre no encontrado. idPadre={}", idPadre);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el tipo de actividad padre");
         }
 
-        return tipoActividadesRepository.findAdministrationChildrenList(idPadre)
+        List<TipoActividadAdministracionListadoDTO> result = tipoActividadesRepository.findAdministrationChildrenList(idPadre)
                 .stream()
                 .map(this::mapToDto)
                 .toList();
+
+        log.info("listChildActivityTypes ===> Tipos de actividad hijas listados. idPadre={}, total={}",
+                idPadre, result.size());
+        return result;
     }
 
     @Override
     @Transactional
     public void saveActivityType(TipoActividadAdministracionFormularioDTO dto) {
+        log.info("saveActivityType ===> Guardando tipo de actividad padre. nombre={}, codigo={}",
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.codigo() : null);
+
         saveActivityTypeWithParent(null, dto);
+
+        log.info("saveActivityType ===> Tipo de actividad padre guardado. nombre={}, codigo={}",
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.codigo() : null);
     }
 
     @Override
     @Transactional
     public void saveChildActivityType(Long idPadre, TipoActividadAdministracionFormularioDTO dto) {
+        log.info("saveChildActivityType ===> Guardando tipo de actividad hija. idPadre={}, nombre={}, codigo={}",
+                idPadre,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.codigo() : null);
+
         if (idPadre == null || !tipoActividadesRepository.existsById(idPadre)) {
+            log.warn("saveChildActivityType ===> Tipo de actividad padre no encontrado. idPadre={}", idPadre);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el tipo de actividad padre");
         }
 
         saveActivityTypeWithParent(idPadre, dto);
+
+        log.info("saveChildActivityType ===> Tipo de actividad hija guardado. idPadre={}, nombre={}, codigo={}",
+                idPadre,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.codigo() : null);
     }
 
     @Override
     @Transactional
     public void updateActivityType(Long id, TipoActividadAdministracionFormularioDTO dto) {
+        log.info("updateActivityType ===> Actualizando tipo de actividad. id={}, nombre={}, codigo={}",
+                id,
+                dto != null ? dto.nombre() : null,
+                dto != null ? dto.codigo() : null);
+
         validateActivityType(dto);
 
         TipoActividadesEntity entity = tipoActividadesRepository.findById(id)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe el tipo de actividad con id " + id
-                ));
+                .orElseThrow(() -> {
+                    log.warn("updateActivityType ===> Tipo de actividad no encontrado. id={}", id);
+                    return new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "No existe el tipo de actividad con id " + id
+                    );
+                });
 
-        /*
-         * No se recalcula TIAC_ORDEN.
-         * No se cambia TIAC_IDPADRE.
-         * Si era padre, sigue padre.
-         * Si era hijo, sigue hijo.
-         */
+        
         fillActivityType(entity, dto);
 
         tipoActividadesRepository.save(entity);
+
+        log.info("updateActivityType ===> Tipo de actividad actualizado. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteActivityType(Long id) {
+        log.info("deleteActivityType ===> Eliminando tipo de actividad. id={}", id);
+
         TipoActividadesEntity entity = tipoActividadesRepository.findById(id)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe el tipo de actividad con id " + id
-                ));
+                .orElseThrow(() -> {
+                    log.warn("deleteActivityType ===> Tipo de actividad no encontrado. id={}", id);
+                    return new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "No existe el tipo de actividad con id " + id
+                    );
+                });
 
         if (tipoActividadesRepository.existsByIdPadre(entity.getId())) {
+            log.warn("deleteActivityType ===> Eliminación bloqueada. El tipo de actividad tiene hijas. id={}",
+                    entity.getId());
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "No se puede eliminar el tipo de actividad porque tiene actividades hijas asociadas"
@@ -116,19 +161,33 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
 
         BigDecimal result = tipoActividadesRepository.deleteByProcedure(id, REGISTRADO_POR);
 
+        if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
+            log.warn("deleteActivityType ===> Procedimiento de eliminación falló. id={}, resultado={}",
+                    id, result);
+        }
+
         validateProcedureResult(result, "No se pudo eliminar el tipo de actividad");
+
+        log.info("deleteActivityType ===> Tipo de actividad eliminado. id={}", id);
     }
 
     @Override
     @Transactional
     public void deleteBulkActivityTypes(List<Long> ids) {
+        log.info("deleteBulkActivityTypes ===> Eliminación masiva de tipos de actividad. total={}",
+                ids != null ? ids.size() : 0);
+
         if (ids == null || ids.isEmpty()) {
+            log.debug("deleteBulkActivityTypes ===> Lista vacía. No se realiza eliminación");
             return;
         }
 
         for (Long id : ids) {
             deleteActivityType(id);
         }
+
+        log.info("deleteBulkActivityTypes ===> Eliminación masiva de tipos de actividad finalizada. total={}",
+                ids.size());
     }
 
     private void saveActivityTypeWithParent(
