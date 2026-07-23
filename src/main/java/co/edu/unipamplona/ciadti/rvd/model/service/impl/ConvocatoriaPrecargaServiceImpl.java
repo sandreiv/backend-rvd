@@ -42,6 +42,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaTipoContrataci
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaEstadoService;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,26 +61,33 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private final ConvocatoriaDatosInsertarMapper convocatoriaDatosInsertarMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
     private final ConvocatoriaTipoContratacionFormularioMapper convocatoriaTipoContratacionFormularioMapper;
+    private final ConvocatoriaEstadoService convocatoriaEstadoService;
 
     @Override
     @Transactional
     public List<ConvocatoriaDTO> findCallListWithDates(Long idPeriodoUniversidad) {
         log.debug("Listando convocatorias con fechas. idPeriodoUniversidad={}",
                 idPeriodoUniversidad);
+
+        convocatoriaEstadoService.syncEstadosConvocatoriasConRestricciones();
+
         List<ConvocatoriaDTO> result = convocatoriaRepository
                 .findCallListWithDates(idPeriodoUniversidad)
                 .stream()
                 .map(this::toListDtoAndSyncEstado)
                 .collect(Collectors.toList());
+
         log.info("Convocatorias listadas. periodo={}, total={}",
                 idPeriodoUniversidad, result.size());
         return result;
     }
 
     private ConvocatoriaDTO toListDtoAndSyncEstado(ConvocatoriaEntity convocatoria) {
+        convocatoriaEstadoService.syncEstadoConvocatoria(convocatoria.getId());
+
         FechasConvocatoriaEntity fechaCnv = convocatoriaRepository
                 .findFechaCnvByConvocatoriaId(convocatoria.getId());
-        syncEstadoVencido(convocatoria, fechaCnv);
+
         return convocatoriaMapper.toListDto(
                 convocatoria,
                 convocatoriaRepository.findPeriodoEntityByConvocatoriaId(
@@ -90,23 +98,6 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 personaGeneralRepository.findGeneralPersonById(
                                 convocatoria.getIdPersonaGeneral())
                         .orElse(null));
-    }
-
-    private void syncEstadoVencido(
-            ConvocatoriaEntity convocatoria,
-            FechasConvocatoriaEntity fechaCnv) {
-        if (fechaCnv == null
-                || !FechasConvocatoriaCalculator.isVencida(fechaCnv.getFechaFin())) {
-            return;
-        }
-        if ("0".equals(convocatoria.getEstado())) {
-            return;
-        }
-        Date ahora = new Date();
-        convocatoriaRepository.updateEstado("0", ahora, convocatoria.getId());
-        convocatoria.setEstado("0");
-        convocatoria.setFechaCambio(ahora);
-        log.info("Convocatoria marcada como vencida. id={}", convocatoria.getId());
     }
 
     @Override
@@ -373,22 +364,49 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
 
     @Override
     public List<ConvocatoriaDTO> findActivePreloadCalls() {
-        log.debug("Consultando convocatorias activas de precarga");
-        List<ConvocatoriaDTO> result = convocatoriaRepository.findActivePreloadCalls().stream()
-                .map(convocatoria -> convocatoriaMapper.toListDto(
-                        convocatoria,
-                        convocatoriaRepository.findPeriodoEntityByConvocatoriaId(
-                                convocatoria.getId()),
-                        convocatoriaRepository.findNivelEntityByConvocatoriaId(
-                                convocatoria.getId()),
-                        convocatoriaRepository.findFechaCnvByConvocatoriaId(
-                                convocatoria.getId()),
-                        personaGeneralRepository.findGeneralPersonById(
-                                        convocatoria.getIdPersonaGeneral())
-                                .orElse(null)))
+        log.debug("findActivePreloadCalls ===> Consultando convocatorias activas de precarga");
+
+        List<ConvocatoriaDTO> result = convocatoriaRepository.findActivePreloadCalls()
+                .stream()
+                .map(this::toPreloadCallListDto)
                 .collect(Collectors.toList());
-        log.info("Convocatorias activas de precarga. total={}", result.size());
+
+        log.info("findActivePreloadCalls ===> Convocatorias activas de precarga consultadas. total={}",
+                result.size());
+
         return result;
+    }
+
+    @Override
+    public List<ConvocatoriaDTO> findAssignableActivePreloadCalls() {
+        log.debug("findAssignableActivePreloadCalls ===> Consultando convocatorias activas asignables sin restricción vigente");
+
+        convocatoriaEstadoService.syncEstadosConvocatoriasConRestricciones();
+
+        List<ConvocatoriaDTO> result = convocatoriaRepository.findAssignableActivePreloadCalls()
+                .stream()
+                .map(this::toPreloadCallListDto)
+                .collect(Collectors.toList());
+
+        log.info("findAssignableActivePreloadCalls ===> Convocatorias activas asignables consultadas. total={}",
+                result.size());
+
+        return result;
+    }
+
+    private ConvocatoriaDTO toPreloadCallListDto(ConvocatoriaEntity convocatoria) {
+        return convocatoriaMapper.toListDto(
+                convocatoria,
+                convocatoriaRepository.findPeriodoEntityByConvocatoriaId(
+                        convocatoria.getId()),
+                convocatoriaRepository.findNivelEntityByConvocatoriaId(
+                        convocatoria.getId()),
+                convocatoriaRepository.findFechaCnvByConvocatoriaId(
+                        convocatoria.getId()),
+                personaGeneralRepository.findGeneralPersonById(
+                                convocatoria.getIdPersonaGeneral())
+                        .orElse(null)
+        );
     }
 }
 

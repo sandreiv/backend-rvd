@@ -67,6 +67,18 @@ public class CoordinationController {
         return new ResponseEntity<>(activePreloadCalls, HttpStatus.OK);
     }
 
+    @Operation(
+        summary = "Obtiene las convocatorias activas asignables",
+        description = "Obtiene las convocatorias activas que no tienen restricciones vigentes para asignación libre"
+    )
+    @GetMapping("/list-assignable-preload-calls")
+    public ResponseEntity<?> listAssignablePreloadCalls() throws Exception {
+        List<ConvocatoriaDTO> activePreloadCalls =
+                convocatoriaPrecargaService.findAssignableActivePreloadCalls();
+
+        return new ResponseEntity<>(activePreloadCalls, HttpStatus.OK);
+    }
+
     // Controlador para buscar las coordinaciones del usuario
     /**
      * TO-DO: implementar obtencion de ID del usuario logueado.

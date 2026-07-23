@@ -1,6 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -43,4 +44,59 @@ public interface RestriccionPorCoordinacionRepository
             """, nativeQuery = true)
     List<CoordinacionRestriccionProjection> findAllWithCoordinacion(
             @Param("idConvocatoria") Long idConvocatoria);
+
+    @Query(value = """
+            SELECT COUNT(1)
+            FROM RVD.RESTRICCIONXCOORDINACION REXC
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = REXC.FECO_ID
+            WHERE FECO.CONV_ID = :idConvocatoria
+            AND REXC.REXC_ESTADO = '1'
+            AND TRUNC(REXC.REXC_FECHAFIN) >= TRUNC(SYSDATE)
+            """, nativeQuery = true)
+    Long countActiveNonExpiredRestrictionsByConvocatoria(
+            @Param("idConvocatoria") Long idConvocatoria);
+
+    @Query(value = """
+            SELECT FECO.CONV_ID
+            FROM RVD.FECHASCONVOCATORIA FECO
+            WHERE FECO.FECO_ID = :idFechasConvocatoria
+            """, nativeQuery = true)
+    Optional<Long> findConvocatoriaIdByFechaId(
+            @Param("idFechasConvocatoria") Long idFechasConvocatoria);
+
+    @Query(value = """
+            SELECT FECO.CONV_ID
+            FROM RVD.RESTRICCIONXCOORDINACION REXC
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = REXC.FECO_ID
+            WHERE REXC.REXC_ID = :idRestriccion
+            """, nativeQuery = true)
+    Optional<Long> findConvocatoriaIdByRestrictionId(
+            @Param("idRestriccion") Long idRestriccion);
+
+    @Query(value = """
+            SELECT DISTINCT FECO.CONV_ID
+            FROM RVD.RESTRICCIONXCOORDINACION REXC
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = REXC.FECO_ID
+            WHERE REXC.REXC_ESTADO = '1'
+            """, nativeQuery = true)
+    List<Long> findConvocatoriaIdsWithRestrictions();
+
+    @Query(value = """
+            SELECT COUNT(1)
+            FROM RVD.RESTRICCIONXCOORDINACION REXC
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = REXC.FECO_ID
+            WHERE FECO.CONV_ID = :idConvocatoria
+            AND REXC.COOR_ID = :idCoordinacion
+            AND REXC.REXC_ESTADO = '1'
+            AND TRUNC(SYSDATE) BETWEEN TRUNC(REXC.REXC_FECHAINICIO)
+                                    AND TRUNC(REXC.REXC_FECHAFIN)
+            """, nativeQuery = true)
+    Long countEditableRestrictionsByConvocatoriaAndCoordinacion(
+            @Param("idConvocatoria") Long idConvocatoria,
+            @Param("idCoordinacion") Long idCoordinacion);
+            
 }

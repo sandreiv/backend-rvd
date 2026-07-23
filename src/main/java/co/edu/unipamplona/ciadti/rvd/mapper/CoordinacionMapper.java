@@ -37,6 +37,9 @@ public interface CoordinacionMapper {
     @Mapping(target = "convocatoria", ignore = true)
     @Mapping(target = "carga", source = ".", qualifiedByName = "toCarga")
     @Mapping(target = "centroCosto", source = ".", qualifiedByName = "toCentroCosto")
+    @Mapping(target = "canEditPreassignment", source = ".", qualifiedByName = "toCanEditPreassignment")
+    @Mapping(target = "editBlockReason", source = "editBlockReason")
+    @Mapping(target = "editionMode", source = "editionMode")
     CoordinacionDTO toDto(CoordinacionListadoProjection projection);
 
     default List<CoordinacionDTO> toDtoList(
@@ -61,6 +64,7 @@ public interface CoordinacionMapper {
             List<CoordinacionListadoProjection> group) {
         CoordinacionListadoProjection first = group.getFirst();
         CoordinacionDTO dto = toDto(first);
+
         return new CoordinacionDTO(
                 dto.id(),
                 dto.nombre(),
@@ -73,7 +77,10 @@ public interface CoordinacionMapper {
                 dto.modalidad(),
                 toConvocatoria(first, collectModalidadesContratacion(group)),
                 dto.carga(),
-                dto.centroCosto());
+                dto.centroCosto(),
+                dto.canEditPreassignment(),
+                dto.editBlockReason(),
+                dto.editionMode());
     }
 
     @Named("toCentroCosto")
@@ -113,6 +120,11 @@ public interface CoordinacionMapper {
                 projection.getIdModalidad(),
                 projection.getDescripcionModalidad(),
                 null);
+    }
+
+    @Named("toCanEditPreassignment")
+    default Boolean toCanEditPreassignment(CoordinacionListadoProjection projection) {
+        return "1".equals(String.valueOf(projection.getCanEditPreassignment()));
     }
 
     default ConvocatoriaListadoDTO toConvocatoria(

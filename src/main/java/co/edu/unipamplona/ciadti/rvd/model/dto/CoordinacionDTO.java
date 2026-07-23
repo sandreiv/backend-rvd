@@ -12,5 +12,8 @@ public record CoordinacionDTO(
     ModalidadDTO modalidad,
     ConvocatoriaListadoDTO convocatoria,
     CargaListadoDTO carga,
-    CentroCostoDTO centroCosto
+    CentroCostoDTO centroCosto,
+    Boolean canEditPreassignment,
+    String editBlockReason,
+    String editionMode
 ) {}

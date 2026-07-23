@@ -216,5 +216,31 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             """, nativeQuery = true)
     List<ConvocatoriaEntity> findActivePreloadCalls();
 
+    @Query(value = """
+            SELECT
+                CONV.CONV_ID,
+                CONV.PEUN_ID,
+                CONV.NIED_ID,
+                CONV.PEGE_IDAUTORIZA,
+                CONV.CONV_NOMBRE,
+                CONV.CONV_DESCRIPCION,
+                CONV.CONV_ESTADO,
+                CONV.CONV_REGISTRADOPOR,
+                CONV.CONV_FECHACAMBIO
+            FROM RVD.CONVOCATORIA CONV
+            WHERE CONV.CONV_ESTADO = '1'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM RVD.RESTRICCIONXCOORDINACION REXC
+                INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                    ON FECO.FECO_ID = REXC.FECO_ID
+                WHERE FECO.CONV_ID = CONV.CONV_ID
+                    AND REXC.REXC_ESTADO = '1'
+                    AND TRUNC(REXC.REXC_FECHAFIN) >= TRUNC(SYSDATE)
+            )
+            ORDER BY CONV.CONV_ID
+            """, nativeQuery = true)
+    List<ConvocatoriaEntity> findAssignableActivePreloadCalls();
+
 }
 

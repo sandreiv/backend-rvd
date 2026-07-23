@@ -32,4 +32,8 @@ public interface CoordinacionListadoProjection {
     String getNombreModalidadContratacion();
     Long getIdCentroCosto();
     String getDescripcionCentroCosto();
+    
+    String getCanEditPreassignment();
+    String getEditBlockReason();
+    String getEditionMode();
 }

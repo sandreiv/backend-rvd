@@ -47,7 +47,79 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 MOCO.MOCO_ID AS idModalidadContratacion,
                 MOCO.MOCO_NOMBRE AS nombreModalidadContratacion,
                 CECO.CECO_ID AS idCentroCosto,
-                CECO.CECO_DESCRIPCION AS descripcionCentroCosto
+                CECO.CECO_DESCRIPCION AS descripcionCentroCosto,
+
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM RVD.RESTRICCIONXCOORDINACION REXC_ANY
+                        INNER JOIN RVD.FECHASCONVOCATORIA FECO_ANY
+                            ON FECO_ANY.FECO_ID = REXC_ANY.FECO_ID
+                        WHERE FECO_ANY.CONV_ID = CONV.CONV_ID
+                        AND REXC_ANY.REXC_ESTADO = '1'
+                        AND TRUNC(REXC_ANY.REXC_FECHAFIN) >= TRUNC(SYSDATE)
+                    ) THEN '1'
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.RESTRICCIONXCOORDINACION REXC_ALLOWED
+                        INNER JOIN RVD.FECHASCONVOCATORIA FECO_ALLOWED
+                            ON FECO_ALLOWED.FECO_ID = REXC_ALLOWED.FECO_ID
+                        WHERE FECO_ALLOWED.CONV_ID = CONV.CONV_ID
+                        AND REXC_ALLOWED.COOR_ID = COOR.COOR_ID
+                        AND REXC_ALLOWED.REXC_ESTADO = '1'
+                        AND TRUNC(SYSDATE) BETWEEN TRUNC(REXC_ALLOWED.REXC_FECHAINICIO)
+                                                AND TRUNC(REXC_ALLOWED.REXC_FECHAFIN)
+                    ) THEN '1'
+                    ELSE '0'
+                END AS canEditPreassignment,
+
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM RVD.RESTRICCIONXCOORDINACION REXC_ANY
+                        INNER JOIN RVD.FECHASCONVOCATORIA FECO_ANY
+                            ON FECO_ANY.FECO_ID = REXC_ANY.FECO_ID
+                        WHERE FECO_ANY.CONV_ID = CONV.CONV_ID
+                        AND REXC_ANY.REXC_ESTADO = '1'
+                        AND TRUNC(REXC_ANY.REXC_FECHAFIN) >= TRUNC(SYSDATE)
+                    ) THEN 'NORMAL_ACTIVE'
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.RESTRICCIONXCOORDINACION REXC_ALLOWED
+                        INNER JOIN RVD.FECHASCONVOCATORIA FECO_ALLOWED
+                            ON FECO_ALLOWED.FECO_ID = REXC_ALLOWED.FECO_ID
+                        WHERE FECO_ALLOWED.CONV_ID = CONV.CONV_ID
+                        AND REXC_ALLOWED.COOR_ID = COOR.COOR_ID
+                        AND REXC_ALLOWED.REXC_ESTADO = '1'
+                        AND TRUNC(SYSDATE) BETWEEN TRUNC(REXC_ALLOWED.REXC_FECHAINICIO)
+                                                AND TRUNC(REXC_ALLOWED.REXC_FECHAFIN)
+                    ) THEN 'RESTRICTED_ALLOWED'
+                    ELSE 'READ_ONLY'
+                END AS editionMode,
+
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM RVD.RESTRICCIONXCOORDINACION REXC_ANY
+                        INNER JOIN RVD.FECHASCONVOCATORIA FECO_ANY
+                            ON FECO_ANY.FECO_ID = REXC_ANY.FECO_ID
+                        WHERE FECO_ANY.CONV_ID = CONV.CONV_ID
+                        AND REXC_ANY.REXC_ESTADO = '1'
+                        AND TRUNC(REXC_ANY.REXC_FECHAFIN) >= TRUNC(SYSDATE)
+                    ) THEN CAST(NULL AS VARCHAR2(4000))
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.RESTRICCIONXCOORDINACION REXC_ALLOWED
+                        INNER JOIN RVD.FECHASCONVOCATORIA FECO_ALLOWED
+                            ON FECO_ALLOWED.FECO_ID = REXC_ALLOWED.FECO_ID
+                        WHERE FECO_ALLOWED.CONV_ID = CONV.CONV_ID
+                        AND REXC_ALLOWED.COOR_ID = COOR.COOR_ID
+                        AND REXC_ALLOWED.REXC_ESTADO = '1'
+                        AND TRUNC(SYSDATE) BETWEEN TRUNC(REXC_ALLOWED.REXC_FECHAINICIO)
+                                                AND TRUNC(REXC_ALLOWED.REXC_FECHAFIN)
+                    ) THEN CAST(NULL AS VARCHAR2(4000))
+                    ELSE 'La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.'
+                END AS editBlockReason
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
                 ON NIED.NIED_ID = CONV.NIED_ID
@@ -121,7 +193,10 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 CAST(NULL AS NUMBER) AS idModalidadContratacion,
                 CAST(NULL AS VARCHAR2(4000)) AS nombreModalidadContratacion,
                 CECO.CECO_ID AS idCentroCosto,
-                CECO.CECO_DESCRIPCION AS descripcionCentroCosto
+                CECO.CECO_DESCRIPCION AS descripcionCentroCosto,
+                CAST('0' AS VARCHAR2(1)) AS canEditPreassignment,
+                CAST(NULL AS VARCHAR2(4000)) AS editBlockReason,
+                CAST('UNASSIGNED' AS VARCHAR2(30)) AS editionMode
             FROM RVD.COORDINACIONES COOR
             INNER JOIN ACADEMICO.UNIDAD UNID_REG
                 ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL

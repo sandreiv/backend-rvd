@@ -32,5 +32,7 @@ public interface ConvocatoriaPrecargaService {
     void bulkDelete(List<ConvocatoriaFormularioDTO> listaConvocatorias);
 
     List<ConvocatoriaDTO> findActivePreloadCalls();
+
+    List<ConvocatoriaDTO> findAssignableActivePreloadCalls();
 }
 /* 02/06/2026 @:Sebastian Jaimes */

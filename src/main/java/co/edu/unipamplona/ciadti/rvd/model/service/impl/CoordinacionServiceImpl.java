@@ -19,6 +19,7 @@ import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaEstadoService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -119,6 +120,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
     private static final int ESCALA_MONETARIA = 2;
+    private static final String PREASIGNACION_SOLO_LECTURA =
+        "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
 
     private final CoordinacionRepository coordinacionRepository;
     private final CargaRepository cargaRepository;
@@ -162,6 +165,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
     private final RestriccionPorCoordinacionMapper restriccionPorCoordinacionMapper;
     private final TotalPreasignacionMapper totalPreasignacionMapper;
+    private final ConvocatoriaEstadoService convocatoriaEstadoService;
 
     @Override
     @Transactional(readOnly = true)
@@ -220,6 +224,115 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
     }
 
+    private void validatePreassignmentWriteAllowedByCarga(Long idCarga) {
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+
+        CargaEntity carga = cargaRepository.findById(idCarga)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe la carga con id " + idCarga));
+
+        validatePreassignmentWriteAllowed(carga);
+    }
+
+    private void validatePreassignmentWriteAllowedByCargaDocente(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
+        }
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        validatePreassignmentWriteAllowedByCarga(cargaDocente.getIdCarga());
+    }
+
+    private void validatePreassignmentWriteAllowedByDetalle(Long idDetalleCargaDocente) {
+        if (idDetalleCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
+        }
+
+        DetalleCargaDocenteEntity detalle = detalleCargaDocenteRepository.findById(idDetalleCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe el detalle de carga docente con id " + idDetalleCargaDocente));
+
+        validatePreassignmentWriteAllowedByCargaDocente(detalle.getIdCargaDocente());
+    }
+
+    private void validatePreassignmentWriteAllowed(CargaEntity carga) {
+        if (carga == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga de la preasignación");
+        }
+
+        if (isPreassignmentWriteAllowed(carga.getIdConvocatoria(), carga.getIdCoordinacion())) {
+            return;
+        }
+
+        log.warn("validatePreassignmentWriteAllowed ===> Escritura bloqueada. idCarga={}, idConvocatoria={}, idCoordinacion={}",
+                carga.getId(), carga.getIdConvocatoria(), carga.getIdCoordinacion());
+
+        throw new ApiException(HttpStatus.FORBIDDEN, PREASIGNACION_SOLO_LECTURA);
+    }
+
+    private boolean isPreassignmentWriteAllowed(Long idConvocatoria, Long idCoordinacion) {
+        if (idConvocatoria == null || idCoordinacion == null) {
+            return false;
+        }
+
+        var convocatoria = convocatoriaRepository.findById(idConvocatoria)
+                .orElse(null);
+
+        if (convocatoria == null) {
+            return false;
+        }
+
+        Long totalRestricciones = restriccionPorCoordinacionRepository
+                .countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
+
+        boolean tieneRestriccionesNoVencidas =
+                totalRestricciones != null && totalRestricciones > 0;
+
+        if (!tieneRestriccionesNoVencidas) {
+            return "1".equals(convocatoria.getEstado());
+        }
+
+        Long totalRestriccionesEditables = restriccionPorCoordinacionRepository
+                .countEditableRestrictionsByConvocatoriaAndCoordinacion(
+                        idConvocatoria,
+                        idCoordinacion);
+
+        return totalRestriccionesEditables != null && totalRestriccionesEditables > 0;
+    }
+
+    private void validateAssignablePreloadCall(Long idConvocatoria) {
+        if (idConvocatoria == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La convocatoria es obligatoria");
+        }
+
+        var convocatoria = convocatoriaRepository.findById(idConvocatoria)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "Convocatoria no encontrada"));
+
+        Long totalRestricciones = restriccionPorCoordinacionRepository
+                .countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
+
+        boolean tieneRestriccionesNoVencidas =
+                totalRestricciones != null && totalRestricciones > 0;
+
+        if (!"1".equals(convocatoria.getEstado()) || tieneRestriccionesNoVencidas) {
+            log.warn("validateAssignablePreloadCall ===> Convocatoria no asignable libremente. idConvocatoria={}, estado={}, restricciones={}",
+                    idConvocatoria,
+                    convocatoria.getEstado(),
+                    totalRestricciones);
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "La convocatoria no está disponible para asignación libre."
+            );
+        }
+    }
+
 
     private Long resolveEstadoCargaInicialId() {
         return estadoCargaRepository.findByNombre(ESTADO_CARGA_INICIAL)
@@ -245,6 +358,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (!convocatoriaRepository.existsById(dto.idConvocatoria())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada");
         }
+
+        validateAssignablePreloadCall(dto.idConvocatoria());
+
     }
 
     @Override
@@ -355,6 +471,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional
     public void addProfessor(CargaDocenteFormularioDTO dto) {
         log.info("addProfessor ===> Agregando docente. idPersona={}, idCarga={}, idModalidad={}", dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion());
+        
+        validatePreassignmentWriteAllowedByCarga(dto.idCarga());
+
         if (dto.idPersonaGeneral() != null
                 && cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionAndIdFechasConvocatoria(
                         dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion(), dto.fechasConvocatoria().id())) {
@@ -398,6 +517,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.info("updateProfessor ===> Actualizando docente. idCargaDocente={}", idCargaDocente);
         CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
         
+        validatePreassignmentWriteAllowedByCarga(entity.getIdCarga());
+
         cargaDocenteMapper.updateEntity(dto, entity);
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
@@ -409,13 +530,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional
     public void deleteProfessor(Long idCargaDocente) {
         log.info("deleteProfessor ===> Eliminando docente. idCargaDocente={}", idCargaDocente);
-        
-        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
-            log.warn("deleteProfessor ===> Carga docente no encontrada al eliminar. id={}", idCargaDocente);
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
-        }
-        
+
+        CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> {
+                    log.warn("deleteProfessor ===> Carga docente no encontrada al eliminar. id={}", idCargaDocente);
+                    return new ApiException(HttpStatus.NOT_FOUND,
+                            "No existe la carga docente con id " + idCargaDocente);
+                });
+
+        validatePreassignmentWriteAllowedByCarga(entity.getIdCarga());
+
         cargaDocenteRepository.deleteByProcedure(idCargaDocente, REGISTRADO_POR);
+
         log.info("deleteProfessor ===> Docente eliminado. idCargaDocente={}", idCargaDocente);
     }
 
@@ -535,6 +661,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 dto.detalles() != null ? dto.detalles().size() : 0);
         
         validateSaveDetailProfessorPreload(dto);
+
+        validatePreassignmentWriteAllowedByCargaDocente(dto.idCargaDocente());
         
         for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
             DetalleCargaDocenteEntity entity = detalleCargaDocenteMapper.toEntity(dto.idCargaDocente(), detalle);
@@ -572,6 +700,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 dto.idDetalleCargaDocente(), dto.idCargaDocente());
         
         validateUpdateDetailProfessorPreload(dto);
+
+        validatePreassignmentWriteAllowedByCargaDocente(dto.idCargaDocente());
 
         Long idDetalleCargaDocente = dto.idDetalleCargaDocente();
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
@@ -716,6 +846,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 dto != null ? dto.idModalidadContratacion() : null);
         validateCareerProfessorPreload(dto);
 
+        validatePreassignmentWriteAllowedByCarga(dto.idCarga());
+
         if (cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
                 dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion())) {
             log.warn("saveCareerProfessorPreload ===> Docente planta duplicado. idPersona={}, idCarga={}",
@@ -763,17 +895,17 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     @Override
+    @Transactional
     public void deleteProfessorActivity(Long idDetalleCargaDocente) {
-        log.info("deleteProfessorActivity ===> Eliminando actividad docente. idDetalle={}", idDetalleCargaDocente);
-        if (idDetalleCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
-        }
-        if (!detalleCargaDocenteRepository.existsById(idDetalleCargaDocente)) {
-            log.warn("deleteProfessorActivity ===> Detalle carga docente no encontrado. id={}", idDetalleCargaDocente);
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + idDetalleCargaDocente);
-        }
+        log.info("deleteProfessorActivity ===> Eliminando actividad docente. idDetalle={}",
+                idDetalleCargaDocente);
+
+        validatePreassignmentWriteAllowedByDetalle(idDetalleCargaDocente);
+
         detalleCargaDocenteRepository.deleteByProcedure(idDetalleCargaDocente, REGISTRADO_POR);
-        log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
+
+        log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}",
+                idDetalleCargaDocente);
     }
 
     @Override
@@ -878,6 +1010,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         restriccion.setRegistradoPor(REGISTRADO_POR);
         restriccion.setFechaCambio(new Date());
         restriccionPorCoordinacionRepository.save(restriccion);
+
+        convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(dto.idFechasConvocatoria());
+
         log.info("saveCoordinationRestriction ===> Restricción guardada. id={}", restriccion.getId());
     }
 
@@ -900,6 +1035,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         RestriccionPorCoordinacionEntity entity = restriccionPorCoordinacionRepository
                 .findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la restriccion con id " + id));
+        
+        Long oldIdFechasConvocatoria = entity.getIdFechasConvocatoria();
 
         if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinacion con id " + dto.idCoordinacion());
@@ -917,9 +1054,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         restriccionPorCoordinacionMapper.updateEntity(dto, entity);
-        entity.setRegistradoPor(REGISTRADO_POR);
-        entity.setFechaCambio(new Date());
-        restriccionPorCoordinacionRepository.save(entity);
+                entity.setRegistradoPor(REGISTRADO_POR);
+                entity.setFechaCambio(new Date());
+                restriccionPorCoordinacionRepository.save(entity);
+
+        convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(oldIdFechasConvocatoria);
+        convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(dto.idFechasConvocatoria());
+
         log.info("updateCoordinationRestriction ===> Restricción actualizada. id={}", id);
     }
 
@@ -934,7 +1075,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             log.warn("deleteCoordinationRestriction ===> Restricción no encontrada al eliminar. id={}", id);
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la restriccion con id " + id);
         }
+
+        Long idConvocatoria = restriccionPorCoordinacionRepository
+                .findConvocatoriaIdByRestrictionId(id)
+                .orElse(null);
+
         restriccionPorCoordinacionRepository.deleteById(id);
+
+        convocatoriaEstadoService.syncEstadoConvocatoria(idConvocatoria);
+
         log.info("deleteCoordinationRestriction ===> Restricción eliminada. id={}", id);
     }
 
