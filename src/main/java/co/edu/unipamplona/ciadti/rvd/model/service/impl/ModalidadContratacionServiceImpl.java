@@ -19,7 +19,6 @@ public class ModalidadContratacionServiceImpl implements ModalidadContratacionSe
 
     @Override
     public List<ModalidadContratacionDTO> findModalityList() {
-        return modalidadContratacionMapper.toDtoList(
-                modalidadContratacionRepository.findAllModalities());
+        return modalidadContratacionMapper.toDtoList(modalidadContratacionRepository.findAllModalities());
     }
 }

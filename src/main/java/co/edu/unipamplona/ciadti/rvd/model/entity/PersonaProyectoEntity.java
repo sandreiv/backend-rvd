@@ -10,22 +10,33 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+@NamedStoredProcedureQuery(
+    name = "PersonaProyectoEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_PERSONAPROYECTO",
+    parameters = {
+        @StoredProcedureParameter(name = "P_PEPR_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_PEPR_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
+    }
+)
 @Getter
 @Setter
 @Entity

@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -17,10 +18,22 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+@NamedStoredProcedureQuery(
+    name = "ConvocatoriaProyectosEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_CONVOCATORIAPROYECTOS",
+    parameters = {
+        @StoredProcedureParameter(name = "P_COPR_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_COPR_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
+    }
+)
 @Getter
 @Setter
 @Entity
@@ -44,8 +57,8 @@ public class ConvocatoriaProyectosEntity implements Serializable, Cloneable {
     @Column(name = "COPR_REGISTRADOPOR")
     private String registradoPor;
 
-    @Column(name = "COPR_FECHAFIN")
-    private Date fechaFin;
+    @Column(name = "COPR_FECHACAMBIO")
+    private Date fechaCambio;
 
     @Override
     public Object clone() throws CloneNotSupportedException {
@@ -60,7 +73,7 @@ public class ConvocatoriaProyectosEntity implements Serializable, Cloneable {
                 ", descripcion=" + descripcion +
                 ", codigo=" + codigo +
                 ", registradoPor=" + registradoPor +
-                ", fechaFin=" + fechaFin +
+                ", fechaCambio=" + fechaCambio +
                 '}';
     }
 }

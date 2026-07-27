@@ -1,12 +1,15 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaProyectoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PersonaProyectoListaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ProyectoDocenteListadoProjection;
 
 public interface PersonaProyectoRepository
@@ -46,5 +49,43 @@ public interface PersonaProyectoRepository
     List<ProyectoDocenteListadoProjection> findProyectosByIdPersonaGeneral(
             @Param("idPersonaGeneral") Long idPersonaGeneral);
 
+    @Query(value = """
+            SELECT
+                PEPR.PEPR_ID AS id,
+                PEPR.PROY_ID AS idProyecto,
+                PEPR.PEGE_ID AS idPersonaGeneral,
+                COALESCE(
+                    NULLIF(TRIM(
+                        NVL(PENG.PENG_PRIMERAPELLIDO, '') || ' ' ||
+                        NVL(PENG.PENG_SEGUNDOAPELLIDO, '') || ' ' ||
+                        NVL(PENG.PENG_PRIMERNOMBRE, '') || ' ' ||
+                        NVL(PENG.PENG_SEGUNDONOMBRE, '')
+                    ), ''),
+                    'Persona ' || PEPR.PEGE_ID
+                ) AS nombreCompleto,
+                PEPR.TIAC_ID AS idTipoActividad,
+                TIAC.TIAC_NOMBRE AS nombreTipoActividad,
+                PEPR.PEPR_TIPO AS tipo,
+                PEPR.PEPR_HORAS AS horas,
+                PEPR.PEPR_OBSERVACION AS observacion
+            FROM RVD.PERSONAPROYECTO PEPR
+            LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEPR.PEGE_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                ON TIAC.TIAC_ID = PEPR.TIAC_ID
+            WHERE PEPR.PROY_ID = :idProyecto
+            ORDER BY nombreCompleto, PEPR.PEPR_ID
+            """, nativeQuery = true)
+    List<PersonaProyectoListaProjection> findByIdProyecto(
+            @Param("idProyecto") Long idProyecto);
+
     boolean existsByIdAndIdProyecto(Long id, Long idProyecto);
+
+    boolean existsByIdProyecto(Long idProyecto);
+
+    @Procedure(name = "PersonaProyectoEntity.deleteByProcedure")
+    BigDecimal deleteByProcedure(
+            @Param("P_PEPR_ID") Long id,
+            @Param("P_PEPR_REGISTRADOPOR") String registradoPor
+    );
 }

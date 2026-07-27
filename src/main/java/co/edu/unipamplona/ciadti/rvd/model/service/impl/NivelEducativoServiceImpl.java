@@ -19,7 +19,6 @@ public class NivelEducativoServiceImpl implements NivelEducativoService {
 
     @Override
     public List<NivelEducativoDTO> findEducationalLevelList() {
-        return nivelEducativoMapper.toDtoList(
-                nivelEducativoRepository.findAllEducationalLevels());
+        return nivelEducativoMapper.toDtoList(nivelEducativoRepository.findAllEducationalLevels());
     }
 }
