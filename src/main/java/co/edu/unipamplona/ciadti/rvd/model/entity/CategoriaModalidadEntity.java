@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,6 +38,12 @@ public class CategoriaModalidadEntity implements Serializable, Cloneable {
     @Column(name = "MOCO_ID")
     private Long idModalidadContratacion;
 
+    @Column(name = "CAMO_REGISTRADOPOR")
+    private String registradoPor;
+
+    @Column(name = "CAMO_FECHACAMBIO")
+    private Date fechaCambio;
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -48,6 +55,8 @@ public class CategoriaModalidadEntity implements Serializable, Cloneable {
                 "id=" + id +
                 ", idCategoriaCatedratico=" + idCategoriaCatedratico +
                 ", idModalidadContratacion=" + idModalidadContratacion +
+                ", registradoPor='" + registradoPor + '\'' +
+                ", fechaCambio=" + fechaCambio +
                 '}';
     }
 }

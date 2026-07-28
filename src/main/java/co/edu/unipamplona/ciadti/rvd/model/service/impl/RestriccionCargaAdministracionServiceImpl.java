@@ -331,6 +331,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         CategoriaModalidadEntity entity = new CategoriaModalidadEntity();
         entity.setIdModalidadContratacion(idModalidadContratacion);
         entity.setIdCategoriaCatedratico(idCategoriaCatedratico);
+        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setFechaCambio(new Date());
 
         categoriaModalidadRepository.save(entity);
     }
