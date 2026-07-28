@@ -98,5 +98,34 @@ public interface RestriccionPorCoordinacionRepository
     Long countEditableRestrictionsByConvocatoriaAndCoordinacion(
             @Param("idConvocatoria") Long idConvocatoria,
             @Param("idCoordinacion") Long idCoordinacion);
+
+
+     @Query(value = """
+                SELECT COUNT(1)
+                FROM RVD.RESTRICCIONXCOORDINACION REXC
+                INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = REXC.FECO_ID
+                WHERE FECO.CONV_ID = :idConvocatoria
+                AND REXC.COOR_ID = :idCoordinacion
+                """, nativeQuery = true)
+        Long countByConvocatoriaAndCoordinacion(
+                @Param("idConvocatoria") Long idConvocatoria,
+                @Param("idCoordinacion") Long idCoordinacion
+        );
+
+     @Query(value = """
+                SELECT COUNT(1)
+                FROM RVD.RESTRICCIONXCOORDINACION REXC
+                INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = REXC.FECO_ID
+                WHERE FECO.CONV_ID = :idConvocatoria
+                AND REXC.COOR_ID = :idCoordinacion
+                AND REXC.REXC_ID <> :idRestriccion
+                """, nativeQuery = true)
+        Long countByConvocatoriaAndCoordinacionAndIdNot(
+                @Param("idConvocatoria") Long idConvocatoria,
+                @Param("idCoordinacion") Long idCoordinacion,
+                @Param("idRestriccion") Long idRestriccion
+        );       
             
 }

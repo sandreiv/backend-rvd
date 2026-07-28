@@ -87,6 +87,11 @@ public interface CoordinacionService {
 
     List<CoordinacionBusquedaDTO> searchCoordination(String nombre);
 
+    List<CoordinacionBusquedaDTO> searchCoordinationForRestriction(
+            String nombre,
+            Long idConvocatoria
+    );
+
     void saveCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto);
 
     List<CoordinacionRestriccionDTO> listCoordinationRestriction(Long idConvocatoria);

@@ -989,31 +989,101 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     @Override
+    public List<CoordinacionBusquedaDTO> searchCoordinationForRestriction(
+            String nombre,
+            Long idConvocatoria) {
+        log.debug(
+                "searchCoordinationForRestriction ===> Buscando coordinación disponible para restricción. nombre={}, idConvocatoria={}",
+                nombre,
+                idConvocatoria
+        );
+
+        String param = normalizeParam(nombre);
+
+        if (param == null || param.length() < 2) {
+            log.debug("searchCoordinationForRestriction ===> Búsqueda sin criterios válidos");
+            return Collections.emptyList();
+        }
+
+        if (idConvocatoria == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria es obligatoria para buscar coordinaciones disponibles"
+            );
+        }
+
+        List<CoordinacionBusquedaDTO> result = coordinacionMapper.toBusquedaDtoList(
+                coordinacionRepository.searchCoordinationAvailableForRestriction(
+                        param,
+                        idConvocatoria
+                )
+        );
+
+        log.info(
+                "searchCoordinationForRestriction ===> Coordinaciones disponibles encontradas. idConvocatoria={}, total={}",
+                idConvocatoria,
+                result.size()
+        );
+
+        return result;
+    }
+
+    @Override
     @Transactional
     public void saveCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto) {
-        log.info("saveCoordinationRestriction ===> Guardando restricción. idCoordinacion={}, idFechasConvocatoria={}", dto.idCoordinacion(), dto.idFechasConvocatoria());
+        log.info(
+                "saveCoordinationRestriction ===> Guardando restricción. idCoordinacion={}, idFechasConvocatoria={}",
+                dto != null ? dto.idCoordinacion() : null,
+                dto != null ? dto.idFechasConvocatoria() : null
+        );
+
+        validateCoordinationRestriction(dto);
 
         if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinacion con id " + dto.idCoordinacion());
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la coordinacion con id " + dto.idCoordinacion()
+            );
         }
 
         if (!fechasConvocatoriaRepository.existsById(dto.idFechasConvocatoria())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la fecha de convocatoria con id " + dto.idFechasConvocatoria());
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la fecha de convocatoria con id " + dto.idFechasConvocatoria()
+            );
         }
 
-        if (restriccionPorCoordinacionRepository.existsByIdCoordinacionAndIdFechasConvocatoria(dto.idCoordinacion(), dto.idFechasConvocatoria())) {
-            log.warn("saveCoordinationRestriction ===> Restricción duplicada. idCoordinacion={}, idFechas={}", dto.idCoordinacion(), dto.idFechasConvocatoria());
-            throw new ApiException(HttpStatus.CONFLICT, "Ya existe una restriccion para la coordinacion y fecha indicadas");
-        }
+        Long idConvocatoria = resolveConvocatoriaIdFromFecha(dto.idFechasConvocatoria());
 
-        RestriccionPorCoordinacionEntity restriccion = restriccionPorCoordinacionMapper.toEntity(dto);
+        validateCoordinationAvailableForRestriction(
+                dto.idCoordinacion(),
+                idConvocatoria,
+                null
+        );
+
+        ensureCargaForRestriction(
+                dto.idCoordinacion(),
+                idConvocatoria
+        );
+
+        RestriccionPorCoordinacionEntity restriccion =
+                restriccionPorCoordinacionMapper.toEntity(dto);
+
         restriccion.setRegistradoPor(REGISTRADO_POR);
         restriccion.setFechaCambio(new Date());
+
         restriccionPorCoordinacionRepository.save(restriccion);
 
-        convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(dto.idFechasConvocatoria());
+        convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(
+                dto.idFechasConvocatoria()
+        );
 
-        log.info("saveCoordinationRestriction ===> Restricción guardada. id={}", restriccion.getId());
+        log.info(
+                "saveCoordinationRestriction ===> Restricción guardada. id={}, idCoordinacion={}, idConvocatoria={}",
+                restriccion.getId(),
+                dto.idCoordinacion(),
+                idConvocatoria
+        );
     }
 
     @Override
@@ -1024,6 +1094,99 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<CoordinacionRestriccionDTO> result = restriccionPorCoordinacionMapper.toDtoList(restriccionPorCoordinacionRepository.findAllWithCoordinacion(idConvocatoria));
         log.info("listCoordinationRestriction ===> Restricciones listadas. idConvocatoria={}, total={}", idConvocatoria, result.size());
         return result;
+    }
+
+    private Long resolveConvocatoriaIdFromFecha(Long idFechasConvocatoria) {
+        return restriccionPorCoordinacionRepository
+                .findConvocatoriaIdByFechaId(idFechasConvocatoria)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "No fue posible identificar la convocatoria asociada a la fecha seleccionada"
+                ));
+    }
+
+    private void validateCoordinationAvailableForRestriction(
+            Long idCoordinacion,
+            Long idConvocatoria,
+            Long idRestriccionActual) {
+        Long totalAsignadasOtraConvocatoria =
+                cargaRepository.countAssignedToAnotherPreloadCall(
+                        idCoordinacion,
+                        idConvocatoria
+                );
+
+        if (totalAsignadasOtraConvocatoria != null
+                && totalAsignadasOtraConvocatoria > 0) {
+            log.warn(
+                    "validateCoordinationAvailableForRestriction ===> Coordinación asociada a otra convocatoria. idCoordinacion={}, idConvocatoria={}",
+                    idCoordinacion,
+                    idConvocatoria
+            );
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "La coordinación ya se encuentra asociada a otra convocatoria"
+            );
+        }
+
+        Long totalRestricciones = idRestriccionActual == null
+                ? restriccionPorCoordinacionRepository
+                        .countByConvocatoriaAndCoordinacion(
+                                idConvocatoria,
+                                idCoordinacion
+                        )
+                : restriccionPorCoordinacionRepository
+                        .countByConvocatoriaAndCoordinacionAndIdNot(
+                                idConvocatoria,
+                                idCoordinacion,
+                                idRestriccionActual
+                        );
+
+        if (totalRestricciones != null && totalRestricciones > 0) {
+            log.warn(
+                    "validateCoordinationAvailableForRestriction ===> Restricción duplicada en convocatoria. idCoordinacion={}, idConvocatoria={}",
+                    idCoordinacion,
+                    idConvocatoria
+            );
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "La coordinación ya tiene una restricción registrada en esta convocatoria"
+            );
+        }
+    }
+
+    private void ensureCargaForRestriction(Long idCoordinacion, Long idConvocatoria) {
+        CargaEntity carga = cargaRepository
+                .findFirstByIdCoordinacionOrderByIdDesc(idCoordinacion)
+                .orElseGet(CargaEntity::new);
+
+        if (carga.getIdConvocatoria() != null
+                && !Objects.equals(carga.getIdConvocatoria(), idConvocatoria)) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "La coordinación ya se encuentra asociada a otra convocatoria"
+            );
+        }
+
+        carga.setIdCoordinacion(idCoordinacion);
+        carga.setIdConvocatoria(idConvocatoria);
+
+        if (carga.getIdEstadoCarga() == null) {
+            carga.setIdEstadoCarga(resolveEstadoCargaInicialId());
+        }
+
+        carga.setRegistradoPor(REGISTRADO_POR);
+        carga.setFechaCambio(new Date());
+
+        cargaRepository.save(carga);
+
+        log.info(
+                "ensureCargaForRestriction ===> Carga asociada para restricción. idCarga={}, idCoordinacion={}, idConvocatoria={}",
+                carga.getId(),
+                idCoordinacion,
+                idConvocatoria
+        );
     }
 
     @Override
@@ -1044,14 +1207,19 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (!fechasConvocatoriaRepository.existsById(dto.idFechasConvocatoria())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la fecha de convocatoria con id " + dto.idFechasConvocatoria());
         }
-        if (restriccionPorCoordinacionRepository
-                .existsByIdCoordinacionAndIdFechasConvocatoriaAndIdNot(
-                        dto.idCoordinacion(),
-                        dto.idFechasConvocatoria(),
-                        id)) {
-            log.warn("updateCoordinationRestriction ===> Conflicto al actualizar restricción. id={}, idCoordinacion={}", id, dto.idCoordinacion());
-            throw new ApiException(HttpStatus.CONFLICT, "Ya existe una restriccion para la coordinacion y fecha indicadas");
-        }
+
+        Long idConvocatoria = resolveConvocatoriaIdFromFecha(dto.idFechasConvocatoria());
+
+        validateCoordinationAvailableForRestriction(
+                dto.idCoordinacion(),
+                idConvocatoria,
+                id
+        );
+
+        ensureCargaForRestriction(
+                dto.idCoordinacion(),
+                idConvocatoria
+        );
 
         restriccionPorCoordinacionMapper.updateEntity(dto, entity);
                 entity.setRegistradoPor(REGISTRADO_POR);

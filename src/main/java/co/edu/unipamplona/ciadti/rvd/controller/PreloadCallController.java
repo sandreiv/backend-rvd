@@ -153,9 +153,18 @@ public class PreloadCallController {
         summary = "Busca coordinaciones",
         description = "Busca coordinaciones"
     )
+    
     @GetMapping("/search-coordination")
-    public ResponseEntity<List<CoordinacionBusquedaDTO>> searchCoordination(@RequestParam(required = false) String nombre) {
-        List<CoordinacionBusquedaDTO> coordinations = coordinacionService.searchCoordination(nombre);
+    public ResponseEntity<List<CoordinacionBusquedaDTO>> searchCoordination(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Long idConvocatoria) {
+        List<CoordinacionBusquedaDTO> coordinations = idConvocatoria == null
+                ? coordinacionService.searchCoordination(nombre)
+                : coordinacionService.searchCoordinationForRestriction(
+                        nombre,
+                        idConvocatoria
+                );
+
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
     }
 

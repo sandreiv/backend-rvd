@@ -352,4 +352,31 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             """, nativeQuery = true)
     List<CoordinacionesEntity> searchCoordination(String nombre);
 
+    @Query(value = """
+            SELECT
+                COOR.*
+            FROM RVD.COORDINACIONES COOR
+            WHERE UPPER(COOR.COOR_NOMBRE) LIKE UPPER('%' || :nombre || '%')
+            AND NOT EXISTS (
+                SELECT 1
+                FROM RVD.CARGA CARG_OTHER
+                WHERE CARG_OTHER.COOR_ID = COOR.COOR_ID
+                AND CARG_OTHER.CONV_ID IS NOT NULL
+                AND CARG_OTHER.CONV_ID <> :idConvocatoria
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM RVD.RESTRICCIONXCOORDINACION REXC
+                INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                    ON FECO.FECO_ID = REXC.FECO_ID
+                WHERE REXC.COOR_ID = COOR.COOR_ID
+                AND FECO.CONV_ID = :idConvocatoria
+            )
+            ORDER BY COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionesEntity> searchCoordinationAvailableForRestriction(
+            @Param("nombre") String nombre,
+            @Param("idConvocatoria") Long idConvocatoria
+    );
+
 }
