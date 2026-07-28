@@ -20,4 +20,6 @@ public interface CategoriaModalidadRepository
 
     Optional<CategoriaModalidadEntity> findByIdModalidadContratacion(
             Long idModalidadContratacion);
+            
+    void deleteByIdModalidadContratacion(Long idModalidadContratacion);        
 }

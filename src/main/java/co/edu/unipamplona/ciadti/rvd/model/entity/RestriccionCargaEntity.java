@@ -23,6 +23,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Lob;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,7 +34,6 @@ import lombok.Setter;
 public class RestriccionCargaEntity implements Serializable, Cloneable{
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "MOCO_ID", nullable = false)
     private Long idModalidadContratacion;
 
@@ -51,6 +51,10 @@ public class RestriccionCargaEntity implements Serializable, Cloneable{
 
     @Column(name = "RECA_TIPOHORAS")
     private String tipoHoras;
+
+    @Lob
+    @Column(name = "RECA_EXCEPCION")
+    private String excepcion;
 
     @Column(name = "RECA_REGISTRADOPOR")
     private String registradoPor;
@@ -76,6 +80,7 @@ public class RestriccionCargaEntity implements Serializable, Cloneable{
                 ", investigacion=" + investigacion +
                 ", formaPago=" + formaPago +
                 ", tipoHoras=" + tipoHoras +
+                ", excepcion=" + excepcion +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

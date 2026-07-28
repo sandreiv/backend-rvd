@@ -14,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
@@ -30,6 +32,7 @@ import lombok.Setter;
 @Table(name = "TIPOACTIVIDADMODALIDAD", schema = "RVD")
 public class TipoActividadModalidadEntity implements Serializable, Cloneable{
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TIAM_ID", nullable = false)
     private Long id;
 

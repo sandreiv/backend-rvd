@@ -22,4 +22,12 @@ public interface CategoriaCatedraticoRepository
             """)
     List<CategoriaCatedraticoEntity> findAllCategories(
             @Param("idModalidadContratacion") Long idModalidadContratacion);
+
+    @Query("""
+           SELECT caca
+           FROM CategoriaCatedraticoEntity caca
+             ORDER BY caca.descripcion
+           """)
+    List<CategoriaCatedraticoEntity> findAllForLoadRestriction();        
+
 }
