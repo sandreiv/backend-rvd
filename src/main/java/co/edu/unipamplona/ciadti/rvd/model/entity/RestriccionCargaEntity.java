@@ -49,6 +49,9 @@ public class RestriccionCargaEntity implements Serializable, Cloneable{
     @Column(name = "RECA_FORMAPAGO")
     private String formaPago;
 
+    @Column(name = "RECA_TIPOCONTRATO")
+    private String tipoContrato;
+
     @Column(name = "RECA_TIPOHORAS")
     private String tipoHoras;
 

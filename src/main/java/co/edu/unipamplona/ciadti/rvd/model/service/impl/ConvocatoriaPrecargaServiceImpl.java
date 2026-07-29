@@ -173,9 +173,9 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                         entity.setSemanas(fecha.semanas());
                         entity.setVacaciones(fecha.vacaciones());
                         entity.setOnceMeses(
-                                FechasConvocatoriaCalculator.calcularOnceMeses(
-                                        fecha.fechaInicio(),
-                                        fecha.fechaFin()));
+                                    resolveOnceMeses(
+                                            fecha.fechaInicio(),
+                                            fecha.fechaFin()));
                         entity.setFechaCambio(new Date());
                         entity.setRegistradoPor("REGISTRO_WEB");
                         fechasConvocatoriaRepository.save(entity);
@@ -261,9 +261,9 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 if (cotcDto.fechas() != null) {
                     for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
                         String onceMeses =
-                                FechasConvocatoriaCalculator.calcularOnceMeses(
-                                        fecha.fechaInicio(),
-                                        fecha.fechaFin());
+                                    resolveOnceMeses(
+                                            fecha.fechaInicio(),
+                                            fecha.fechaFin());
                         if (fecha.id() != null) {
                             fechasConvocatoriaRepository.updateModalidad(
                                     fecha.fechaInicio(),
@@ -408,6 +408,17 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                         .orElse(null)
         );
     }
+
+    private String resolveOnceMeses(Date fechaInicio, Date fechaFin) {
+        if (fechaInicio == null || fechaFin == null) {
+            return "0";
+        }
+
+        return FechasConvocatoriaCalculator.calcularOnceMeses(fechaInicio, fechaFin);
+    }
+
+
+
 }
 
  /* 04/06/2026 @:Sebastian Jaimes*/
