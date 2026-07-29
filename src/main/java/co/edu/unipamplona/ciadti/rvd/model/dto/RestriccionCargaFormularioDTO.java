@@ -17,6 +17,7 @@ public record RestriccionCargaFormularioDTO(
         String maximo,
         String investigacion,
         String formaPago,
+        String tipoContrato,
         String tipoHoras,
         List<Long> idsProgramasExcepcion,
         List<Long> idsPersonasExcepcion,

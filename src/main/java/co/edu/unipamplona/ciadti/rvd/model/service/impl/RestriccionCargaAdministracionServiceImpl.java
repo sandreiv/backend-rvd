@@ -152,6 +152,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 restriction != null ? restriction.getMaximo() : null,
                 restriction != null ? restriction.getInvestigacion() : null,
                 restriction != null ? restriction.getFormaPago() : null,
+                restriction != null ? restriction.getTipoContrato() : null,
                 restriction != null ? restriction.getTipoHoras() : null,
                 excepcion != null ? cleanIds(excepcion.programas()) : List.of(),
                 excepcion != null ? cleanIds(excepcion.personas()) : List.of(),
@@ -191,6 +192,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         entity.setMaximo(clean(dto.maximo()));
         entity.setInvestigacion(isMarked(dto.investigacion()) ? "1" : "0");
         entity.setFormaPago(clean(dto.formaPago()));
+        entity.setTipoContrato(clean(dto.tipoContrato()));
         entity.setTipoHoras(clean(dto.tipoHoras()));
         entity.setExcepcion(buildExcepcion(dto));
         entity.setRegistradoPor(REGISTRADO_POR);
@@ -241,6 +243,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         validateModalityExists(dto.idModalidadContratacion());
         validateHours(dto.minimo(), dto.maximo());
+        validateTipoContrato(dto.tipoContrato());
         validateExcepcion(dto);
         validateCategoria(dto.idCategoriaCatedratico());
         validateTipoActividad(dto.idTipoActividad());
@@ -267,6 +270,21 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         if (maximoNumber.compareTo(minimoNumber) < 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "El máximo de horas debe ser mayor o igual que el mínimo");
+        }
+    }
+
+    private void validateTipoContrato(String tipoContrato) {
+        String value = normalize(tipoContrato);
+
+        if (!StringUtils.hasText(value)) {
+            return;
+        }
+
+        if (!List.of("CONTRATO", "NORMA").contains(value)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El tipo de contrato debe ser Contrato o Norma"
+            );
         }
     }
 
