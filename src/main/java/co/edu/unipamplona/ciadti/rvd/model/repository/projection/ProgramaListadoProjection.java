@@ -4,4 +4,6 @@ public interface ProgramaListadoProjection {
 
     Long getId();
     String getNombre();
+    Long getIdCentroCosto();
+    String getDescripcionCentroCosto();
 }

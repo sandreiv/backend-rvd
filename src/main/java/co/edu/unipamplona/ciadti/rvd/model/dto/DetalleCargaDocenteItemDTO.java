@@ -5,7 +5,7 @@
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
  * Fecha de creación: 17/07/2026
  * Modificaciones:
- * 17/07/2026 - Daniel Arias - Creación inicial
+ * 17/07/2026 - Sebastian Jaimes - Creación inicial
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.dto;
@@ -25,4 +25,4 @@ public record DetalleCargaDocenteItemDTO(
     List<RelacionCargaProyectoDTO> relacionCargaProyecto
 ) {}
 
-/* 17/07/2026 @:Daniel Arias */
+/* 17/07/2026 @:Sebastian Jaimes */

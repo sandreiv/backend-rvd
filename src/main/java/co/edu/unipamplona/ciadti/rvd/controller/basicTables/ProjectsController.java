@@ -224,6 +224,7 @@ public class ProjectsController {
     )
     @PutMapping("/project-calls/update/{id}")
     public ResponseEntity<Void> updateProjectCall(@PathVariable Long id, @RequestBody ConvocatoriaProyectosFormularioDTO dto) {
+        System.out.println("updateProjectCall ===> " + dto);
         proyectosService.updateProjectCall(id, dto);
         return ResponseEntity.ok().build();
     }

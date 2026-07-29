@@ -85,8 +85,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private ConvocatoriaDTO toListDtoAndSyncEstado(ConvocatoriaEntity convocatoria) {
         convocatoriaEstadoService.syncEstadoConvocatoria(convocatoria.getId());
 
-        FechasConvocatoriaEntity fechaCnv = convocatoriaRepository
-                .findFechaCnvByConvocatoriaId(convocatoria.getId());
+        FechasConvocatoriaEntity fechaCnv = convocatoriaRepository.findFechaCnvByConvocatoriaId(convocatoria.getId());
 
         return convocatoriaMapper.toListDto(
                 convocatoria,
@@ -102,8 +101,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
 
     @Override
     public List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(String nombre, String documento) {
-        log.debug("Buscando persona autoriza. nombre={}, documento={}",
-                nombre, documento);
+        log.debug("Buscando persona autoriza. nombre={}, documento={}", nombre, documento);
         String nombreParam = normalizeParam(nombre);
         String documentoParam = normalizeParam(documento);
         if (nombreParam == null && documentoParam == null) {
@@ -275,8 +273,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                                     fecha.id());
                             fechaModalidadIds.add(fecha.id());
                         } else {
-                            FechasConvocatoriaEntity entity =
-                                    new FechasConvocatoriaEntity();
+                            FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
                             entity.setIdConvocatoria(id);
                             entity.setIdConvocatoriaTipoContratacion(cotcId);
                             entity.setFechaInicio(fecha.fechaInicio());
@@ -285,8 +282,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                             entity.setVacaciones(fecha.vacaciones());
                             entity.setOnceMeses(onceMeses);
                             entity.setFechaCambio(new Date());
-                            fechaModalidadIds.add(
-                                    fechasConvocatoriaRepository.save(entity).getId());
+                            fechaModalidadIds.add(fechasConvocatoriaRepository.save(entity).getId());
                         }
                     }
                 }

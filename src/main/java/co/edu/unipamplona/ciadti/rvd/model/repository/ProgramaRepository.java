@@ -15,7 +15,9 @@ public interface ProgramaRepository extends JpaRepository<ProgramaEntity, Long> 
     @Query(value = """
             SELECT DISTINCT
                 prog.PROG_ID AS id,
-                prog.PROG_NOMBRE AS nombre
+                prog.PROG_NOMBRE AS nombre,
+                ceco.CECO_ID AS idCentroCosto,
+                ceco.CECO_DESCRIPCION AS descripcionCentroCosto
             FROM RVD.ASOCIACIONCOORDINACION asco
             INNER JOIN ACADEMICO.PROGRAMA prog
                 ON prog.PROG_ID = asco.PROG_ID
@@ -25,6 +27,8 @@ public interface ProgramaRepository extends JpaRepository<ProgramaEntity, Long> 
                 ON prog.MODA_ID = moda.MODA_ID
             INNER JOIN ACADEMICO.NIVELEDUCATIVO nied
                 ON moda.NIED_ID = nied.NIED_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
+                ON ceco.CECO_ID = asco.CECO_ID
             WHERE asco.COOR_ID = :idCoordinacion
                 AND asco.MATE_CODIGOMATERIA IS NULL
                 AND asco.PROG_ID IS NOT NULL
@@ -40,7 +44,9 @@ public interface ProgramaRepository extends JpaRepository<ProgramaEntity, Long> 
     @Query(value = """
             SELECT DISTINCT
                 prog.PROG_ID AS id,
-                prog.PROG_NOMBRE AS nombre
+                prog.PROG_NOMBRE AS nombre,
+                CAST(NULL AS NUMBER) AS idCentroCosto,
+                CAST(NULL AS VARCHAR2(255)) AS descripcionCentroCosto
             FROM ACADEMICO.UNIDADPROGRAMA unpr
             INNER JOIN ACADEMICO.PROGRAMA prog
                 ON prog.PROG_ID = unpr.PROG_ID

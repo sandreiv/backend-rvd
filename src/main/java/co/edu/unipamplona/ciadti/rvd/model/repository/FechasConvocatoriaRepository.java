@@ -81,6 +81,13 @@ public interface FechasConvocatoriaRepository
     BigDecimal deleteByProcedure(@Param("P_FECO_ID") Long id, @Param("P_FECO_REGISTRADOPOR") String registradoPor);
 
 
+    /**
+     * Busca las fechas de convocatoria por coordinación y modalidad de contratación. 
+     * Revisa que el tipo de restricción de la carga sea semanal.
+     * @param coorId
+     * @param mocoId
+     * @return
+     */
     @Query("""
             SELECT
                 feco.id AS id,
@@ -98,9 +105,9 @@ public interface FechasConvocatoriaRepository
             JOIN FechasConvocatoriaEntity feco
                 ON feco.idConvocatoriaTipoContratacion = cotc.id
             WHERE carg.idCoordinacion = :coorId
-                AND cotc.idModalidadContratacion = :mocoId
+                AND cotc.idModalidadContratacion = :mocoId and reca.tipoHoras = 'SEMANAL'
             """)
-    List<FechaModalidadProjection> findByCoordinationAndModality(
+    List<FechaModalidadProjection> findByCoordinationAndModalityAndRestrictionSemanal(
             @Param("coorId") Long coorId,
             @Param("mocoId") Long mocoId);
 

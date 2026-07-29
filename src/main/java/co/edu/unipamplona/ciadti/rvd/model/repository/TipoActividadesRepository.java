@@ -54,8 +54,6 @@ public interface TipoActividadesRepository
                 tiac.TIAC_ORDEN,
                 tiac.TIAC_ESTADO,
                 tiac.TIAC_CODIGO,
-                tiac.TIAC_COMPONENTE,
-                tiac.TIAC_CLASE,
                 tiac.TIAC_MINIMOHORAS,
                 tiac.TIAC_MAXIMOHORAS,
                 tiac.TIAC_REGISTRADOPOR,

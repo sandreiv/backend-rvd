@@ -43,7 +43,7 @@ public interface DetalleCargaDocenteMapper {
     @Mapping(target = "idTipoActividad", expression = "java(resolveTipoActividad(detalle))")
     @Mapping(target = "idPrograma", source = "detalle.idPrograma")
     @Mapping(target = "idGrupo", source = "detalle.idGrupo")
-    @Mapping(target = "idCentroCosto", expression = "java(resolveIdCentroCosto(detalle))")
+    @Mapping(target = "idCentroCosto", source = "idCentroCosto")
     @Mapping(target = "horas", expression = "java(toHoras(detalle.horas()))")
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
@@ -53,7 +53,9 @@ public interface DetalleCargaDocenteMapper {
     @Mapping(target = "tipoActividad", ignore = true)
     @Mapping(target = "centroCosto", ignore = true)
     DetalleCargaDocenteEntity toEntity(
-            Long idCargaDocente, DetalleCargaDocenteItemDTO detalle);
+            Long idCargaDocente,
+            DetalleCargaDocenteItemDTO detalle,
+            Long idCentroCosto);
 
     default List<DetalleCargaDocenteDTO> toDtoList(List<DetalleCargaDocenteListadoProjection> projections,
             ProyectoMapper proyectoMapper,
@@ -210,7 +212,8 @@ public interface DetalleCargaDocenteMapper {
         }
         return new ProgramaDTO(
                 projection.getIdPrograma(),
-                projection.getNombrePrograma());
+                projection.getNombrePrograma(),
+                null);
     }
 
     default GrupoDTO mapGrupo(DetalleCargaDocenteListadoProjection projection) {
@@ -301,7 +304,9 @@ public interface DetalleCargaDocenteMapper {
         return new ArrayList<>(relaciones.values());
     }
 
-    default DetalleCargaDocenteEntity toEntityFromDto(DetalleCargaDocenteDTO dto) {
+    default DetalleCargaDocenteEntity toEntityFromDto(
+            DetalleCargaDocenteDTO dto,
+            Long idCentroCosto) {
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
         DetalleCargaDocenteEntity entity = new DetalleCargaDocenteEntity();
         entity.setId(dto.idDetalleCargaDocente());
@@ -309,7 +314,7 @@ public interface DetalleCargaDocenteMapper {
         entity.setIdTipoActividad(resolveTipoActividadFromActividad(actividad));
         entity.setIdPrograma(resolveIdPrograma(actividad));
         entity.setIdGrupo(resolveIdGrupo(actividad));
-        entity.setIdCentroCosto(resolveIdCentroCostoFromActividad(actividad));
+        entity.setIdCentroCosto(idCentroCosto);
         entity.setHoras(actividad.horas());
         return entity;
     }
@@ -361,27 +366,10 @@ public interface DetalleCargaDocenteMapper {
         return actividad.grupo() != null ? actividad.grupo().id() : null;
     }
 
-    default Long resolveIdCentroCostoFromActividad(
-            DetalleCargaDocenteActividadDTO actividad) {
-        if (actividad.centroCosto() == null) {
-            return null;
-        }
-        return actividad.centroCosto().id();
-    }
-
     default Long resolveTipoActividad(DetalleCargaDocenteItemDTO detalle) {
         return detalle.idTipoActividadHija() != null
                 ? detalle.idTipoActividadHija()
                 : detalle.idTipoActividad();
-    }
-
-    default Long resolveIdCentroCosto(DetalleCargaDocenteItemDTO detalle) {
-        if (detalle.materia() != null
-                && detalle.materia().idCentroCosto() != null) {
-            // Prioridad: centro de costo principal de la materia.
-            return detalle.materia().idCentroCosto();
-        }
-        return detalle.idCentroCosto();
     }
 
     default String toHoras(Long horas) {

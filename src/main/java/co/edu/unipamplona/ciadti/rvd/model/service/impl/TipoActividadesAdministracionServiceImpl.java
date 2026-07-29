@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TipoActividadesAdministracionServiceImpl implements TipoActividadesAdministracionService {
 
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
-    private static final Set<String> CODIGOS_PERMITIDOS = Set.of("CTI", "AC", "FAD", "FAI", "ISU");
+    private static final Set<String> CODIGOS_PERMITIDOS = Set.of("CTEI", "AC", "FAD", "FAI", "ISU");
 
     private final TipoActividadesRepository tipoActividadesRepository;
 
@@ -243,13 +243,6 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
         entity.setEstado(normalizeStatus(dto.estado()));
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
-
-        /*
-         * Estos campos no se trabajan en esta pantalla.
-         * Se dejan nulos.
-         */
-        entity.setComponente(null);
-        entity.setClase(null);
     }
 
     private void validateActivityType(TipoActividadAdministracionFormularioDTO dto) {

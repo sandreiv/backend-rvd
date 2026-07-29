@@ -1,6 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.math.BigDecimal;
 
 
@@ -75,7 +76,19 @@ public interface AsociacionCoordinacionRepository
         return count != null && count > 0;
     }
 
-
+    @Query(value = """
+            SELECT asco.CECO_ID
+            FROM RVD.ASOCIACIONCOORDINACION asco
+            WHERE asco.COOR_ID = :idCoordinacion
+                AND asco.PROG_ID = :idPrograma
+                AND asco.PROG_ID IS NOT NULL
+                AND asco.MATE_CODIGOMATERIA IS NULL
+                AND asco.CECO_ID IS NOT NULL
+                AND ROWNUM = 1
+            """, nativeQuery = true)
+    Optional<Long> findIdCentroCostoByCoordinacionAndPrograma(
+            @Param("idCoordinacion") Long idCoordinacion,
+            @Param("idPrograma") Long idPrograma);
 
     @Procedure(name = "AsociacionCoordinacionEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(

@@ -120,8 +120,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         fillProject(entity, dto);
         ProyectosEntity saved = proyectosRepository.save(entity);
 
-        log.info("saveProject ===> Proyecto guardado. id={}, idProyectoPadre={}",
-                saved.getId(), saved.getIdProyectoPadre());
+        log.info("saveProject ===> Proyecto guardado. id={}, idProyectoPadre={}", saved.getId(), saved.getIdProyectoPadre());
     }
 
     @Override
@@ -135,9 +134,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         ProyectosEntity entity = proyectosRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("updateProject ===> Proyecto no encontrado. id={}", id);
-                    return new ApiException(
-                            HttpStatus.NOT_FOUND,
-                            "No existe el proyecto con id " + id
+                    return new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto con id " + id
                     );
                 });
 
@@ -154,25 +151,19 @@ public class ProyectosServiceImpl implements ProyectosService {
 
         if (id == null || !proyectosRepository.existsById(id)) {
             log.warn("deleteProject ===> Proyecto no encontrado. id={}", id);
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe el proyecto con id " + id
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto con id " + id
             );
         }
 
         if (proyectosRepository.existsByIdProyectoPadre(id)) {
             log.warn("deleteProject ===> Eliminación bloqueada. Tiene productos. id={}", id);
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "No se puede eliminar el proyecto porque tiene productos asociados"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No se puede eliminar el proyecto porque tiene productos asociados"
             );
         }
 
         if (personaProyectoRepository.existsByIdProyecto(id)) {
             log.warn("deleteProject ===> Eliminación bloqueada. Tiene personas. id={}", id);
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "No se puede eliminar el proyecto porque tiene personas asociadas"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No se puede eliminar el proyecto porque tiene personas asociadas"
             );
         }
 
@@ -216,13 +207,10 @@ public class ProyectosServiceImpl implements ProyectosService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto");
         }
 
-        List<PersonaProyectoListaProjection> persons =
-                personaProyectoRepository.findByIdProyecto(idProyecto);
-        List<PersonaProyectoListaDTO> result =
-                personaProyectoMapper.toPersonaProyectoListaDTOList(persons);
+        List<PersonaProyectoListaProjection> persons = personaProyectoRepository.findByIdProyecto(idProyecto);
+        List<PersonaProyectoListaDTO> result = personaProyectoMapper.toPersonaProyectoListaDTOList(persons);
 
-        log.info("listProjectPersons ===> Personas listadas. idProyecto={}, total={}",
-                idProyecto, result.size());
+        log.info("listProjectPersons ===> Personas listadas. idProyecto={}, total={}", idProyecto, result.size());
         return result;
     }
 
@@ -239,8 +227,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         fillProjectPerson(entity, dto);
         personaProyectoRepository.save(entity);
 
-        log.info("saveProjectPerson ===> Persona guardada. idProyecto={}, idPersonaGeneral={}",
-                dto.idProyecto(), dto.idPersonaGeneral());
+        log.info("saveProjectPerson ===> Persona guardada. idProyecto={}, idPersonaGeneral={}", dto.idProyecto(), dto.idPersonaGeneral());
     }
 
     @Override
@@ -253,9 +240,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         PersonaProyectoEntity entity = personaProyectoRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("updateProjectPerson ===> Persona no encontrada. id={}", id);
-                    return new ApiException(
-                            HttpStatus.NOT_FOUND,
-                            "No existe la persona del proyecto con id " + id
+                    return new ApiException(HttpStatus.NOT_FOUND, "No existe la persona del proyecto con id " + id
                     );
                 });
 
@@ -272,17 +257,14 @@ public class ProyectosServiceImpl implements ProyectosService {
 
         if (id == null || !personaProyectoRepository.existsById(id)) {
             log.warn("deleteProjectPerson ===> Persona no encontrada. id={}", id);
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la persona del proyecto con id " + id
+            throw new ApiException( HttpStatus.NOT_FOUND, "No existe la persona del proyecto con id " + id
             );
         }
 
         BigDecimal result = personaProyectoRepository.deleteByProcedure(id, REGISTRADO_POR);
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
-            log.warn("deleteProjectPerson ===> Procedimiento falló. id={}, resultado={}",
-                    id, result);
+            log.warn("deleteProjectPerson ===> Procedimiento falló. id={}, resultado={}", id, result);
         }
 
         validateProcedureResult(result, "No se pudo eliminar la persona del proyecto");
@@ -315,8 +297,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         log.debug("listProjectTypes ===> Listando tipos de proyecto");
 
         List<TipoProyectoEntity> projectTypes = tipoProyectoRepository.findAllProjectTypes();
-        List<TipoProyectoListaDTO> result =
-                tipoProyectoMapper.toTipoProyectoListaDTOList(projectTypes);
+        List<TipoProyectoListaDTO> result = tipoProyectoMapper.toTipoProyectoListaDTOList(projectTypes);
 
         log.info("listProjectTypes ===> Tipos de proyecto listados. total={}", result.size());
         return result;
@@ -445,7 +426,7 @@ public class ProyectosServiceImpl implements ProyectosService {
     @Override
     @Transactional
     public void updateProjectCall(Long id, ConvocatoriaProyectosFormularioDTO dto) {
-        log.info("updateProjectCall ===> Actualizando convocatoria. id={}, nombre={}, codigo={}",
+        log.info("updateProjectCall ===> Actualizando convocatoria de proyecto. id={}, nombre={}, codigo={}",
                 id,
                 dto != null ? dto.nombre() : null,
                 dto != null ? dto.codigo() : null);
@@ -454,7 +435,7 @@ public class ProyectosServiceImpl implements ProyectosService {
 
         ConvocatoriaProyectosEntity entity = convocatoriaProyectosRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.warn("updateProjectCall ===> Convocatoria no encontrada. id={}", id);
+                    log.warn("updateProjectCall ===> Convocatoria de proyecto no encontrada. id={}", id);
                     return new ApiException(HttpStatus.NOT_FOUND, "No existe la convocatoria de proyecto con id " + id
                     );
                 });
@@ -477,8 +458,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         }
 
         if (proyectosRepository.existsByIdConvocatoriaProyectos(id)) {
-            log.warn("deleteProjectCall ===> Eliminación bloqueada. Tiene proyectos asociados. id={}",
-                    id);
+            log.warn("deleteProjectCall ===> Eliminación bloqueada. Tiene proyectos asociados. id={}", id);
             throw new ApiException(HttpStatus.BAD_REQUEST, "No se puede eliminar la convocatoria porque tiene proyectos asociados"
             );
         }
@@ -528,9 +508,7 @@ public class ProyectosServiceImpl implements ProyectosService {
 
     private void validateProject(ProyectosFormularioDTO dto) {
         if (dto == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La información del proyecto es obligatoria"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La información del proyecto es obligatoria"
             );
         }
 
@@ -539,62 +517,45 @@ public class ProyectosServiceImpl implements ProyectosService {
         }
 
         if (dto.idConvocatoriaProyectos() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La convocatoria de proyecto es obligatoria"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La convocatoria de proyecto es obligatoria"
             );
         }
 
         if (!convocatoriaProyectosRepository.existsById(dto.idConvocatoriaProyectos())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la convocatoria de proyecto con id "
-                            + dto.idConvocatoriaProyectos()
+            throw new ApiException( HttpStatus.NOT_FOUND, "No existe la convocatoria de proyecto con id " + dto.idConvocatoriaProyectos()
             );
         }
 
         if (dto.idTipoProyecto() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El tipo de proyecto es obligatorio"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El tipo de proyecto es obligatorio"
             );
         }
 
         if (!tipoProyectoRepository.existsById(dto.idTipoProyecto())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe el tipo de proyecto con id " + dto.idTipoProyecto()
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el tipo de proyecto con id " + dto.idTipoProyecto()
             );
         }
 
         if (dto.idCoordinacion() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La coordinación es obligatoria"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La coordinación es obligatoria"
             );
         }
 
         if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la coordinación con id " + dto.idCoordinacion()
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinación con id " + dto.idCoordinacion()
             );
         }
 
         if (dto.idProyectoPadre() != null
                 && !proyectosRepository.existsById(dto.idProyectoPadre())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe el proyecto padre con id " + dto.idProyectoPadre()
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto padre con id " + dto.idProyectoPadre()
             );
         }
 
         if (dto.fechaInicio() != null
                 && dto.fechaFin() != null
                 && !dto.fechaFin().after(dto.fechaInicio())) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La fecha fin debe ser posterior a la fecha inicio"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La fecha fin debe ser posterior a la fecha inicio"
             );
         }
     }
@@ -614,9 +575,7 @@ public class ProyectosServiceImpl implements ProyectosService {
 
     private void validateProjectPerson(PersonaProyectoFormularioDTO dto) {
         if (dto == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La información de la persona del proyecto es obligatoria"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La información de la persona del proyecto es obligatoria"
             );
         }
 
@@ -625,9 +584,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         }
 
         if (!proyectosRepository.existsById(dto.idProyecto())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe el proyecto con id " + dto.idProyecto()
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto con id " + dto.idProyecto()
             );
         }
 
@@ -636,23 +593,17 @@ public class ProyectosServiceImpl implements ProyectosService {
         }
 
         if (!personaGeneralRepository.existsById(dto.idPersonaGeneral())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la persona con id " + dto.idPersonaGeneral()
+            throw new ApiException(HttpStatus.NOT_FOUND,"No existe la persona con id " + dto.idPersonaGeneral()
             );
         }
 
         if (dto.idTipoActividad() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El tipo de actividad es obligatorio"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El tipo de actividad es obligatorio"
             );
         }
 
         if (!tipoActividadesRepository.existsById(dto.idTipoActividad())) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe el tipo de actividad con id " + dto.idTipoActividad()
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el tipo de actividad con id " + dto.idTipoActividad()
             );
         }
 
@@ -675,9 +626,7 @@ public class ProyectosServiceImpl implements ProyectosService {
 
     private void validateProjectCall(ConvocatoriaProyectosFormularioDTO dto) {
         if (dto == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La información de la convocatoria de proyecto es obligatoria"
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La información de la convocatoria de proyecto es obligatoria"
             );
         }
 

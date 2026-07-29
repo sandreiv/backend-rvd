@@ -30,23 +30,18 @@ public class ConvocatoriaEstadoServiceImpl implements ConvocatoriaEstadoService 
             return;
         }
 
-        ConvocatoriaEntity convocatoria = convocatoriaRepository.findById(idConvocatoria)
-                .orElse(null);
+        ConvocatoriaEntity convocatoria = convocatoriaRepository.findById(idConvocatoria).orElse(null);
 
         if (convocatoria == null) {
-            log.warn("syncEstadoConvocatoria ===> Convocatoria no encontrada. idConvocatoria={}",
-                    idConvocatoria);
+            log.warn("syncEstadoConvocatoria ===> Convocatoria no encontrada. idConvocatoria={}", idConvocatoria);
             return;
         }
 
-        FechasConvocatoriaEntity fechaConvocatoria =
-                convocatoriaRepository.findFechaCnvByConvocatoriaId(idConvocatoria);
+        FechasConvocatoriaEntity fechaConvocatoria = convocatoriaRepository.findFechaCnvByConvocatoriaId(idConvocatoria);
 
-        boolean convocatoriaVencida = fechaConvocatoria != null
-                && FechasConvocatoriaCalculator.isVencida(fechaConvocatoria.getFechaFin());
+        boolean convocatoriaVencida = fechaConvocatoria != null && FechasConvocatoriaCalculator.isVencida(fechaConvocatoria.getFechaFin());
 
-        Long totalRestricciones = restriccionPorCoordinacionRepository
-                .countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
+        Long totalRestricciones = restriccionPorCoordinacionRepository.countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
 
         boolean tieneRestriccionesNoVencidas = totalRestricciones != null && totalRestricciones > 0;
 
