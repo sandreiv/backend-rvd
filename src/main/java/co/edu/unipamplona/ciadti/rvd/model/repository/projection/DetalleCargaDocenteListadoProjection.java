@@ -12,10 +12,12 @@ public interface DetalleCargaDocenteListadoProjection {
     String getDescripcionTipoActividad();
     String getOrdenTipoActividad();
     String getCodigoTipoActividad();
+    String getComponenteTipoActividad();
     String getNombreTipoActividadPadre();
     String getDescripcionTipoActividadPadre();
     String getOrdenTipoActividadPadre();
     String getCodigoTipoActividadPadre();
+    String getComponenteTipoActividadPadre();
 
     Long getIdUnidadRegional();
     String getNombreUnidadRegional();

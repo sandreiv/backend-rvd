@@ -35,7 +35,8 @@ public interface PersonaProyectoRepository
                 tiac.TIAC_NOMBRE AS nombreTipoActividad,
                 tiac.TIAC_DESCRIPCION AS descripcionTipoActividad,
                 tiac.TIAC_ORDEN AS ordenTipoActividad,
-                tiac.TIAC_CODIGO AS codigoTipoActividad
+                tiac.TIAC_CODIGO AS codigoTipoActividad,
+                tiac.TIAC_COMPONENTE AS componenteTipoActividad
             FROM RVD.PROYECTOS proy
             INNER JOIN RVD.PERSONAPROYECTO pepr
                 ON proy.PROY_ID = pepr.PROY_ID

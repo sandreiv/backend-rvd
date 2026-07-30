@@ -5,6 +5,7 @@ public record TipoActividadDTO(
     Long idPadre,
     String nombre,
     String descripcion,
-    String orden, 
-    String codigo
+    String orden,
+    String codigo,
+    String componente
 ) {}

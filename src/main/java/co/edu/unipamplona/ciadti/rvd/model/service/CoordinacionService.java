@@ -11,6 +11,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import java.util.List;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
@@ -66,6 +67,8 @@ public interface CoordinacionService {
     List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad);
 
     List<TipoActividadDTO> listActivityTypes();
+
+    ActividadModalidadDTO listActivitiesModality(Long idModalidadContratacion);
 
     List<MateriaDTO> listSubjects(Long idPrograma, Long idCoordinacion);
 

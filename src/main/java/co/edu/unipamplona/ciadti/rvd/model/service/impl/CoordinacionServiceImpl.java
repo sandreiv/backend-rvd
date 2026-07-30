@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
+import co.edu.unipamplona.ciadti.rvd.mapper.ActividadModalidadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CategoriaCatedraticoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CoordinacionMapper;
@@ -42,6 +43,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
@@ -100,9 +102,11 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosCategoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosVigenciaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RelacionCargaProyectoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionPorCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ActividadModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
@@ -150,6 +154,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final TipoActividadesRepository tipoActividadesRepository;
     private final TipoActividadCriterioMapper tipoActividadCriterioMapper;
     private final TipoActividadMapper tipoActividadMapper;
+    private final RestriccionCargaRepository restriccionCargaRepository;
+    private final ActividadModalidadMapper actividadModalidadMapper;
     private final MateriaRepository materiaRepository;
     private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final MateriaMapper materiaMapper;
@@ -594,6 +600,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<TipoActividadDTO> result = tipoActividadMapper.toDtoList(tipoActividadesRepository.findParentActivityTypes());
         
         log.info("listActivityTypes ===> Tipos de actividad listados. total={}", result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ActividadModalidadDTO listActivitiesModality(Long idModalidadContratacion) {
+        log.debug("listActivitiesModality ===> Listando actividades por modalidad. idModalidad={}", idModalidadContratacion);
+
+        List<ActividadModalidadProjection> projections = restriccionCargaRepository.findActivitiesByModality(idModalidadContratacion);
+        ActividadModalidadDTO result = actividadModalidadMapper.toDto(idModalidadContratacion, projections);
+
+        log.info("listActivitiesModality ===> Actividades por modalidad consultadas. idModalidad={}, total={}", idModalidadContratacion, result.tipoActividades().size());
         return result;
     }
 

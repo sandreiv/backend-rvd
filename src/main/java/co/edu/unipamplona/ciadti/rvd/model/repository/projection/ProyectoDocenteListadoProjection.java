@@ -21,4 +21,5 @@ public interface ProyectoDocenteListadoProjection {
     String getDescripcionTipoActividad();
     String getOrdenTipoActividad();
     String getCodigoTipoActividad();
+    String getComponenteTipoActividad();
 }

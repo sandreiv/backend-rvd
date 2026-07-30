@@ -122,7 +122,8 @@ public interface ProyectoMapper {
                 projection.getNombreTipoActividad(),
                 projection.getDescripcionTipoActividad(),
                 projection.getOrdenTipoActividad(),
-                projection.getCodigoTipoActividad());
+                projection.getCodigoTipoActividad(),
+                projection.getComponenteTipoActividad());
     }
 
     default List<ProyectoDTO> toArbolDesdeDetalle(

@@ -28,6 +28,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
@@ -232,6 +233,8 @@ public class CoordinationController {
         return new ResponseEntity<>(tiposActividad, HttpStatus.OK);
     }
 
+    
+
     @Operation(
         summary = "Lista las unidades regionales de una coordinación",
         description = "Lista todas las unidades academicas marcadas como regionales de una coordinación"
@@ -340,6 +343,16 @@ public class CoordinationController {
     public ResponseEntity<TotalPreasignacionDTO> getTotalPreload(@RequestParam Long idCarga) {
         TotalPreasignacionDTO total = coordinacionService.getTotalPreload(idCarga);
         return new ResponseEntity<>(total, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los tipos de actividad según la modalidad de contratación",
+        description = "Consulta RESTRICCIONCARGA y, según la modalidad (MOCO), obtiene los tipos de actividad desde TIPOACTIVIDADMODALIDAD"
+    )
+    @GetMapping("/list-activities-modality")
+    public ResponseEntity<ActividadModalidadDTO> listActivitiesModality(@RequestParam Long idModalidadContratacion) {
+        ActividadModalidadDTO actividad = coordinacionService.listActivitiesModality(idModalidadContratacion);
+        return new ResponseEntity<>(actividad, HttpStatus.OK);
     }
 
 }

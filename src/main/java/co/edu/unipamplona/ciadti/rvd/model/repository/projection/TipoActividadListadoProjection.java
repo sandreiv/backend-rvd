@@ -8,4 +8,5 @@ public interface TipoActividadListadoProjection {
     String getDescripcion();
     String getOrden();
     String getCodigo();
+    String getComponente();
 }

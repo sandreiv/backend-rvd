@@ -23,7 +23,8 @@ public interface TipoActividadesRepository
                 tiac.TIAC_NOMBRE AS nombre,
                 tiac.TIAC_DESCRIPCION AS descripcion,
                 tiac.TIAC_ORDEN AS orden,
-                tiac.TIAC_CODIGO AS codigo
+                tiac.TIAC_CODIGO AS codigo,
+                tiac.TIAC_COMPONENTE AS componente
             FROM RVD.TIPOACTIVIDADES tiac
             WHERE tiac.TIAC_IDPADRE IS NULL
             ORDER BY tiac.TIAC_ORDEN, tiac.TIAC_NOMBRE
@@ -37,7 +38,8 @@ public interface TipoActividadesRepository
                 tiac.TIAC_NOMBRE AS nombre,
                 tiac.TIAC_DESCRIPCION AS descripcion,
                 tiac.TIAC_ORDEN AS orden,
-                tiac.TIAC_CODIGO AS codigo
+                tiac.TIAC_CODIGO AS codigo,
+                tiac.TIAC_COMPONENTE AS componente
             FROM RVD.TIPOACTIVIDADES tiac
             WHERE tiac.TIAC_IDPADRE = :idPadre
             ORDER BY tiac.TIAC_ORDEN, tiac.TIAC_NOMBRE
@@ -54,6 +56,7 @@ public interface TipoActividadesRepository
                 tiac.TIAC_ORDEN,
                 tiac.TIAC_ESTADO,
                 tiac.TIAC_CODIGO,
+                tiac.TIAC_COMPONENTE,
                 tiac.TIAC_MINIMOHORAS,
                 tiac.TIAC_MAXIMOHORAS,
                 tiac.TIAC_REGISTRADOPOR,
@@ -81,6 +84,7 @@ public interface TipoActividadesRepository
                 TIAC.TIAC_NOMBRE AS nombre,
                 TIAC.TIAC_DESCRIPCION AS descripcion,
                 TIAC.TIAC_CODIGO AS codigo,
+                TIAC.TIAC_COMPONENTE AS componente,
                 TIAC.TIAC_MINIMOHORAS AS minimoHoras,
                 TIAC.TIAC_MAXIMOHORAS AS maximoHoras,
                 TIAC.TIAC_ORDEN AS orden,
@@ -103,6 +107,7 @@ public interface TipoActividadesRepository
                 TIAC.TIAC_NOMBRE AS nombre,
                 TIAC.TIAC_DESCRIPCION AS descripcion,
                 TIAC.TIAC_CODIGO AS codigo,
+                TIAC.TIAC_COMPONENTE AS componente,
                 TIAC.TIAC_MINIMOHORAS AS minimoHoras,
                 TIAC.TIAC_MAXIMOHORAS AS maximoHoras,
                 TIAC.TIAC_ORDEN AS orden,

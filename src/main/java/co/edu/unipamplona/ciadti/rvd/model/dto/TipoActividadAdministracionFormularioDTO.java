@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 30/07/2026 - Se agrega campo componente.
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.dto;
@@ -14,6 +15,7 @@ public record TipoActividadAdministracionFormularioDTO(
         String nombre,
         String descripcion,
         String codigo,
+        String componente,
         Integer minimoHoras,
         Integer maximoHoras,
         String estado

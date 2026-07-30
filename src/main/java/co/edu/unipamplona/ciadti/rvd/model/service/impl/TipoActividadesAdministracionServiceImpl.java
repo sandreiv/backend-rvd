@@ -224,6 +224,7 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
                 item.getNombre(),
                 item.getDescripcion(),
                 item.getCodigo(),
+                item.getComponente(),
                 item.getMinimoHoras(),
                 item.getMaximoHoras(),
                 item.getOrden(),
@@ -238,6 +239,10 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
         entity.setNombre(dto.nombre().trim());
         entity.setDescripcion(dto.descripcion().trim());
         entity.setCodigo(dto.codigo().trim().toUpperCase());
+        entity.setComponente(
+                StringUtils.hasText(dto.componente())
+                        ? dto.componente().trim()
+                        : null);
         entity.setMinimoHoras(String.valueOf(dto.minimoHoras()));
         entity.setMaximoHoras(String.valueOf(dto.maximoHoras()));
         entity.setEstado(normalizeStatus(dto.estado()));

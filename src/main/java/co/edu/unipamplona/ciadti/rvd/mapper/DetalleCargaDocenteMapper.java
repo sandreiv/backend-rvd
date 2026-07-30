@@ -179,7 +179,8 @@ public interface DetalleCargaDocenteMapper {
                 projection.getNombreTipoActividad(),
                 projection.getDescripcionTipoActividad(),
                 projection.getOrdenTipoActividad(),
-                projection.getCodigoTipoActividad());
+                projection.getCodigoTipoActividad(),
+                projection.getComponenteTipoActividad());
     }
 
     default TipoActividadDTO mapTipoActividadPadre(
@@ -193,7 +194,8 @@ public interface DetalleCargaDocenteMapper {
                 projection.getNombreTipoActividadPadre(),
                 projection.getDescripcionTipoActividadPadre(),
                 projection.getOrdenTipoActividadPadre(),
-                projection.getCodigoTipoActividadPadre());
+                projection.getCodigoTipoActividadPadre(),
+                projection.getComponenteTipoActividadPadre());
     }
 
     default UnidadDTO mapUnidad(DetalleCargaDocenteListadoProjection projection) {
