@@ -358,11 +358,6 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         List<Long> idsProgramas = cleanIds(dto.idsProgramasExcepcion());
         List<Long> idsPersonas = cleanIds(dto.idsPersonasExcepcion());
 
-        if (idsProgramas.isEmpty() && idsPersonas.isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "Debe seleccionar al menos un programa o una persona para aplicar la excepción");
-        }
-
         for (Long idPrograma : idsProgramas) {
             if (!programaRepository.existsById(idPrograma)) {
                 throw new ApiException(HttpStatus.NOT_FOUND,
