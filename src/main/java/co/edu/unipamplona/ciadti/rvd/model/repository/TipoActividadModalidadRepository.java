@@ -11,6 +11,8 @@ package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.Optional;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -21,6 +23,9 @@ public interface TipoActividadModalidadRepository
 
     Optional<TipoActividadModalidadEntity> findByIdModalidadContratacion(
             Long idModalidadContratacion);
+
+    List<TipoActividadModalidadEntity> findAllByIdModalidadContratacion(
+        Long idModalidadContratacion);        
 
     void deleteByIdModalidadContratacion(Long idModalidadContratacion);
 }

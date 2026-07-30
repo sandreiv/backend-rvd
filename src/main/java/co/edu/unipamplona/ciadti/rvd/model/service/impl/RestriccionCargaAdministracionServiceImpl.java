@@ -134,13 +134,11 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 .findById(idModalidadContratacion)
                 .orElse(null);
 
-        CategoriaModalidadEntity categoriaModalidad = categoriaModalidadRepository
-                .findByIdModalidadContratacion(idModalidadContratacion)
-                .orElse(null);
+        List<CategoriaModalidadEntity> categoriasModalidad = categoriaModalidadRepository
+            .findAllByIdModalidadContratacion(idModalidadContratacion);
 
-        TipoActividadModalidadEntity tipoActividadModalidad = tipoActividadModalidadRepository
-                .findByIdModalidadContratacion(idModalidadContratacion)
-                .orElse(null);
+        List<TipoActividadModalidadEntity> tiposActividadModalidad = tipoActividadModalidadRepository
+            .findAllByIdModalidadContratacion(idModalidadContratacion);
 
         RestriccionExcepcionDTO excepcion = parseExcepcion(
         restriction != null ? restriction.getExcepcion() : null
@@ -156,8 +154,16 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 restriction != null ? restriction.getTipoHoras() : null,
                 excepcion != null ? cleanIds(excepcion.programas()) : List.of(),
                 excepcion != null ? cleanIds(excepcion.personas()) : List.of(),
-                categoriaModalidad != null ? categoriaModalidad.getIdCategoriaCatedratico() : null,
-                tipoActividadModalidad != null ? tipoActividadModalidad.getIdTipoActividades() : null
+                categoriasModalidad.stream()
+                        .map(CategoriaModalidadEntity::getIdCategoriaCatedratico)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList(),
+                tiposActividadModalidad.stream()
+                        .map(TipoActividadModalidadEntity::getIdTipoActividades)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList()
         );
 
         log.info("getRestriction ===> Restricción de carga consultada. idModalidad={}",
@@ -200,8 +206,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         restriccionCargaRepository.save(entity);
 
-        syncCategoriaModalidad(dto.idModalidadContratacion(), dto.idCategoriaCatedratico());
-        syncTipoActividadModalidad(dto.idModalidadContratacion(), dto.idTipoActividad());
+        syncCategoriasModalidad(dto.idModalidadContratacion(), dto.idsCategoriasCatedratico());
+        syncTiposActividadModalidad(dto.idModalidadContratacion(), dto.idsTiposActividad());
 
         log.info("saveRestriction ===> Restricción de carga guardada. idModalidad={}",
                 dto.idModalidadContratacion());
@@ -243,10 +249,13 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         validateModalityExists(dto.idModalidadContratacion());
         validateHours(dto.minimo(), dto.maximo());
+        validateInvestigacion(dto.investigacion());
+        validateFormaPago(dto.formaPago());
         validateTipoContrato(dto.tipoContrato());
+        validateTipoHoras(dto.tipoHoras());
         validateExcepcion(dto);
-        validateCategoria(dto.idCategoriaCatedratico());
-        validateTipoActividad(dto.idTipoActividad());
+        validateCategorias(dto.idsCategoriasCatedratico());
+        validateTiposActividad(dto.idsTiposActividad());
     }
 
     private void validateModalityExists(Long idModalidadContratacion) {
@@ -260,8 +269,14 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
     }
 
     private void validateHours(String minimo, String maximo) {
-        if (!StringUtils.hasText(minimo) || !StringUtils.hasText(maximo)) {
-            return;
+        if (!StringUtils.hasText(minimo)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "El mínimo de horas es obligatorio");
+        }
+
+        if (!StringUtils.hasText(maximo)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "El máximo de horas es obligatorio");
         }
 
         BigDecimal minimoNumber = parseHours(minimo, "El mínimo de horas debe ser numérico");
@@ -273,11 +288,54 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         }
     }
 
+    private void validateInvestigacion(String investigacion) {
+        String value = normalize(investigacion);
+
+        if (!StringUtils.hasText(value)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "La investigación es obligatoria");
+        }
+
+        if (!List.of("0", "1", "S", "N", "SI", "NO", "TRUE", "FALSE").contains(value)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "La investigación debe ser Sí o No");
+        }
+    }
+
+    private void validateFormaPago(String formaPago) {
+        String value = normalize(formaPago);
+
+        if (!StringUtils.hasText(value)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "La forma de pago es obligatoria");
+        }
+
+        if (!List.of("SALARIO", "CATEDRA").contains(value)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "La forma de pago debe ser Salario o Cátedra");
+        }
+    }
+
+    private void validateTipoHoras(String tipoHoras) {
+        String value = normalize(tipoHoras);
+
+        if (!StringUtils.hasText(value)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "El tipo de horas es obligatorio");
+        }
+
+        if (!List.of("SEMANAL", "SEMESTRAL").contains(value)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "El tipo de horas debe ser Semanal o Semestral");
+        }
+    }
+
     private void validateTipoContrato(String tipoContrato) {
         String value = normalize(tipoContrato);
 
         if (!StringUtils.hasText(value)) {
-            return;
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "El tipo de contrato es obligatorio");
         }
 
         if (!List.of("CONTRATO", "NORMA").contains(value)) {
@@ -300,6 +358,11 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         List<Long> idsProgramas = cleanIds(dto.idsProgramasExcepcion());
         List<Long> idsPersonas = cleanIds(dto.idsPersonasExcepcion());
 
+        if (idsProgramas.isEmpty() && idsPersonas.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Debe seleccionar al menos un programa o una persona para aplicar la excepción");
+        }
+
         for (Long idPrograma : idsProgramas) {
             if (!programaRepository.existsById(idPrograma)) {
                 throw new ApiException(HttpStatus.NOT_FOUND,
@@ -315,63 +378,57 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         }
     }
 
-    private void validateCategoria(Long idCategoriaCatedratico) {
-        if (idCategoriaCatedratico == null) {
-            return;
-        }
-
-        if (!categoriaCatedraticoRepository.existsById(idCategoriaCatedratico)) {
-            throw new ApiException(HttpStatus.NOT_FOUND,
-                    "No existe la categoría seleccionada");
+    private void validateCategorias(List<Long> idsCategoriasCatedratico) {
+        for (Long idCategoriaCatedratico : cleanIds(idsCategoriasCatedratico)) {
+            if (!categoriaCatedraticoRepository.existsById(idCategoriaCatedratico)) {
+                throw new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe una de las categorías seleccionadas");
+            }
         }
     }
 
-    private void validateTipoActividad(Long idTipoActividad) {
-        if (idTipoActividad == null) {
-            return;
-        }
-
-        if (!tipoActividadesRepository.existsById(idTipoActividad)) {
-            throw new ApiException(HttpStatus.NOT_FOUND,
-                    "No existe el tipo de actividad seleccionado");
+    private void validateTiposActividad(List<Long> idsTiposActividad) {
+        for (Long idTipoActividad : cleanIds(idsTiposActividad)) {
+            if (!tipoActividadesRepository.existsById(idTipoActividad)) {
+                throw new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe uno de los tipos de actividad seleccionados");
+            }
         }
     }
 
-    private void syncCategoriaModalidad(
+    private void syncCategoriasModalidad(
             Long idModalidadContratacion,
-            Long idCategoriaCatedratico) {
+            List<Long> idsCategoriasCatedratico) {
         categoriaModalidadRepository.deleteByIdModalidadContratacion(idModalidadContratacion);
 
-        if (idCategoriaCatedratico == null) {
-            return;
+        for (Long idCategoriaCatedratico : cleanIds(idsCategoriasCatedratico)) {
+            CategoriaModalidadEntity entity = new CategoriaModalidadEntity();
+            entity.setIdModalidadContratacion(idModalidadContratacion);
+            entity.setIdCategoriaCatedratico(idCategoriaCatedratico);
+            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setFechaCambio(new Date());
+
+            categoriaModalidadRepository.save(entity);
         }
-
-        CategoriaModalidadEntity entity = new CategoriaModalidadEntity();
-        entity.setIdModalidadContratacion(idModalidadContratacion);
-        entity.setIdCategoriaCatedratico(idCategoriaCatedratico);
-        entity.setRegistradoPor(REGISTRADO_POR);
-        entity.setFechaCambio(new Date());
-
-        categoriaModalidadRepository.save(entity);
     }
 
-    private void syncTipoActividadModalidad(
+    private void syncTiposActividadModalidad(
             Long idModalidadContratacion,
-            Long idTipoActividad) {
+            List<Long> idsTiposActividad) {
         tipoActividadModalidadRepository.deleteByIdModalidadContratacion(idModalidadContratacion);
 
-        if (idTipoActividad == null) {
-            return;
+        int orden = 1;
+
+        for (Long idTipoActividad : cleanIds(idsTiposActividad)) {
+            TipoActividadModalidadEntity entity = new TipoActividadModalidadEntity();
+            entity.setIdModalidadContratacion(idModalidadContratacion);
+            entity.setIdTipoActividades(idTipoActividad);
+            entity.setOrden(String.valueOf(orden++));
+            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setFechaCambio(new Date());
+
+            tipoActividadModalidadRepository.save(entity);
         }
-
-        TipoActividadModalidadEntity entity = new TipoActividadModalidadEntity();
-        entity.setIdModalidadContratacion(idModalidadContratacion);
-        entity.setIdTipoActividades(idTipoActividad);
-        entity.setOrden("1");
-        entity.setRegistradoPor(REGISTRADO_POR);
-        entity.setFechaCambio(new Date());
-
-        tipoActividadModalidadRepository.save(entity);
     }
 
     private String buildExcepcion(RestriccionCargaFormularioDTO dto) {

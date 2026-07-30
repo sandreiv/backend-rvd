@@ -21,6 +21,6 @@ public record RestriccionCargaFormularioDTO(
         String tipoHoras,
         List<Long> idsProgramasExcepcion,
         List<Long> idsPersonasExcepcion,
-        Long idCategoriaCatedratico,
-        Long idTipoActividad
+        List<Long> idsCategoriasCatedratico,
+        List<Long> idsTiposActividad
 ) {}
