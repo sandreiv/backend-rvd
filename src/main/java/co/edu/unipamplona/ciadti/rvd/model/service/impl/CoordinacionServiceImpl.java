@@ -11,10 +11,16 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -49,9 +55,11 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
@@ -72,11 +80,13 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalHorasPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
@@ -117,6 +127,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.UnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ActividadModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -133,8 +144,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
     private static final int ESCALA_MONETARIA = 2;
-    private static final String PREASIGNACION_SOLO_LECTURA =
-        "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
+    private static final int ESCALA_PORCENTAJE = 2;
+    private static final BigDecimal DIAS_MES = new BigDecimal("30");
+    private static final BigDecimal DIAS_ANIO = new BigDecimal("360");
+    private static final BigDecimal DIAS_VACACIONES = new BigDecimal("720");
+    private static final BigDecimal TASA_INTERES = new BigDecimal("0.12");
+    private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
+    private static final BigDecimal CIEN = new BigDecimal("100");
+    private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
 
     private final CoordinacionRepository coordinacionRepository;
@@ -336,11 +353,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 heredados);
     }
 
-    private CargaDocenteEntity cloneCargaDocenteForInheritance(
-            CargaDocenteEntity origen,
-            Long idCargaDestino,
-            FechasConvocatoriaEntity fechaDestino) {
+    private CargaDocenteEntity cloneCargaDocenteForInheritance(CargaDocenteEntity origen, Long idCargaDestino, FechasConvocatoriaEntity fechaDestino) {
         CargaDocenteEntity copia = new CargaDocenteEntity();
+        
         copia.setIdCarga(idCargaDestino);
         copia.setIdPersonaGeneral(origen.getIdPersonaGeneral());
         copia.setIdModalidadContratacion(origen.getIdModalidadContratacion());
@@ -348,16 +363,16 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         copia.setIdFechasConvocatoria(fechaDestino.getId());
         copia.setFechaInicio(fechaDestino.getFechaInicio());
         copia.setFechaFin(fechaDestino.getFechaFin());
-        copia.setValorContrato(origen.getValorContrato());
-        copia.setValorPrestaciones(origen.getValorPrestaciones());
-        copia.setSalario(origen.getSalario());
+        //copia.setValorContrato(origen.getValorContrato());
+        //copia.setValorPrestaciones(origen.getValorPrestaciones());
+        //copia.setSalario(origen.getSalario());
         copia.setEstado(origen.getEstado());
         copia.setVigente(origen.getVigente());
         copia.setHoras(origen.getHoras());
         copia.setValorHora(origen.getValorHora());
         copia.setPuntos(origen.getPuntos());
         copia.setValorPunto(origen.getValorPunto());
-        copia.setTotalContrato(origen.getTotalContrato());
+        //copia.setTotalContrato(origen.getTotalContrato());
         copia.setSemanas(origen.getSemanas());
         copia.setNivelFormacion(origen.getNivelFormacion());
         copia.setMomento(origen.getMomento());
@@ -1724,6 +1739,285 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 || dto.fechaFin() == null
                 || !StringUtils.hasText(dto.estado())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La coordinacion, fecha de convocatoria, fechas y estado son obligatorios");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ValorContratacionDTO getContractValue(Long idCargaDocente) {
+        log.debug("getContractValue ===> idCargaDocente={}", idCargaDocente);
+        
+        CargaDocenteEntity cargaDocente = findCargaDocenteOrThrow(idCargaDocente);
+        BigDecimal asignacionSalarial = resolveAsignacionSalarialContrato(cargaDocente);
+        long cantidadDias = resolveCantidadDiasContrato(cargaDocente);
+        BigDecimal dias = BigDecimal.valueOf(cantidadDias);
+
+        BigDecimal valorContrato = asignacionSalarial
+                .divide(DIAS_MES, 8, RoundingMode.HALF_UP)
+                .multiply(dias)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
+        BigDecimal valorCesantias = asignacionSalarial
+                .multiply(dias)
+                .divide(DIAS_ANIO, ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
+        BigDecimal valorIntereses = valorCesantias
+                .multiply(dias)
+                .divide(DIAS_ANIO, 8, RoundingMode.HALF_UP)
+                .multiply(TASA_INTERES)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
+        BigDecimal valorPrimaLegal = valorCesantias;
+        BigDecimal valorVacaciones = asignacionSalarial
+                .multiply(dias)
+                .divide(DIAS_VACACIONES, ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
+        BigDecimal totalPrestaciones = valorCesantias
+                .add(valorIntereses)
+                .add(valorPrimaLegal)
+                .add(valorVacaciones)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
+        BigDecimal totalContrato = valorContrato
+                .add(totalPrestaciones)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
+        log.info("getContractValue ===> id={}, dias={}, totalContrato={}",
+                idCargaDocente, cantidadDias, totalContrato);
+        return new ValorContratacionDTO(
+                valorVacaciones,
+                valorCesantias,
+                valorIntereses,
+                valorPrimaLegal,
+                totalPrestaciones,
+                valorContrato,
+                totalContrato);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ActividadHorasResumenDTO> listActivityHours(Long idCargaDocente) {
+        log.debug("listActivityHours ===> idCargaDocente={}", idCargaDocente);
+        validateCargaDocenteExists(idCargaDocente);
+
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos = loadDetallesUnicosByCargaDocente(idCargaDocente);
+
+        Map<String, ActividadHorasAcumulado> acumulados = new LinkedHashMap<>();
+        for (DetalleCargaDocenteListadoProjection detalle : unicos.values()) {
+            String codigo = resolveCodigoActividad(detalle);
+            String nombre = resolveNombreActividad(detalle);
+            String tipo = resolveTipoActividad(detalle);
+            String clave = codigo + "|" + nombre;
+            ActividadHorasAcumulado actual = acumulados.computeIfAbsent(clave, k -> new ActividadHorasAcumulado(tipo, codigo, nombre));
+            actual.totalHoras = actual.totalHoras.add(parseHorasDetalle(detalle.getHoras()));
+        }
+
+        List<ActividadHorasResumenDTO> resultado = new ArrayList<>();
+        for (ActividadHorasAcumulado item : acumulados.values()) {
+            resultado.add(new ActividadHorasResumenDTO(item.tipo, item.codigo, item.nombre, item.totalHoras));
+        }
+        log.info("listActivityHours ===> id={}, totalTipos={}", idCargaDocente, resultado.size());
+        return resultado;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CentroCostoResumenDTO> listCostCenters(Long idCargaDocente) {
+        log.debug("listCostCenters ===> idCargaDocente={}", idCargaDocente);
+        ValorContratacionDTO valor = getContractValue(idCargaDocente);
+        return buildCostCenters(idCargaDocente, valor.totalContrato());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente) {
+        log.debug("getProfessorLoadSummary ===> idCargaDocente={}", idCargaDocente);
+        ValorContratacionDTO valorContratacion = getContractValue(idCargaDocente);
+        List<ActividadHorasResumenDTO> horasActividades = listActivityHours(idCargaDocente);
+        List<CentroCostoResumenDTO> centrosCosto = buildCostCenters(idCargaDocente, valorContratacion.totalContrato());
+        log.info("getProfessorLoadSummary ===> id={}, actividades={}, centros={}", idCargaDocente, horasActividades.size(), centrosCosto.size());
+        return new ResumenCargaDocenteDTO(idCargaDocente, valorContratacion, horasActividades, centrosCosto);
+    }
+
+    private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos = loadDetallesUnicosByCargaDocente(idCargaDocente);
+
+        Map<Long, CentroCostoAcumulado> acumulados = new LinkedHashMap<>();
+        BigDecimal totalHoras = BigDecimal.ZERO;
+        for (DetalleCargaDocenteListadoProjection detalle : unicos.values()) {
+            BigDecimal horas = parseHorasDetalle(detalle.getHoras());
+            totalHoras = totalHoras.add(horas);
+            Long idCentro = detalle.getIdCentroCosto();
+            if (idCentro == null) {
+                continue;
+            }
+            CentroCostoAcumulado actual = acumulados.computeIfAbsent(
+                    idCentro,
+                    k -> new CentroCostoAcumulado(
+                            idCentro, resolveNombreCentroCosto(detalle)));
+            actual.numeroActividades++;
+            actual.totalHoras = actual.totalHoras.add(horas);
+        }
+
+        BigDecimal contrato = totalContrato != null ? totalContrato : BigDecimal.ZERO;
+        List<CentroCostoResumenDTO> resultado = new ArrayList<>();
+        for (CentroCostoAcumulado item : acumulados.values()) {
+            BigDecimal porcentaje = calcularPorcentajeHoras(item.totalHoras, totalHoras);
+            BigDecimal valorAsignado = contrato
+                    .multiply(porcentaje)
+                    .divide(CIEN, ESCALA_MONETARIA, RoundingMode.HALF_UP);
+            resultado.add(new CentroCostoResumenDTO(
+                    item.idCentroCosto,
+                    item.nombre,
+                    item.numeroActividades,
+                    item.totalHoras,
+                    porcentaje,
+                    valorAsignado));
+        }
+        return resultado;
+    }
+
+    private Map<Long, DetalleCargaDocenteListadoProjection>loadDetallesUnicosByCargaDocente(Long idCargaDocente) {
+        List<DetalleCargaDocenteListadoProjection> detalles = detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente);
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos = new LinkedHashMap<>();
+        for (DetalleCargaDocenteListadoProjection detalle : detalles) {
+            unicos.putIfAbsent(detalle.getIdDetalleCargaDocente(), detalle);
+        }
+        return unicos;
+    }
+
+    private CargaDocenteEntity findCargaDocenteOrThrow(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de carga docente es obligatorio");
+        }
+        return cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
+    }
+
+    private void validateCargaDocenteExists(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de carga docente es obligatorio");
+        }
+        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
+        }
+    }
+
+    private BigDecimal resolveAsignacionSalarialContrato(CargaDocenteEntity cargaDocente) {
+        if (cargaDocente.getSalario() != null) {
+            return cargaDocente.getSalario();
+        }
+        BigDecimal valorPunto = cargaDocente.getValorPunto();
+        if (valorPunto == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente no tiene asignacion salarial ni valor del punto");
+        }
+        BigDecimal puntos = resolvePuntosDocenteContrato(cargaDocente);
+        return puntos.multiply(valorPunto)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal resolvePuntosDocenteContrato(
+            CargaDocenteEntity cargaDocente) {
+        if (!StringUtils.hasText(cargaDocente.getPuntos())) {
+            return PUNTOS_DOCENTE_DEFAULT;
+        }
+        try {
+            return new BigDecimal(cargaDocente.getPuntos().trim());
+        } catch (NumberFormatException ex) {
+            return PUNTOS_DOCENTE_DEFAULT;
+        }
+    }
+
+    private long resolveCantidadDiasContrato(CargaDocenteEntity cargaDocente) {
+        Date fechaInicio = cargaDocente.getFechaInicio();
+        Date fechaFin = cargaDocente.getFechaFin();
+        if (fechaInicio == null || fechaFin == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente no tiene fechas de inicio y fin");
+        }
+        LocalDate inicio = fechaInicio.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+        LocalDate fin = fechaFin.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+        if (fin.isBefore(inicio)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La fecha fin no puede ser anterior a la fecha inicio");
+        }
+        return ChronoUnit.DAYS.between(inicio, fin) + 1;
+    }
+
+    private String resolveCodigoActividad(DetalleCargaDocenteListadoProjection detalle) {
+        if (StringUtils.hasText(detalle.getCodigoTipoActividad())) {
+            return detalle.getCodigoTipoActividad();
+        }
+        return detalle.getCodigoTipoActividadPadre();
+    }
+
+    private String resolveNombreActividad(DetalleCargaDocenteListadoProjection detalle) {
+        if (StringUtils.hasText(detalle.getNombreTipoActividad())) {
+            return detalle.getNombreTipoActividad();
+        }
+        return detalle.getNombreTipoActividadPadre();
+    }
+
+    private String resolveTipoActividad(DetalleCargaDocenteListadoProjection detalle) {
+        if (StringUtils.hasText(detalle.getNombreTipoActividadPadre())) {
+            return detalle.getNombreTipoActividadPadre();
+        }
+        return detalle.getNombreTipoActividad();
+    }
+
+    private String resolveNombreCentroCosto(DetalleCargaDocenteListadoProjection detalle) {
+        if (StringUtils.hasText(detalle.getDescripcionCentroCosto())) {
+            return detalle.getDescripcionCentroCosto();
+        }
+        return "Sin nombre";
+    }
+
+    private BigDecimal calcularPorcentajeHoras(
+            BigDecimal horasCentro,
+            BigDecimal totalHoras) {
+        if (totalHoras.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO.setScale(ESCALA_PORCENTAJE);
+        }
+        return horasCentro
+                .multiply(CIEN)
+                .divide(totalHoras, ESCALA_PORCENTAJE, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal parseHorasDetalle(String horas) {
+        if (!StringUtils.hasText(horas)) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(horas.trim().replace(',', '.'));
+        } catch (NumberFormatException ex) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private static final class ActividadHorasAcumulado {
+        private final String tipo;
+        private final String codigo;
+        private final String nombre;
+        private BigDecimal totalHoras = BigDecimal.ZERO;
+
+        private ActividadHorasAcumulado(String tipo, String codigo, String nombre) {
+            this.tipo = tipo;
+            this.codigo = codigo;
+            this.nombre = nombre;
+        }
+    }
+
+    private static final class CentroCostoAcumulado {
+        private final Long idCentroCosto;
+        private final String nombre;
+        private long numeroActividades;
+        private BigDecimal totalHoras = BigDecimal.ZERO;
+
+        private CentroCostoAcumulado(Long idCentroCosto, String nombre) {
+            this.idCentroCosto = idCentroCosto;
+            this.nombre = nombre;
         }
     }
 

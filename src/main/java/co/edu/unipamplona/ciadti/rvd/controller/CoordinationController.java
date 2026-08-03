@@ -23,15 +23,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
@@ -40,11 +37,18 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -372,6 +376,42 @@ public class CoordinationController {
     public ResponseEntity<ActividadModalidadDTO> listActivitiesModality(@RequestParam Long idModalidadContratacion) {
         ActividadModalidadDTO actividad = coordinacionService.listActivitiesModality(idModalidadContratacion);
         return new ResponseEntity<>(actividad, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene el resumen completo de una carga docente",
+        description = "Agrupa valor de contratación, horas de actividades y distribución por centros de costo."
+    )
+    @GetMapping("/professor-load-summary/{idCargaDocente}")
+    public ResponseEntity<ResumenCargaDocenteDTO> getProfessorLoadSummary(@PathVariable Long idCargaDocente) {
+        return new ResponseEntity<>(coordinacionService.getProfessorLoadSummary(idCargaDocente), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene el valor de contratación de una carga docente",
+        description = "Calcula vacaciones, cesantías, intereses, prima legal, prestaciones, valor y total de contrato."
+    )
+    @GetMapping("/contract-value/{idCargaDocente}")
+    public ResponseEntity<ValorContratacionDTO> getContractValue(@PathVariable Long idCargaDocente) {
+        return new ResponseEntity<>(coordinacionService.getContractValue(idCargaDocente), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene el resumen de horas por actividad",
+        description = "Retorna tipo, código, nombre y total de horas de las actividades de la carga docente."
+    )
+    @GetMapping("/activity-hours/{idCargaDocente}")
+    public ResponseEntity<List<ActividadHorasResumenDTO>> getActivityHours(@PathVariable Long idCargaDocente) {
+        return new ResponseEntity<>(coordinacionService.listActivityHours(idCargaDocente), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene la distribución por centros de costo",
+        description = "Retorna nombre del centro, número de actividades, porcentaje de horas y valor del contrato asignado."
+    )
+    @GetMapping("/cost-centers/{idCargaDocente}")
+    public ResponseEntity<List<CentroCostoResumenDTO>> getCostCenters(@PathVariable Long idCargaDocente) {
+        return new ResponseEntity<>(coordinacionService.listCostCenters(idCargaDocente), HttpStatus.OK);
     }
 
 }

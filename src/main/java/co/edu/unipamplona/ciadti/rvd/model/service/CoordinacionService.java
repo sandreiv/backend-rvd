@@ -11,9 +11,11 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import java.util.List;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
@@ -30,10 +32,12 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 
 public interface CoordinacionService {
@@ -97,12 +101,17 @@ public interface CoordinacionService {
 
     TotalPreasignacionDTO getTotalPreload(Long idCarga);
 
+    ValorContratacionDTO getContractValue(Long idCargaDocente);
+
+    List<ActividadHorasResumenDTO> listActivityHours(Long idCargaDocente);
+
+    List<CentroCostoResumenDTO> listCostCenters(Long idCargaDocente);
+
+    ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente);
+
     List<CoordinacionBusquedaDTO> searchCoordination(String nombre);
 
-    List<CoordinacionBusquedaDTO> searchCoordinationForRestriction(
-            String nombre,
-            Long idConvocatoria
-    );
+    List<CoordinacionBusquedaDTO> searchCoordinationForRestriction(String nombre, Long idConvocatoria);
 
     void saveCoordinationRestriction(CoordinacionRestriccionFormularioDTO dto);
 
