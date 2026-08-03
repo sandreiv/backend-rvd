@@ -60,7 +60,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 ON PENG.PEGE_ID = PEGE.PEGE_ID
                 LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CADO.FECO_ID
-                WHERE CARG.COOR_ID = :idCoordinacion
+                WHERE CADO.CARG_ID = :idCarga
                 AND CADO.MOCO_ID = :idModalidadContratacion
                 ORDER BY
                 CASE
@@ -78,8 +78,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
                 )) NULLS LAST
             """, nativeQuery = true)
-    List<DocenteCargaCoordinacionProjection> findProfessorsByCoordinationAndModality(
-            @Param("idCoordinacion") Long idCoordinacion,
+    List<DocenteCargaCoordinacionProjection> findProfessorsByCargaAndModality(
+            @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
 
     @Query(value = """
@@ -110,7 +110,9 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
                 FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin
-                FROM RVD.DOCENTESPLANTACOORDINACION DOPC
+                FROM RVD.CARGA CARG
+                INNER JOIN RVD.DOCENTESPLANTACOORDINACION DOPC
+                ON DOPC.COOR_ID = CARG.COOR_ID
                 INNER JOIN GENERAL.PERSONAGENERAL PEGE
                 ON PEGE.PEGE_ID = DOPC.PEGE_ID
                 INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
@@ -118,15 +120,10 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 LEFT JOIN RVD.CARGADOCENTE CADO
                 ON CADO.PEGE_ID = DOPC.PEGE_ID
                 AND CADO.MOCO_ID = :idModalidadContratacion
-                AND EXISTS (
-                    SELECT 1
-                    FROM RVD.CARGA CARG
-                    WHERE CARG.CARG_ID = CADO.CARG_ID
-                        AND CARG.COOR_ID = DOPC.COOR_ID
-                )
+                AND CADO.CARG_ID = CARG.CARG_ID
                 LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CADO.FECO_ID
-                WHERE DOPC.COOR_ID = :idCoordinacion
+                WHERE CARG.CARG_ID = :idCarga
                 ORDER BY
                 UPPER(TRIM(
                     TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
@@ -134,8 +131,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
                 )) NULLS LAST
             """, nativeQuery = true)
-    List<DocenteCargaCoordinacionProjection> findPlantProfessorsByCoordinationAndModality(
-            @Param("idCoordinacion") Long idCoordinacion,
+    List<DocenteCargaCoordinacionProjection> findPlantProfessorsByCargaAndModality(
+            @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
 
     @Procedure(name = "CargaDocenteEntity.deleteByProcedure")
@@ -152,6 +149,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
 
     boolean existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
             Long idPersonaGeneral, Long idCarga, Long idModalidadContratacion);
+
+    List<CargaDocenteEntity> findByIdCargaAndOnceMeses(Long idCarga, String onceMeses);
 
     @Query(value = """
             SELECT

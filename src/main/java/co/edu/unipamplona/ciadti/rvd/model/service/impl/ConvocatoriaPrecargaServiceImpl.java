@@ -37,6 +37,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PersonaAutorizaConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaTipoContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaTipoContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
@@ -79,6 +80,23 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
 
         log.info("Convocatorias listadas. periodo={}, total={}",
                 idPeriodoUniversidad, result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public List<ConvocatoriaDTO> findCallListByFirstPeriodByYear(Long year) {
+        log.debug("findCallListByFirstPeriodByYear ===> Listando convocatorias. year={}, periodo=1", year);
+
+        convocatoriaEstadoService.syncEstadosConvocatoriasConRestricciones();
+
+        List<ConvocatoriaDTO> result = convocatoriaRepository
+                .findCallListByFirstPeriodByYear(year)
+                .stream()
+                .map(this::toListDtoAndSyncEstado)
+                .collect(Collectors.toList());
+
+        log.info("findCallListByFirstPeriodByYear ===> Convocatorias listadas. year={}, total={}", year, result.size());
         return result;
     }
 
@@ -132,6 +150,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         convocatoria.setIdPersonaGeneral(datos.autoriza().id());
         convocatoria.setIdPeriodoUniversidad(datos.periodo().id());
         convocatoria.setIdNivelEducativo(datos.nivelEducativo().id());
+        convocatoria.setIdRelacion(resolveIdRelacion(datos.idRelacion(), null));
         convocatoria.setEstado("1");
         convocatoria.setFechaCambio(new Date());
         convocatoria.setRegistradoPor("REGISTRO_WEB");
@@ -198,6 +217,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 datos.autoriza().id(),
                 datos.periodo().id(),
                 datos.nivelEducativo().id(),
+                resolveIdRelacion(datos.idRelacion(), id),
                 new Date(),
                 id);
         if (updated == 0) {
@@ -359,33 +379,47 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     }
 
     @Override
-    public List<ConvocatoriaDTO> findActivePreloadCalls() {
-        log.debug("findActivePreloadCalls ===> Consultando convocatorias activas de precarga");
+    public List<ConvocatoriaDTO> findActivePreloadCalls(Long idPeriodoUniversidad) {
+        log.debug("findActivePreloadCalls ===> Consultando convocatorias activas. idPeriodoUniversidad={}",
+                idPeriodoUniversidad);
 
-        List<ConvocatoriaDTO> result = convocatoriaRepository.findActivePreloadCalls()
+        if (idPeriodoUniversidad == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
+        }
+
+        List<ConvocatoriaDTO> result = convocatoriaRepository
+                .findActivePreloadCalls(idPeriodoUniversidad)
                 .stream()
                 .map(this::toPreloadCallListDto)
                 .collect(Collectors.toList());
 
-        log.info("findActivePreloadCalls ===> Convocatorias activas de precarga consultadas. total={}",
-                result.size());
+        log.info("findActivePreloadCalls ===> Convocatorias activas consultadas. periodo={}, total={}",
+                idPeriodoUniversidad, result.size());
 
         return result;
     }
 
     @Override
-    public List<ConvocatoriaDTO> findAssignableActivePreloadCalls() {
-        log.debug("findAssignableActivePreloadCalls ===> Consultando convocatorias activas asignables sin restricción vigente");
+    public List<ConvocatoriaDTO> findAssignableActivePreloadCalls(Long idPeriodoUniversidad) {
+        log.debug(
+                "findAssignableActivePreloadCalls ===> Consultando convocatorias asignables. idPeriodoUniversidad={}",
+                idPeriodoUniversidad);
+
+        if (idPeriodoUniversidad == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
+        }
 
         convocatoriaEstadoService.syncEstadosConvocatoriasConRestricciones();
 
-        List<ConvocatoriaDTO> result = convocatoriaRepository.findAssignableActivePreloadCalls()
+        List<ConvocatoriaDTO> result = convocatoriaRepository
+                .findAssignableActivePreloadCalls(idPeriodoUniversidad)
                 .stream()
                 .map(this::toPreloadCallListDto)
                 .collect(Collectors.toList());
 
-        log.info("findAssignableActivePreloadCalls ===> Convocatorias activas asignables consultadas. total={}",
-                result.size());
+        log.info(
+                "findAssignableActivePreloadCalls ===> Convocatorias asignables consultadas. periodo={}, total={}",
+                idPeriodoUniversidad, result.size());
 
         return result;
     }
@@ -413,8 +447,58 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         return FechasConvocatoriaCalculator.calcularOnceMeses(fechaInicio, fechaFin);
     }
 
+    @Override
+    @Transactional
+    public void updateRelation(Long idConvocatoria, Long idRelacion) {
+        log.info("updateRelation ===> Relacionando convocatoria. idConvocatoria={}, idRelacion={}", idConvocatoria, idRelacion);
 
+        if (!convocatoriaRepository.existsById(idConvocatoria)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada");
+        }
+
+        PeriodoUniversidadEntity periodoActual = convocatoriaRepository.findPeriodoEntityByConvocatoriaId(idConvocatoria);
+        if (periodoActual == null || !"2".equals(periodoActual.getPeriodo())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Solo se puede relacionar una convocatoria de segundo periodo");
+        }
+
+        Long idRelacionResuelto = resolveIdRelacion(idRelacion, idConvocatoria);
+        int updated = convocatoriaRepository.updateIdRelacion(
+                idRelacionResuelto,
+                new Date(),
+                idConvocatoria);
+        if (updated == 0) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada");
+        }
+
+        log.info("updateRelation ===> Relación actualizada. idConvocatoria={}, idRelacion={}", idConvocatoria, idRelacionResuelto);
+    }
+
+    private Long resolveIdRelacion(Long idRelacion, Long idConvocatoriaActual) {
+        if (idRelacion == null) {
+            return null;
+        }
+        if (idConvocatoriaActual != null && idRelacion.equals(idConvocatoriaActual)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Una convocatoria no puede relacionarse consigo misma");
+        }
+        if (!convocatoriaRepository.existsById(idRelacion)) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la convocatoria relacionada con id " + idRelacion);
+        }
+        PeriodoUniversidadEntity periodoRelacionado =
+                convocatoriaRepository.findPeriodoEntityByConvocatoriaId(idRelacion);
+        if (periodoRelacionado == null
+                || !"1".equals(periodoRelacionado.getPeriodo())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria relacionada debe pertenecer al primer periodo");
+        }
+        return idRelacion;
+    }
 
 }
+
 
  /* 04/06/2026 @:Sebastian Jaimes*/

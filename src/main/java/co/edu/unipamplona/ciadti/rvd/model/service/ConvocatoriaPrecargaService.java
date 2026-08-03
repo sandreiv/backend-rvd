@@ -19,6 +19,8 @@ public interface ConvocatoriaPrecargaService {
 
     List<ConvocatoriaDTO> findCallListWithDates(Long idPeriodoUniversidad);
 
+    List<ConvocatoriaDTO> findCallListByFirstPeriodByYear(Long year);
+
     List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(String nombre, String documento);
 
     void save(ConvocatoriaFormularioDTO dto);
@@ -31,8 +33,10 @@ public interface ConvocatoriaPrecargaService {
 
     void bulkDelete(List<ConvocatoriaFormularioDTO> listaConvocatorias);
 
-    List<ConvocatoriaDTO> findActivePreloadCalls();
+    List<ConvocatoriaDTO> findActivePreloadCalls(Long idPeriodoUniversidad);
 
-    List<ConvocatoriaDTO> findAssignableActivePreloadCalls();
+    List<ConvocatoriaDTO> findAssignableActivePreloadCalls(Long idPeriodoUniversidad);
+
+    void updateRelation(Long idConvocatoria, Long idRelacion);
 }
 /* 02/06/2026 @:Sebastian Jaimes */

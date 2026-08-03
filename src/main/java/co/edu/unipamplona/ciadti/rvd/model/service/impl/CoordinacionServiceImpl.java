@@ -11,12 +11,13 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -81,13 +82,16 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CategoriaModalidadEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionPorCoordinacionEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.AsignarCentroCostoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
@@ -118,7 +122,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoo
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
-import java.util.Collections;
+import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -132,6 +136,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final int ESCALA_MONETARIA = 2;
     private static final String PREASIGNACION_SOLO_LECTURA =
         "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
+    private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
 
     private final CoordinacionRepository coordinacionRepository;
     private final CargaRepository cargaRepository;
@@ -167,6 +172,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final MateriaMapper materiaMapper;
     private final AsociacionCoordinacionRepository asociacionCoordinacionRepository;
+    private final AsignarCentroCostoRepository asignarCentroCostoRepository;
     private final GrupoRepository grupoRepository;
     private final GrupoMapper grupoMapper;
     private final PersonaProyectoRepository personaProyectoRepository;
@@ -182,17 +188,47 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CoordinacionDTO> findCoordinationsByIdConvocatoria(Long idConvocatoria, Long idUsuario) {
-        log.debug("findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idUsuario={}",
-                idConvocatoria, idUsuario);
-        List<CoordinacionListadoProjection> projections = idConvocatoria == null
-                ? coordinacionRepository.findWithoutCarga(idUsuario)
-                : coordinacionRepository.findByConvocatoriaWithCarga(
-                        idConvocatoria, idUsuario);
+    public List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad,
+            Long idUsuario) {
+        log.debug(
+                "findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idPeriodoUniversidad={}, idUsuario={}",
+                idConvocatoria, idPeriodoUniversidad, idUsuario);
+
+        List<CoordinacionListadoProjection> projections;
+        if (idConvocatoria != null) {
+            if (idPeriodoUniversidad != null) {
+                validateConvocatoriaBelongsToPeriod(idConvocatoria, idPeriodoUniversidad);
+            }
+            projections = coordinacionRepository.findByConvocatoriaWithCarga(
+                    idConvocatoria, idUsuario);
+        } else {
+            if (idPeriodoUniversidad == null) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El periodo universitario es obligatorio cuando no se envía convocatoria");
+            }
+            projections = coordinacionRepository.findWithoutCarga(
+                    idUsuario, idPeriodoUniversidad);
+        }
+
         List<CoordinacionDTO> result = coordinacionMapper.toDtoList(projections);
-        log.info("findCoordinationsByIdConvocatoria ===> Coordinaciones listadas. idConvocatoria={}, total={}",
-                idConvocatoria, result.size());
+        log.info(
+                "findCoordinationsByIdConvocatoria ===> Coordinaciones listadas. idConvocatoria={}, idPeriodoUniversidad={}, total={}",
+                idConvocatoria, idPeriodoUniversidad, result.size());
         return result;
+    }
+
+    private void validateConvocatoriaBelongsToPeriod(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
+        var periodo = convocatoriaRepository.findPeriodoEntityByConvocatoriaId(idConvocatoria);
+        if (periodo == null || !Objects.equals(periodo.getId(), idPeriodoUniversidad)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria no pertenece al periodo universitario indicado");
+        }
     }
 
     @Override
@@ -203,9 +239,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 dto != null ? dto.idConvocatoria() : null);
         validateSavePreload(dto);
 
-        CargaEntity carga = cargaRepository.findFirstByIdCoordinacionOrderByIdDesc(dto.idCoordinacion()).orElseGet(CargaEntity::new);
+        Optional<CargaEntity> cargaExistente = cargaRepository
+                .findFirstByIdCoordinacionAndIdConvocatoria(
+                        dto.idCoordinacion(),
+                        dto.idConvocatoria());
+        boolean isNewCarga = cargaExistente.isEmpty();
 
-        validatePreloadCallChangeAllowed(carga, dto.idConvocatoria());
+        CargaEntity carga = cargaExistente.orElseGet(CargaEntity::new);
 
         carga.setIdCoordinacion(dto.idCoordinacion());
         carga.setIdConvocatoria(dto.idConvocatoria());
@@ -218,23 +258,114 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         carga.setFechaCambio(new Date());
 
         cargaRepository.save(carga);
-        log.info("savePreload ===> Preasignación guardada. idCarga={}, idCoordinacion={}, idConvocatoria={}", carga.getId(), dto.idCoordinacion(), dto.idConvocatoria());
+        log.info("savePreload ===> Preasignación guardada. idCarga={}, idCoordinacion={}, idConvocatoria={}",
+                carga.getId(), dto.idCoordinacion(), dto.idConvocatoria());
+
+        if (isNewCarga) {
+            inheritOnceMesesTeachers(carga);
+        }
     }
 
-    private void validatePreloadCallChangeAllowed(CargaEntity carga, Long newPreloadCallId) {
-        if (carga.getId() == null) {
+    private void inheritOnceMesesTeachers(CargaEntity cargaDestino) {
+        if (cargaDestino == null
+                || cargaDestino.getId() == null
+                || cargaDestino.getIdConvocatoria() == null
+                || cargaDestino.getIdCoordinacion() == null) {
             return;
         }
 
-        if (Objects.equals(carga.getIdConvocatoria(), newPreloadCallId)) {
+        ConvocatoriaEntity convocatoriaDestino = convocatoriaRepository
+                .findById(cargaDestino.getIdConvocatoria())
+                .orElse(null);
+        if (convocatoriaDestino == null || convocatoriaDestino.getIdRelacion() == null) {
+            log.debug(
+                    "inheritOnceMesesTeachers ===> Sin relación de convocatoria. idCarga={}",
+                    cargaDestino.getId());
             return;
         }
 
-        if (cargaDocenteRepository.existsByIdCarga(carga.getId())) {
-            log.warn("validatePreloadCallChangeAllowed ===> Cambio de convocatoria bloqueado. idCarga={}, nuevaConvocatoria={}", carga.getId(), newPreloadCallId);
-            throw new ApiException(HttpStatus.CONFLICT, "No se puede cambiar la convocatoria porque ya existen docentes cargados en la preasignación"
-            );
+        Optional<CargaEntity> cargaOrigenOpt = cargaRepository
+                .findFirstByIdCoordinacionAndIdConvocatoria(
+                        cargaDestino.getIdCoordinacion(),
+                        convocatoriaDestino.getIdRelacion());
+        if (cargaOrigenOpt.isEmpty()) {
+            log.debug(
+                    "inheritOnceMesesTeachers ===> No hay carga origen. idCoordinacion={}, idConvocatoriaRelacion={}",
+                    cargaDestino.getIdCoordinacion(),
+                    convocatoriaDestino.getIdRelacion());
+            return;
         }
+
+        List<CargaDocenteEntity> docentesOnceMeses = cargaDocenteRepository
+                .findByIdCargaAndOnceMeses(cargaOrigenOpt.get().getId(), "1");
+        if (docentesOnceMeses.isEmpty()) {
+            log.debug(
+                    "inheritOnceMesesTeachers ===> Sin docentes once meses en origen. idCargaOrigen={}",
+                    cargaOrigenOpt.get().getId());
+            return;
+        }
+
+        int heredados = 0;
+        for (CargaDocenteEntity origen : docentesOnceMeses) {
+            if (origen.getIdPersonaGeneral() != null
+                    && cargaDocenteRepository
+                            .existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
+                                    origen.getIdPersonaGeneral(),
+                                    cargaDestino.getId(),
+                                    origen.getIdModalidadContratacion())) {
+                continue;
+            }
+
+            FechasConvocatoriaEntity fechaDestino = fechasConvocatoriaRepository
+                    .findByConvocatoriaAndModalidad(
+                            cargaDestino.getIdConvocatoria(),
+                            origen.getIdModalidadContratacion())
+                    .orElseThrow(() -> new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "No existe fecha de convocatoria en la convocatoria destino"
+                                    + " para la modalidad " + origen.getIdModalidadContratacion()));
+
+            CargaDocenteEntity copia = cloneCargaDocenteForInheritance(
+                    origen, cargaDestino.getId(), fechaDestino);
+            cargaDocenteRepository.save(copia);
+            heredados++;
+        }
+
+        log.info(
+                "inheritOnceMesesTeachers ===> Docentes once meses heredados. idCargaDestino={}, total={}",
+                cargaDestino.getId(),
+                heredados);
+    }
+
+    private CargaDocenteEntity cloneCargaDocenteForInheritance(
+            CargaDocenteEntity origen,
+            Long idCargaDestino,
+            FechasConvocatoriaEntity fechaDestino) {
+        CargaDocenteEntity copia = new CargaDocenteEntity();
+        copia.setIdCarga(idCargaDestino);
+        copia.setIdPersonaGeneral(origen.getIdPersonaGeneral());
+        copia.setIdModalidadContratacion(origen.getIdModalidadContratacion());
+        copia.setIdCategoriaCatedratico(origen.getIdCategoriaCatedratico());
+        copia.setIdFechasConvocatoria(fechaDestino.getId());
+        copia.setFechaInicio(fechaDestino.getFechaInicio());
+        copia.setFechaFin(fechaDestino.getFechaFin());
+        copia.setValorContrato(origen.getValorContrato());
+        copia.setValorPrestaciones(origen.getValorPrestaciones());
+        copia.setSalario(origen.getSalario());
+        copia.setEstado(origen.getEstado());
+        copia.setVigente(origen.getVigente());
+        copia.setHoras(origen.getHoras());
+        copia.setValorHora(origen.getValorHora());
+        copia.setPuntos(origen.getPuntos());
+        copia.setValorPunto(origen.getValorPunto());
+        copia.setTotalContrato(origen.getTotalContrato());
+        copia.setSemanas(origen.getSemanas());
+        copia.setNivelFormacion(origen.getNivelFormacion());
+        copia.setMomento(origen.getMomento());
+        copia.setOnceMeses(origen.getOnceMeses());
+        copia.setRegistradoPor(REGISTRADO_POR);
+        copia.setFechaCambio(new Date());
+        return copia;
     }
 
     private void validatePreassignmentWriteAllowedByCarga(Long idCarga) {
@@ -400,6 +531,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<DocentePreasignacionDTO> result = docentePreasignacionMapper.toDtoList(
                 personaGeneralRepository.searchProfessorsForPreassignment(
                         nombreParam, documentoParam, idModalidadContratacion));
+                        
         log.info("searchProfessor ===> Docentes encontrados. total={}", result.size());
         return result;
     }
@@ -413,18 +545,29 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FechaModalidadFormularioDTO> getWorkDate(Long coorId, Long mocoId) {
-        log.debug("getWorkDate ===> Consultando fechas de trabajo. idCoordinacion={}, idModalidad={}", coorId, mocoId);
-        
-        List<FechaModalidadFormularioDTO> result = fechasConvocatoriaMapper.toModalidadDtoList(fechasConvocatoriaRepository.findByCoordinationAndModalityAndRestrictionSemanal(coorId, mocoId));
-        
-        log.info("getWorkDate ===> Fechas de trabajo consultadas. idCoordinacion={}, total={}", coorId, result.size());
+    public List<FechaModalidadFormularioDTO> getWorkDate(Long idCarga, Long idModalidadContratacion) {
+        log.debug("getWorkDate ===> Consultando fechas de trabajo. idCarga={}, idModalidad={}",
+                idCarga, idModalidadContratacion);
+
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
+
+        List<FechaModalidadFormularioDTO> result = fechasConvocatoriaMapper.toModalidadDtoList(
+                fechasConvocatoriaRepository.findByCargaAndModalityAndRestrictionSemanal(
+                        idCarga, idModalidadContratacion));
+
+        log.info("getWorkDate ===> Fechas de trabajo consultadas. idCarga={}, total={}",
+                idCarga, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ValorPuntosPrecargaDTO getValuePointsPreload(Long anio, Long idCategoriaCatedratico, Long idPersonaGeneral) {
+    public ValorPuntosPrecargaDTO getValuePointsPreload(Long anio, Long idCategoriaCatedratico, Long idPersonaGeneral, Long idModalidadContratacion) {
         log.debug("getValuePointsPreload ===> Calculando valor puntos precarga. anio={}, idCategoria={}, idPersona={}", anio, idCategoriaCatedratico, idPersonaGeneral);
 
         PuntosVigenciaEntity vigencia = puntosVigenciaRepository.findByAnio(anio).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"No existe valor de puntos para la vigencia " + anio));
@@ -435,27 +578,50 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         BigDecimal puntosCategoriaValor = parseValor(puntosCategoria.getPuntos(), "puntos de la categoria");
         BigDecimal valorHora = valorPunto.multiply(puntosCategoriaValor).setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
         BigDecimal valorPuntoEscalado = valorPunto.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+        String formaPago = resolveFormaPago(idModalidadContratacion);
 
         if (idPersonaGeneral == null) {
-            log.info("getValuePointsPreload ===> Valor puntos precarga calculado sin persona. anio={}, valorHora={}", anio, valorHora);
-            return new ValorPuntosPrecargaDTO(valorHora, valorPuntoEscalado, null, null);
+            log.info(
+                    "getValuePointsPreload ===> Valor puntos precarga calculado sin persona. anio={}, valorHora={}, formaPago={}",
+                    anio, valorHora, formaPago);
+            return new ValorPuntosPrecargaDTO(
+                    valorHora, valorPuntoEscalado, null, null, formaPago);
         }
 
-        EscalafonEntity escalafon = escalafonRepository.findByIdCategoriaCatedratico(idCategoriaCatedratico, idPersonaGeneral);
+        EscalafonEntity escalafon = escalafonRepository
+                .findByIdCategoriaCatedratico(idCategoriaCatedratico, idPersonaGeneral);
         if (escalafon == null) {
-            log.warn("getValuePointsPreload ===> Escalafón no encontrado. idPersona={}, idCategoria={}",idPersonaGeneral, idCategoriaCatedratico);
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe escalafon para la persona " + idPersonaGeneral + " y la categoria " + idCategoriaCatedratico);
+            log.warn(
+                    "getValuePointsPreload ===> Escalafón no encontrado. idPersona={}, idCategoria={}",
+                    idPersonaGeneral, idCategoriaCatedratico);
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe escalafon para la persona " + idPersonaGeneral
+                            + " y la categoria " + idCategoriaCatedratico);
         }
 
         BigDecimal puntosDocente = parseValor(escalafon.getPuntos(), "puntos del docente (escalafon)");
-        BigDecimal asignacionSalarial = puntosDocente.multiply(valorPunto).setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+        BigDecimal asignacionSalarial = puntosDocente.multiply(valorPunto)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
 
-        log.info("getValuePointsPreload ===> Valor puntos precarga calculado. anio={}, idPersona={}, valorHora={}", anio, idPersonaGeneral, valorHora);
+        log.info(
+                "getValuePointsPreload ===> Valor puntos precarga calculado. anio={}, idPersona={}, valorHora={}, formaPago={}",
+                anio, idPersonaGeneral, valorHora, formaPago);
         return new ValorPuntosPrecargaDTO(
                 valorHora,
                 valorPuntoEscalado,
                 puntosDocente.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP),
-                asignacionSalarial);
+                asignacionSalarial,
+                formaPago);
+    }
+
+    private String resolveFormaPago(Long idModalidadContratacion) {
+        if (idModalidadContratacion == null) {
+            return null;
+        }
+        return restriccionCargaRepository.findById(idModalidadContratacion)
+                .map(RestriccionCargaEntity::getFormaPago)
+                .orElse(null);
     }
 
     private BigDecimal parseValor(String valor, String campo) {
@@ -498,6 +664,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setFechaCambio(new Date());
         entity.setEstado("0");
         entity.setVigente("1");
+        entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
         cargaDocenteRepository.save(entity);
         log.info("addProfessor ===> Docente agregado. idCargaDocente={}", entity.getId());
@@ -505,16 +672,27 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocenteCoordinacionDTO> listProfessors(Long idCoordinacion, Long idModalidadContratacion) {
-        log.debug("listProfessors ===> Listando docentes. idCoordinacion={}, idModalidad={}", idCoordinacion, idModalidadContratacion);
+    public List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion) {
+        log.debug("listProfessors ===> Listando docentes. idCarga={}, idModalidad={}",
+                idCarga, idModalidadContratacion);
+
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
+
         List<DocenteCargaCoordinacionProjection> projections;
         if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findPlantProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion);
+            projections = cargaDocenteRepository.findPlantProfessorsByCargaAndModality(
+                    idCarga, idModalidadContratacion);
         } else {
-            projections = cargaDocenteRepository.findProfessorsByCoordinationAndModality(idCoordinacion, idModalidadContratacion);
+            projections = cargaDocenteRepository.findProfessorsByCargaAndModality(
+                    idCarga, idModalidadContratacion);
         }
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
-        log.info("listProfessors ===> Docentes listados. idCoordinacion={}, total={}", idCoordinacion, result.size());
+        log.info("listProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
         return result;
     }
 
@@ -628,6 +806,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         cargaDocenteMapper.updateEntity(dto, entity);
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
+        entity.setOnceMeses(
+                FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
         cargaDocenteRepository.save(entity);
         log.info("updateProfessor ===> Docente actualizado. idCargaDocente={}", idCargaDocente);
@@ -963,9 +1143,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private Long resolveIdCentroCosto(
             DetalleCargaDocenteItemDTO detalle,
             Long idCoordinacion) {
-        if (detalle.materia() != null && detalle.materia().idCentroCosto() != null) {
-            // Prioridad 1: centro de costo de la materia (transversales).
-            return detalle.materia().idCentroCosto();
+        Long idCentroEspecial = findIdCentroCostoByCodigoActividadEspecial(
+                detalle.codigoTipoActividad());
+        if (idCentroEspecial != null) {
+            // Prioridad 1: CTEI/ISU desde coordinación con el mismo COOR_CODIGO.
+            return idCentroEspecial;
         }
         Long idCentroPrograma = findIdCentroCostoProgramaAsociado(
                 idCoordinacion, detalle.idPrograma());
@@ -973,13 +1155,19 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             // Prioridad 2: centro de costo del programa en ASOCIACIONCOORDINACION.
             return idCentroPrograma;
         }
-        // Prioridad 3: centro de costo enviado en el formulario (p. ej. de la coordinación).
+        if (detalle.materia() != null && detalle.materia().idCentroCosto() != null) {
+            // Prioridad 3: centro de costo de la materia (transversales).
+            return detalle.materia().idCentroCosto();
+        }
+        // Prioridad 4: centro de costo enviado en el formulario.
         return detalle.idCentroCosto();
     }
 
-    private Long resolveIdCentroCostoFromActividad(
-            DetalleCargaDocenteActividadDTO actividad,
-            Long idCoordinacion) {
+    private Long resolveIdCentroCostoFromActividad(DetalleCargaDocenteActividadDTO actividad, Long idCoordinacion) {
+        Long idCentroEspecial = findIdCentroCostoByCodigoActividadEspecial(resolveCodigoTipoActividad(actividad));
+        if (idCentroEspecial != null) {
+            return idCentroEspecial;
+        }
         Long idPrograma = actividad.programa() != null
                 ? actividad.programa().id()
                 : null;
@@ -988,15 +1176,42 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (idCentroPrograma != null) {
             return idCentroPrograma;
         }
+        // En update no hay materia.idCentroCosto; se usa el del formulario.
         if (actividad.centroCosto() == null) {
             return null;
         }
         return actividad.centroCosto().id();
     }
 
-    private Long findIdCentroCostoProgramaAsociado(
-            Long idCoordinacion,
-            Long idPrograma) {
+    private String resolveCodigoTipoActividad(DetalleCargaDocenteActividadDTO actividad) {
+        if (actividad.tipoActividadHija() != null) {
+            for (TipoActividadDTO hija : actividad.tipoActividadHija()) {
+                if (hija != null && StringUtils.hasText(hija.codigo())) {
+                    return hija.codigo();
+                }
+            }
+        }
+        if (actividad.tipoActividad() != null
+                && StringUtils.hasText(actividad.tipoActividad().codigo())) {
+            return actividad.tipoActividad().codigo();
+        }
+        return null;
+    }
+
+    private Long findIdCentroCostoByCodigoActividadEspecial(String codigoTipoActividad) {
+        if (!StringUtils.hasText(codigoTipoActividad)) {
+            return null;
+        }
+        String codigo = codigoTipoActividad.trim().toUpperCase();
+        if (!CODIGOS_CENTRO_COSTO_ESPECIAL.contains(codigo)) {
+            return null;
+        }
+        return asignarCentroCostoRepository
+                .findIdCentroCostoByCodigoCoordinacion(codigo)
+                .orElse(null);
+    }
+
+    private Long findIdCentroCostoProgramaAsociado(Long idCoordinacion, Long idPrograma) {
         if (idCoordinacion == null || idPrograma == null) {
             return null;
         }
@@ -1353,7 +1568,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "La coordinación ya se encuentra asociada a otra convocatoria"
+                    "La coordinación ya se encuentra asociada a otra convocatoria del mismo periodo"
             );
         }
 
@@ -1386,14 +1601,19 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     private void ensureCargaForRestriction(Long idCoordinacion, Long idConvocatoria) {
         CargaEntity carga = cargaRepository
-                .findFirstByIdCoordinacionOrderByIdDesc(idCoordinacion)
+                .findFirstByIdCoordinacionAndIdConvocatoria(idCoordinacion, idConvocatoria)
                 .orElseGet(CargaEntity::new);
 
-        if (carga.getIdConvocatoria() != null
-                && !Objects.equals(carga.getIdConvocatoria(), idConvocatoria)) {
+        Long totalAsignadasOtraConvocatoria =
+                cargaRepository.countAssignedToAnotherPreloadCall(
+                        idCoordinacion,
+                        idConvocatoria
+                );
+        if (totalAsignadasOtraConvocatoria != null
+                && totalAsignadasOtraConvocatoria > 0) {
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "La coordinación ya se encuentra asociada a otra convocatoria"
+                    "La coordinación ya se encuentra asociada a otra convocatoria del mismo periodo"
             );
         }
 

@@ -73,6 +73,13 @@ public class ConvocatoriaEntity implements Serializable, Cloneable{
     @Column(name = "CONV_FECHACAMBIO")
     private Date fechaCambio;
 
+    @Column(name = "CONV_IDRELACION")
+    private Long idRelacion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CONV_IDRELACION", insertable = false, updatable = false)
+    private ConvocatoriaEntity relacion;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PEUN_ID", insertable = false, updatable = false)
     private PeriodoUniversidadEntity periodoUniversidad;
@@ -100,6 +107,7 @@ public class ConvocatoriaEntity implements Serializable, Cloneable{
                 ", nombre=" + nombre +
                 ", descripcion=" + descripcion +
                 ", estado=" + estado +
+                ", idRelacion=" + idRelacion +
                 '}';
     }
 

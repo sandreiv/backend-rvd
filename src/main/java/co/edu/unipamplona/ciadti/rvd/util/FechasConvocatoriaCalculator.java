@@ -17,8 +17,11 @@ public final class FechasConvocatoriaCalculator {
 
     private static final int MESES_ANTES_REDONDEO = 10;
     private static final int DIAS_MEDIO_MES = 15;
+    /** Semanas equivalentes a 11 meses (11 * 52 / 12 ≈ 47.67). */
+    private static final int SEMANAS_ONCE_MESES = 48;
     private static final String ESTADO_ACTIVO = "1";
     private static final String ESTADO_INACTIVO = "0";
+    private static final String INDICADOR_ONCE_MESES = "1";
 
     private FechasConvocatoriaCalculator() {
     }
@@ -30,6 +33,21 @@ public final class FechasConvocatoriaCalculator {
                 .plusMonths(MESES_ANTES_REDONDEO)
                 .plusDays(DIAS_MEDIO_MES);
         return fin.isBefore(limiteOnceMeses) ? "0" : "1";
+    }
+
+    /**
+     * Retorna "1" si las semanas alcanzan 11 meses; de lo contrario null.
+     */
+    public static String calcularOnceMesesPorSemanas(String semanas) {
+        if (semanas == null || semanas.isBlank()) {
+            return null;
+        }
+        try {
+            int valor = Integer.parseInt(semanas.trim());
+            return valor >= SEMANAS_ONCE_MESES ? INDICADOR_ONCE_MESES : null;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     /**

@@ -28,14 +28,23 @@ public interface CargaRepository extends JpaRepository<CargaEntity, Long> {
 
     Optional<CargaEntity> findFirstByIdCoordinacionOrderByIdDesc(Long idCoordinacion);
 
+    Optional<CargaEntity> findFirstByIdCoordinacionAndIdConvocatoria(
+            Long idCoordinacion,
+            Long idConvocatoria);
+
     boolean existsByIdAndIdConvocatoria(Long id, Long idConvocatoria);
 
     @Query(value = """
             SELECT COUNT(1)
             FROM RVD.CARGA CARG
+            INNER JOIN RVD.CONVOCATORIA CONV_OTHER
+                ON CONV_OTHER.CONV_ID = CARG.CONV_ID
+            INNER JOIN RVD.CONVOCATORIA CONV_TARGET
+                ON CONV_TARGET.CONV_ID = :idConvocatoria
             WHERE CARG.COOR_ID = :idCoordinacion
             AND CARG.CONV_ID IS NOT NULL
             AND CARG.CONV_ID <> :idConvocatoria
+            AND CONV_OTHER.PEUN_ID = CONV_TARGET.PEUN_ID
             """, nativeQuery = true)
     Long countAssignedToAnotherPreloadCall(
             @Param("idCoordinacion") Long idCoordinacion,

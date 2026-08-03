@@ -38,7 +38,10 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 
 public interface CoordinacionService {
 
-    List<CoordinacionDTO> findCoordinationsByIdConvocatoria(Long idConvocatoria, Long idUsuario);
+    List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad,
+            Long idUsuario);
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 
@@ -46,15 +49,19 @@ public interface CoordinacionService {
 
     List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion);
 
-    List<FechaModalidadFormularioDTO> getWorkDate(Long coorId, Long mocoId);
+    List<FechaModalidadFormularioDTO> getWorkDate(Long idCarga, Long idModalidadContratacion);
 
-    ValorPuntosPrecargaDTO getValuePointsPreload(Long anio, Long idCategoriaCatedratico, Long idPersonaGeneral);
+    ValorPuntosPrecargaDTO getValuePointsPreload(
+            Long anio,
+            Long idCategoriaCatedratico,
+            Long idPersonaGeneral,
+            Long idModalidadContratacion);
 
     List<CategoriaCatedraticoDTO> listProfessorCategory(Long idModalidadContratacion);
 
     void addProfessor(CargaDocenteFormularioDTO dto);
 
-    List<DocenteCoordinacionDTO> listProfessors(Long idCoordinacion, Long idModalidadContratacion);
+    List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
 
     void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto);
 

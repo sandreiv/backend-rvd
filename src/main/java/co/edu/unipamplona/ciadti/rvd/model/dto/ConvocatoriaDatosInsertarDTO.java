@@ -6,5 +6,6 @@ public record ConvocatoriaDatosInsertarDTO(
     String descripcion,
     PersonaAutorizaConvocatoriaDTO autoriza,
     PeriodoUniversidadDTO periodo,
-    NivelEducativoDTO nivelEducativo
+    NivelEducativoDTO nivelEducativo,
+    Long idRelacion
 ) {}

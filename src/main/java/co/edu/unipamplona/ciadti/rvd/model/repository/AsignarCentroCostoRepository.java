@@ -60,6 +60,18 @@ public interface AsignarCentroCostoRepository extends JpaRepository<AsignarCentr
             """, nativeQuery = true)
     List<Long> findIdsByIdCoordinacion(@Param("idCoordinacion") Long idCoordinacion);
 
+    @Query(value = """
+            SELECT ascc.CECO_ID
+            FROM RVD.ASIGNARCENTROCOSTO ascc
+            INNER JOIN RVD.COORDINACIONES coor
+                ON coor.COOR_ID = ascc.COOR_ID
+            WHERE UPPER(TRIM(coor.COOR_CODIGO)) = UPPER(TRIM(:codigoCoordinacion))
+                AND ascc.CECO_ID IS NOT NULL
+                AND ROWNUM = 1
+            """, nativeQuery = true)
+    Optional<Long> findIdCentroCostoByCodigoCoordinacion(
+            @Param("codigoCoordinacion") String codigoCoordinacion);
+
 }
 
 /* 17/07/2026 @:Daniel Arias */

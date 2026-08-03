@@ -20,6 +20,7 @@ public interface ConvocatoriaMapper {
     @Mapping(source = "convocatoria.id", target = "id")
     @Mapping(source = "convocatoria.descripcion", target = "descripcion")
     @Mapping(source = "convocatoria.nombre", target = "nombre")
+    @Mapping(source = "convocatoria.idRelacion", target = "idRelacion")
     @Mapping(
             source = "periodo",
             target = "periodoUniversidad",

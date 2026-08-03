@@ -7,6 +7,7 @@
  * Modificaciones:
  * 23/06/2026 - Sebastian Jaimes - Creación inicial
  * 20/07/2026 - Sebastian Jaimes - Campos monetarios a BigDecimal
+ * 30/07/2026 - Se agrega formaPago según restricción de carga por modalidad.
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
@@ -16,5 +17,6 @@ public record ValorPuntosPrecargaDTO(
     BigDecimal valorHora,
     BigDecimal valorPunto,
     BigDecimal puntosDocente,
-    BigDecimal asignacionSalarial
+    BigDecimal asignacionSalarial,
+    String formaPago
 ) {}

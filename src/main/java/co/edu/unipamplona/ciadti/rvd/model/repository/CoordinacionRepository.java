@@ -215,7 +215,10 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM RVD.CARGA CARG
+                INNER JOIN RVD.CONVOCATORIA CONV
+                    ON CONV.CONV_ID = CARG.CONV_ID
                 WHERE CARG.COOR_ID = COOR.COOR_ID
+                AND CONV.PEUN_ID = :idPeriodoUniversidad
             ) AND PECO.PEGE_ID = :idPersonaGeneral
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
@@ -223,7 +226,8 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 COOR.COOR_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findWithoutCarga(
-            @Param("idPersonaGeneral") Long idPersonaGeneral);
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
 
     @Query(value = """
@@ -360,9 +364,14 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             AND NOT EXISTS (
                 SELECT 1
                 FROM RVD.CARGA CARG_OTHER
+                INNER JOIN RVD.CONVOCATORIA CONV_OTHER
+                    ON CONV_OTHER.CONV_ID = CARG_OTHER.CONV_ID
+                INNER JOIN RVD.CONVOCATORIA CONV_TARGET
+                    ON CONV_TARGET.CONV_ID = :idConvocatoria
                 WHERE CARG_OTHER.COOR_ID = COOR.COOR_ID
                 AND CARG_OTHER.CONV_ID IS NOT NULL
                 AND CARG_OTHER.CONV_ID <> :idConvocatoria
+                AND CONV_OTHER.PEUN_ID = CONV_TARGET.PEUN_ID
             )
             AND NOT EXISTS (
                 SELECT 1

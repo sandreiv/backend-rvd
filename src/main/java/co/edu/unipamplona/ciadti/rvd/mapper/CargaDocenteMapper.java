@@ -44,6 +44,7 @@ public interface CargaDocenteMapper {
     @Mapping(target = "tipoNovedad", ignore = true)
     @Mapping(target = "novedad", ignore = true)
     @Mapping(target = "horas", ignore = true)
+    @Mapping(target = "onceMeses", ignore = true)
     CargaDocenteEntity toEntity(CargaDocenteFormularioDTO dto);
 
     @InheritConfiguration(name = "toEntity")
@@ -81,5 +82,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "fechaConvocatoria", ignore = true)
     @Mapping(target = "tipoNovedad", ignore = true)
     @Mapping(target = "novedad", ignore = true)
+    @Mapping(target = "onceMeses", ignore = true)
     CargaDocenteEntity toEntityFromPlanta(CargaDocentePlantaDTO dto);
 }

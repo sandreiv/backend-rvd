@@ -60,22 +60,21 @@ public class CoordinationController {
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
-        description = "Obtiene las convocatorias con el fin de filtrar las coordinaciones"
+        description = "Obtiene las convocatorias activas del periodo universitario para filtrar coordinaciones"
     )
     @GetMapping("/list-active-preload-calls") 
-    public ResponseEntity<?> listActivePreloadCalls() throws Exception {
-        List<ConvocatoriaDTO> activePreloadCalls = convocatoriaPrecargaService.findActivePreloadCalls();
+    public ResponseEntity<?> listActivePreloadCalls(@RequestParam Long idPeriodoUniversidad) throws Exception {
+        List<ConvocatoriaDTO> activePreloadCalls = convocatoriaPrecargaService.findActivePreloadCalls(idPeriodoUniversidad);
         return new ResponseEntity<>(activePreloadCalls, HttpStatus.OK);
     }
 
     @Operation(
         summary = "Obtiene las convocatorias activas asignables",
-        description = "Obtiene las convocatorias activas que no tienen restricciones vigentes para asignación libre"
+        description = "Obtiene las convocatorias activas del periodo sin restricciones vigentes para asignación libre"
     )
     @GetMapping("/list-assignable-preload-calls")
-    public ResponseEntity<?> listAssignablePreloadCalls() throws Exception {
-        List<ConvocatoriaDTO> activePreloadCalls =
-                convocatoriaPrecargaService.findAssignableActivePreloadCalls();
+    public ResponseEntity<?> listAssignablePreloadCalls(@RequestParam Long idPeriodoUniversidad) throws Exception {
+        List<ConvocatoriaDTO> activePreloadCalls = convocatoriaPrecargaService.findAssignableActivePreloadCalls(idPeriodoUniversidad);
 
         return new ResponseEntity<>(activePreloadCalls, HttpStatus.OK);
     }
@@ -90,16 +89,19 @@ public class CoordinationController {
     @Operation(
         summary = "Obtiene la lista de coordinaciones",
         description = """
-            Sin idConvocatoria: coordinaciones sin carga (convocatoria y carga null).
+            Sin idConvocatoria: requiere idPeriodoUniversidad; coordinaciones sin carga en ese periodo.
             Con idConvocatoria: coordinaciones con carga en esa convocatoria activa.
             """
     )
     @GetMapping("/list")
-    public ResponseEntity<?> listCoordinations(@RequestParam(required = false) Long idConvocatoria) throws Exception {
+    public ResponseEntity<?> listCoordinations(
+            @RequestParam(required = false) Long idConvocatoria,
+            @RequestParam(required = false) Long idPeriodoUniversidad) throws Exception {
         //String idUsuario = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         // Este Id es de prueba y solo sera temporal. ------------------ CAMBIAR --------------------
         Long idUsuario = 239419L;
-        List<CoordinacionDTO> coordinations = coordinacionService.findCoordinationsByIdConvocatoria(idConvocatoria, idUsuario);
+        List<CoordinacionDTO> coordinations = coordinacionService.findCoordinationsByIdConvocatoria(
+                idConvocatoria, idPeriodoUniversidad, idUsuario);
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
     }
 
@@ -137,19 +139,24 @@ public class CoordinationController {
     }
 
     @Operation(
-        summary = "Obtiene las fechas de convocatoria por coordinación y modalidad de contratación",
-        description = "Retorna las fechas de la convocatoria en carga para la coordinación (coorId) y la modalidad de contratación (mocoId)"
+        summary = "Obtiene las fechas de convocatoria por carga y modalidad de contratación",
+        description = "Retorna las fechas de la convocatoria asociada a la carga (idCarga) y la modalidad (idModalidadContratacion)"
     )
     @GetMapping("/work-date")
-    public ResponseEntity<List<FechaModalidadFormularioDTO>> getWorkDate(@RequestParam Long idCoordinacion, @RequestParam Long idModalidadContratacion) {
-        List<FechaModalidadFormularioDTO> fechas = coordinacionService.getWorkDate(idCoordinacion, idModalidadContratacion);
+    public ResponseEntity<List<FechaModalidadFormularioDTO>> getWorkDate(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
+        List<FechaModalidadFormularioDTO> fechas =
+                coordinacionService.getWorkDate(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(fechas, HttpStatus.OK);
     }
 
     @GetMapping("/value-points-preload")
-    public ResponseEntity<ValorPuntosPrecargaDTO> getValuePointsPreload(@RequestParam Long anio, @RequestParam Long idCategoriaCatedratico, @RequestParam(required = false) String idPersonaGeneral) {
+    public ResponseEntity<ValorPuntosPrecargaDTO> getValuePointsPreload(
+            @RequestParam Long anio,
+            @RequestParam Long idCategoriaCatedratico,
+            @RequestParam(required = false) String idPersonaGeneral,
+            @RequestParam Long idModalidadContratacion) {
         Long idPersona = parseNullableLong(idPersonaGeneral);
-        ValorPuntosPrecargaDTO valores = coordinacionService.getValuePointsPreload(anio, idCategoriaCatedratico, idPersona);
+        ValorPuntosPrecargaDTO valores = coordinacionService.getValuePointsPreload(anio, idCategoriaCatedratico, idPersona, idModalidadContratacion);
         return new ResponseEntity<>(valores, HttpStatus.OK);
     }
 
@@ -181,15 +188,16 @@ public class CoordinationController {
     }
 
     @Operation(
-        summary = "Lista los docentes de una coordinacion según la modalidad de contratacion",
+        summary = "Lista los docentes de una carga según la modalidad de contratacion",
         description = """
             Si la modalidad es planta: lista todos los de DOCENTESPLANTACOORDINACION
-            Para otras modalidades: solo docentes con registro en CARGADOCENTE.
+            de la coordinación de la carga, con datos de CARGADOCENTE solo de esa carga.
+            Para otras modalidades: solo docentes con registro en CARGADOCENTE de esa carga.
             """
     )
     @GetMapping("/list-professors-modality")
-    public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCoordinacion, @RequestParam Long idModalidadContratacion) {
-        List<DocenteCoordinacionDTO> docentes = coordinacionService.listProfessors(idCoordinacion, idModalidadContratacion);
+    public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
+        List<DocenteCoordinacionDTO> docentes = coordinacionService.listProfessors(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
 

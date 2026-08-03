@@ -28,7 +28,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_DESCRIPCION,
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
-                CONV.CONV_FECHACAMBIO
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.CONV_ID = CONV.CONV_ID
@@ -37,6 +38,30 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             ORDER BY CONV.CONV_ID
             """, nativeQuery = true)
     List<ConvocatoriaEntity> findCallListWithDates(@Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
+
+    @Query(value = """
+            SELECT DISTINCT
+                CONV.CONV_ID,
+                CONV.PEUN_ID,
+                CONV.NIED_ID,
+                CONV.PEGE_IDAUTORIZA,
+                CONV.CONV_NOMBRE,
+                CONV.CONV_DESCRIPCION,
+                CONV.CONV_ESTADO,
+                CONV.CONV_REGISTRADOPOR,
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION
+            FROM RVD.CONVOCATORIA CONV
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.CONV_ID = CONV.CONV_ID
+            INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
+            WHERE FECO.FECO_CODIGO = 'CNV'
+                AND PEUN.PEUN_ANO = :year
+                AND PEUN.PEUN_PERIODO = '1'
+            ORDER BY CONV.CONV_ID
+            """, nativeQuery = true)
+    List<ConvocatoriaEntity> findCallListByFirstPeriodByYear(@Param("year") Long year);
 
     @Query(value = """
             SELECT
@@ -69,7 +94,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_DESCRIPCION,
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
-                CONV.CONV_FECHACAMBIO
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ID = :id
             """, nativeQuery = true)
@@ -176,6 +202,7 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             c.idPersonaGeneral = :idPersonaGeneral,
             c.idPeriodoUniversidad = :idPeriodoUniversidad,
             c.idNivelEducativo = :idNivelEducativo,
+            c.idRelacion = :idRelacion,
             c.fechaCambio = :fechaCambio
             where c.id = :id
             """)
@@ -185,10 +212,21 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             @Param("idPersonaGeneral") Long idPersonaGeneral,
             @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
             @Param("idNivelEducativo") Long idNivelEducativo,
+            @Param("idRelacion") Long idRelacion,
             @Param("fechaCambio") Date fechaCambio,
             @Param("id") Long id);
 
-    
+    @Modifying
+    @Query("""
+            update ConvocatoriaEntity c set
+            c.idRelacion = :idRelacion,
+            c.fechaCambio = :fechaCambio
+            where c.id = :id
+            """)
+    int updateIdRelacion(
+            @Param("idRelacion") Long idRelacion,
+            @Param("fechaCambio") Date fechaCambio,
+            @Param("id") Long id);
 
     @Modifying
     @Query(value = """
@@ -209,12 +247,15 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_DESCRIPCION,
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
-                CONV.CONV_FECHACAMBIO
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ESTADO = '1'
+            AND CONV.PEUN_ID = :idPeriodoUniversidad
             ORDER BY CONV.CONV_ID
             """, nativeQuery = true)
-    List<ConvocatoriaEntity> findActivePreloadCalls();
+    List<ConvocatoriaEntity> findActivePreloadCalls(
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
     @Query(value = """
             SELECT
@@ -226,9 +267,11 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_DESCRIPCION,
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
-                CONV.CONV_FECHACAMBIO
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ESTADO = '1'
+            AND CONV.PEUN_ID = :idPeriodoUniversidad
             AND NOT EXISTS (
                 SELECT 1
                 FROM RVD.RESTRICCIONXCOORDINACION REXC
@@ -240,7 +283,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             )
             ORDER BY CONV.CONV_ID
             """, nativeQuery = true)
-    List<ConvocatoriaEntity> findAssignableActivePreloadCalls();
+    List<ConvocatoriaEntity> findAssignableActivePreloadCalls(
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
 }
 

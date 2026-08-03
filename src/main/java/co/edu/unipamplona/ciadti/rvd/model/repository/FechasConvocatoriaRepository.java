@@ -82,11 +82,8 @@ public interface FechasConvocatoriaRepository
 
 
     /**
-     * Busca las fechas de convocatoria por coordinación y modalidad de contratación. 
+     * Busca las fechas de convocatoria por carga y modalidad de contratación.
      * Revisa que el tipo de restricción de la carga sea semanal.
-     * @param coorId
-     * @param mocoId
-     * @return
      */
     @Query("""
             SELECT
@@ -104,11 +101,12 @@ public interface FechasConvocatoriaRepository
                 ON reca.idModalidadContratacion = cotc.idModalidadContratacion
             JOIN FechasConvocatoriaEntity feco
                 ON feco.idConvocatoriaTipoContratacion = cotc.id
-            WHERE carg.idCoordinacion = :coorId
-                AND cotc.idModalidadContratacion = :mocoId and reca.tipoHoras = 'SEMANAL'
+            WHERE carg.id = :idCarga
+                AND cotc.idModalidadContratacion = :mocoId
+                AND reca.tipoHoras = 'SEMANAL'
             """)
-    List<FechaModalidadProjection> findByCoordinationAndModalityAndRestrictionSemanal(
-            @Param("coorId") Long coorId,
+    List<FechaModalidadProjection> findByCargaAndModalityAndRestrictionSemanal(
+            @Param("idCarga") Long idCarga,
             @Param("mocoId") Long mocoId);
 
     @Query("""

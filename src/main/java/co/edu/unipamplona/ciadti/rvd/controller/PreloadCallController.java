@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaRelacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
@@ -218,5 +219,24 @@ public class PreloadCallController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Obtiene la lista de convocatorias de un primer periodo por año",
+        description = "Obtiene la lista de convocatorias asociadas al primer periodo universitario del año indicado"
+    )
+    @GetMapping("/list-by-first-period-by-year")
+    public ResponseEntity<List<ConvocatoriaDTO>> listPreloadCallByFirstPeriodByYear(@RequestParam Long year) {
+        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findCallListByFirstPeriodByYear(year);
+        return new ResponseEntity<>(callList, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Relaciona una convocatoria de segundo periodo con una de primer periodo",
+        description = "Relaciona una convocatoria de segundo periodo con una de primer periodo"
+    )
+    @PutMapping("/update-relation/{idConvocatoria}")
+    public ResponseEntity<Void> updateRelation(@PathVariable Long idConvocatoria, @RequestBody ConvocatoriaRelacionDTO dto) {
+        convocatoriaPrecargaService.updateRelation(idConvocatoria, dto.idRelacion());
+        return ResponseEntity.ok().build();
+    }
 }
 /* 02/06/2026 @:Sebastian Jaimes */
