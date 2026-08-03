@@ -21,6 +21,7 @@ public record RestriccionCargaDetalleDTO(
         String tipoHoras,
         List<Long> idsProgramasExcepcion,
         List<Long> idsPersonasExcepcion,
+        List<RestriccionCargaPersonaExcepcionDTO> personasExcepcion,
         List<Long> idsCategoriasCatedratico,
         List<Long> idsTiposActividad
 ) {}

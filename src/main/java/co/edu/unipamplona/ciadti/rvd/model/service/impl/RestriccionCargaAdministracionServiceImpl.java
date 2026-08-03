@@ -14,6 +14,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,8 +25,10 @@ import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaPersonaExcepcionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CatalogoAdministracionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaDetalleDTO;
@@ -41,6 +46,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadModalidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TipoActividadAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.RestriccionCargaAdministracionService;
@@ -56,6 +62,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
     private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final RestriccionCargaRepository restriccionCargaRepository;
+    private final CargaDocenteRepository cargaDocenteRepository;
     private final CategoriaCatedraticoRepository categoriaCatedraticoRepository;
     private final CategoriaModalidadRepository categoriaModalidadRepository;
     private final TipoActividadesRepository tipoActividadesRepository;
@@ -153,7 +160,15 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 restriction != null ? restriction.getTipoContrato() : null,
                 restriction != null ? restriction.getTipoHoras() : null,
                 excepcion != null ? cleanIds(excepcion.programas()) : List.of(),
-                excepcion != null ? cleanIds(excepcion.personas()) : List.of(),
+                excepcion != null
+                        ? excepcion.personas()
+                                .stream()
+                                .map(RestriccionCargaPersonaExcepcionDTO::idPersona)
+                                .filter(Objects::nonNull)
+                                .distinct()
+                                .toList()
+                        : List.of(),
+                excepcion != null ? cleanPersonasExcepcion(excepcion.personas()) : List.of(),
                 categoriasModalidad.stream()
                         .map(CategoriaModalidadEntity::getIdCategoriaCatedratico)
                         .filter(Objects::nonNull)
@@ -206,6 +221,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         restriccionCargaRepository.save(entity);
 
+        syncHorasDeExcepcionCargaDocente(dto);
         syncCategoriasModalidad(dto.idModalidadContratacion(), dto.idsCategoriasCatedratico());
         syncTiposActividadModalidad(dto.idModalidadContratacion(), dto.idsTiposActividad());
 
@@ -356,7 +372,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
     private void validateExcepcion(RestriccionCargaFormularioDTO dto) {
         List<Long> idsProgramas = cleanIds(dto.idsProgramasExcepcion());
-        List<Long> idsPersonas = cleanIds(dto.idsPersonasExcepcion());
+        List<RestriccionCargaPersonaExcepcionDTO> personas =
+                cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
 
         for (Long idPrograma : idsProgramas) {
             if (!programaRepository.existsById(idPrograma)) {
@@ -365,11 +382,29 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
             }
         }
 
-        for (Long idPersona : idsPersonas) {
-            if (!personaGeneralRepository.existsById(idPersona)) {
+        for (RestriccionCargaPersonaExcepcionDTO persona : personas) {
+            if (!personaGeneralRepository.existsById(persona.idPersona())) {
                 throw new ApiException(HttpStatus.NOT_FOUND,
                         "No existe una de las personas seleccionadas para la excepción");
             }
+
+            validateMaximoHorasExcepcion(persona.maximoHoras());
+        }
+    }
+
+    private void validateMaximoHorasExcepcion(String maximoHoras) {
+        if (!StringUtils.hasText(maximoHoras)) {
+            return;
+        }
+
+        BigDecimal maximoHorasNumber = parseHours(
+                maximoHoras,
+                "Las horas máximas de excepción deben ser numéricas"
+        );
+
+        if (maximoHorasNumber.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Las horas máximas de excepción deben ser mayores a cero");
         }
     }
 
@@ -389,6 +424,42 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                         "No existe uno de los tipos de actividad seleccionados");
             }
         }
+    }
+
+    private void syncHorasDeExcepcionCargaDocente(RestriccionCargaFormularioDTO dto) {
+        Long idModalidadContratacion = dto.idModalidadContratacion();
+
+        int cleared = cargaDocenteRepository.clearHorasDeExcepcionByModalidad(
+                idModalidadContratacion,
+                REGISTRADO_POR
+        );
+
+        int updated = 0;
+
+        List<RestriccionCargaPersonaExcepcionDTO> personas =
+                cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
+
+        for (RestriccionCargaPersonaExcepcionDTO persona : personas) {
+            String maximoHoras = clean(persona.maximoHoras());
+
+            if (!StringUtils.hasText(maximoHoras)) {
+                continue;
+            }
+
+            updated += cargaDocenteRepository.updateHorasDeExcepcionByModalidadAndPersona(
+                    idModalidadContratacion,
+                    persona.idPersona(),
+                    maximoHoras,
+                    REGISTRADO_POR
+            );
+        }
+
+        log.info(
+                "syncHorasDeExcepcionCargaDocente ===> Horas de excepción sincronizadas. idModalidad={}, limpiados={}, actualizados={}",
+                idModalidadContratacion,
+                cleared,
+                updated
+        );
     }
 
     private void syncCategoriasModalidad(
@@ -428,15 +499,16 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
     private String buildExcepcion(RestriccionCargaFormularioDTO dto) {
         List<Long> idsProgramas = cleanIds(dto.idsProgramasExcepcion());
-        List<Long> idsPersonas = cleanIds(dto.idsPersonasExcepcion());
+        List<RestriccionCargaPersonaExcepcionDTO> personas =
+                cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
 
-        if (idsProgramas.isEmpty() && idsPersonas.isEmpty()) {
+        if (idsProgramas.isEmpty() && personas.isEmpty()) {
             return null;
         }
 
         try {
             return objectMapper.writeValueAsString(
-                    new RestriccionExcepcionDTO(idsProgramas, idsPersonas)
+                    new RestriccionExcepcionDTO(idsProgramas, personas)
             );
         } catch (JsonProcessingException ex) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -450,12 +522,106 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         }
 
         try {
-            return objectMapper.readValue(value, RestriccionExcepcionDTO.class);
+            JsonNode root = objectMapper.readTree(value);
+
+            return new RestriccionExcepcionDTO(
+                    parseLongArray(root.get("programas")),
+                    parsePersonasExcepcion(root.get("personas"))
+            );
         } catch (JsonProcessingException ex) {
             log.warn("parseExcepcion ===> No fue posible leer la excepción configurada. value={}",
                     value);
             return null;
         }
+    }
+
+    private List<Long> parseLongArray(JsonNode node) {
+        if (node == null || !node.isArray()) {
+            return List.of();
+        }
+
+        List<Long> values = new ArrayList<>();
+
+        for (JsonNode item : node) {
+            Long value = parseLongNode(item);
+
+            if (value != null) {
+                values.add(value);
+            }
+        }
+
+        return cleanIds(values);
+    }
+
+    private List<RestriccionCargaPersonaExcepcionDTO> parsePersonasExcepcion(JsonNode node) {
+        if (node == null || !node.isArray()) {
+            return List.of();
+        }
+
+        List<RestriccionCargaPersonaExcepcionDTO> personas = new ArrayList<>();
+
+        for (JsonNode item : node) {
+            if (item == null || item.isNull()) {
+                continue;
+            }
+
+            if (item.isObject()) {
+                Long idPersona = parseLongNode(item.get("idPersona"));
+
+                if (idPersona == null) {
+                    idPersona = parseLongNode(item.get("id"));
+                }
+
+                if (idPersona == null) {
+                    continue;
+                }
+
+                personas.add(new RestriccionCargaPersonaExcepcionDTO(
+                        idPersona,
+                        parseTextNode(item.get("maximoHoras"))
+                ));
+                continue;
+            }
+
+            Long idPersona = parseLongNode(item);
+
+            if (idPersona != null) {
+                personas.add(new RestriccionCargaPersonaExcepcionDTO(
+                        idPersona,
+                        null
+                ));
+            }
+        }
+
+        return cleanPersonasExcepcion(personas);
+    }
+
+    private Long parseLongNode(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+
+        if (node.isNumber()) {
+            return node.longValue();
+        }
+
+        if (node.isTextual() && StringUtils.hasText(node.asText())) {
+            try {
+                return Long.valueOf(node.asText().trim());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private String parseTextNode(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+
+        return clean(node.asText());
     }
 
     private boolean isMarked(String value) {
@@ -478,6 +644,47 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 .toList();
     }
 
+    private List<RestriccionCargaPersonaExcepcionDTO> cleanPersonasExcepcion(
+            List<RestriccionCargaPersonaExcepcionDTO> personas) {
+        return cleanPersonasExcepcion(personas, List.of());
+    }
+
+    private List<RestriccionCargaPersonaExcepcionDTO> cleanPersonasExcepcion(
+            List<RestriccionCargaPersonaExcepcionDTO> personas,
+            List<Long> idsPersonasFallback) {
+        Map<Long, RestriccionCargaPersonaExcepcionDTO> result = new LinkedHashMap<>();
+
+        if (personas != null) {
+            for (RestriccionCargaPersonaExcepcionDTO persona : personas) {
+                if (persona == null || persona.idPersona() == null) {
+                    continue;
+                }
+
+                result.putIfAbsent(
+                        persona.idPersona(),
+                        new RestriccionCargaPersonaExcepcionDTO(
+                                persona.idPersona(),
+                                clean(persona.maximoHoras())
+                        )
+                );
+            }
+        }
+
+        if (result.isEmpty()) {
+            for (Long idPersona : cleanIds(idsPersonasFallback)) {
+                result.putIfAbsent(
+                        idPersona,
+                        new RestriccionCargaPersonaExcepcionDTO(
+                                idPersona,
+                                null
+                        )
+                );
+            }
+        }
+
+        return result.values().stream().toList();
+    }
+
     private String clean(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
     }
@@ -490,6 +697,6 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
     private record RestriccionExcepcionDTO(
             List<Long> programas,
-            List<Long> personas
+            List<RestriccionCargaPersonaExcepcionDTO> personas
     ) {}
 }

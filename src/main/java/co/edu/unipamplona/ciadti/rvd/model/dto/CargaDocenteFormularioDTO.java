@@ -18,5 +18,6 @@ public record CargaDocenteFormularioDTO(
     BigDecimal valorHora,
     String puntos,
     BigDecimal valorPunto,
-    String semanas
+    String semanas,
+    String horasDeExcepcion
 ) {}

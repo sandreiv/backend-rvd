@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
@@ -45,6 +46,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CADO.CADO_PUNTOS AS puntos,
                 CADO.CADO_VALORPUNTO AS valorPunto,
                 CADO.CADO_SEMANAS AS semanas,
+                CADO.CADO_HORASDEEXCEPCION AS horasDeExcepcion,
                 FECO.FECO_ID AS idFechasConvocatoria,
                 FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
                 FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
@@ -103,6 +105,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CADO.CADO_PUNTOS AS puntos,
                 CADO.CADO_VALORPUNTO AS valorPunto,
                 CADO.CADO_SEMANAS AS semanas,
+                CADO.CADO_HORASDEEXCEPCION AS horasDeExcepcion,
                 FECO.FECO_ID AS idFechasConvocatoria,
                 FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
                 FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
@@ -171,4 +174,47 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             WHERE CARG.CARG_ID = :cargId
             """, nativeQuery = true)
     List<Object[]> findTotalPreasignacionByCargaId(@Param("cargId") Long cargId);
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.CARGADOCENTE CADO
+            SET CADO.CADO_HORASDEEXCEPCION = NULL,
+                CADO.CADO_REGISTRADOPOR = :registradoPor,
+                CADO.CADO_FECHACAMBIO = SYSDATE
+            WHERE CADO.MOCO_ID = :idModalidadContratacion
+            AND NVL(CADO.CADO_VIGENTE, '1') = '1'
+            AND CADO.CADO_HORASDEEXCEPCION IS NOT NULL
+            """, nativeQuery = true)
+    int clearHorasDeExcepcionByModalidad(
+            @Param("idModalidadContratacion") Long idModalidadContratacion,
+            @Param("registradoPor") String registradoPor);
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.CARGADOCENTE CADO
+            SET CADO.CADO_HORASDEEXCEPCION = :horasDeExcepcion,
+                CADO.CADO_REGISTRADOPOR = :registradoPor,
+                CADO.CADO_FECHACAMBIO = SYSDATE
+            WHERE CADO.MOCO_ID = :idModalidadContratacion
+            AND CADO.PEGE_ID = :idPersonaGeneral
+            AND NVL(CADO.CADO_VIGENTE, '1') = '1'
+            """, nativeQuery = true)
+    int updateHorasDeExcepcionByModalidadAndPersona(
+            @Param("idModalidadContratacion") Long idModalidadContratacion,
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("horasDeExcepcion") String horasDeExcepcion,
+            @Param("registradoPor") String registradoPor);
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.CARGADOCENTE CADO
+            SET CADO.CADO_ESTADO = '1',
+                CADO.CADO_REGISTRADOPOR = :registradoPor,
+                CADO.CADO_FECHACAMBIO = SYSDATE
+            WHERE CADO.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    int approvePreassignmentById(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("registradoPor") String registradoPor);
+            
 }

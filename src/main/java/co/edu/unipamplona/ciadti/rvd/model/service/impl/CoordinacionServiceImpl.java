@@ -16,12 +16,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaEstadoService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.ActividadModalidadMapper;
@@ -72,6 +77,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TotalHorasPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CategoriaModalidadEntity;
@@ -155,6 +161,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final TipoActividadCriterioMapper tipoActividadCriterioMapper;
     private final TipoActividadMapper tipoActividadMapper;
     private final RestriccionCargaRepository restriccionCargaRepository;
+    private final ObjectMapper objectMapper;
     private final ActividadModalidadMapper actividadModalidadMapper;
     private final MateriaRepository materiaRepository;
     private final ModalidadContratacionRepository modalidadContratacionRepository;
@@ -491,6 +498,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setFechaCambio(new Date());
         entity.setEstado("0");
         entity.setVigente("1");
+        applyHorasDeExcepcion(entity);
         cargaDocenteRepository.save(entity);
         log.info("addProfessor ===> Docente agregado. idCargaDocente={}", entity.getId());
     }
@@ -508,6 +516,98 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
         log.info("listProfessors ===> Docentes listados. idCoordinacion={}, total={}", idCoordinacion, result.size());
         return result;
+    }
+
+    private void applyHorasDeExcepcion(CargaDocenteEntity entity) {
+        if (entity == null) {
+            return;
+        }
+
+        entity.setHorasDeExcepcion(
+                resolveHorasDeExcepcion(
+                        entity.getIdModalidadContratacion(),
+                        entity.getIdPersonaGeneral()
+                )
+        );
+    }
+
+    private String resolveHorasDeExcepcion(
+            Long idModalidadContratacion,
+            Long idPersonaGeneral) {
+        if (idModalidadContratacion == null || idPersonaGeneral == null) {
+            return null;
+        }
+
+        return restriccionCargaRepository.findById(idModalidadContratacion)
+                .map(RestriccionCargaEntity::getExcepcion)
+                .flatMap(excepcion -> extractHorasDeExcepcion(excepcion, idPersonaGeneral))
+                .orElse(null);
+    }
+
+    private Optional<String> extractHorasDeExcepcion(
+            String excepcion,
+            Long idPersonaGeneral) {
+        if (!StringUtils.hasText(excepcion)) {
+            return Optional.empty();
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(excepcion);
+            JsonNode personas = root.get("personas");
+
+            if (personas == null || !personas.isArray()) {
+                return Optional.empty();
+            }
+
+            for (JsonNode persona : personas) {
+                if (persona == null || !persona.isObject()) {
+                    continue;
+                }
+
+                Long idPersona = parseLongNode(persona.get("idPersona"));
+
+                if (idPersona == null) {
+                    idPersona = parseLongNode(persona.get("id"));
+                }
+
+                if (!idPersonaGeneral.equals(idPersona)) {
+                    continue;
+                }
+
+                JsonNode maximoHorasNode = persona.get("maximoHoras");
+
+                if (maximoHorasNode != null
+                        && StringUtils.hasText(maximoHorasNode.asText())) {
+                    return Optional.of(maximoHorasNode.asText().trim());
+                }
+            }
+
+            return Optional.empty();
+        } catch (JsonProcessingException ex) {
+            log.warn("extractHorasDeExcepcion ===> No fue posible leer la excepción configurada. value={}",
+                    excepcion);
+            return Optional.empty();
+        }
+    }
+
+    private Long parseLongNode(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+
+        if (node.isNumber()) {
+            return node.longValue();
+        }
+
+        if (node.isTextual() && StringUtils.hasText(node.asText())) {
+            try {
+                return Long.valueOf(node.asText().trim());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private boolean isModalidadPlanta(Long idModalidadContratacion) {
@@ -528,6 +628,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         cargaDocenteMapper.updateEntity(dto, entity);
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
+        applyHorasDeExcepcion(entity);
         cargaDocenteRepository.save(entity);
         log.info("updateProfessor ===> Docente actualizado. idCargaDocente={}", idCargaDocente);
     }
@@ -963,6 +1064,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setFechaCambio(new Date());
         entity.setEstado("0");
         entity.setVigente("1");
+        applyHorasDeExcepcion(entity);
         cargaDocenteRepository.save(entity);
         log.info("saveCareerProfessorPreload ===> Docente planta guardado en precarga. idCargaDocente={}", entity.getId());
     }
@@ -997,6 +1099,43 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         detalleCargaDocenteRepository.deleteByProcedure(idDetalleCargaDocente, REGISTRADO_POR);
 
         log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
+    }
+
+    @Override
+    @Transactional
+    public void approveProfessorPreassignment(Long idCargaDocente) {
+        log.info("approveProfessorPreassignment ===> Aprobando preasignación docente. idCargaDocente={}",
+                idCargaDocente);
+
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "La carga docente es obligatoria para aprobar la preasignación");
+        }
+
+        CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
+
+        if ("1".equals(entity.getEstado())) {
+            log.info("approveProfessorPreassignment ===> La preasignación ya estaba aprobada. idCargaDocente={}",
+                    idCargaDocente);
+            return;
+        }
+
+        int updated = cargaDocenteRepository.approvePreassignmentById(
+                idCargaDocente,
+                REGISTRADO_POR
+        );
+
+        if (updated == 0) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "No fue posible aprobar la preasignación del docente");
+        }
+
+        log.info("approveProfessorPreassignment ===> Preasignación aprobada. idCargaDocente={}",
+                idCargaDocente);
     }
 
     @Override

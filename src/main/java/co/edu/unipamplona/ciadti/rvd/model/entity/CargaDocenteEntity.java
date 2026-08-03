@@ -100,6 +100,9 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "CADO_HORAS")
     private String horas;
 
+    @Column(name = "CADO_HORASDEEXCEPCION")
+    private String horasDeExcepcion;
+
     @Column(name = "CADO_VALORHORA")
     private BigDecimal valorHora;
 
@@ -182,6 +185,7 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
                 ", estado=" + estado +
                 ", vigente=" + vigente +
                 ", horas=" + horas +
+                ", horasDeExcepcion='" + horasDeExcepcion + '\'' +
                 ", valorHora=" + valorHora +
                 ", puntos=" + puntos +
                 ", valorPunto=" + valorPunto +

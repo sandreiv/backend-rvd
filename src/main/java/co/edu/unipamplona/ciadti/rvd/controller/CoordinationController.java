@@ -336,6 +336,17 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Aprueba la preasignación de un docente",
+        description = "Actualiza el estado de la carga docente a aprobada"
+    )
+    @PutMapping("/approve-professor-preassignment/{idCargaDocente}")
+    public ResponseEntity<Void> approveProfessorPreassignment(
+            @PathVariable Long idCargaDocente) {
+        coordinacionService.approveProfessorPreassignment(idCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Obtiene el total de una preasignación por carga",
         description = "Retorna totales de docentes, prestaciones, contratos y preasignación,además de las horas agrupadas por tipo de actividad y el total de horas"
     )

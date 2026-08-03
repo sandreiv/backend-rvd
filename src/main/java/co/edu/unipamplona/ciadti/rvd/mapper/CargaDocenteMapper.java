@@ -64,6 +64,7 @@ public interface CargaDocenteMapper {
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "vigente", ignore = true)
     @Mapping(target = "horas", ignore = true)
+    @Mapping(target = "horasDeExcepcion", ignore = true)
     @Mapping(target = "valorHora", ignore = true)
     @Mapping(target = "puntos", ignore = true)
     @Mapping(target = "valorPunto", ignore = true)
