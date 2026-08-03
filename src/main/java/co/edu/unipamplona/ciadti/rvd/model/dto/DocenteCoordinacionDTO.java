@@ -23,6 +23,7 @@ public record DocenteCoordinacionDTO(
     String puntos,
     BigDecimal valorPunto,
     String semanas,
+    String onceMeses,
     String horasDeExcepcion,
     Boolean tieneCarga
 ) {}

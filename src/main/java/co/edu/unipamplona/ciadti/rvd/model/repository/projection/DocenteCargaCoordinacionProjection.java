@@ -22,6 +22,7 @@ public interface DocenteCargaCoordinacionProjection {
     String getPuntos();
     BigDecimal getValorPunto();
     String getSemanas();
+    String getOnceMeses();
     String getHorasDeExcepcion();
     Long getIdFechasConvocatoria();
     String getFechaConvocatoriaCodigo();
