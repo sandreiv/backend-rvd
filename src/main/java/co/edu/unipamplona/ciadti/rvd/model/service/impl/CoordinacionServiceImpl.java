@@ -219,13 +219,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             if (idPeriodoUniversidad != null) {
                 validateConvocatoriaBelongsToPeriod(idConvocatoria, idPeriodoUniversidad);
             }
-            projections = coordinacionRepository.findByConvocatoriaWithCarga(
-                    idConvocatoria, idUsuario);
+            projections = coordinacionRepository.findByConvocatoriaWithCarga(idConvocatoria, idUsuario);
         } else {
             if (idPeriodoUniversidad == null) {
-                throw new ApiException(
-                        HttpStatus.BAD_REQUEST,
-                        "El periodo universitario es obligatorio cuando no se envía convocatoria");
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio cuando no se envía convocatoria");
             }
             projections = coordinacionRepository.findWithoutCarga(
                     idUsuario, idPeriodoUniversidad);
@@ -243,9 +240,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             Long idPeriodoUniversidad) {
         var periodo = convocatoriaRepository.findPeriodoEntityByConvocatoriaId(idConvocatoria);
         if (periodo == null || !Objects.equals(periodo.getId(), idPeriodoUniversidad)) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La convocatoria no pertenece al periodo universitario indicado");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La convocatoria no pertenece al periodo universitario indicado");
         }
     }
 
@@ -343,8 +338,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                             "No existe fecha de convocatoria en la convocatoria destino"
                                     + " para la modalidad " + origen.getIdModalidadContratacion()));
 
-            CargaDocenteEntity copia = cloneCargaDocenteForInheritance(
-                    origen, cargaDestino.getId(), fechaDestino);
+            CargaDocenteEntity copia = cloneCargaDocenteForInheritance(origen, cargaDestino.getId(), fechaDestino);
             cargaDocenteRepository.save(copia);
             heredados++;
         }
@@ -363,8 +357,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         copia.setIdModalidadContratacion(origen.getIdModalidadContratacion());
         copia.setIdCategoriaCatedratico(origen.getIdCategoriaCatedratico());
         copia.setIdFechasConvocatoria(fechaDestino.getId());
-        copia.setFechaInicio(fechaDestino.getFechaInicio());
-        copia.setFechaFin(fechaDestino.getFechaFin());
+        copia.setFechaInicio(origen.getFechaInicio());
+        copia.setFechaFin(origen.getFechaFin());
         //copia.setValorContrato(origen.getValorContrato());
         //copia.setValorPrestaciones(origen.getValorPrestaciones());
         //copia.setSalario(origen.getSalario());
@@ -471,8 +465,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         var convocatoria = convocatoriaRepository.findById(idConvocatoria)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "Convocatoria no encontrada"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada"));
 
         Long totalRestricciones = restriccionPorCoordinacionRepository
                 .countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
@@ -486,9 +479,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                     convocatoria.getEstado(),
                     totalRestricciones);
 
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "La convocatoria no está disponible para asignación libre."
+            throw new ApiException(HttpStatus.CONFLICT, "La convocatoria no está disponible para asignación libre."
             );
         }
     }
