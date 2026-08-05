@@ -88,13 +88,11 @@ public class PreasignacionExcelExporter {
             if (modalidades.isEmpty()) {
                 Row empty = sheet.createRow(rowIdx);
                 Cell cell = empty.createCell(0);
-                cell.setCellValue(
-                        "No hay docentes preasignados en esta carga");
+                cell.setCellValue("No hay docentes preasignados en esta carga");
                 cell.setCellStyle(styles.value);
             } else {
                 for (ModalidadPreasignacionReporteDTO modalidad : modalidades) {
-                    rowIdx = writeModalidadTable(
-                            sheet, modalidad, rowIdx, styles);
+                    rowIdx = writeModalidadTable(sheet, modalidad, rowIdx, styles);
                     rowIdx++;
                 }
             }
@@ -102,9 +100,7 @@ public class PreasignacionExcelExporter {
             workbook.write(out);
             return out.toByteArray();
         } catch (IOException ex) {
-            throw new ApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible generar el archivo Excel de preasignación");
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "No fue posible generar el archivo Excel de preasignación");
         }
     }
 
@@ -112,6 +108,7 @@ public class PreasignacionExcelExporter {
             Sheet sheet,
             EncabezadoCargaReporteDTO encabezado,
             Styles styles) {
+
         int rowIdx = 0;
         Row title = sheet.createRow(rowIdx++);
         Cell titleCell = title.createCell(0);
@@ -164,15 +161,14 @@ public class PreasignacionExcelExporter {
             ModalidadPreasignacionReporteDTO modalidad,
             int startRow,
             Styles styles) {
+
         int rowIdx = startRow;
         Row modalityTitle = sheet.createRow(rowIdx);
         Cell titleCell = modalityTitle.createCell(0);
-        titleCell.setCellValue(
-                "Modalidad de contratación: "
-                        + nullToEmpty(modalidad.nombreModalidad()));
+        titleCell.setCellValue("Modalidad de contratación: " + nullToEmpty(modalidad.nombreModalidad()));
         titleCell.setCellStyle(styles.modalityTitle);
-        sheet.addMergedRegion(
-                new CellRangeAddress(rowIdx, rowIdx, 0, LAST_COL));
+        sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 0, LAST_COL));
+
         for (int col = 1; col <= LAST_COL; col++) {
             Cell filler = modalityTitle.createCell(col);
             filler.setCellStyle(styles.modalityTitle);
@@ -209,22 +205,21 @@ public class PreasignacionExcelExporter {
 
     private int writeGroupHeader(Sheet sheet, int rowIdx, Styles styles) {
         Row row = sheet.createRow(rowIdx);
+
         writeGroupCell(row, COL_DOCENTE_INICIO, "Datos del docente", styles);
-        writeGroupCell(
-                row, COL_CONTRATO_INICIO, "Valores de contratación", styles);
+        writeGroupCell(row, COL_CONTRATO_INICIO, "Valores de contratación", styles);
         writeGroupCell(row, COL_ACT_INICIO, "Actividades (horas)", styles);
+
         for (int col = 0; col <= LAST_COL; col++) {
             if (row.getCell(col) == null) {
                 Cell filler = row.createCell(col);
                 filler.setCellStyle(styles.groupHeader);
             }
         }
-        sheet.addMergedRegion(new CellRangeAddress(
-                rowIdx, rowIdx, COL_DOCENTE_INICIO, COL_DOCENTE_FIN));
-        sheet.addMergedRegion(new CellRangeAddress(
-                rowIdx, rowIdx, COL_CONTRATO_INICIO, COL_CONTRATO_FIN));
-        sheet.addMergedRegion(new CellRangeAddress(
-                rowIdx, rowIdx, COL_ACT_INICIO, LAST_COL));
+
+        sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, COL_DOCENTE_INICIO, COL_DOCENTE_FIN));
+        sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, COL_CONTRATO_INICIO, COL_CONTRATO_FIN));
+        sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, COL_ACT_INICIO, LAST_COL));
         row.setHeightInPoints(22);
         return rowIdx + 1;
     }
@@ -234,6 +229,7 @@ public class PreasignacionExcelExporter {
             int col,
             String label,
             Styles styles) {
+
         Cell cell = row.createCell(col);
         cell.setCellValue(label);
         cell.setCellStyle(styles.groupHeader);
@@ -255,6 +251,7 @@ public class PreasignacionExcelExporter {
             DocentePreasignacionReporteDTO docente,
             Styles styles,
             SimpleDateFormat dateFormat) {
+
         setText(row, 0, docente.nombreCompleto(), styles.data);
         setText(row, 1, docente.documento(), styles.data);
         setText(row, 2, docente.puntos(), styles.data);
@@ -357,16 +354,14 @@ public class PreasignacionExcelExporter {
 
         CellStyle modalityTitle = workbook.createCellStyle();
         modalityTitle.setFont(boldFont);
-        modalityTitle.setFillForegroundColor(
-                IndexedColors.GREY_50_PERCENT.getIndex());
+        modalityTitle.setFillForegroundColor(IndexedColors.GREY_50_PERCENT.getIndex());
         modalityTitle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         modalityTitle.setAlignment(HorizontalAlignment.LEFT);
         modalityTitle.setVerticalAlignment(VerticalAlignment.CENTER);
 
         CellStyle groupHeader = workbook.createCellStyle();
         groupHeader.setFont(boldFont);
-        groupHeader.setFillForegroundColor(
-                IndexedColors.GREY_40_PERCENT.getIndex());
+        groupHeader.setFillForegroundColor(IndexedColors.GREY_40_PERCENT.getIndex());
         groupHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         applyBorder(groupHeader);
         groupHeader.setAlignment(HorizontalAlignment.CENTER);
@@ -387,13 +382,11 @@ public class PreasignacionExcelExporter {
 
         CellStyle number = workbook.createCellStyle();
         number.cloneStyleFrom(data);
-        number.setDataFormat(
-                workbook.createDataFormat().getFormat("#,##0.00"));
+        number.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
 
         CellStyle money = workbook.createCellStyle();
         money.cloneStyleFrom(data);
-        money.setDataFormat(
-                workbook.createDataFormat().getFormat("$#,##0.00"));
+        money.setDataFormat(workbook.createDataFormat().getFormat("$#,##0.00"));
 
         return new Styles(
                 title,

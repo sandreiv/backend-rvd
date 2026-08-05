@@ -6,7 +6,6 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
- * 04/08/2026 - Sebastian Jaimes - Batch por carga y tablas por modalidad
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -48,16 +47,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PreasignacionReporteServiceImpl
-        implements PreasignacionReporteService {
+public class PreasignacionReporteServiceImpl implements PreasignacionReporteService {
 
     private static final int ESCALA_MONETARIA = 2;
     private static final BigDecimal DIAS_MES = new BigDecimal("30");
     private static final BigDecimal DIAS_ANIO = new BigDecimal("360");
     private static final BigDecimal DIAS_VACACIONES = new BigDecimal("720");
     private static final BigDecimal TASA_INTERES = new BigDecimal("0.12");
-    private static final BigDecimal PUNTOS_DOCENTE_DEFAULT =
-            new BigDecimal("100");
+    private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
 
     private final CargaRepository cargaRepository;
     private final CargaDocenteRepository cargaDocenteRepository;
@@ -69,21 +66,15 @@ public class PreasignacionReporteServiceImpl
     public PreasignacionExcelFileDTO generatePreloadReport(Long idCarga) {
         log.debug("generatePreloadReport ===> idCarga={}", idCarga);
         if (idCarga == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El id de la carga es obligatorio");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
         }
 
         EncabezadoCargaReporteDTO encabezado = loadEncabezado(idCarga);
-        List<DocentePreasignacionReporteProjection> docentes =
-                cargaDocenteRepository.findReportProfessorsByCarga(idCarga);
-        Map<Long, Map<String, BigDecimal>> horasByDocente =
-                loadHorasPorDocente(idCarga);
-        List<ModalidadPreasignacionReporteDTO> modalidades =
-                buildModalidades(docentes, horasByDocente);
+        List<DocentePreasignacionReporteProjection> docentes = cargaDocenteRepository.findReportProfessorsByCarga(idCarga);
+        Map<Long, Map<String, BigDecimal>> horasByDocente = loadHorasPorDocente(idCarga);
+        List<ModalidadPreasignacionReporteDTO> modalidades = buildModalidades(docentes, horasByDocente);
 
-        ReportePreasignacionCargaDTO reporte =
-                new ReportePreasignacionCargaDTO(encabezado, modalidades);
+        ReportePreasignacionCargaDTO reporte = new ReportePreasignacionCargaDTO(encabezado, modalidades);
         byte[] content = excelExporter.export(reporte);
         String fileName = buildFileName(encabezado);
         log.info(
@@ -98,9 +89,7 @@ public class PreasignacionReporteServiceImpl
     private EncabezadoCargaReporteDTO loadEncabezado(Long idCarga) {
         EncabezadoPreasignacionProjection projection = cargaRepository
                 .findEncabezadoReporteByIdCarga(idCarga)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la carga con id " + idCarga));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
         return new EncabezadoCargaReporteDTO(
                 projection.getIdCarga(),
                 projection.getIdCoordinacion(),
@@ -113,15 +102,11 @@ public class PreasignacionReporteServiceImpl
                 projection.getConvocatoria());
     }
 
-    private Map<Long, Map<String, BigDecimal>> loadHorasPorDocente(
-            Long idCarga) {
-        List<HorasCodigoActividadReporteProjection> rows =
-                detalleCargaDocenteRepository
-                        .findHorasPorCodigoPadreByCarga(idCarga);
+    private Map<Long, Map<String, BigDecimal>> loadHorasPorDocente(Long idCarga) {
+        List<HorasCodigoActividadReporteProjection> rows = detalleCargaDocenteRepository.findHorasPorCodigoPadreByCarga(idCarga);
         Map<Long, Map<String, BigDecimal>> result = new HashMap<>();
         for (HorasCodigoActividadReporteProjection row : rows) {
-            if (row.getIdCargaDocente() == null
-                    || !StringUtils.hasText(row.getCodigoPadre())) {
+            if (row.getIdCargaDocente() == null || !StringUtils.hasText(row.getCodigoPadre())) {
                 continue;
             }
             result
@@ -137,9 +122,7 @@ public class PreasignacionReporteServiceImpl
         return result;
     }
 
-    private List<ModalidadPreasignacionReporteDTO> buildModalidades(
-            List<DocentePreasignacionReporteProjection> docentes,
-            Map<Long, Map<String, BigDecimal>> horasByDocente) {
+    private List<ModalidadPreasignacionReporteDTO> buildModalidades(List<DocentePreasignacionReporteProjection> docentes, Map<Long, Map<String, BigDecimal>> horasByDocente) {
         Map<Long, ModalidadBucket> buckets = new LinkedHashMap<>();
         for (DocentePreasignacionReporteProjection projection : docentes) {
             Long idModalidad = projection.getIdModalidadContratacion();
@@ -167,9 +150,7 @@ public class PreasignacionReporteServiceImpl
         return result;
     }
 
-    private DocentePreasignacionReporteDTO toDocenteReporte(
-            DocentePreasignacionReporteProjection projection,
-            Map<String, BigDecimal> horasPorCodigo) {
+    private DocentePreasignacionReporteDTO toDocenteReporte(DocentePreasignacionReporteProjection projection, Map<String, BigDecimal> horasPorCodigo) {
         BigDecimal asignacion = null;
         ValorContratacionDTO valor = null;
         String error = null;
@@ -198,35 +179,36 @@ public class PreasignacionReporteServiceImpl
                 error);
     }
 
-    private ValorContratacionDTO calculateContractValue(
-            DocentePreasignacionReporteProjection projection,
-            BigDecimal asignacionSalarial) {
-        long cantidadDias = resolveCantidadDias(
-                projection.getFechaInicio(),
-                projection.getFechaFin());
+    private ValorContratacionDTO calculateContractValue(DocentePreasignacionReporteProjection projection, BigDecimal asignacionSalarial) {
+        long cantidadDias = resolveCantidadDias(projection.getFechaInicio(), projection.getFechaFin());
         BigDecimal dias = BigDecimal.valueOf(cantidadDias);
 
         BigDecimal valorContrato = asignacionSalarial
                 .divide(DIAS_MES, 8, RoundingMode.HALF_UP)
                 .multiply(dias)
                 .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
         BigDecimal valorCesantias = asignacionSalarial
                 .multiply(dias)
                 .divide(DIAS_ANIO, ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
         BigDecimal valorIntereses = valorCesantias
                 .multiply(dias)
                 .divide(DIAS_ANIO, 8, RoundingMode.HALF_UP)
                 .multiply(TASA_INTERES)
                 .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
         BigDecimal valorPrimaLegal = valorCesantias;
         BigDecimal valorVacaciones = asignacionSalarial
                 .multiply(dias)
                 .divide(DIAS_VACACIONES, ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
         BigDecimal totalPrestaciones = valorCesantias
                 .add(valorIntereses)
                 .add(valorPrimaLegal)
                 .add(valorVacaciones)
                 .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+
         BigDecimal totalContrato = valorContrato
                 .add(totalPrestaciones)
                 .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
@@ -241,16 +223,13 @@ public class PreasignacionReporteServiceImpl
                 totalContrato);
     }
 
-    private BigDecimal resolveAsignacionSalarial(
-            DocentePreasignacionReporteProjection projection) {
+    private BigDecimal resolveAsignacionSalarial(DocentePreasignacionReporteProjection projection) {
         if (projection.getSalario() != null) {
             return projection.getSalario();
         }
         BigDecimal valorPunto = projection.getValorPunto();
         if (valorPunto == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente no tiene asignacion salarial ni valor del punto");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente no tiene asignacion salarial ni valor del punto");
         }
         return resolvePuntos(projection.getPuntos())
                 .multiply(valorPunto)
@@ -270,9 +249,7 @@ public class PreasignacionReporteServiceImpl
 
     private long resolveCantidadDias(Date fechaInicio, Date fechaFin) {
         if (fechaInicio == null || fechaFin == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente no tiene fechas de inicio y fin");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente no tiene fechas de inicio y fin");
         }
         LocalDate inicio = fechaInicio.toInstant()
                 .atZone(ZoneId.systemDefault())
@@ -281,9 +258,7 @@ public class PreasignacionReporteServiceImpl
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
         if (fin.isBefore(inicio)) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La fecha fin no puede ser anterior a la fecha inicio");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La fecha fin no puede ser anterior a la fecha inicio");
         }
         return ChronoUnit.DAYS.between(inicio, fin) + 1;
     }
@@ -312,8 +287,7 @@ public class PreasignacionReporteServiceImpl
     private static final class ModalidadBucket {
         private final Long idModalidad;
         private final String nombre;
-        private final List<DocentePreasignacionReporteDTO> docentes =
-                new ArrayList<>();
+        private final List<DocentePreasignacionReporteDTO> docentes = new ArrayList<>();
 
         private ModalidadBucket(Long idModalidad, String nombre) {
             this.idModalidad = idModalidad;
