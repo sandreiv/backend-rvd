@@ -11,7 +11,9 @@ package co.edu.unipamplona.ciadti.rvd.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +41,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
@@ -51,6 +54,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -61,6 +65,7 @@ public class CoordinationController {
 
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
+    private final PreasignacionReporteService preasignacionReporteService;
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
@@ -104,8 +109,8 @@ public class CoordinationController {
         //String idUsuario = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         // Este Id es de prueba y solo sera temporal. ------------------ CAMBIAR --------------------
         Long idUsuario = 239419L;
-        List<CoordinacionDTO> coordinations = coordinacionService.findCoordinationsByIdConvocatoria(
-                idConvocatoria, idPeriodoUniversidad, idUsuario);
+        //Long idUsuario = SecurityUtils.requireIdPersona(); // TODO: Implementar, permite conocer con seguridad el id del usuario logueado.
+        List<CoordinacionDTO> coordinations = coordinacionService.findCoordinationsByIdConvocatoria(idConvocatoria, idPeriodoUniversidad, idUsuario);
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
     }
 
@@ -412,6 +417,26 @@ public class CoordinationController {
     @GetMapping("/cost-centers/{idCargaDocente}")
     public ResponseEntity<List<CentroCostoResumenDTO>> getCostCenters(@PathVariable Long idCargaDocente) {
         return new ResponseEntity<>(coordinacionService.listCostCenters(idCargaDocente), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Genera el reporte Excel de preasignación de una carga",
+        description = """
+            Exporta el resumen de todos los docentes de la carga: encabezado
+            (unidad, facultad, coordinación, periodo, convocatoria), valores de
+            contratación, horas de actividades y centros de costo.
+            """
+    )
+    @GetMapping("/preload-report/{idCarga}")
+    public ResponseEntity<byte[]> generatePreloadReport(@PathVariable Long idCarga) {
+        PreasignacionExcelFileDTO file = preasignacionReporteService.generatePreloadReport(idCarga);
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.fileName() + "\"")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file.content());
     }
 
 }

@@ -19,6 +19,7 @@ import org.springframework.data.repository.query.Param;
 
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.EncabezadoPreasignacionProjection;
 
 public interface CargaRepository extends JpaRepository<CargaEntity, Long> {
 
@@ -51,6 +52,31 @@ public interface CargaRepository extends JpaRepository<CargaEntity, Long> {
             @Param("idConvocatoria") Long idConvocatoria
     );
 
-
+    @Query(value = """
+            SELECT
+                CARG.CARG_ID AS idCarga,
+                COOR.COOR_ID AS idCoordinacion,
+                UNID_REG.UNID_NOMBRE AS unidad,
+                UNID_AREA.UNID_NOMBRE AS facultad,
+                COOR.COOR_NOMBRE AS coordinacion,
+                PEUN.PEUN_ID AS idPeriodoUniversidad,
+                TRIM(PEUN.PEUN_ANO || '-' || PEUN.PEUN_PERIODO) AS periodoAcademico,
+                CONV.CONV_ID AS idConvocatoria,
+                CONV.CONV_NOMBRE AS convocatoria
+            FROM RVD.CARGA CARG
+            INNER JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+            INNER JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            INNER JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            LEFT JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CARG.CONV_ID
+            LEFT JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
+            WHERE CARG.CARG_ID = :idCarga
+            """, nativeQuery = true)
+    Optional<EncabezadoPreasignacionProjection> findEncabezadoReporteByIdCarga(
+            @Param("idCarga") Long idCarga);
 
 }

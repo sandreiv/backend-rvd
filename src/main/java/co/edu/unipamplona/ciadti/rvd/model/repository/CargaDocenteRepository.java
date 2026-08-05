@@ -20,6 +20,7 @@ import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 
 public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity, Long> {
 
@@ -217,5 +218,47 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
     int approvePreassignmentById(
             @Param("idCargaDocente") Long idCargaDocente,
             @Param("registradoPor") String registradoPor);
-            
+
+    @Query(value = """
+            SELECT
+                CADO.CADO_ID AS idCargaDocente,
+                PEGE.PEGE_ID AS idPersonaGeneral,
+                PEGE.PEGE_DOCUMENTOIDENTIDAD AS documento,
+                TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                ) AS nombreCompleto,
+                CADO.CADO_ESTADO AS estado,
+                CADO.MOCO_ID AS idModalidadContratacion,
+                MOCO.MOCO_NOMBRE AS modalidadContratacion,
+                CADO.CACA_ID AS idCategoriaCatedratico,
+                CACA.CACA_DESCRIPCION AS categoria,
+                CADO.CADO_PUNTOS AS puntos,
+                CADO.CADO_VALORPUNTO AS valorPunto,
+                CADO.CADO_SALARIO AS salario,
+                CADO.CADO_FECHAINICIO AS fechaInicio,
+                CADO.CADO_FECHAFIN AS fechaFin,
+                CADO.CADO_SEMANAS AS semanas
+            FROM RVD.CARGADOCENTE CADO
+            LEFT JOIN GENERAL.PERSONAGENERAL PEGE
+                ON PEGE.PEGE_ID = CADO.PEGE_ID
+            LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = CADO.MOCO_ID
+            LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
+                ON CACA.CACA_ID = CADO.CACA_ID
+            WHERE CADO.CARG_ID = :idCarga
+            ORDER BY
+                UPPER(NVL(MOCO.MOCO_NOMBRE, ' ')),
+                UPPER(TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                )) NULLS LAST
+            """, nativeQuery = true)
+    List<DocentePreasignacionReporteProjection> findReportProfessorsByCarga(
+            @Param("idCarga") Long idCarga);
+
 }

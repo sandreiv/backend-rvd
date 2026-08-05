@@ -55,6 +55,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadDirectaDetalleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
@@ -151,6 +152,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final BigDecimal TASA_INTERES = new BigDecimal("0.12");
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
     private static final BigDecimal CIEN = new BigDecimal("100");
+    private static final String CODIGO_ACTIVIDAD_DIRECTA = "FAD";
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
 
@@ -1800,7 +1802,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.debug("listActivityHours ===> idCargaDocente={}", idCargaDocente);
         validateCargaDocenteExists(idCargaDocente);
 
-        Map<Long, DetalleCargaDocenteListadoProjection> unicos = loadDetallesUnicosByCargaDocente(idCargaDocente);
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos =
+                loadDetallesUnicosByCargaDocente(idCargaDocente);
 
         Map<String, ActividadHorasAcumulado> acumulados = new LinkedHashMap<>();
         for (DetalleCargaDocenteListadoProjection detalle : unicos.values()) {
@@ -1808,13 +1811,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             String nombre = resolveNombreActividad(detalle);
             String tipo = resolveTipoActividad(detalle);
             String clave = codigo + "|" + nombre;
-            ActividadHorasAcumulado actual = acumulados.computeIfAbsent(clave, k -> new ActividadHorasAcumulado(tipo, codigo, nombre));
-            actual.totalHoras = actual.totalHoras.add(parseHorasDetalle(detalle.getHoras()));
+            ActividadHorasAcumulado actual = acumulados.computeIfAbsent(
+                    clave,
+                    k -> new ActividadHorasAcumulado(tipo, codigo, nombre));
+            BigDecimal horas = parseHorasDetalle(detalle.getHoras());
+            actual.totalHoras = actual.totalHoras.add(horas);
+            if (isActividadDirecta(detalle)) {
+                actual.detalles.add(toActividadDirectaDetalle(detalle, horas));
+            }
         }
 
         List<ActividadHorasResumenDTO> resultado = new ArrayList<>();
         for (ActividadHorasAcumulado item : acumulados.values()) {
-            resultado.add(new ActividadHorasResumenDTO(item.tipo, item.codigo, item.nombre, item.totalHoras));
+            resultado.add(new ActividadHorasResumenDTO(
+                    item.tipo,
+                    item.codigo,
+                    item.nombre,
+                    item.totalHoras,
+                    item.detalles.isEmpty() ? null : List.copyOf(item.detalles)));
         }
         log.info("listActivityHours ===> id={}, totalTipos={}", idCargaDocente, resultado.size());
         return resultado;
@@ -1953,6 +1967,33 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return detalle.getCodigoTipoActividadPadre();
     }
 
+    private boolean isActividadDirecta(DetalleCargaDocenteListadoProjection detalle) {
+        if (CODIGO_ACTIVIDAD_DIRECTA.equalsIgnoreCase(detalle.getCodigoTipoActividad())
+                || CODIGO_ACTIVIDAD_DIRECTA.equalsIgnoreCase(
+                        detalle.getCodigoTipoActividadPadre())) {
+            return true;
+        }
+        String tipo = resolveTipoActividad(detalle);
+        String nombre = resolveNombreActividad(detalle);
+        return containsDirecta(tipo) || containsDirecta(nombre);
+    }
+
+    private boolean containsDirecta(String valor) {
+        return StringUtils.hasText(valor)
+                && valor.toLowerCase().contains("directa");
+    }
+
+    private ActividadDirectaDetalleDTO toActividadDirectaDetalle(
+            DetalleCargaDocenteListadoProjection detalle,
+            BigDecimal horas) {
+        return new ActividadDirectaDetalleDTO(
+                detalle.getNombreUnidadRegional(),
+                detalle.getNombrePrograma(),
+                detalle.getNombreMateria(),
+                detalle.getNombreGrupo(),
+                horas);
+    }
+
     private String resolveNombreActividad(DetalleCargaDocenteListadoProjection detalle) {
         if (StringUtils.hasText(detalle.getNombreTipoActividad())) {
             return detalle.getNombreTipoActividad();
@@ -2001,8 +2042,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         private final String codigo;
         private final String nombre;
         private BigDecimal totalHoras = BigDecimal.ZERO;
+        private final List<ActividadDirectaDetalleDTO> detalles =
+                new ArrayList<>();
 
-        private ActividadHorasAcumulado(String tipo, String codigo, String nombre) {
+        private ActividadHorasAcumulado(
+                String tipo, String codigo, String nombre) {
             this.tipo = tipo;
             this.codigo = codigo;
             this.nombre = nombre;

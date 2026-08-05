@@ -20,6 +20,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TotalHorasPreasignacionProjection;
 
 public interface DetalleCargaDocenteRepository
@@ -135,6 +136,37 @@ public interface DetalleCargaDocenteRepository
             """, nativeQuery = true)
     List<TotalHorasPreasignacionProjection> findTotalHorasPreasignacionByCargaId(
             @Param("cargId") Long cargId);
+
+    @Query(value = """
+            SELECT
+                CADO.CADO_ID AS idCargaDocente,
+                UPPER(TRIM(
+                    NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)
+                )) AS codigoPadre,
+                SUM(
+                    NVL(
+                        TO_NUMBER(
+                            REPLACE(TRIM(DECD.DECD_HORAS), ',', '.')
+                            DEFAULT NULL ON CONVERSION ERROR
+                        ),
+                        0
+                    )
+                ) AS totalHoras
+            FROM RVD.CARGADOCENTE CADO
+            INNER JOIN RVD.DETALLECARGADOCENTE DECD
+                ON DECD.CADO_ID = CADO.CADO_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                ON TIAC.TIAC_ID = DECD.TIAC_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC_PADRE
+                ON TIAC_PADRE.TIAC_ID = TIAC.TIAC_IDPADRE
+            WHERE CADO.CARG_ID = :idCarga
+            AND NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO) IS NOT NULL
+            GROUP BY
+                CADO.CADO_ID,
+                UPPER(TRIM(NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)))
+            """, nativeQuery = true)
+    List<HorasCodigoActividadReporteProjection> findHorasPorCodigoPadreByCarga(
+            @Param("idCarga") Long idCarga);
 
     @Procedure(name = "DetalleCargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(@Param("P_DECD_ID") Long id, @Param("P_DECD_REGISTRADOPOR") String registradoPor);
