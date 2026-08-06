@@ -82,6 +82,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionProgramaHorasDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalHorasPreasignacionDTO;
@@ -130,6 +131,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ActividadModali
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
@@ -716,9 +718,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         );
     }
 
-    private String resolveHorasDeExcepcion(
-            Long idModalidadContratacion,
-            Long idPersonaGeneral) {
+    private String resolveHorasDeExcepcion(Long idModalidadContratacion, Long idPersonaGeneral) {
         if (idModalidadContratacion == null || idPersonaGeneral == null) {
             return null;
         }
@@ -772,6 +772,184 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             log.warn("extractHorasDeExcepcion ===> No fue posible leer la excepción configurada. value={}",
                     excepcion);
             return Optional.empty();
+        }
+    }
+
+    private Map<Long, String> resolveMaximosHorasPrograma(
+            Long idModalidadContratacion) {
+        Map<Long, String> result = new LinkedHashMap<>();
+
+        restriccionCargaRepository.findById(idModalidadContratacion)
+                .map(RestriccionCargaEntity::getExcepcion)
+                .ifPresent(excepcion -> {
+                    try {
+                        JsonNode root = objectMapper.readTree(excepcion);
+                        JsonNode programas = root.get("programas");
+                        if (programas == null || !programas.isArray()) {
+                            return;
+                        }
+                        for (JsonNode programa : programas) {
+                            if (programa == null || programa.isNull()) {
+                                continue;
+                            }
+
+                            Long idPrograma;
+                            String maximoHoras = null;
+
+                            if (programa.isObject()) {
+                                idPrograma = parseLongNode(
+                                        programa.get("idPrograma"));
+                                if (idPrograma == null) {
+                                    idPrograma = parseLongNode(
+                                            programa.get("id"));
+                                }
+                                JsonNode maximoNode =
+                                        programa.get("maximoHoras");
+                                if (maximoNode != null
+                                        && StringUtils.hasText(
+                                                maximoNode.asText())) {
+                                    maximoHoras = maximoNode.asText().trim();
+                                }
+                            } else {
+                                idPrograma = parseLongNode(programa);
+                            }
+
+                            if (idPrograma != null
+                                    && StringUtils.hasText(maximoHoras)) {
+                                result.putIfAbsent(idPrograma, maximoHoras);
+                            }
+                        }
+                    } catch (JsonProcessingException ex) {
+                        log.warn(
+                                "resolveMaximosHorasPrograma ===> No fue posible leer excepciones de programa. idModalidad={}",
+                                idModalidadContratacion);
+                    }
+                });
+
+        return result;
+    }
+
+    private Map<Long, BigDecimal> loadHorasAsignadasPorPrograma(
+            Long idCargaDocente,
+            Long idDetalleExcluido) {
+        Map<Long, BigDecimal> result = new LinkedHashMap<>();
+        List<HorasProgramaProjection> rows =
+                detalleCargaDocenteRepository
+                        .findHorasByProgramaAndCargaDocente(
+                                idCargaDocente,
+                                idDetalleExcluido);
+        for (HorasProgramaProjection row : rows) {
+            if (row.getIdPrograma() == null) {
+                continue;
+            }
+            result.put(
+                    row.getIdPrograma(),
+                    row.getTotalHoras() != null
+                            ? row.getTotalHoras()
+                            : BigDecimal.ZERO);
+        }
+        return result;
+    }
+
+    private void validateProgramHourRestrictionOnSave(
+            DetalleCargaDocenteFormularioDTO dto) {
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+                .findById(dto.idCargaDocente())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id "
+                                + dto.idCargaDocente()));
+
+        Map<Long, String> maximos = resolveMaximosHorasPrograma(
+                cargaDocente.getIdModalidadContratacion());
+        if (maximos.isEmpty()) {
+            return;
+        }
+
+        Map<Long, BigDecimal> horasNuevas = new LinkedHashMap<>();
+        for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
+            if (detalle.idPrograma() == null || detalle.horas() == null) {
+                continue;
+            }
+            if (!maximos.containsKey(detalle.idPrograma())) {
+                continue;
+            }
+            horasNuevas.merge(
+                    detalle.idPrograma(),
+                    BigDecimal.valueOf(detalle.horas()),
+                    BigDecimal::add);
+        }
+
+        if (horasNuevas.isEmpty()) {
+            return;
+        }
+
+        Map<Long, BigDecimal> horasAsignadas = loadHorasAsignadasPorPrograma(
+                dto.idCargaDocente(),
+                null);
+
+        for (Map.Entry<Long, BigDecimal> entry : horasNuevas.entrySet()) {
+            assertProgramHoursWithinLimit(
+                    entry.getKey(),
+                    maximos.get(entry.getKey()),
+                    horasAsignadas.getOrDefault(
+                            entry.getKey(),
+                            BigDecimal.ZERO),
+                    entry.getValue());
+        }
+    }
+
+    private void validateProgramHourRestrictionOnUpdate(
+            DetalleCargaDocenteDTO dto,
+            DetalleCargaDocenteEntity detallePersistido) {
+        DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
+        Long idPrograma = actividad.programa() != null
+                ? actividad.programa().id()
+                : null;
+        if (idPrograma == null || !StringUtils.hasText(actividad.horas())) {
+            return;
+        }
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+                .findById(dto.idCargaDocente())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id "
+                                + dto.idCargaDocente()));
+
+        Map<Long, String> maximos = resolveMaximosHorasPrograma(
+                cargaDocente.getIdModalidadContratacion());
+        String maximoHoras = maximos.get(idPrograma);
+        if (!StringUtils.hasText(maximoHoras)) {
+            return;
+        }
+
+        Map<Long, BigDecimal> horasAsignadas = loadHorasAsignadasPorPrograma(
+                dto.idCargaDocente(),
+                detallePersistido.getId());
+
+        assertProgramHoursWithinLimit(
+                idPrograma,
+                maximoHoras,
+                horasAsignadas.getOrDefault(idPrograma, BigDecimal.ZERO),
+                parseHorasDetalle(actividad.horas()));
+    }
+
+    private void assertProgramHoursWithinLimit(
+            Long idPrograma,
+            String maximoHoras,
+            BigDecimal horasAsignadas,
+            BigDecimal horasNuevas) {
+        BigDecimal maximo = parseHorasDetalle(maximoHoras);
+        BigDecimal total = horasAsignadas.add(horasNuevas);
+        if (total.compareTo(maximo) > 0) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Las horas del programa " + idPrograma
+                            + " exceden el máximo permitido de "
+                            + maximoHoras
+                            + " (asignadas: " + horasAsignadas
+                            + ", nuevas: " + horasNuevas + ")");
         }
     }
 
@@ -1047,6 +1225,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
             validateDetalleItem(detalle, idCoordinacion);
         }
+        validateProgramHourRestrictionOnSave(dto);
     }
 
     private void validateUpdateDetailProfessorPreload(
@@ -1077,6 +1256,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 dto.detalles().get(0),
                 detallePersistido.getIdTipoActividad(),
                 idCoordinacion);
+        validateProgramHourRestrictionOnUpdate(dto, detallePersistido);
     }
 
 
@@ -1842,6 +2022,66 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<CentroCostoResumenDTO> centrosCosto = buildCostCenters(idCargaDocente, valorContratacion.totalContrato());
         log.info("getProfessorLoadSummary ===> id={}, actividades={}, centros={}", idCargaDocente, horasActividades.size(), centrosCosto.size());
         return new ResumenCargaDocenteDTO(idCargaDocente, valorContratacion, horasActividades, centrosCosto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RestriccionProgramaHorasDTO> listProgramHourRestrictions(
+            Long idModalidadContratacion,
+            Long idCargaDocente) {
+        log.debug(
+                "listProgramHourRestrictions ===> idModalidad={}, idCargaDocente={}",
+                idModalidadContratacion,
+                idCargaDocente);
+
+        if (idModalidadContratacion == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "La modalidad de contratación es obligatoria");
+        }
+        if (!modalidadContratacionRepository.existsById(idModalidadContratacion)) {
+            throw new ApiException(HttpStatus.NOT_FOUND,
+                    "No existe la modalidad de contratación");
+        }
+
+        Map<Long, String> maximosPorPrograma =
+                resolveMaximosHorasPrograma(idModalidadContratacion);
+        if (maximosPorPrograma.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, BigDecimal> horasAsignadasPorPrograma = Map.of();
+        if (idCargaDocente != null) {
+            if (!cargaDocenteRepository.existsById(idCargaDocente)) {
+                throw new ApiException(HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente);
+            }
+            horasAsignadasPorPrograma = loadHorasAsignadasPorPrograma(
+                    idCargaDocente,
+                    null);
+        }
+
+        List<RestriccionProgramaHorasDTO> result = new ArrayList<>();
+        for (Map.Entry<Long, String> entry : maximosPorPrograma.entrySet()) {
+            BigDecimal horasAsignadas = horasAsignadasPorPrograma.getOrDefault(
+                    entry.getKey(),
+                    BigDecimal.ZERO);
+            BigDecimal maximo = parseHorasDetalle(entry.getValue());
+            BigDecimal horasDisponibles = maximo.subtract(horasAsignadas);
+            if (horasDisponibles.compareTo(BigDecimal.ZERO) < 0) {
+                horasDisponibles = BigDecimal.ZERO;
+            }
+            result.add(new RestriccionProgramaHorasDTO(
+                    entry.getKey(),
+                    entry.getValue(),
+                    horasAsignadas,
+                    horasDisponibles));
+        }
+
+        log.info(
+                "listProgramHourRestrictions ===> idModalidad={}, total={}",
+                idModalidadContratacion,
+                result.size());
+        return result;
     }
 
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {

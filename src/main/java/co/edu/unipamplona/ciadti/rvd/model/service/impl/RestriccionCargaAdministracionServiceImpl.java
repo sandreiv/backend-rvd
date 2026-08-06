@@ -6,6 +6,7 @@
  * Fecha de creación: 22/07/2026
  * Modificaciones:
  * 22/07/2026 - Joel Daniel Arias Duarte - Creación inicial para administrar restricciones de carga por modalidad.
+ * 06/08/2026 - Excepciones de programa con máximo de horas (idPrograma + maximoHoras).
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaPersonaExcepcionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaProgramaExcepcionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CatalogoAdministracionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionCargaDetalleDTO;
@@ -151,6 +153,15 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         restriction != null ? restriction.getExcepcion() : null
         );
 
+        List<RestriccionCargaProgramaExcepcionDTO> programasExcepcion =
+                excepcion != null
+                        ? cleanProgramasExcepcion(excepcion.programas())
+                        : List.of();
+        List<RestriccionCargaPersonaExcepcionDTO> personasExcepcion =
+                excepcion != null
+                        ? cleanPersonasExcepcion(excepcion.personas())
+                        : List.of();
+
         RestriccionCargaDetalleDTO result = new RestriccionCargaDetalleDTO(
                 idModalidadContratacion,
                 restriction != null ? restriction.getMinimo() : null,
@@ -159,16 +170,18 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 restriction != null ? restriction.getFormaPago() : null,
                 restriction != null ? restriction.getTipoContrato() : null,
                 restriction != null ? restriction.getTipoHoras() : null,
-                excepcion != null ? cleanIds(excepcion.programas()) : List.of(),
-                excepcion != null
-                        ? excepcion.personas()
-                                .stream()
-                                .map(RestriccionCargaPersonaExcepcionDTO::idPersona)
-                                .filter(Objects::nonNull)
-                                .distinct()
-                                .toList()
-                        : List.of(),
-                excepcion != null ? cleanPersonasExcepcion(excepcion.personas()) : List.of(),
+                programasExcepcion.stream()
+                        .map(RestriccionCargaProgramaExcepcionDTO::idPrograma)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList(),
+                programasExcepcion,
+                personasExcepcion.stream()
+                        .map(RestriccionCargaPersonaExcepcionDTO::idPersona)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList(),
+                personasExcepcion,
                 categoriasModalidad.stream()
                         .map(CategoriaModalidadEntity::getIdCategoriaCatedratico)
                         .filter(Objects::nonNull)
@@ -371,15 +384,20 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
     }
 
     private void validateExcepcion(RestriccionCargaFormularioDTO dto) {
-        List<Long> idsProgramas = cleanIds(dto.idsProgramasExcepcion());
+        List<RestriccionCargaProgramaExcepcionDTO> programas =
+                cleanProgramasExcepcion(
+                        dto.programasExcepcion(),
+                        dto.idsProgramasExcepcion());
         List<RestriccionCargaPersonaExcepcionDTO> personas =
                 cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
 
-        for (Long idPrograma : idsProgramas) {
-            if (!programaRepository.existsById(idPrograma)) {
+        for (RestriccionCargaProgramaExcepcionDTO programa : programas) {
+            if (!programaRepository.existsById(programa.idPrograma())) {
                 throw new ApiException(HttpStatus.NOT_FOUND,
                         "No existe uno de los programas seleccionados para la excepción");
             }
+
+            validateMaximoHorasExcepcion(programa.maximoHoras());
         }
 
         for (RestriccionCargaPersonaExcepcionDTO persona : personas) {
@@ -498,17 +516,20 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
     }
 
     private String buildExcepcion(RestriccionCargaFormularioDTO dto) {
-        List<Long> idsProgramas = cleanIds(dto.idsProgramasExcepcion());
+        List<RestriccionCargaProgramaExcepcionDTO> programas =
+                cleanProgramasExcepcion(
+                        dto.programasExcepcion(),
+                        dto.idsProgramasExcepcion());
         List<RestriccionCargaPersonaExcepcionDTO> personas =
                 cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
 
-        if (idsProgramas.isEmpty() && personas.isEmpty()) {
+        if (programas.isEmpty() && personas.isEmpty()) {
             return null;
         }
 
         try {
             return objectMapper.writeValueAsString(
-                    new RestriccionExcepcionDTO(idsProgramas, personas)
+                    new RestriccionExcepcionDTO(programas, personas)
             );
         } catch (JsonProcessingException ex) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -525,7 +546,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
             JsonNode root = objectMapper.readTree(value);
 
             return new RestriccionExcepcionDTO(
-                    parseLongArray(root.get("programas")),
+                    parseProgramasExcepcion(root.get("programas")),
                     parsePersonasExcepcion(root.get("personas"))
             );
         } catch (JsonProcessingException ex) {
@@ -535,22 +556,48 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         }
     }
 
-    private List<Long> parseLongArray(JsonNode node) {
+    private List<RestriccionCargaProgramaExcepcionDTO> parseProgramasExcepcion(
+            JsonNode node) {
         if (node == null || !node.isArray()) {
             return List.of();
         }
 
-        List<Long> values = new ArrayList<>();
+        List<RestriccionCargaProgramaExcepcionDTO> programas = new ArrayList<>();
 
         for (JsonNode item : node) {
-            Long value = parseLongNode(item);
+            if (item == null || item.isNull()) {
+                continue;
+            }
 
-            if (value != null) {
-                values.add(value);
+            if (item.isObject()) {
+                Long idPrograma = parseLongNode(item.get("idPrograma"));
+
+                if (idPrograma == null) {
+                    idPrograma = parseLongNode(item.get("id"));
+                }
+
+                if (idPrograma == null) {
+                    continue;
+                }
+
+                programas.add(new RestriccionCargaProgramaExcepcionDTO(
+                        idPrograma,
+                        parseTextNode(item.get("maximoHoras"))
+                ));
+                continue;
+            }
+
+            Long idPrograma = parseLongNode(item);
+
+            if (idPrograma != null) {
+                programas.add(new RestriccionCargaProgramaExcepcionDTO(
+                        idPrograma,
+                        null
+                ));
             }
         }
 
-        return cleanIds(values);
+        return cleanProgramasExcepcion(programas);
     }
 
     private List<RestriccionCargaPersonaExcepcionDTO> parsePersonasExcepcion(JsonNode node) {
@@ -644,6 +691,47 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                 .toList();
     }
 
+    private List<RestriccionCargaProgramaExcepcionDTO> cleanProgramasExcepcion(
+            List<RestriccionCargaProgramaExcepcionDTO> programas) {
+        return cleanProgramasExcepcion(programas, List.of());
+    }
+
+    private List<RestriccionCargaProgramaExcepcionDTO> cleanProgramasExcepcion(
+            List<RestriccionCargaProgramaExcepcionDTO> programas,
+            List<Long> idsProgramasFallback) {
+        Map<Long, RestriccionCargaProgramaExcepcionDTO> result = new LinkedHashMap<>();
+
+        if (programas != null) {
+            for (RestriccionCargaProgramaExcepcionDTO programa : programas) {
+                if (programa == null || programa.idPrograma() == null) {
+                    continue;
+                }
+
+                result.putIfAbsent(
+                        programa.idPrograma(),
+                        new RestriccionCargaProgramaExcepcionDTO(
+                                programa.idPrograma(),
+                                clean(programa.maximoHoras())
+                        )
+                );
+            }
+        }
+
+        if (result.isEmpty()) {
+            for (Long idPrograma : cleanIds(idsProgramasFallback)) {
+                result.putIfAbsent(
+                        idPrograma,
+                        new RestriccionCargaProgramaExcepcionDTO(
+                                idPrograma,
+                                null
+                        )
+                );
+            }
+        }
+
+        return result.values().stream().toList();
+    }
+
     private List<RestriccionCargaPersonaExcepcionDTO> cleanPersonasExcepcion(
             List<RestriccionCargaPersonaExcepcionDTO> personas) {
         return cleanPersonasExcepcion(personas, List.of());
@@ -696,7 +784,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
     }
 
     private record RestriccionExcepcionDTO(
-            List<Long> programas,
+            List<RestriccionCargaProgramaExcepcionDTO> programas,
             List<RestriccionCargaPersonaExcepcionDTO> personas
     ) {}
 }

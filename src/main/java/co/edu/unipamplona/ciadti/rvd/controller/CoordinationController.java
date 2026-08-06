@@ -46,6 +46,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionProgramaHorasDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
@@ -320,6 +321,19 @@ public class CoordinationController {
     public ResponseEntity<List<DetalleCargaDocenteDTO>> listDetailProfessorPreload(@RequestParam Long idCargaDocente) {
         List<DetalleCargaDocenteDTO> detalle = coordinacionService.listDetailProfessorPreload(idCargaDocente);
         return new ResponseEntity<>(detalle, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Consulta restricciones de horas por programa",
+        description = """
+            Lista los programas con máximo de horas configurado en la restricción
+            de carga de la modalidad. Si se envía idCargaDocente, incluye horas
+            ya asignadas y disponibles para validar actividades de horas directas.
+            """
+    )
+    @GetMapping("/program-hour-restriction")
+    public ResponseEntity<List<RestriccionProgramaHorasDTO>> listProgramHourRestrictions(@RequestParam Long idModalidadContratacion, @RequestParam(required = false) Long idCargaDocente) {
+        return ResponseEntity.ok(coordinacionService.listProgramHourRestrictions(idModalidadContratacion, idCargaDocente));
     }
 
     @Operation(

@@ -21,6 +21,7 @@ import org.springframework.data.repository.query.Param;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TotalHorasPreasignacionProjection;
 
 public interface DetalleCargaDocenteRepository
@@ -167,6 +168,28 @@ public interface DetalleCargaDocenteRepository
             """, nativeQuery = true)
     List<HorasCodigoActividadReporteProjection> findHorasPorCodigoPadreByCarga(
             @Param("idCarga") Long idCarga);
+
+    @Query(value = """
+            SELECT
+                DECD.PROG_ID AS idPrograma,
+                SUM(
+                    NVL(
+                        TO_NUMBER(
+                            REPLACE(TRIM(DECD.DECD_HORAS), ',', '.')
+                            DEFAULT NULL ON CONVERSION ERROR
+                        ),
+                        0
+                    )
+                ) AS totalHoras
+            FROM RVD.DETALLECARGADOCENTE DECD
+            WHERE DECD.CADO_ID = :idCargaDocente
+            AND DECD.PROG_ID IS NOT NULL
+            AND (:idDetalleExcluido IS NULL OR DECD.DECD_ID <> :idDetalleExcluido)
+            GROUP BY DECD.PROG_ID
+            """, nativeQuery = true)
+    List<HorasProgramaProjection> findHorasByProgramaAndCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idDetalleExcluido") Long idDetalleExcluido);
 
     @Procedure(name = "DetalleCargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(@Param("P_DECD_ID") Long id, @Param("P_DECD_REGISTRADOPOR") String registradoPor);
