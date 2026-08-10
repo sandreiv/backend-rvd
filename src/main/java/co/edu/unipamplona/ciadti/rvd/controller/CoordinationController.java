@@ -53,6 +53,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
@@ -374,6 +375,17 @@ public class CoordinationController {
     public ResponseEntity<Void> approveProfessorPreassignment(
             @PathVariable Long idCargaDocente) {
         coordinacionService.approveProfessorPreassignment(idCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Guarda y aprueba la distribución de actividades del docente",
+        description = "Valida, guarda actividades y aprueba la preasignación del docente en una única transacción"
+    )
+    @PostMapping("/approve-professor-activity-distribution")
+    public ResponseEntity<Void> approveProfessorActivityDistribution(
+            @RequestBody AprobacionDetalleCargaDocenteDTO dto) {
+        coordinacionService.approveProfessorActivityDistribution(dto);
         return ResponseEntity.ok().build();
     }
 

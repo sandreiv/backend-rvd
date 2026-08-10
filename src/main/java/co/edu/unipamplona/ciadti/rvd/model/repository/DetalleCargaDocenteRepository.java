@@ -193,6 +193,29 @@ public interface DetalleCargaDocenteRepository
 
     @Procedure(name = "DetalleCargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(@Param("P_DECD_ID") Long id, @Param("P_DECD_REGISTRADOPOR") String registradoPor);
+
+    @Query(value = """
+            SELECT COUNT(1)
+            FROM RVD.DETALLECARGADOCENTE DECD
+            INNER JOIN RVD.RELACIONCARGAPROYECTO RECP
+                ON RECP.DECD_ID = DECD.DECD_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                ON TIAC.TIAC_ID = DECD.TIAC_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC_PADRE
+                ON TIAC_PADRE.TIAC_ID = TIAC.TIAC_IDPADRE
+            WHERE DECD.CADO_ID = :idCargaDocente
+            AND UPPER(TRIM(NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO))) IN ('CTEI', 'ISU')
+            AND NVL(
+                    TO_NUMBER(
+                        REPLACE(TRIM(DECD.DECD_HORAS), ',', '.')
+                        DEFAULT 0 ON CONVERSION ERROR
+                    ),
+                    0
+            ) > 0
+            """, nativeQuery = true)
+    int countCteiOrIsuProjectAssociationsByCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente);
+
 }
 
 /* 17/07/2026 @:Daniel Arias */

@@ -90,6 +90,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
@@ -157,7 +158,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String CODIGO_ACTIVIDAD_DIRECTA = "FAD";
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
-
+    private static final String MENSAJE_PLANTA_SIN_PROYECTO_CTEI_ISU =
+        "Debe tener un proyecto CTEI o ISU asociado para aprobar";
     private final CoordinacionRepository coordinacionRepository;
     private final CargaRepository cargaRepository;
     private final ConvocatoriaRepository convocatoriaRepository;
@@ -1505,6 +1507,130 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
+    public void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
+        log.info(
+                "approveProfessorActivityDistribution ===> Iniciando aprobación de distribución. idCargaDocente={}",
+                dto != null ? dto.idCargaDocente() : null
+        );
+
+        validateApproveProfessorActivityDistribution(dto);
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(dto.idCargaDocente())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + dto.idCargaDocente()
+                ));
+
+        validatePreassignmentWriteAllowedByCargaDocente(dto.idCargaDocente());
+
+        if ("1".equals(cargaDocente.getEstado())) {
+            log.info(
+                    "approveProfessorActivityDistribution ===> La preasignación ya estaba aprobada. idCargaDocente={}",
+                    dto.idCargaDocente()
+            );
+            return;
+        }
+
+        List<DetalleCargaDocenteDTO> detallesActualizados =
+        dto.detallesActualizados() != null ? dto.detallesActualizados() : List.of();
+
+        List<DetalleCargaDocenteItemDTO> detallesNuevos =
+                dto.detallesNuevos() != null ? dto.detallesNuevos() : List.of();
+
+        for (DetalleCargaDocenteDTO detalle : detallesActualizados) {
+            updateDetailProfessorPreload(detalle);
+        }
+
+        if (!detallesNuevos.isEmpty()) {
+            saveDetailProfessorPreload(
+                    new DetalleCargaDocenteFormularioDTO(
+                            dto.idCargaDocente(),
+                            detallesNuevos
+                    )
+            );
+        }
+
+        /*
+        * Validamos DESPUÉS de aplicar la distribución,
+        * pero dentro de la misma transacción.
+        * Si falla, el ApiException hace rollback de lo guardado.
+        */
+        detalleCargaDocenteRepository.flush();
+        relacionCargaProyectoRepository.flush();
+
+        validatePlantaHasCteiOrIsuProject(cargaDocente);
+
+        int updated = cargaDocenteRepository.approvePreassignmentById(
+                dto.idCargaDocente(),
+                REGISTRADO_POR
+        );
+
+
+        if (updated == 0) {
+            throw new ApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "No fue posible aprobar la preasignación del docente"
+            );
+        }
+
+        log.info(
+                "approveProfessorActivityDistribution ===> Distribución aprobada correctamente. idCargaDocente={}",
+                dto.idCargaDocente()
+        );
+    }
+
+    private void validateApproveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
+        if (dto == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La información de aprobación es obligatoria"
+            );
+        }
+
+        if (dto.idCargaDocente() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente es obligatoria para aprobar la preasignación"
+            );
+        }
+    }
+
+    private boolean isDocentePlanta(CargaDocenteEntity cargaDocente) {
+        Long idModalidadContratacion = cargaDocente.getIdModalidadContratacion();
+
+        if (idModalidadContratacion == null) {
+            return false;
+        }
+
+        return modalidadContratacionRepository.findById(idModalidadContratacion)
+                .map(modalidad -> {
+                    String nombre = normalizeUpperText(modalidad.getNombre());
+                    String sigla = normalizeUpperText(modalidad.getSigla());
+
+                    return "PLANTA".equals(sigla)
+                            || "CARRERA".equals(sigla)
+                            || "DOCENTE_CARRERA".equals(sigla)
+                            || "DOCENTE DE CARRERA".equals(sigla)
+                            || nombre.contains("PLANTA")
+                            || nombre.contains("CARRERA");
+                })
+                .orElse(false);
+    }
+
+    private String normalizeUpperText(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+
+        return java.text.Normalizer
+                .normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .trim()
+                .toUpperCase();
+    }
+
+    @Override
+    @Transactional
     public void approveProfessorPreassignment(Long idCargaDocente) {
         log.info("approveProfessorPreassignment ===> Aprobando preasignación docente. idCargaDocente={}",
                 idCargaDocente);
@@ -1526,6 +1652,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             return;
         }
 
+        validatePlantaHasCteiOrIsuProject(entity);
+
         int updated = cargaDocenteRepository.approvePreassignmentById(
                 idCargaDocente,
                 REGISTRADO_POR
@@ -1538,6 +1666,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         log.info("approveProfessorPreassignment ===> Preasignación aprobada. idCargaDocente={}",
                 idCargaDocente);
+    }
+    
+    private void validatePlantaHasCteiOrIsuProject(CargaDocenteEntity cargaDocente) {
+        if (!isDocentePlanta(cargaDocente)) {
+            return;
+        }
+
+        int totalProjects = detalleCargaDocenteRepository
+                .countCteiOrIsuProjectAssociationsByCargaDocente(cargaDocente.getId());
+
+        if (totalProjects > 0) {
+            return;
+        }
+
+        throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                MENSAJE_PLANTA_SIN_PROYECTO_CTEI_ISU
+        );
     }
 
     @Override
