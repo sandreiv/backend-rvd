@@ -1143,12 +1143,32 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral) {
-        log.debug("listProjectsProfessor ===> Listando proyectos del docente. idPersona={}", idPersonaGeneral);
-        
-        List<ProyectoDTO> result = proyectoMapper.toDtoList(personaProyectoRepository.findProyectosByIdPersonaGeneral(idPersonaGeneral));
-        
-        log.info("listProjectsProfessor ===> Proyectos del docente listados. idPersona={}, total={}", idPersonaGeneral, result.size());
+    public List<ProyectoDTO> listProjectsProfessor(
+            Long idPersonaGeneral,
+            Long idConvocatoria) {
+
+        log.debug(
+                "listProjectsProfessor ===> Listando proyectos del docente. idPersona={}, idConvocatoria={}",
+                idPersonaGeneral,
+                idConvocatoria
+        );
+
+        List<ProyectoDTO> result =
+                proyectoMapper.toDtoList(
+                        personaProyectoRepository
+                                .findProyectosByIdPersonaGeneralAndConvocatoria(
+                                        idPersonaGeneral,
+                                        idConvocatoria
+                                )
+                );
+
+        log.info(
+                "listProjectsProfessor ===> Proyectos del docente listados. idPersona={}, idConvocatoria={}, total={}",
+                idPersonaGeneral,
+                idConvocatoria,
+                result.size()
+        );
+
         return result;
     }
 

@@ -14,5 +14,6 @@ public record ConvocatoriaProyectosListaDTO(
     String nombre,
     String descripcion,
     String codigo,
+    Long idConvocatoria,
     String nombreConvocatoria
 ) {}

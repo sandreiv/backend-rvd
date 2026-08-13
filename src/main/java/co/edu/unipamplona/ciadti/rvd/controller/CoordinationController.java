@@ -296,12 +296,23 @@ public class CoordinationController {
 
     @Operation(
         summary = "Lista los proyectos asociados a un docente",
-        description = "Lista los proyectos asociados a un docente"
+        description = "Lista los proyectos asociados a un docente filtrados por la convocatoria de precarga"
     )
     @GetMapping("/list-projects-professor")
-    public ResponseEntity<List<ProyectoDTO>> listProjectsProfessor(@RequestParam Long idPersonaGeneral) {
-        List<ProyectoDTO> proyectos = coordinacionService.listProjectsProfessor(idPersonaGeneral);
-        return new ResponseEntity<>(proyectos, HttpStatus.OK);
+    public ResponseEntity<List<ProyectoDTO>> listProjectsProfessor(
+            @RequestParam Long idPersonaGeneral,
+            @RequestParam Long idConvocatoria) {
+
+        List<ProyectoDTO> proyectos =
+                coordinacionService.listProjectsProfessor(
+                        idPersonaGeneral,
+                        idConvocatoria
+                );
+
+        return new ResponseEntity<>(
+                proyectos,
+                HttpStatus.OK
+        );
     }
 
     @Operation(

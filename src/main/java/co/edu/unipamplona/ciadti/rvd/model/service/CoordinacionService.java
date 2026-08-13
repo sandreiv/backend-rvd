@@ -87,7 +87,7 @@ public interface CoordinacionService {
 
     List<GrupoDTO> listSubjectGroup(String codigoMateria, Long idPeriodoUniversidad);
 
-    List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral);
+    List<ProyectoDTO> listProjectsProfessor(Long idPersonaGeneral, Long idConvocatoria);
 
     void saveDetailProfessorPreload(DetalleCargaDocenteFormularioDTO dto);
 

@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -425,25 +426,48 @@ public class ProyectosServiceImpl implements ProyectosService {
 
     @Override
     @Transactional
-    public void updateProjectCall(Long id, ConvocatoriaProyectosFormularioDTO dto) {
-        log.info("updateProjectCall ===> Actualizando convocatoria de proyecto. id={}, nombre={}, codigo={}",
+    public void updateProjectCall(
+            Long id,
+            ConvocatoriaProyectosFormularioDTO dto) {
+
+        log.info(
+                "updateProjectCall ===> Actualizando convocatoria de proyecto. id={}, nombre={}, codigo={}, idConvocatoria={}",
                 id,
                 dto != null ? dto.nombre() : null,
-                dto != null ? dto.codigo() : null);
+                dto != null ? dto.codigo() : null,
+                dto != null ? dto.idConvocatoria() : null
+        );
 
         validateProjectCall(dto);
+        validateProjectCallRelation(dto);
 
-        ConvocatoriaProyectosEntity entity = convocatoriaProyectosRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("updateProjectCall ===> Convocatoria de proyecto no encontrada. id={}", id);
-                    return new ApiException(HttpStatus.NOT_FOUND, "No existe la convocatoria de proyecto con id " + id
-                    );
-                });
+        ConvocatoriaProyectosEntity entity =
+                convocatoriaProyectosRepository.findById(id)
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "updateProjectCall ===> Convocatoria de proyecto no encontrada. id={}",
+                                    id
+                            );
+
+                            return new ApiException(
+                                    HttpStatus.NOT_FOUND,
+                                    "No existe la convocatoria de proyecto con id " + id
+                            );
+                        });
 
         fillProjectCall(entity, dto);
         convocatoriaProyectosRepository.save(entity);
 
-        log.info("updateProjectCall ===> Convocatoria de proyecto actualizada. id={}", id);
+        syncProjectCallRelation(
+                id,
+                dto.idConvocatoria()
+        );
+
+        log.info(
+                "updateProjectCall ===> Convocatoria de proyecto actualizada. id={}, idConvocatoria={}",
+                id,
+                dto.idConvocatoria()
+        );
     }
 
     @Override
@@ -490,6 +514,64 @@ public class ProyectosServiceImpl implements ProyectosService {
         }
 
         log.info("deleteBulkProjectCalls ===> Eliminación masiva finalizada. total={}", ids.size());
+    }
+
+    private void syncProjectCallRelation(
+            Long idConvocatoriaProyectos,
+            Long idConvocatoria) {
+
+        List<RelacionConvocatoriasEntity> relations =
+                relacionConvocatoriasRepository
+                        .findByIdConvocatoriaProyectos(
+                                idConvocatoriaProyectos
+                        );
+
+        RelacionConvocatoriasEntity targetRelation = null;
+
+        for (RelacionConvocatoriasEntity relation : relations) {
+
+            boolean isTarget =
+                    Objects.equals(
+                            relation.getIdConvocatoria(),
+                            idConvocatoria
+                    );
+
+            relation.setEstado(
+                    isTarget ? ESTADO_ACTIVO : "0"
+            );
+
+            relation.setRegistradoPor(REGISTRADO_POR);
+            relation.setFechaCambio(new Date());
+
+            if (isTarget) {
+                targetRelation = relation;
+            }
+        }
+
+        if (!relations.isEmpty()) {
+            relacionConvocatoriasRepository.saveAll(relations);
+        }
+
+        if (targetRelation != null) {
+            return;
+        }
+
+        RelacionConvocatoriasEntity newRelation =
+                new RelacionConvocatoriasEntity();
+
+        newRelation.setIdConvocatoriaProyectos(
+                idConvocatoriaProyectos
+        );
+
+        newRelation.setIdConvocatoria(
+                idConvocatoria
+        );
+
+        newRelation.setEstado(ESTADO_ACTIVO);
+        newRelation.setRegistradoPor(REGISTRADO_POR);
+        newRelation.setFechaCambio(new Date());
+
+        relacionConvocatoriasRepository.save(newRelation);
     }
 
     private void fillProject(ProyectosEntity entity, ProyectosFormularioDTO dto) {

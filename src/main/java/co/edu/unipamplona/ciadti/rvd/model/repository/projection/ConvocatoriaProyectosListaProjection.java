@@ -14,5 +14,6 @@ public interface ConvocatoriaProyectosListaProjection {
     String getNombre();
     String getDescripcion();
     String getCodigo();
+    Long getIdConvocatoria();
     String getNombreConvocatoria();
 }

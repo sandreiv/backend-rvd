@@ -29,10 +29,12 @@ public interface ConvocatoriaProyectosRepository
                 COPR.COPR_NOMBRE AS nombre,
                 COPR.COPR_DESCRIPCION AS descripcion,
                 COPR.COPR_CODIGO AS codigo,
+                RECO.CONV_ID AS idConvocatoria,
                 CONV.CONV_NOMBRE AS nombreConvocatoria
             FROM RVD.CONVOCATORIAPROYECTOS COPR
             LEFT JOIN RVD.RELACIONCONVOCATORIAS RECO
                 ON COPR.COPR_ID = RECO.COPR_ID
+            AND TRIM(RECO.RECO_ESTADO) = '1'
             LEFT JOIN RVD.CONVOCATORIA CONV
                 ON RECO.CONV_ID = CONV.CONV_ID
             ORDER BY COPR.COPR_NOMBRE

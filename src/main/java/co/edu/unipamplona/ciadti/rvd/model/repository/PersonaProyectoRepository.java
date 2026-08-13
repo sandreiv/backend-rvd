@@ -38,17 +38,30 @@ public interface PersonaProyectoRepository
                 tiac.TIAC_CODIGO AS codigoTipoActividad,
                 tiac.TIAC_COMPONENTE AS componenteTipoActividad
             FROM RVD.PROYECTOS proy
+
             INNER JOIN RVD.PERSONAPROYECTO pepr
                 ON proy.PROY_ID = pepr.PROY_ID
+
+            INNER JOIN RVD.RELACIONCONVOCATORIAS reco
+                ON proy.COPR_ID = reco.COPR_ID
+
             LEFT JOIN RVD.TIPOPROYECTO tipr
                 ON proy.TIPR_ID = tipr.TIPR_ID
+
             LEFT JOIN RVD.TIPOACTIVIDADES tiac
                 ON pepr.TIAC_ID = tiac.TIAC_ID
+
             WHERE pepr.PEGE_ID = :idPersonaGeneral
+            AND reco.CONV_ID = :idConvocatoria
+            AND TRIM(reco.RECO_ESTADO) = '1'
+
             ORDER BY proy.PROY_NOMBRE, pepr.PEPR_ID
             """, nativeQuery = true)
-    List<ProyectoDocenteListadoProjection> findProyectosByIdPersonaGeneral(
-            @Param("idPersonaGeneral") Long idPersonaGeneral);
+    List<ProyectoDocenteListadoProjection>
+            findProyectosByIdPersonaGeneralAndConvocatoria(
+                    @Param("idPersonaGeneral") Long idPersonaGeneral,
+                    @Param("idConvocatoria") Long idConvocatoria
+            );
 
     @Query(value = """
             SELECT
