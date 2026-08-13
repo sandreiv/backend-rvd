@@ -134,6 +134,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDoc
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
@@ -567,9 +568,21 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<FechaModalidadFormularioDTO> result = fechasConvocatoriaMapper.toModalidadDtoList(
-                fechasConvocatoriaRepository.findByCargaAndModalityAndRestrictionSemanal(
-                        idCarga, idModalidadContratacion));
+        List<FechaModalidadProjection> fechas =
+                isModalidadPlanta(idModalidadContratacion)
+                        ? fechasConvocatoriaRepository
+                                .findPlantByCargaAndModalityAndRestrictionSemanal(
+                                        idCarga,
+                                        idModalidadContratacion
+                                )
+                        : fechasConvocatoriaRepository
+                                .findByCargaAndModalityAndRestrictionSemanal(
+                                        idCarga,
+                                        idModalidadContratacion
+                                );
+
+        List<FechaModalidadFormularioDTO> result =
+                fechasConvocatoriaMapper.toModalidadDtoList(fechas);
 
         log.info("getWorkDate ===> Fechas de trabajo consultadas. idCarga={}, total={}",
                 idCarga, result.size());
@@ -1452,17 +1465,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta carga y modalidad");
         }
 
-        FechasConvocatoriaEntity fecha = fechasConvocatoriaRepository
-                .findByConvocatoriaAndModalidad(
-                        dto.idConvocatoria(), dto.idModalidadContratacion())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe fecha de convocatoria para la modalidad seleccionada"));
+        FechasConvocatoriaEntity fechaConvocatoria =
+                convocatoriaRepository.findFechaCnvByConvocatoriaId(
+                        dto.idConvocatoria()
+                );
+
+        if (fechaConvocatoria == null) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la fecha general de la convocatoria seleccionada"
+            );
+        }
 
         CategoriaModalidadEntity categoriaModalidad = categoriaModalidadRepository
                 .findByIdModalidadContratacion(dto.idModalidadContratacion())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe categoria asociada a la modalidad de contratacion"));
 
         CargaDocenteEntity entity = cargaDocenteMapper.toEntityFromPlanta(dto);
-        entity.setIdFechasConvocatoria(fecha.getId());
+        entity.setIdFechasConvocatoria(fechaConvocatoria.getId());
         entity.setIdCategoriaCatedratico(categoriaModalidad.getIdCategoriaCatedratico());
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
@@ -1668,15 +1688,29 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 idCargaDocente);
     }
     
-    private void validatePlantaHasCteiOrIsuProject(CargaDocenteEntity cargaDocente) {
+    private void validatePlantaHasCteiOrIsuProject(
+            CargaDocenteEntity cargaDocente) {
+
         if (!isDocentePlanta(cargaDocente)) {
             return;
         }
 
         int totalProjects = detalleCargaDocenteRepository
-                .countCteiOrIsuProjectAssociationsByCargaDocente(cargaDocente.getId());
+                .countCteiOrIsuProjectAssociationsByCargaDocente(
+                        cargaDocente.getId()
+                );
 
         if (totalProjects > 0) {
+            return;
+        }
+
+        if (areCteiAndIsuExpired(cargaDocente)) {
+            log.info(
+                    "validatePlantaHasCteiOrIsuProject ===> " +
+                    "Se permite aprobación sin proyecto porque " +
+                    "CTEI e ISU están vencidos. idCargaDocente={}",
+                    cargaDocente.getId()
+            );
             return;
         }
 
@@ -1684,6 +1718,58 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 HttpStatus.BAD_REQUEST,
                 MENSAJE_PLANTA_SIN_PROYECTO_CTEI_ISU
         );
+    }
+
+    private boolean areCteiAndIsuExpired(
+                CargaDocenteEntity cargaDocente) {
+
+            Long idCarga = cargaDocente.getIdCarga();
+
+            if (idCarga == null) {
+                return false;
+            }
+
+            CargaEntity carga = cargaRepository.findById(idCarga)
+                    .orElse(null);
+
+            if (carga == null || carga.getIdConvocatoria() == null) {
+                return false;
+            }
+
+            List<FechasConvocatoriaEntity> fechas =
+                    convocatoriaRepository
+                            .findFechasGeneralesByConvocatoriaId(
+                                    carga.getIdConvocatoria()
+                            );
+
+            boolean cteiExpired =
+                    isGeneralDateExpired(fechas, "CTEI");
+
+            boolean isuExpired =
+                    isGeneralDateExpired(fechas, "ISU");
+
+            return cteiExpired && isuExpired;
+        }
+
+        private boolean isGeneralDateExpired(
+            List<FechasConvocatoriaEntity> fechas,
+            String codigo) {
+
+        if (fechas == null || fechas.isEmpty()) {
+            return false;
+        }
+
+        return fechas.stream()
+                .filter(fecha ->
+                        codigo.equals(
+                                normalizeUpperText(fecha.getCodigo())
+                        )
+                )
+                .map(FechasConvocatoriaEntity::getFechaFin)
+                .filter(Objects::nonNull)
+                .anyMatch(
+                        FechasConvocatoriaCalculator::isVencida
+                );
     }
 
     @Override

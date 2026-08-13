@@ -109,6 +109,29 @@ public interface FechasConvocatoriaRepository
             @Param("idCarga") Long idCarga,
             @Param("mocoId") Long mocoId);
 
+     @Query("""
+        SELECT
+            feco.id AS id,
+            feco.vacaciones AS vacaciones,
+            feco.fechaInicio AS fechaInicio,
+            feco.fechaFin AS fechaFin,
+            feco.semanas AS semanas,
+            reca.minimo AS minimo,
+            reca.maximo AS maximo
+        FROM CargaEntity carg
+        JOIN RestriccionCargaEntity reca
+            ON reca.idModalidadContratacion = :mocoId
+        JOIN FechasConvocatoriaEntity feco
+            ON feco.idConvocatoria = carg.idConvocatoria
+            AND feco.codigo = 'CNV'
+        WHERE carg.id = :idCarga
+            AND reca.tipoHoras = 'SEMANAL'
+        """)
+        List<FechaModalidadProjection>
+        findPlantByCargaAndModalityAndRestrictionSemanal(
+                @Param("idCarga") Long idCarga,
+                @Param("mocoId") Long mocoId);       
+
     @Query("""
             SELECT feco
             FROM FechasConvocatoriaEntity feco

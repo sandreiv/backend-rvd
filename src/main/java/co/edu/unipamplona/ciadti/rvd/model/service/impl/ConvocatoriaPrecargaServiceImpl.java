@@ -40,6 +40,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaTipoContratacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
@@ -58,6 +59,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private final ConvocatoriaTipoContratacionRepository convocatoriaTipoContratacionRepository;
     private final FechasConvocatoriaRepository fechasConvocatoriaRepository;
     private final PersonaGeneralRepository personaGeneralRepository;
+    private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final PersonaAutorizaConvocatoriaMapper personaAutorizaConvocatoriaMapper;
     private final ConvocatoriaDatosInsertarMapper convocatoriaDatosInsertarMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
@@ -180,7 +182,10 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 cotc.setRegistradoPor("REGISTRO_WEB");
                 Long cotcId = convocatoriaTipoContratacionRepository.save(cotc).getId();
 
-                if (cotcDto.fechas() != null) {
+                boolean esPlanta =
+                        isModalidadPlanta(cotcDto.idModalidadContratacion());
+
+                if (!esPlanta && cotcDto.fechas() != null) {
                     for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
                         FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
                         entity.setIdConvocatoria(convId);
@@ -190,9 +195,9 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                         entity.setSemanas(fecha.semanas());
                         entity.setVacaciones(fecha.vacaciones());
                         entity.setOnceMeses(
-                                    resolveOnceMeses(
-                                            fecha.fechaInicio(),
-                                            fecha.fechaFin()));
+                                resolveOnceMeses(
+                                        fecha.fechaInicio(),
+                                        fecha.fechaFin()));
                         entity.setFechaCambio(new Date());
                         entity.setRegistradoPor("REGISTRO_WEB");
                         fechasConvocatoriaRepository.save(entity);
@@ -276,12 +281,17 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 cotcIds.add(cotcId);
 
                 Set<Long> fechaModalidadIds = new HashSet<>();
-                if (cotcDto.fechas() != null) {
+
+                boolean esPlanta =
+                        isModalidadPlanta(cotcDto.idModalidadContratacion());
+
+                if (!esPlanta && cotcDto.fechas() != null) {
                     for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
                         String onceMeses =
-                                    resolveOnceMeses(
-                                            fecha.fechaInicio(),
-                                            fecha.fechaFin());
+                                resolveOnceMeses(
+                                        fecha.fechaInicio(),
+                                        fecha.fechaFin());
+
                         if (fecha.id() != null) {
                             fechasConvocatoriaRepository.updateModalidad(
                                     fecha.fechaInicio(),
@@ -291,9 +301,12 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                                     onceMeses,
                                     new Date(),
                                     fecha.id());
+
                             fechaModalidadIds.add(fecha.id());
                         } else {
-                            FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
+                            FechasConvocatoriaEntity entity =
+                                    new FechasConvocatoriaEntity();
+
                             entity.setIdConvocatoria(id);
                             entity.setIdConvocatoriaTipoContratacion(cotcId);
                             entity.setFechaInicio(fecha.fechaInicio());
@@ -302,7 +315,11 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                             entity.setVacaciones(fecha.vacaciones());
                             entity.setOnceMeses(onceMeses);
                             entity.setFechaCambio(new Date());
-                            fechaModalidadIds.add(fechasConvocatoriaRepository.save(entity).getId());
+
+                            fechaModalidadIds.add(
+                                    fechasConvocatoriaRepository
+                                            .save(entity)
+                                            .getId());
                         }
                     }
                 }
@@ -497,6 +514,29 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         }
         return idRelacion;
     }
+
+    private boolean isModalidadPlanta(Long idModalidadContratacion) {
+        if (idModalidadContratacion == null) {
+            return false;
+        }
+
+        return modalidadContratacionRepository
+                .findById(idModalidadContratacion)
+                .map(modalidad -> {
+                    String sigla = modalidad.getSigla() == null
+                            ? ""
+                            : modalidad.getSigla().trim();
+
+                    String nombre = modalidad.getNombre() == null
+                            ? ""
+                            : modalidad.getNombre().trim();
+
+                    return "PLANTA".equalsIgnoreCase(sigla)
+                            || "PLANTA".equalsIgnoreCase(nombre);
+                })
+                .orElse(false);
+    }
+
 
 }
 
