@@ -6,12 +6,14 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 12/08/2026 - Sebastian Jaimes - Rechaza anónimo; exige JWT AuthUserDetails
  */
 package co.edu.unipamplona.ciadti.rvd.config.security;
 
 import java.util.Collection;
 import java.util.function.Supplier;
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -24,8 +26,10 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Autoriza con authorities {@code METHOD:URL} (Ant patterns).
- * Si {@code enforceFuncionalidad=false}, rutas fuera del catálogo del usuario
- * pasan con JWT válido; rutas del catálogo con verbo incorrecto → 403.
+ *
+ * <p>Sin JWT válido (anónimo) siempre deniega → 401. Con JWT:
+ * {@code enforceFuncionalidad=false} deja pasar rutas fuera del catálogo;
+ * rutas del catálogo con verbo incorrecto → 403.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -40,7 +44,13 @@ public class FuncionalidadAuthorizationManager
             Supplier<Authentication> authentication,
             RequestAuthorizationContext context) {
         Authentication auth = authentication.get();
-        if (auth == null || !auth.isAuthenticated()) {
+        // AnonymousAuthenticationToken.isAuthenticated() == true; no basta
+        // con isAuthenticated(): sin Bearer hay que denegar siempre.
+        // --- usar este mientras se está en desarrollo y NO se ha enlazado con Vortal.
+        /*if (auth == null || !auth.isAuthenticated()) {
+         return new AuthorizationDecision(false);
+        }*/
+        if (!isJwtAuthenticated(auth)) {
             return new AuthorizationDecision(false);
         }
 
@@ -83,6 +93,20 @@ public class FuncionalidadAuthorizationManager
             return new AuthorizationDecision(!properties.enforceFuncionalidad());
         }
         return new AuthorizationDecision(!properties.enforceFuncionalidad());
+    }
+
+    /**
+     * Solo acepta autenticación real de SecurityAuth (principal AuthUserDetails).
+     * El anónimo de Spring pasa isAuthenticated() y no debe acceder a las APIs.
+     */
+    private static boolean isJwtAuthenticated(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        if (auth instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+        return auth.getPrincipal() instanceof AuthUserDetails;
     }
 
     private static boolean methodMatches(String authMethod, String requestMethod) {

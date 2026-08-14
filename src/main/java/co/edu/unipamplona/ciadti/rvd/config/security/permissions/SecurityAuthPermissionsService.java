@@ -6,6 +6,7 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 12/08/2026 - Sebastian Jaimes - Modos /** (módulo) vs URL granular
  */
 package co.edu.unipamplona.ciadti.rvd.config.security.permissions;
 
@@ -33,19 +34,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Resuelve permisos METHOD:URL desde SecurityAuth (misma lógica que
- * PermisoRolCacheService del AS) y los cachea en memoria.
+ * Resuelve authorities {@code METHOD:URL} desde SecurityAuth.
+ *
+ * <ul>
+ *   <li><b>Módulo completo:</b> URL con {@code /**} (o menú sin verbo + {@code /})
+ *       → {@code *:/path/**}</li>
+ *   <li><b>Granular:</b> hija con LISTAR|GUARDAR|ACTUALIZAR|ELIMINAR + URL concreta</li>
+ * </ul>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SecurityAuthPermissionsService {
 
+    /** Verbos de negocio en func_nombrefuncion → HTTP (controllers RVD). */
     private static final Map<String, String> METODOS_HTTP = Map.of(
             "LISTAR", "GET",
+            "LIST", "GET",
+            "GUARDAR", "POST",
             "ACTUALIZAR", "PUT",
-            "ELIMINAR", "DELETE",
-            "GUARDAR", "POST");
+            "ELIMINAR", "DELETE");
 
     private static final Set<String> HTTP_VERBS = Set.of(
             "GET", "POST", "PUT", "PATCH", "DELETE", "*");
@@ -118,14 +126,9 @@ public class SecurityAuthPermissionsService {
         }
     }
 
-    /**
-     * Convierte funcionalidades a authorities {@code HTTP:URL}, alineado a
-     * SecurityAuth (LISTAR→GET, GUARDAR→POST, ACTUALIZAR→PATCH, ELIMINAR→DELETE).
-     */
     Set<String> transformarPermisos(List<FuncionalidadPermisoDTO> funcionalidades) {
         return funcionalidades.stream()
-                .filter(f -> f.getUrlRecurso() != null
-                        && StringUtils.hasText(f.getUrlRecurso()))
+                .filter(f -> StringUtils.hasText(f.getUrlRecurso()))
                 .map(this::toAuthority)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -133,29 +136,57 @@ public class SecurityAuthPermissionsService {
 
     private String toAuthority(FuncionalidadPermisoDTO f) {
         String http = resolveHttpMethod(f);
-        if (http == null) {
-            return null;
+        String url = normalizeUrlRecurso(f.getUrlRecurso().trim(), http);
+        return http + ":" + url;
+    }
+
+    /**
+     * Módulo: {@code /path/**} o menú {@code *} con {@code /path/} → {@code /path/**}.
+     * Acción granular: URL concreta; si no trae {@code /**}, se añade para path vars
+     * ({@code /update-professor/{id}}).
+     */
+    static String normalizeUrlRecurso(String url, String httpMethod) {
+        String u = url.trim();
+        if (u.contains("**")) {
+            String base = u.replace("/**", "").replaceAll("/+$", "");
+            return base + "/**";
         }
-        return http + ":" + f.getUrlRecurso().trim();
+        if ("*".equals(httpMethod) && u.endsWith("/")) {
+            while (u.endsWith("/")) {
+                u = u.substring(0, u.length() - 1);
+            }
+            return u + "/**";
+        }
+        if (!"*".equals(httpMethod) && !u.endsWith("/**")) {
+            return u + "/**";
+        }
+        return u;
     }
 
     private String resolveHttpMethod(FuncionalidadPermisoDTO f) {
-        String raw = firstNonBlank(f.getMetodo(), f.getNombre());
-        if (!StringUtils.hasText(raw)) {
-            return "*";
+        for (String candidate : List.of(
+                nullToEmpty(f.getNombreFuncion()),
+                nullToEmpty(f.getMetodo()),
+                nullToEmpty(f.getNombre()))) {
+            if (!StringUtils.hasText(candidate)) {
+                continue;
+            }
+            String upper = candidate.trim().toUpperCase();
+            if ("1".equals(upper)) {
+                continue;
+            }
+            if (HTTP_VERBS.contains(upper)) {
+                return upper;
+            }
+            if (METODOS_HTTP.containsKey(upper)) {
+                return METODOS_HTTP.get(upper);
+            }
         }
-        String upper = raw.trim().toUpperCase();
-        if (HTTP_VERBS.contains(upper)) {
-            return upper;
-        }
-        return METODOS_HTTP.getOrDefault(upper, "*");
+        return "*";
     }
 
-    private static String firstNonBlank(String a, String b) {
-        if (StringUtils.hasText(a)) {
-            return a;
-        }
-        return b;
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     public static String buildCacheKey(Long idAplicacion, List<String> roles) {

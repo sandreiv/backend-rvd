@@ -1207,9 +1207,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         List<DetalleCargaDocenteDTO> result = detalleCargaDocenteMapper.toDtoList(
                 detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente),
-                proyectoMapper,
-                tipoActividadMapper,
-                tipoActividadesRepository);
+                proyectoMapper);
         
         log.info("listDetailProfessorPreload ===> Detalle precarga docente listado. idCargaDocente={}, total={}", idCargaDocente, result.size());
         return result;
