@@ -115,10 +115,10 @@ public class ProyectosServiceImpl implements ProyectosService {
                 dto != null ? dto.nombre() : null,
                 dto != null ? dto.idProyectoPadre() : null);
 
-        validateProject(dto);
+       ProyectosEntity parent = validateProject(dto);
 
         ProyectosEntity entity = new ProyectosEntity();
-        fillProject(entity, dto);
+        fillProject(entity, dto, parent);
         ProyectosEntity saved = proyectosRepository.save(entity);
 
         log.info("saveProject ===> Proyecto guardado. id={}, idProyectoPadre={}", saved.getId(), saved.getIdProyectoPadre());
@@ -126,23 +126,54 @@ public class ProyectosServiceImpl implements ProyectosService {
 
     @Override
     @Transactional
-    public void updateProject(Long id, ProyectosFormularioDTO dto) {
-        log.info("updateProject ===> Actualizando proyecto. id={}, nombre={}",
-                id, dto != null ? dto.nombre() : null);
+    public void updateProject(
+            Long id,
+            ProyectosFormularioDTO dto) {
 
-        validateProject(dto);
+        log.info(
+                "updateProject ===> Actualizando proyecto. id={}, nombre={}",
+                id,
+                dto != null ? dto.nombre() : null
+        );
 
-        ProyectosEntity entity = proyectosRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("updateProject ===> Proyecto no encontrado. id={}", id);
-                    return new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto con id " + id
-                    );
-                });
+        ProyectosEntity parent = validateProject(dto);
 
-        fillProject(entity, dto);
+        ProyectosEntity entity =
+                proyectosRepository.findById(id)
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "updateProject ===> Proyecto no encontrado. id={}",
+                                    id
+                            );
+
+                            return new ApiException(
+                                    HttpStatus.NOT_FOUND,
+                                    "No existe el proyecto con id " + id
+                            );
+                        });
+
+        if (!Objects.equals(
+                entity.getIdProyectoPadre(),
+                dto.idProyectoPadre())) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No se puede modificar el proyecto padre asociado"
+            );
+        }
+
+        fillProject(
+                entity,
+                dto,
+                parent
+        );
+
         proyectosRepository.save(entity);
 
-        log.info("updateProject ===> Proyecto actualizado. id={}", id);
+        log.info(
+                "updateProject ===> Proyecto actualizado. id={}",
+                id
+        );
     }
 
     @Override
@@ -574,70 +605,213 @@ public class ProyectosServiceImpl implements ProyectosService {
         relacionConvocatoriasRepository.save(newRelation);
     }
 
-    private void fillProject(ProyectosEntity entity, ProyectosFormularioDTO dto) {
+    private void fillProject(
+            ProyectosEntity entity,
+            ProyectosFormularioDTO dto,
+            ProyectosEntity parent) {
+
         entity.setNombre(dto.nombre().trim());
-        entity.setDescripcion(normalizeOptional(dto.descripcion()));
-        entity.setMonto(normalizeOptional(dto.monto()));
-        entity.setFechaInicio(dto.fechaInicio());
-        entity.setFechaFin(dto.fechaFin());
-        entity.setIdConvocatoriaProyectos(dto.idConvocatoriaProyectos());
-        entity.setIdTipoProyecto(dto.idTipoProyecto());
-        entity.setIdCoordinacion(dto.idCoordinacion());
-        entity.setIdProyectoPadre(dto.idProyectoPadre());
+        entity.setDescripcion(
+                normalizeOptional(dto.descripcion())
+        );
+        entity.setMonto(
+                normalizeOptional(dto.monto())
+        );
+
+        if (parent != null) {
+
+            entity.setIdConvocatoriaProyectos(
+                    parent.getIdConvocatoriaProyectos()
+            );
+
+            entity.setIdTipoProyecto(
+                    parent.getIdTipoProyecto()
+            );
+
+            entity.setIdCoordinacion(
+                    parent.getIdCoordinacion()
+            );
+
+            entity.setIdProyectoPadre(
+                    parent.getId()
+            );
+
+            entity.setFechaInicio(
+                    parent.getFechaInicio()
+            );
+
+            entity.setFechaFin(
+                    parent.getFechaFin()
+            );
+
+        } else {
+
+            entity.setIdConvocatoriaProyectos(
+                    dto.idConvocatoriaProyectos()
+            );
+
+            entity.setIdTipoProyecto(
+                    dto.idTipoProyecto()
+            );
+
+            entity.setIdCoordinacion(
+                    dto.idCoordinacion()
+            );
+
+            entity.setFechaInicio(
+                    dto.fechaInicio()
+            );
+
+            entity.setFechaFin(
+                    dto.fechaFin()
+            );
+
+            entity.setIdProyectoPadre(null);
+        }
+
         entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
     }
 
-    private void validateProject(ProyectosFormularioDTO dto) {
+
+    private ProyectosEntity validateProject(
+            ProyectosFormularioDTO dto) {
+
         if (dto == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La información del proyecto es obligatoria"
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La información del proyecto es obligatoria"
             );
         }
 
         if (!StringUtils.hasText(dto.nombre())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
-        }
-
-        if (dto.idConvocatoriaProyectos() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La convocatoria de proyecto es obligatoria"
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El nombre es obligatorio"
             );
         }
 
-        if (!convocatoriaProyectosRepository.existsById(dto.idConvocatoriaProyectos())) {
-            throw new ApiException( HttpStatus.NOT_FOUND, "No existe la convocatoria de proyecto con id " + dto.idConvocatoriaProyectos()
+        ProyectosEntity parent = null;
+
+        if (dto.idProyectoPadre() != null) {
+
+            parent = proyectosRepository
+                    .findById(dto.idProyectoPadre())
+                    .orElseThrow(() ->
+                            new ApiException(
+                                    HttpStatus.NOT_FOUND,
+                                    "No existe el proyecto padre con id "
+                                            + dto.idProyectoPadre()
+                            )
+                    );
+
+            validateParentProjectConfiguration(parent);
+
+        } else {
+
+            validateProjectConfiguration(dto);
+        }
+
+        Date fechaInicio =
+                parent != null
+                        ? parent.getFechaInicio()
+                        : dto.fechaInicio();
+
+        Date fechaFin =
+                parent != null
+                        ? parent.getFechaFin()
+                        : dto.fechaFin();
+
+        if (
+            fechaInicio != null
+            && fechaFin != null
+            && !fechaFin.after(fechaInicio)
+        ) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La fecha fin debe ser posterior a la fecha inicio"
+            );
+        }
+
+        return parent;
+    }
+
+    private void validateProjectConfiguration(
+            ProyectosFormularioDTO dto) {
+
+        if (dto.idConvocatoriaProyectos() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria de proyecto es obligatoria"
+            );
+        }
+
+        if (!convocatoriaProyectosRepository
+                .existsById(dto.idConvocatoriaProyectos())) {
+
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la convocatoria de proyecto con id "
+                            + dto.idConvocatoriaProyectos()
             );
         }
 
         if (dto.idTipoProyecto() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El tipo de proyecto es obligatorio"
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El tipo de proyecto es obligatorio"
             );
         }
 
-        if (!tipoProyectoRepository.existsById(dto.idTipoProyecto())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el tipo de proyecto con id " + dto.idTipoProyecto()
+        if (!tipoProyectoRepository
+                .existsById(dto.idTipoProyecto())) {
+
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe el tipo de proyecto con id "
+                            + dto.idTipoProyecto()
             );
         }
 
         if (dto.idCoordinacion() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La coordinación es obligatoria"
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La coordinación es obligatoria"
             );
         }
 
-        if (!coordinacionRepository.existsById(dto.idCoordinacion())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la coordinación con id " + dto.idCoordinacion()
+        if (!coordinacionRepository
+                .existsById(dto.idCoordinacion())) {
+
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la coordinación con id "
+                            + dto.idCoordinacion()
+            );
+        }
+    }
+
+    private void validateParentProjectConfiguration(
+            ProyectosEntity parent) {
+
+        if (parent.getIdConvocatoriaProyectos() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El proyecto padre no tiene una convocatoria de proyecto asociada"
             );
         }
 
-        if (dto.idProyectoPadre() != null
-                && !proyectosRepository.existsById(dto.idProyectoPadre())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe el proyecto padre con id " + dto.idProyectoPadre()
+        if (parent.getIdTipoProyecto() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El proyecto padre no tiene un tipo de proyecto asociado"
             );
         }
 
-        if (dto.fechaInicio() != null
-                && dto.fechaFin() != null
-                && !dto.fechaFin().after(dto.fechaInicio())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La fecha fin debe ser posterior a la fecha inicio"
+        if (parent.getIdCoordinacion() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El proyecto padre no tiene una coordinación asociada"
             );
         }
     }
