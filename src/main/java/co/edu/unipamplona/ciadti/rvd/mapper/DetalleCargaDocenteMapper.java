@@ -32,7 +32,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
-import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 
 @Mapper(componentModel = "spring")
@@ -57,10 +56,7 @@ public interface DetalleCargaDocenteMapper {
             DetalleCargaDocenteItemDTO detalle,
             Long idCentroCosto);
 
-    default List<DetalleCargaDocenteDTO> toDtoList(List<DetalleCargaDocenteListadoProjection> projections,
-            ProyectoMapper proyectoMapper,
-            TipoActividadMapper tipoActividadMapper,
-            TipoActividadesRepository tipoActividadesRepository) {
+    default List<DetalleCargaDocenteDTO> toDtoList(List<DetalleCargaDocenteListadoProjection> projections, ProyectoMapper proyectoMapper) {
         if (projections == null || projections.isEmpty()) {
             return List.of();
         }
@@ -69,12 +65,11 @@ public interface DetalleCargaDocenteMapper {
         List<DetalleCargaDocenteDTO> resultado = new ArrayList<>();
         for (Map.Entry<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>>
                 cargaEntry : agrupados.entrySet()) {
-            for (Map.Entry<Long, List<DetalleCargaDocenteListadoProjection>> detalleEntry : cargaEntry.getValue().entrySet()) {
+            for (Map.Entry<Long, List<DetalleCargaDocenteListadoProjection>>
+                    detalleEntry : cargaEntry.getValue().entrySet()) {
                 DetalleCargaDocenteActividadDTO detalleActividad = toActividadDto(
                         detalleEntry.getValue(),
-                        proyectoMapper,
-                        tipoActividadMapper,
-                        tipoActividadesRepository);
+                        proyectoMapper);
                 resultado.add(new DetalleCargaDocenteDTO(
                         detalleEntry.getKey(),
                         cargaEntry.getKey(),
@@ -84,13 +79,11 @@ public interface DetalleCargaDocenteMapper {
         return resultado;
     }
 
-    default List<DetalleCargaDocenteFormularioDTO> toFormularioDtoList(
-            List<DetalleCargaDocenteListadoProjection> projections) {
+    default List<DetalleCargaDocenteFormularioDTO> toFormularioDtoList(List<DetalleCargaDocenteListadoProjection> projections) {
         if (projections == null || projections.isEmpty()) {
             return List.of();
         }
-        Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>> agrupados =
-                agruparPorCargaYDetalle(projections);
+        Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>> agrupados = agruparPorCargaYDetalle(projections);
         List<DetalleCargaDocenteFormularioDTO> resultado = new ArrayList<>();
         for (Map.Entry<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>>
                 cargaEntry : agrupados.entrySet()) {
@@ -104,11 +97,8 @@ public interface DetalleCargaDocenteMapper {
         return resultado;
     }
 
-    default Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>>
-            agruparPorCargaYDetalle(
-                    List<DetalleCargaDocenteListadoProjection> projections) {
-        Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>> agrupados =
-                new LinkedHashMap<>();
+    default Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>>agruparPorCargaYDetalle(List<DetalleCargaDocenteListadoProjection> projections) {
+        Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>> agrupados = new LinkedHashMap<>();
         for (DetalleCargaDocenteListadoProjection projection : projections) {
             agrupados
                     .computeIfAbsent(
@@ -122,22 +112,14 @@ public interface DetalleCargaDocenteMapper {
         return agrupados;
     }
 
-    default DetalleCargaDocenteActividadDTO toActividadDto(
-            List<DetalleCargaDocenteListadoProjection> filas,
-            ProyectoMapper proyectoMapper,
-            TipoActividadMapper tipoActividadMapper,
-            TipoActividadesRepository tipoActividadesRepository) {
+    default DetalleCargaDocenteActividadDTO toActividadDto(List<DetalleCargaDocenteListadoProjection> filas, ProyectoMapper proyectoMapper) {
         DetalleCargaDocenteListadoProjection primera = filas.get(0);
         TipoActividadDTO tipoActividad = primera.getIdTipoActividadPadre() != null
                 ? mapTipoActividadPadre(primera)
                 : mapTipoActividadResuelto(primera);
-        List<TipoActividadDTO> tipoActividadHija = resolveTipoActividadesHijas(
-                tipoActividad,
-                tipoActividadMapper,
-                tipoActividadesRepository);
         return new DetalleCargaDocenteActividadDTO(
                 tipoActividad,
-                tipoActividadHija,
+                resolveTipoActividadesHijas(primera),
                 mapUnidad(primera),
                 mapPrograma(primera),
                 mapMateria(primera),
@@ -147,29 +129,22 @@ public interface DetalleCargaDocenteMapper {
                 collectRelacionesListado(filas, proyectoMapper));
     }
 
-    default List<TipoActividadDTO> resolveTipoActividadesHijas(
-            TipoActividadDTO tipoActividad,
-            TipoActividadMapper tipoActividadMapper,
-            TipoActividadesRepository tipoActividadesRepository) {
-        if (tipoActividad == null || tipoActividad.id() == null) {
+    default List<TipoActividadDTO> resolveTipoActividadesHijas(DetalleCargaDocenteListadoProjection projection) {
+        if (projection.getIdTipoActividadPadre() == null) {
             return List.of();
         }
-        return tipoActividadMapper.toDtoList(
-                tipoActividadesRepository.findByIdPadre(tipoActividad.id()));
+        TipoActividadDTO hija = mapTipoActividadResuelto(projection);
+        return hija != null ? List.of(hija) : List.of();
     }
 
-    default MateriaDetalleDTO mapMateria(
-            DetalleCargaDocenteListadoProjection projection) {
+    default MateriaDetalleDTO mapMateria(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getCodigoMateria() == null) {
             return null;
         }
-        return new MateriaDetalleDTO(
-                projection.getCodigoMateria(),
-                projection.getNombreMateria());
+        return new MateriaDetalleDTO(projection.getCodigoMateria(), projection.getNombreMateria());
     }
 
-    default TipoActividadDTO mapTipoActividadResuelto(
-            DetalleCargaDocenteListadoProjection projection) {
+    default TipoActividadDTO mapTipoActividadResuelto(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdTipoActividadResuelto() == null) {
             return null;
         }
@@ -183,8 +158,7 @@ public interface DetalleCargaDocenteMapper {
                 projection.getComponenteTipoActividad());
     }
 
-    default TipoActividadDTO mapTipoActividadPadre(
-            DetalleCargaDocenteListadoProjection projection) {
+    default TipoActividadDTO mapTipoActividadPadre(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdTipoActividadPadre() == null) {
             return null;
         }
@@ -202,45 +176,31 @@ public interface DetalleCargaDocenteMapper {
         if (projection.getIdUnidadRegional() == null) {
             return null;
         }
-        return new UnidadDTO(
-                projection.getIdUnidadRegional(),
-                projection.getNombreUnidadRegional());
+        return new UnidadDTO(projection.getIdUnidadRegional(), projection.getNombreUnidadRegional());
     }
 
-    default ProgramaDTO mapPrograma(
-            DetalleCargaDocenteListadoProjection projection) {
+    default ProgramaDTO mapPrograma(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdPrograma() == null) {
             return null;
         }
-        return new ProgramaDTO(
-                projection.getIdPrograma(),
-                projection.getNombrePrograma(),
-                null);
+        return new ProgramaDTO(projection.getIdPrograma(), projection.getNombrePrograma(), null);
     }
 
     default GrupoDTO mapGrupo(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdGrupo() == null) {
             return null;
         }
-        return new GrupoDTO(
-                projection.getIdGrupo(),
-                projection.getNombreGrupo(),
-                projection.getCapacidadGrupo());
+        return new GrupoDTO(projection.getIdGrupo(), projection.getNombreGrupo(), projection.getCapacidadGrupo());
     }
 
-    default CentroCostoDTO mapCentroCosto(
-            DetalleCargaDocenteListadoProjection projection) {
+    default CentroCostoDTO mapCentroCosto(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdCentroCosto() == null) {
             return null;
         }
-        return new CentroCostoDTO(
-                projection.getIdCentroCosto(),
-                projection.getDescripcionCentroCosto());
+        return new CentroCostoDTO(projection.getIdCentroCosto(), projection.getDescripcionCentroCosto());
     }
 
-    default List<RelacionCargaProyectoListadoDTO> collectRelacionesListado(
-            List<DetalleCargaDocenteListadoProjection> filas,
-            ProyectoMapper proyectoMapper) {
+    default List<RelacionCargaProyectoListadoDTO> collectRelacionesListado(List<DetalleCargaDocenteListadoProjection> filas, ProyectoMapper proyectoMapper) {
         Map<Long, RelacionCargaProyectoListadoDTO> relaciones = new LinkedHashMap<>();
         for (DetalleCargaDocenteListadoProjection fila : filas) {
             if (fila.getIdPersonaProyecto() == null) {
@@ -256,8 +216,7 @@ public interface DetalleCargaDocenteMapper {
         return new ArrayList<>(relaciones.values());
     }
 
-    default DetalleCargaDocenteItemDTO toItemDtoFromGroup(
-            List<DetalleCargaDocenteListadoProjection> filas) {
+    default DetalleCargaDocenteItemDTO toItemDtoFromGroup(List<DetalleCargaDocenteListadoProjection> filas) {
         DetalleCargaDocenteListadoProjection primera = filas.get(0);
         return new DetalleCargaDocenteItemDTO(
                 resolveIdTipoActividadPadre(primera),
@@ -274,24 +233,21 @@ public interface DetalleCargaDocenteMapper {
                 collectRelacionesCargaProyecto(filas));
     }
 
-    default Long resolveIdTipoActividadPadre(
-            DetalleCargaDocenteListadoProjection projection) {
+    default Long resolveIdTipoActividadPadre(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdTipoActividadPadre() != null) {
             return projection.getIdTipoActividadPadre();
         }
         return projection.getIdTipoActividadResuelto();
     }
 
-    default Long resolveIdTipoActividadHija(
-            DetalleCargaDocenteListadoProjection projection) {
+    default Long resolveIdTipoActividadHija(DetalleCargaDocenteListadoProjection projection) {
         if (projection.getIdTipoActividadPadre() != null) {
             return projection.getIdTipoActividadResuelto();
         }
         return null;
     }
 
-    default List<RelacionCargaProyectoDTO> collectRelacionesCargaProyecto(
-            List<DetalleCargaDocenteListadoProjection> filas) {
+    default List<RelacionCargaProyectoDTO> collectRelacionesCargaProyecto(List<DetalleCargaDocenteListadoProjection> filas) {
         Map<Long, RelacionCargaProyectoDTO> relaciones = new LinkedHashMap<>();
         for (DetalleCargaDocenteListadoProjection fila : filas) {
             if (fila.getIdPersonaProyecto() == null) {
@@ -306,9 +262,7 @@ public interface DetalleCargaDocenteMapper {
         return new ArrayList<>(relaciones.values());
     }
 
-    default DetalleCargaDocenteEntity toEntityFromDto(
-            DetalleCargaDocenteDTO dto,
-            Long idCentroCosto) {
+    default DetalleCargaDocenteEntity toEntityFromDto(DetalleCargaDocenteDTO dto, Long idCentroCosto) {
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
         DetalleCargaDocenteEntity entity = new DetalleCargaDocenteEntity();
         entity.setId(dto.idDetalleCargaDocente());
@@ -321,8 +275,7 @@ public interface DetalleCargaDocenteMapper {
         return entity;
     }
 
-    default List<RelacionCargaProyectoDTO> toRelacionesCargaProyecto(
-            List<RelacionCargaProyectoListadoDTO> relaciones) {
+    default List<RelacionCargaProyectoDTO> toRelacionesCargaProyecto(List<RelacionCargaProyectoListadoDTO> relaciones) {
         if (relaciones == null || relaciones.isEmpty()) {
             return List.of();
         }
@@ -333,14 +286,11 @@ public interface DetalleCargaDocenteMapper {
                 .toList();
     }
 
-    default Long resolveTipoActividadFromActividad(
-            DetalleCargaDocenteActividadDTO actividad) {
+    default Long resolveTipoActividadFromActividad(DetalleCargaDocenteActividadDTO actividad) {
         return resolveTipoActividadFromActividad(actividad, null);
     }
 
-    default Long resolveTipoActividadFromActividad(
-            DetalleCargaDocenteActividadDTO actividad,
-            Long idTipoActividadPersistido) {
+    default Long resolveTipoActividadFromActividad(DetalleCargaDocenteActividadDTO actividad, Long idTipoActividadPersistido) {
         List<TipoActividadDTO> hijas = actividad.tipoActividadHija();
         if (hijas != null && hijas.size() == 1 && hijas.get(0) != null) {
             return hijas.get(0).id();
