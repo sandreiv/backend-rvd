@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UsuarioSesionDTO {
     private String username;
+    private String nombreCompleto;
     private Long idPersona;
     private List<String> roles;
     private Long idAplicacion;

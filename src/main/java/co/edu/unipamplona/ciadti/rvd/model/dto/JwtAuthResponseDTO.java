@@ -18,10 +18,13 @@ import lombok.Data;
 @Data
 public class JwtAuthResponseDTO {
     private String accessToken;
+
     @JsonProperty("type")
     private String tokenType = "Bearer";
+
     private String refreshToken;
     private String username;
+    private String nombreCompleto;
     private String idPersona;
     private List<String> roles;
     private UsuarioSesionDTO usuario;
