@@ -99,6 +99,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.HistorialCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
@@ -116,6 +117,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacion
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.HistorialCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
@@ -179,6 +181,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
     private final CategoriaCatedraticoMapper categoriaCatedraticoMapper;
     private final CargaDocenteRepository cargaDocenteRepository;
+    private final HistorialCargaDocenteRepository historialCargaDocenteRepository;
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
     private final UnidadRepository unidadRepository;
@@ -690,7 +693,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setVigente("1");
         entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
-        cargaDocenteRepository.save(entity);
+        Long idNewCargaDocente = cargaDocenteRepository.save(entity).getId();
+
+        // Registrar el estado dentro del historial
+        registerProfessorPreloadHistory(idNewCargaDocente);
+
         log.info("addProfessor ===> Docente agregado. idCargaDocente={}", entity.getId());
     }
 
@@ -1028,8 +1035,37 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         validatePreassignmentWriteAllowedByCarga(entity.getIdCarga());
 
         cargaDocenteRepository.deleteByProcedure(idCargaDocente, REGISTRADO_POR);
+        
+        // Eliminar su historial de estados
+        List<HistorialCargaDocenteEntity> historialCargaDocente = historialCargaDocenteRepository.findByIdCargaDocente(idCargaDocente);
+        for (HistorialCargaDocenteEntity registro : historialCargaDocente) {
+            historialCargaDocenteRepository.deleteByProcedure(registro.getId(), REGISTRADO_POR);
+        }
 
         log.info("deleteProfessor ===> Docente eliminado. idCargaDocente={}", idCargaDocente);
+    }
+
+    @Override
+    public void registerProfessorPreloadHistory(Long idCargaDocente) {
+        log.info("registerProfessorPreloadHistory ===> Registrando estado de carga docente. idCargaDocente={}", idCargaDocente);
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> {
+                    log.warn("registerProfessorPreloadHistory ===> Carga docente no encontrada. id={}", idCargaDocente);
+                    return new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id" + idCargaDocente);
+                });
+        
+        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
+
+        HistorialCargaDocenteEntity historialCargaDocente = new HistorialCargaDocenteEntity();
+        
+        historialCargaDocente.setIdCargaDocente(idCargaDocente);
+        historialCargaDocente.setEstado(cargaDocente.getEstado());
+        historialCargaDocente.setRegistradoPor(REGISTRADO_POR);
+        historialCargaDocente.setFechaCambio(new Date());
+        historialCargaDocenteRepository.save(historialCargaDocente);
+
+        log.info("registerProfessorPreloadHistory ===> Estado de carga docente registrado. idCargaDocente={}", idCargaDocente);
     }
 
     @Override
@@ -1507,7 +1543,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setEstado("0");
         entity.setVigente("1");
         applyHorasDeExcepcion(entity);
-        cargaDocenteRepository.save(entity);
+        Long idNewCargaDocente = cargaDocenteRepository.save(entity).getId();
+
+        // Registrar el estado dentro del historial
+        registerProfessorPreloadHistory(idNewCargaDocente);
+        
         log.info("saveCareerProfessorPreload ===> Docente planta guardado en precarga. idCargaDocente={}", entity.getId());
     }
 
@@ -1610,6 +1650,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                     "No fue posible aprobar la preasignación del docente"
             );
         }
+
+        // Como ya se aprobo, se actualiza el contexto para mantener la trazabilidad en el historial
+        cargaDocente.setEstado("1");
+        // Registrar el estado dentro del historial
+        registerProfessorPreloadHistory(dto.idCargaDocente());
 
         log.info(
                 "approveProfessorActivityDistribution ===> Distribución aprobada correctamente. idCargaDocente={}",

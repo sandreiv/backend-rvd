@@ -73,6 +73,8 @@ public interface CoordinacionService {
 
     void deleteProfessor(Long idCargaDocente);
 
+    void registerProfessorPreloadHistory(Long idCargaDocente);
+
     List<UnidadDTO> listRegionalUnits(Long idCoordinacion);
 
     List<ProgramaDTO> listProgramsByRegionalUnit(Long idCoordinacion, Long idUnidadRegional, Long idNivelEducativo);
