@@ -52,7 +52,19 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 FECO.FECO_ID AS idFechasConvocatoria,
                 FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
                 FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
-                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin
+                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
+
+                CASE
+                    WHEN CADO.CADO_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLECARGADOCENTE DECD
+                            WHERE DECD.CADO_ID = CADO.CADO_ID
+                        )
+                    THEN 1
+                    ELSE 0
+                END AS tieneActividades
+
                 FROM RVD.CARGADOCENTE CADO
                 INNER JOIN RVD.CARGA CARG
                 ON CARG.CARG_ID = CADO.CARG_ID
@@ -112,7 +124,19 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 FECO.FECO_ID AS idFechasConvocatoria,
                 FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
                 FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
-                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin
+                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
+
+                CASE
+                    WHEN CADO.CADO_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLECARGADOCENTE DECD
+                            WHERE DECD.CADO_ID = CADO.CADO_ID
+                        )
+                    THEN 1
+                    ELSE 0
+                END AS tieneActividades
+
                 FROM RVD.CARGA CARG
                 INNER JOIN RVD.DOCENTESPLANTACOORDINACION DOPC
                 ON DOPC.COOR_ID = CARG.COOR_ID

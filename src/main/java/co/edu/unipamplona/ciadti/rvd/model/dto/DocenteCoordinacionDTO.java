@@ -25,5 +25,6 @@ public record DocenteCoordinacionDTO(
     String semanas,
     String onceMeses,
     String horasDeExcepcion,
-    Boolean tieneCarga
+    Boolean tieneCarga,
+    Boolean tieneDetalleActividades
 ) {}

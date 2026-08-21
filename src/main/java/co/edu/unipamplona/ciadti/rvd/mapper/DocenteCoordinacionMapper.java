@@ -16,6 +16,8 @@ public interface DocenteCoordinacionMapper {
             expression = "java(resolveFechaFin(projection))")
     @Mapping(target = "tieneCarga",
             expression = "java(projection.getIdCargaDocente() != null)")
+    @Mapping(target = "tieneDetalleActividades",
+            expression = "java(projection.getTieneActividades() != 0)")
     DocenteCoordinacionDTO toDto(
             DocenteCargaCoordinacionProjection projection);
 

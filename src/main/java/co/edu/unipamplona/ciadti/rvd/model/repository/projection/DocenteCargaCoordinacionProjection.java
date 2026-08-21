@@ -28,4 +28,5 @@ public interface DocenteCargaCoordinacionProjection {
     String getFechaConvocatoriaCodigo();
     Date getFechaConvocatoriaInicio();
     Date getFechaConvocatoriaFin();
+    Integer getTieneActividades();
 }
