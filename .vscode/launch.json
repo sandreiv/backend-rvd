@@ -9,6 +9,16 @@
             "projectName": "rvd",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-RvdApplication<rvd>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "co.edu.unipamplona.ciadti.rvd.RvdApplication",
+            "projectName": "rvd",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }
