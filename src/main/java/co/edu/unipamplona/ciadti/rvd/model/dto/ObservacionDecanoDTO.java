@@ -1,6 +1,6 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 public record ObservacionDecanoDTO(
-    Long idPersonaNatural,
+    Long idPersonaGeneral,
     String observacion
 ) {}

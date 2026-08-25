@@ -42,6 +42,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
@@ -480,6 +481,26 @@ public class CoordinationController {
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file.content());
+    }
+
+    @Operation(
+        summary = "Cambia el estado de la carga a inscrito",
+        description = "Actualiza el estado de la carga a inscrito"
+    )
+    @PutMapping("/send-preload-dean/{idCarga}")
+    public ResponseEntity<Void> endorsePreloadDean(@PathVariable Long idCarga) {
+        coordinacionService.endorsePreloadDean(idCarga);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Cambia el estado de la carga a registrado por devolución del decano",
+        description = "Actualiza el estado de la carga a registrado por devolución del decano"
+    )
+    @PutMapping("/decline-preload-dean/{idCarga}")
+    public ResponseEntity<Void> declinePreloadDean(@PathVariable Long idCarga, @RequestBody ObservacionDecanoDTO dto) {
+        coordinacionService.declinePreloadDean(idCarga, dto);
+        return ResponseEntity.ok().build();
     }
 
 }

@@ -104,6 +104,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.HistorialCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
@@ -124,6 +125,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.HistorialCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
@@ -153,11 +155,11 @@ import lombok.extern.slf4j.Slf4j;
 public class CoordinacionServiceImpl implements CoordinacionService {
 
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
-    private static final String ESTADO_CARGA_INICIAL = "REGISTRADO";
+    private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
+    private static final String ESTADO_CARGA_INSCRITA = "INSCRITO";
     private static final String ROL_COORDINADOR = "Coordinador";
     private static final String ROL_DECANO = "Decano";
     
-    private static final String ESTADO_CARGA_INSCRITA = "INSCRITO"; // POR DEFINIR
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
     
@@ -192,6 +194,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CategoriaCatedraticoMapper categoriaCatedraticoMapper;
     private final CargaDocenteRepository cargaDocenteRepository;
     private final HistorialCargaDocenteRepository historialCargaDocenteRepository;
+    private final ObservacionCargaRepository observacionCargaRepository;
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
     private final UnidadRepository unidadRepository;
@@ -2477,16 +2480,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional
     public void declinePreloadDean(Long idCarga, ObservacionDecanoDTO dto) {
         log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
-        CargaEntity entity = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+        CargaEntity carga = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
         
-        validatePreassignmentWriteAllowed(entity);
+        validatePreassignmentWriteAllowed(carga);
         Long idEstadoRegistrado = resolveEstadoCargaInicialId();
 
-        entity.setIdEstadoCarga(idEstadoRegistrado);
-        cargaRepository.save(entity);
+        carga.setIdEstadoCarga(idEstadoRegistrado);
+        cargaRepository.save(carga);
 
         // Trazabilidad observaciones
-        
+        ObservacionCargaEntity observacionCarga = new ObservacionCargaEntity();
+
+        observacionCarga.setIdCarga(idCarga);
+        observacionCarga.setIdPersonaGeneralRegistra(dto.idPersonaGeneral());
+        observacionCarga.setTexto(dto.observacion());
+        observacionCarga.setFecha(new Date());
+        observacionCarga.setRegistradoPor(REGISTRADO_POR);
+        observacionCarga.setFechaCambio(new Date());
+        observacionCargaRepository.save(observacionCarga);
 
         log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
     }
