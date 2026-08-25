@@ -238,8 +238,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         syncCategoriasModalidad(dto.idModalidadContratacion(), dto.idsCategoriasCatedratico());
         syncTiposActividadModalidad(dto.idModalidadContratacion(), dto.idsTiposActividad());
 
-        log.info("saveRestriction ===> Restricción de carga guardada. idModalidad={}",
-                dto.idModalidadContratacion());
+        log.info("saveRestriction ===> Restricción de carga guardada. idModalidad={}", dto.idModalidadContratacion());
     }
 
     private RestriccionCargaModalidadListadoDTO toListDto(ModalidadContratacionEntity entity) {
@@ -402,8 +401,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         for (RestriccionCargaPersonaExcepcionDTO persona : personas) {
             if (!personaGeneralRepository.existsById(persona.idPersona())) {
-                throw new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe una de las personas seleccionadas para la excepción");
+                throw new ApiException(HttpStatus.NOT_FOUND,"No existe una de las personas seleccionadas para la excepción");
             }
 
             validateMaximoHorasExcepcion(persona.maximoHoras());
@@ -454,8 +452,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         int updated = 0;
 
-        List<RestriccionCargaPersonaExcepcionDTO> personas =
-                cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
+        List<RestriccionCargaPersonaExcepcionDTO> personas = cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
 
         for (RestriccionCargaPersonaExcepcionDTO persona : personas) {
             String maximoHoras = clean(persona.maximoHoras());
@@ -516,24 +513,17 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
     }
 
     private String buildExcepcion(RestriccionCargaFormularioDTO dto) {
-        List<RestriccionCargaProgramaExcepcionDTO> programas =
-                cleanProgramasExcepcion(
-                        dto.programasExcepcion(),
-                        dto.idsProgramasExcepcion());
-        List<RestriccionCargaPersonaExcepcionDTO> personas =
-                cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
+        List<RestriccionCargaProgramaExcepcionDTO> programas =cleanProgramasExcepcion(dto.programasExcepcion(), dto.idsProgramasExcepcion());
+        List<RestriccionCargaPersonaExcepcionDTO> personas = cleanPersonasExcepcion(dto.personasExcepcion(), dto.idsPersonasExcepcion());
 
         if (programas.isEmpty() && personas.isEmpty()) {
             return null;
         }
 
         try {
-            return objectMapper.writeValueAsString(
-                    new RestriccionExcepcionDTO(programas, personas)
-            );
+            return objectMapper.writeValueAsString(new RestriccionExcepcionDTO(programas, personas));
         } catch (JsonProcessingException ex) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible construir la excepción de la restricción");
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "No fue posible construir la excepción de la restricción");
         }
     }
 

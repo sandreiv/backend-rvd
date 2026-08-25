@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -46,8 +47,7 @@ public interface CoordinacionService {
 
     List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
             Long idConvocatoria,
-            Long idPeriodoUniversidad,
-            Long idUsuario);
+            Long idPeriodoUniversidad);
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 

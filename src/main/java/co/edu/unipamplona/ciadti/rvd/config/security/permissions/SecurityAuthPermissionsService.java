@@ -55,8 +55,7 @@ public class SecurityAuthPermissionsService {
             "ACTUALIZAR", "PUT",
             "ELIMINAR", "DELETE");
 
-    private static final Set<String> HTTP_VERBS = Set.of(
-            "GET", "POST", "PUT", "PATCH", "DELETE", "*");
+    private static final Set<String> HTTP_VERBS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE", "*");
 
     private final SecurityAuthProperties properties;
     private RestClient restClient;
