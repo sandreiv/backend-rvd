@@ -150,6 +150,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
+    private static final String ESTADO_CARGA_INSCRITA = "INSCRITO"; // POR DEFINIR
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
     private static final BigDecimal DIAS_MES = new BigDecimal("30");
@@ -497,6 +498,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return estadoCargaRepository.findByNombre(ESTADO_CARGA_INICIAL)
                 .map(estado -> estado.getId())
                 .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"No existe el estado de carga inicial: " + ESTADO_CARGA_INICIAL));
+    }
+
+    private Long resolveEstadoCargaInscritaId() {
+        return estadoCargaRepository.findByNombre(ESTADO_CARGA_INSCRITA)
+                .map(estado -> estado.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"No existe el estado de carga inscrita: " + ESTADO_CARGA_INICIAL));
     }
 
     private void validateSavePreload(RelacionConvocatoriaCoordinacionDTO dto) {
@@ -2377,6 +2384,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 idModalidadContratacion,
                 result.size());
         return result;
+    }
+
+    @Override
+    @Transactional
+    public void endorsePreload(Long idCarga) {
+        log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
+        CargaEntity entity = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+        
+        validatePreassignmentWriteAllowed(entity);
+        Long idEstadoInscrito = resolveEstadoCargaInscritaId();
+
+        entity.setIdEstadoCarga(idEstadoInscrito);
+        cargaRepository.save(entity);
+        log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
     }
 
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {

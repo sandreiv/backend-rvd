@@ -476,4 +476,13 @@ public class CoordinationController {
                 .body(file.content());
     }
 
+    @Operation(
+        summary = "Cambia el estado de la carga a inscrito",
+        description = "Actualiza el estado de la carga a inscrita"
+    )
+    @PutMapping("/endorse-preload/{idCarga}")
+    public ResponseEntity<Void> endorsePreload(@PathVariable Long idCarga) {
+        coordinacionService.endorsePreload(idCarga);
+        return ResponseEntity.ok().build();
+    }
 }

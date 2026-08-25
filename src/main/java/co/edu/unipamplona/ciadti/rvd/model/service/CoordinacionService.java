@@ -132,4 +132,6 @@ public interface CoordinacionService {
     void deleteCoordinationRestriction(Long id, CoordinacionRestriccionDTO dto);
 
     void bulkDeleteCoordinationRestriction(List<CoordinacionRestriccionDTO> restricciones);
+
+    void endorsePreload(Long idCarga);
 }
