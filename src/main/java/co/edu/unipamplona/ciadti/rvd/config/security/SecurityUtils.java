@@ -6,6 +6,7 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 25/08/2026 - Sebastian Jaimes - requireUser para listados por JWT
  */
 package co.edu.unipamplona.ciadti.rvd.config.security;
 
@@ -31,7 +32,15 @@ public final class SecurityUtils {
         return currentUser().map(AuthUserDetails::getIdPersonaGeneral);
     }
 
+    public static AuthUserDetails requireUser() {
+        return currentUser().orElseThrow(() -> new IllegalStateException("No hay usuario autenticado en el contexto de seguridad"));
+    }
+
     public static Long requireIdPersona() {
-        return currentIdPersona().orElseThrow(() -> new IllegalStateException("No hay idPersona en el contexto de seguridad"));
+        Long idPersona = requireUser().getIdPersonaGeneral();
+        if (idPersona == null) {
+            throw new IllegalStateException("No hay idPersona en el contexto de seguridad");
+        }
+        return idPersona;
     }
 }

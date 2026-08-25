@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -30,6 +31,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
@@ -46,8 +48,7 @@ public interface CoordinacionService {
 
     List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
             Long idConvocatoria,
-            Long idPeriodoUniversidad,
-            Long idUsuario);
+            Long idPeriodoUniversidad);
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 
@@ -134,4 +135,6 @@ public interface CoordinacionService {
     void bulkDeleteCoordinationRestriction(List<CoordinacionRestriccionDTO> restricciones);
 
     void endorsePreloadDean(Long idCarga);
+
+    void declinePreloadDean(Long idCarga, ObservacionDecanoDTO dto);
 }

@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -35,6 +36,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import co.edu.unipamplona.ciadti.rvd.config.security.AuthUserDetails;
+import co.edu.unipamplona.ciadti.rvd.config.security.SecurityUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.ActividadModalidadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CargaDocenteMapper;
@@ -77,6 +80,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
@@ -149,21 +153,26 @@ import lombok.extern.slf4j.Slf4j;
 public class CoordinacionServiceImpl implements CoordinacionService {
 
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
-    private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
+    private static final String ESTADO_CARGA_INICIAL = "REGISTRADO";
+    private static final String ROL_COORDINADOR = "Coordinador";
+    private static final String ROL_DECANO = "Decano";
+    
     private static final String ESTADO_CARGA_INSCRITA = "INSCRITO"; // POR DEFINIR
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
+    
     private static final BigDecimal DIAS_MES = new BigDecimal("30");
     private static final BigDecimal DIAS_ANIO = new BigDecimal("360");
     private static final BigDecimal DIAS_VACACIONES = new BigDecimal("720");
     private static final BigDecimal TASA_INTERES = new BigDecimal("0.12");
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
     private static final BigDecimal CIEN = new BigDecimal("100");
+    
     private static final String CODIGO_ACTIVIDAD_DIRECTA = "FAD";
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
-    private static final String MENSAJE_PLANTA_SIN_PROYECTO_CTEI_ISU =
-        "Debe tener un proyecto CTEI o ISU asociado para aprobar";
+    private static final String MENSAJE_PLANTA_SIN_PROYECTO_CTEI_ISU = "Debe tener un proyecto CTEI o ISU asociado para aprobar";
+   
     private final CoordinacionRepository coordinacionRepository;
     private final CargaRepository cargaRepository;
     private final ConvocatoriaRepository convocatoriaRepository;
@@ -217,24 +226,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional(readOnly = true)
     public List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
             Long idConvocatoria,
-            Long idPeriodoUniversidad,
-            Long idUsuario) {
+            Long idPeriodoUniversidad) {
+        AuthUserDetails user = requireListadoUser();
+        Long idPersona = user.getIdPersonaGeneral();
+        boolean coordinador = hasRole(user, ROL_COORDINADOR);
+        boolean decano = hasRole(user, ROL_DECANO);
         log.debug(
-                "findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idPeriodoUniversidad={}, idUsuario={}",
-                idConvocatoria, idPeriodoUniversidad, idUsuario);
+                "findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, coordinador={}, decano={}",
+                idConvocatoria, idPeriodoUniversidad, idPersona, coordinador, decano);
 
-        List<CoordinacionListadoProjection> projections;
-        if (idConvocatoria != null) {
-            if (idPeriodoUniversidad != null) {
-                validateConvocatoriaBelongsToPeriod(idConvocatoria, idPeriodoUniversidad);
-            }
-            projections = coordinacionRepository.findByConvocatoriaWithCarga(idConvocatoria, idUsuario);
-        } else {
-            if (idPeriodoUniversidad == null) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio cuando no se envía convocatoria");
-            }
-            projections = coordinacionRepository.findWithoutCarga(
-                    idUsuario, idPeriodoUniversidad);
+        validateListadoFiltros(idConvocatoria, idPeriodoUniversidad);
+        List<CoordinacionListadoProjection> projections = new ArrayList<>();
+        if (coordinador) {
+            projections.addAll(listForCoordinador(
+                    idConvocatoria, idPeriodoUniversidad, idPersona));
+        }
+        if (decano) {
+            projections.addAll(listForDecano(
+                    idConvocatoria, idPeriodoUniversidad, idPersona));
         }
 
         List<CoordinacionDTO> result = coordinacionMapper.toDtoList(projections);
@@ -242,6 +251,70 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 "findCoordinationsByIdConvocatoria ===> Coordinaciones listadas. idConvocatoria={}, idPeriodoUniversidad={}, total={}",
                 idConvocatoria, idPeriodoUniversidad, result.size());
         return result;
+    }
+
+    private AuthUserDetails requireListadoUser() {
+        AuthUserDetails user;
+        try {
+            user = SecurityUtils.requireUser();
+            System.out.println("[DEBUG] USER: " + user);
+        } catch (IllegalStateException ex) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        }
+        if (user.getIdPersonaGeneral() == null) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
+        }
+        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "El listado de coordinaciones requiere rol Coordinador o Decano");
+        }
+        return user;
+    }
+
+    private void validateListadoFiltros(Long idConvocatoria, Long idPeriodoUniversidad) {
+        if (idConvocatoria != null && idPeriodoUniversidad != null) {
+            validateConvocatoriaBelongsToPeriod(idConvocatoria, idPeriodoUniversidad);
+        }
+        if (idConvocatoria == null && idPeriodoUniversidad == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio cuando no se envía convocatoria");
+        }
+    }
+
+    private List<CoordinacionListadoProjection> listForCoordinador(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad,
+            Long idPersona) {
+        if (idConvocatoria != null) {
+            System.out.println("[DEBUG] LISTANDO COMO COORDINADOR");
+            System.out.println("[DEBUG] idConvocatoria: " + idConvocatoria);
+            System.out.println("[DEBUG] idPersona: " + idPersona);
+            return coordinacionRepository.findByConvocatoriaWithCarga(idConvocatoria, idPersona);
+        }
+        System.out.println("[DEBUG] LISTANDO SIN CONVOCATORIA");
+        System.out.println("[DEBUG] idPeriodoUniversidad: " + idPeriodoUniversidad);
+        System.out.println("[DEBUG] idPersona: " + idPersona);
+        return coordinacionRepository.findWithoutCarga(idPersona, idPeriodoUniversidad);
+    }
+
+    private List<CoordinacionListadoProjection> listForDecano(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad,
+            Long idPersona) {
+        if (idConvocatoria != null) {
+            System.out.println("[DEBUG] LISTANDO COMO DECANO");
+            System.out.println("[DEBUG] idConvocatoria: " + idConvocatoria);
+            System.out.println("[DEBUG] idPersona: " + idPersona);
+            return coordinacionRepository.findByConvocatoriaForDean(idConvocatoria, idPersona);
+        }
+        System.out.println("[DEBUG] LISTANDO COMO DECANO SIN CONVOCATORIA");
+        System.out.println("[DEBUG] idPeriodoUniversidad: " + idPeriodoUniversidad);
+        System.out.println("[DEBUG] idPersona: " + idPersona);
+        return coordinacionRepository.findByPeriodoForDean(idPeriodoUniversidad, idPersona);
+    }
+
+    private static boolean hasRole(AuthUserDetails user, String role) {
+        return user.getRoles().stream()
+                .filter(Objects::nonNull)
+                .anyMatch(item -> role.equalsIgnoreCase(item.trim()));
     }
 
     private void validateConvocatoriaBelongsToPeriod(
@@ -2397,6 +2470,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         entity.setIdEstadoCarga(idEstadoInscrito);
         cargaRepository.save(entity);
+        log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
+    }
+
+    @Override
+    @Transactional
+    public void declinePreloadDean(Long idCarga, ObservacionDecanoDTO dto) {
+        log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
+        CargaEntity entity = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+        
+        validatePreassignmentWriteAllowed(entity);
+        Long idEstadoRegistrado = resolveEstadoCargaInicialId();
+
+        entity.setIdEstadoCarga(idEstadoRegistrado);
+        cargaRepository.save(entity);
+
+        // Trazabilidad observaciones
+        
+
         log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
     }
 

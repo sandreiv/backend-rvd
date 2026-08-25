@@ -72,8 +72,7 @@ public class LoadRestrictionController {
         description = "Registra o actualiza la restricción de carga de una modalidad de contratación"
     )
     @PostMapping("/restriction/save")
-    public ResponseEntity<Void> saveRestriction(
-            @RequestBody RestriccionCargaFormularioDTO dto) {
+    public ResponseEntity<Void> saveRestriction(@RequestBody RestriccionCargaFormularioDTO dto) {
         restriccionCargaAdministracionService.saveRestriction(dto);
         return ResponseEntity.noContent().build();
     }

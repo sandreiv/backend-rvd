@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -41,6 +42,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
@@ -57,6 +59,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
+import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -68,6 +71,7 @@ public class CoordinationController {
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
     private final PreasignacionReporteService preasignacionReporteService;
+    private final PeriodoUniversidadService periodoUniversidadService;
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
@@ -90,29 +94,31 @@ public class CoordinationController {
         return new ResponseEntity<>(activePreloadCalls, HttpStatus.OK);
     }
 
-    // Controlador para buscar las coordinaciones del usuario
-    /**
-     * TO-DO: implementar obtencion de ID del usuario logueado.
-     * Dos opciones: obtenerlo desde el contexto de la aplicacion aca en el backend.
-     * Obtener el ID desde el frontend /{idPersonaGeneral}
-     * 
-     */
+    @Operation(
+        summary = "Obtiene la lista de periodos de universidad",
+        description = "Obtiene la lista de periodos de universidad"
+    )
+    @GetMapping("/list-university-period")
+    public ResponseEntity<List<PeriodoUniversidadDTO>> listUniversityPeriod() {
+        List<PeriodoUniversidadDTO> periods = periodoUniversidadService.findUniversityPeriodList();
+        return new ResponseEntity<>(periods, HttpStatus.OK);
+    }
+
     @Operation(
         summary = "Obtiene la lista de coordinaciones",
         description = """
-            Sin idConvocatoria: requiere idPeriodoUniversidad; coordinaciones sin carga en ese periodo.
-            Con idConvocatoria: coordinaciones con carga en esa convocatoria activa.
+            Identidad y roles salen del JWT (idPersona + roles del bootstrap).
+            Coordinador: sus coordinaciones en PERSONACOORDINACION.
+            Decano: coordinaciones hijas de sus facultades, carga INSCRITO.
+            Sin idConvocatoria: requiere idPeriodoUniversidad.
             """
     )
     @GetMapping("/list")
     public ResponseEntity<?> listCoordinations(
             @RequestParam(required = false) Long idConvocatoria,
             @RequestParam(required = false) Long idPeriodoUniversidad) throws Exception {
-        //String idUsuario = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        // Este Id es de prueba y solo sera temporal. ------------------ CAMBIAR --------------------
-        Long idUsuario = 239419L;
-        //Long idUsuario = SecurityUtils.requireIdPersona(); // TODO: Implementar, permite conocer con seguridad el id del usuario logueado.
-        List<CoordinacionDTO> coordinations = coordinacionService.findCoordinationsByIdConvocatoria(idConvocatoria, idPeriodoUniversidad, idUsuario);
+        List<CoordinacionDTO> coordinations = coordinacionService.findCoordinationsByIdConvocatoria(idConvocatoria, idPeriodoUniversidad);
+        
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
     }
 
@@ -476,13 +482,4 @@ public class CoordinationController {
                 .body(file.content());
     }
 
-    @Operation(
-        summary = "Cambia el estado de la carga a inscrito",
-        description = "Actualiza el estado de la carga a inscrita"
-    )
-    @PutMapping("/send-preload-dean/{idCarga}")
-    public ResponseEntity<Void> endorsePreloadDean(@PathVariable Long idCarga) {
-        coordinacionService.endorsePreloadDean(idCarga);
-        return ResponseEntity.ok().build();
-    }
 }
