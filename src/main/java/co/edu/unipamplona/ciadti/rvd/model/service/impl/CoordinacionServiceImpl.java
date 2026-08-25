@@ -2388,7 +2388,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void endorsePreload(Long idCarga) {
+    public void endorsePreloadDean(Long idCarga) {
         log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
         CargaEntity entity = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
         

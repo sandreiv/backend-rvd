@@ -133,5 +133,5 @@ public interface CoordinacionService {
 
     void bulkDeleteCoordinationRestriction(List<CoordinacionRestriccionDTO> restricciones);
 
-    void endorsePreload(Long idCarga);
+    void endorsePreloadDean(Long idCarga);
 }

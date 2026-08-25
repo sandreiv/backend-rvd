@@ -480,9 +480,9 @@ public class CoordinationController {
         summary = "Cambia el estado de la carga a inscrito",
         description = "Actualiza el estado de la carga a inscrita"
     )
-    @PutMapping("/endorse-preload/{idCarga}")
-    public ResponseEntity<Void> endorsePreload(@PathVariable Long idCarga) {
-        coordinacionService.endorsePreload(idCarga);
+    @PutMapping("/send-preload-dean/{idCarga}")
+    public ResponseEntity<Void> endorsePreloadDean(@PathVariable Long idCarga) {
+        coordinacionService.endorsePreloadDean(idCarga);
         return ResponseEntity.ok().build();
     }
 }
