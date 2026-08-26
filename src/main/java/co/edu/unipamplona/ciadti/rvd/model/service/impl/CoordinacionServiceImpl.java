@@ -2403,12 +2403,49 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente) {
-        log.debug("getProfessorLoadSummary ===> idCargaDocente={}", idCargaDocente);
-        ValorContratacionDTO valorContratacion = getContractValue(idCargaDocente);
-        List<ActividadHorasResumenDTO> horasActividades = listActivityHours(idCargaDocente);
-        List<CentroCostoResumenDTO> centrosCosto = buildCostCenters(idCargaDocente, valorContratacion.totalContrato());
-        log.info("getProfessorLoadSummary ===> id={}, actividades={}, centros={}", idCargaDocente, horasActividades.size(), centrosCosto.size());
-        return new ResumenCargaDocenteDTO(idCargaDocente, valorContratacion, horasActividades, centrosCosto);
+        log.debug(
+                "getProfessorLoadSummary ===> idCargaDocente={}",
+                idCargaDocente
+        );
+
+        CargaDocenteEntity cargaDocente =
+                findCargaDocenteOrThrow(idCargaDocente);
+
+        boolean docentePlanta = isDocentePlanta(cargaDocente);
+
+        ValorContratacionDTO valorContratacion =
+                docentePlanta
+                        ? null
+                        : getContractValue(idCargaDocente);
+
+        List<ActividadHorasResumenDTO> horasActividades =
+                listActivityHours(idCargaDocente);
+
+        BigDecimal totalContrato =
+                valorContratacion != null
+                        ? valorContratacion.totalContrato()
+                        : BigDecimal.ZERO;
+
+        List<CentroCostoResumenDTO> centrosCosto =
+                buildCostCenters(
+                        idCargaDocente,
+                        totalContrato
+                );
+
+        log.info(
+                "getProfessorLoadSummary ===> id={}, planta={}, actividades={}, centros={}",
+                idCargaDocente,
+                docentePlanta,
+                horasActividades.size(),
+                centrosCosto.size()
+        );
+
+        return new ResumenCargaDocenteDTO(
+                idCargaDocente,
+                valorContratacion,
+                horasActividades,
+                centrosCosto
+        );
     }
 
     @Override
