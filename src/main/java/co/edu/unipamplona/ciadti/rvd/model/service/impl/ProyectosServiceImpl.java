@@ -50,6 +50,8 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ConvocatoriaPro
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PersonaProyectoListaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ProyectosListaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.ProyectosService;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,7 +60,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProyectosServiceImpl implements ProyectosService {
 
-    private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final String ESTADO_ACTIVO = "1";
 
     private final ProyectosRepository proyectosRepository;
@@ -199,7 +200,10 @@ public class ProyectosServiceImpl implements ProyectosService {
             );
         }
 
-        BigDecimal result = proyectosRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = proyectosRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteProject ===> Procedimiento de eliminación falló. id={}, resultado={}",
@@ -293,7 +297,10 @@ public class ProyectosServiceImpl implements ProyectosService {
             );
         }
 
-        BigDecimal result = personaProyectoRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = personaProyectoRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteProjectPerson ===> Procedimiento falló. id={}, resultado={}", id, result);
@@ -388,7 +395,10 @@ public class ProyectosServiceImpl implements ProyectosService {
             );
         }
 
-        BigDecimal result = tipoProyectoRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = tipoProyectoRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteProjectType ===> Procedimiento de eliminación falló. id={}, resultado={}", id, result);
@@ -447,7 +457,9 @@ public class ProyectosServiceImpl implements ProyectosService {
         relation.setIdConvocatoriaProyectos(saved.getId());
         relation.setIdConvocatoria(dto.idConvocatoria());
         relation.setEstado(ESTADO_ACTIVO);
-        relation.setRegistradoPor(REGISTRADO_POR);
+        relation.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
         relation.setFechaCambio(new Date());
         relacionConvocatoriasRepository.save(relation);
 
@@ -518,7 +530,10 @@ public class ProyectosServiceImpl implements ProyectosService {
             );
         }
 
-        BigDecimal result = convocatoriaProyectosRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = convocatoriaProyectosRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteProjectCall ===> Procedimiento de eliminación falló. id={}, resultado={}", id, result);
@@ -571,7 +586,9 @@ public class ProyectosServiceImpl implements ProyectosService {
                     isTarget ? ESTADO_ACTIVO : "0"
             );
 
-            relation.setRegistradoPor(REGISTRADO_POR);
+            relation.setRegistradoPor(
+                    RegistradoPorUtils.value(Accion.UPDATE)
+            );
             relation.setFechaCambio(new Date());
 
             if (isTarget) {
@@ -599,7 +616,9 @@ public class ProyectosServiceImpl implements ProyectosService {
         );
 
         newRelation.setEstado(ESTADO_ACTIVO);
-        newRelation.setRegistradoPor(REGISTRADO_POR);
+        newRelation.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
         newRelation.setFechaCambio(new Date());
 
         relacionConvocatoriasRepository.save(newRelation);
@@ -669,7 +688,13 @@ public class ProyectosServiceImpl implements ProyectosService {
             entity.setIdProyectoPadre(null);
         }
 
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(
+                RegistradoPorUtils.value(
+                        entity.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
         entity.setFechaCambio(new Date());
     }
 
@@ -825,7 +850,13 @@ public class ProyectosServiceImpl implements ProyectosService {
         entity.setTipo(normalizeOptional(dto.tipo()));
         entity.setHoras(normalizeOptional(dto.horas()));
         entity.setObservacion(normalizeOptional(dto.observacion()));
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(
+        RegistradoPorUtils.value(
+                        entity.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
         entity.setFechaCambio(new Date());
     }
 
@@ -876,7 +907,13 @@ public class ProyectosServiceImpl implements ProyectosService {
         entity.setNombre(dto.nombre().trim());
         entity.setDescripcion(dto.descripcion().trim());
         entity.setCodigo(dto.codigo().trim().toUpperCase());
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(
+        RegistradoPorUtils.value(
+                        entity.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
         entity.setFechaCambio(new Date());
     }
 
@@ -920,7 +957,13 @@ public class ProyectosServiceImpl implements ProyectosService {
         entity.setMinimoProductos(normalizeOptional(dto.minimoProductos()));
         entity.setMinimoConocimientoTi(normalizeOptional(dto.minimoConocimientoTi()));
         entity.setTipo(dto.tipo().trim());
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(
+        RegistradoPorUtils.value(
+                        entity.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
         entity.setFechaCambio(new Date());
     }
 

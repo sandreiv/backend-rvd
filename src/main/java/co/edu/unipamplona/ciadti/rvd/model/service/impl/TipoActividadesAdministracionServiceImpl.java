@@ -28,6 +28,8 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TipoActividadAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.TipoActividadesAdministracionService;
 import lombok.RequiredArgsConstructor;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TipoActividadesAdministracionServiceImpl implements TipoActividadesAdministracionService {
 
-    private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final Set<String> CODIGOS_PERMITIDOS = Set.of("CTEI", "AC", "FAD", "FAI", "ISU");
 
     private final TipoActividadesRepository tipoActividadesRepository;
@@ -159,7 +160,10 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
             );
         }
 
-        BigDecimal result = tipoActividadesRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = tipoActividadesRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteActivityType ===> Procedimiento de eliminación falló. id={}, resultado={}",
@@ -246,7 +250,13 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
         entity.setMinimoHoras(String.valueOf(dto.minimoHoras()));
         entity.setMaximoHoras(String.valueOf(dto.maximoHoras()));
         entity.setEstado(normalizeStatus(dto.estado()));
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(
+        RegistradoPorUtils.value(
+                        entity.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
         entity.setFechaCambio(new Date());
     }
 

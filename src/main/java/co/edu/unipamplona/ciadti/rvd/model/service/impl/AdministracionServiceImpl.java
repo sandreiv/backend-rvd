@@ -48,6 +48,8 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaCoordinacionRepository;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;;
 
@@ -55,8 +57,6 @@ import lombok.extern.slf4j.Slf4j;;
 @Service
 @RequiredArgsConstructor
 public class AdministracionServiceImpl implements AdministracionService {
-
-    private static final String REGISTRADO_POR = "REGISTRO_WEB";
 
     private final AsociacionCoordinacionRepository asociacionCoordinacionRepository;
     private final AsignarCentroCostoRepository asignarCentroCostoRepository;
@@ -162,7 +162,10 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la asociación con id " + id);
         }
 
-        BigDecimal result = asociacionCoordinacionRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = asociacionCoordinacionRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteCoordinationAssociation ===> Procedimiento de eliminación falló. id={}, resultado={}",
@@ -193,7 +196,10 @@ public class AdministracionServiceImpl implements AdministracionService {
                 ids.size());
     }
 
-    private void fillAssociation(AsociacionCoordinacionEntity association, AsociacionCoordinacionFormularioDTO dto) {
+    private void fillAssociation(
+            AsociacionCoordinacionEntity association,
+            AsociacionCoordinacionFormularioDTO dto
+    ) {
         String codigoMateria = normalizeText(dto.codigoMateria());
         boolean hasProgram = dto.idPrograma() != null;
         boolean hasSubject = StringUtils.hasText(codigoMateria);
@@ -204,7 +210,15 @@ public class AdministracionServiceImpl implements AdministracionService {
         association.setIdCentroCosto(hasProgram ? dto.idCentroCosto() : null);
 
         association.setEstado(normalizeStatus(dto.estado()));
-        association.setRegistradoPor(REGISTRADO_POR);
+
+        association.setRegistradoPor(
+                RegistradoPorUtils.value(
+                        association.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
+
         association.setFechaCambio(new Date());
     }
 
@@ -335,7 +349,10 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el centro de costo asignado con id " + id);
         }
 
-        BigDecimal result = asignarCentroCostoRepository.deleteByProcedure(id, REGISTRADO_POR);
+        BigDecimal result = asignarCentroCostoRepository.deleteByProcedure(
+                id,
+                RegistradoPorUtils.value(Accion.DELETE)
+        );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
             log.warn("deleteCostCenterAssignment ===> Procedimiento de eliminación falló. id={}, resultado={}",
@@ -373,7 +390,15 @@ public class AdministracionServiceImpl implements AdministracionService {
         entity.setIdCoordinacion(dto.idCoordinacion());
         entity.setIdCentroCosto(dto.idCentroCosto());
         entity.setEstado("1".equals(normalizeStatus(dto.estado())) ? 1L : 0L);
-        entity.setRegistradoPor(REGISTRADO_POR);
+
+        entity.setRegistradoPor(
+                RegistradoPorUtils.value(
+                        entity.getId() == null
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
+
         entity.setFechaCambio(new Date());
     }
 
@@ -431,6 +456,11 @@ public class AdministracionServiceImpl implements AdministracionService {
 
         PersonaCoordinacionEntity entity = new PersonaCoordinacionEntity();
         fillPeopleCoordination(entity, dto);
+
+        entity.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
+
         personaCoordinacionRepository.save(entity);
 
         log.info("savePeopleCoordination ===> Persona asociada a coordinación guardada. idPersonaGeneral={}, idCoordinacion={}",
@@ -466,7 +496,7 @@ public class AdministracionServiceImpl implements AdministracionService {
             BigDecimal result = personaCoordinacionRepository.deleteByProcedure(
                     oldIdPersonaGeneral,
                     oldIdCoordinacion,
-                    REGISTRADO_POR
+                    RegistradoPorUtils.value(Accion.DELETE)
             );
 
             if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
@@ -479,6 +509,15 @@ public class AdministracionServiceImpl implements AdministracionService {
 
         PersonaCoordinacionEntity entity = new PersonaCoordinacionEntity();
         fillPeopleCoordination(entity, dto);
+
+        entity.setRegistradoPor(
+                RegistradoPorUtils.value(
+                        keyChanged
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
+
         personaCoordinacionRepository.save(entity);
 
         log.info("updatePeopleCoordination ===> Persona asociada a coordinación actualizada. idPersonaGeneral={}, idCoordinacion={}",
@@ -502,7 +541,7 @@ public class AdministracionServiceImpl implements AdministracionService {
         BigDecimal result = personaCoordinacionRepository.deleteByProcedure(
                 idPersonaGeneral,
                 idCoordinacion,
-                REGISTRADO_POR
+                RegistradoPorUtils.value(Accion.DELETE)
         );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
@@ -565,8 +604,15 @@ public class AdministracionServiceImpl implements AdministracionService {
 
         validatePersonCoordination(dto);
         
-        DocentesPlantaCoordinacionEntity entity = new DocentesPlantaCoordinacionEntity();
+        DocentesPlantaCoordinacionEntity entity =
+                new DocentesPlantaCoordinacionEntity();
+
         fillPlantProfessorCoordination(entity, dto);
+
+        entity.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
+
         docentesPlantaCoordinacionRepository.save(entity);
 
         log.info("savePlantProfessorCoordination ===> Docente planta asociado guardado. idPersonaGeneral={}, idCoordinacion={}",
@@ -599,10 +645,11 @@ public class AdministracionServiceImpl implements AdministracionService {
             log.info("updatePlantProfessorCoordination ===> Cambio de llave detectado. Eliminando docente planta asociado anterior. oldIdPersonaGeneral={}, oldIdCoordinacion={}",
                     oldIdPersonaGeneral, oldIdCoordinacion);
 
-            BigDecimal result = docentesPlantaCoordinacionRepository.deleteByProcedure(
+            BigDecimal result =
+            docentesPlantaCoordinacionRepository.deleteByProcedure(
                     oldIdPersonaGeneral,
                     oldIdCoordinacion,
-                    REGISTRADO_POR
+                    RegistradoPorUtils.value(Accion.DELETE)
             );
 
             if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
@@ -613,8 +660,19 @@ public class AdministracionServiceImpl implements AdministracionService {
             validateProcedureResult(result, "No se pudo eliminar el docente planta asociado anterior");
         }
 
-        DocentesPlantaCoordinacionEntity entity = new DocentesPlantaCoordinacionEntity();
+        DocentesPlantaCoordinacionEntity entity =
+                new DocentesPlantaCoordinacionEntity();
+
         fillPlantProfessorCoordination(entity, dto);
+
+        entity.setRegistradoPor(
+                RegistradoPorUtils.value(
+                        keyChanged
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
+
         docentesPlantaCoordinacionRepository.save(entity);
 
         log.info("updatePlantProfessorCoordination ===> Docente planta asociado actualizado. idPersonaGeneral={}, idCoordinacion={}",
@@ -635,10 +693,11 @@ public class AdministracionServiceImpl implements AdministracionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe el docente planta asociado a la coordinación");
         }
 
-        BigDecimal result = docentesPlantaCoordinacionRepository.deleteByProcedure(
+        BigDecimal result =
+        docentesPlantaCoordinacionRepository.deleteByProcedure(
                 idPersonaGeneral,
                 idCoordinacion,
-                REGISTRADO_POR
+                RegistradoPorUtils.value(Accion.DELETE)
         );
 
         if (result == null || BigDecimal.ONE.compareTo(result) != 0) {
@@ -671,19 +730,23 @@ public class AdministracionServiceImpl implements AdministracionService {
                 registros.size());
     }
 
-    private void fillPeopleCoordination(PersonaCoordinacionEntity entity, PersonaCoordinacionFormularioDTO dto) {
+    private void fillPeopleCoordination(
+            PersonaCoordinacionEntity entity,
+            PersonaCoordinacionFormularioDTO dto
+    ) {
         entity.setIdPersonaGeneral(dto.idPersonaGeneral());
         entity.setIdCoordinacion(dto.idCoordinacion());
         entity.setEstado("1".equals(normalizeStatus(dto.estado())) ? 1L : 0L);
-        entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
     }
 
-    private void fillPlantProfessorCoordination(DocentesPlantaCoordinacionEntity entity, PersonaCoordinacionFormularioDTO dto) {
+   private void fillPlantProfessorCoordination(
+            DocentesPlantaCoordinacionEntity entity,
+            PersonaCoordinacionFormularioDTO dto
+    ) {
         entity.setIdPersonaGeneral(dto.idPersonaGeneral());
         entity.setIdCoordinacion(dto.idCoordinacion());
         entity.setEstado(normalizeStatus(dto.estado()));
-        entity.setRegistradoPor(REGISTRADO_POR);
         entity.setFechaCambio(new Date());
     }
 
