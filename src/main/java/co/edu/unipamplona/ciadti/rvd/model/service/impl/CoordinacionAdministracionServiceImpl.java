@@ -37,6 +37,8 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdm
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionAdministracionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 
 @Slf4j
 @Service
@@ -317,7 +319,7 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
 
         entity.setCodigo(StringUtils.hasText(dto.codigo()) ? dto.codigo().trim() : null);
         entity.setEsAcademica(normalizeCheck(dto.esAcademica()));
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         entity.setFechaCambio(new Date());
     }
 
@@ -332,7 +334,7 @@ public class CoordinacionAdministracionServiceImpl implements CoordinacionAdmini
         entity.setIdCoordinacion(idCoordinacion);
         entity.setIdCentroCosto(idCentroCosto);
         entity.setEstado(1L);
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         entity.setFechaCambio(new Date());
 
         AsignarCentroCostoEntity saved = asignarCentroCostoRepository.save(entity);

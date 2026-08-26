@@ -30,8 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public final class RegistradoPorUtils {
 
     public static final int MAX_LENGTH = 150;
-    private static final DateTimeFormatter FECHA =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public enum Accion {
         INSERT("I"),

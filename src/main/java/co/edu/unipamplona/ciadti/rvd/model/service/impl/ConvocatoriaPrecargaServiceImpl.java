@@ -48,6 +48,8 @@ import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaEstadoService;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 
 @Slf4j
 @Service
@@ -155,7 +157,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         convocatoria.setIdRelacion(resolveIdRelacion(datos.idRelacion(), null));
         convocatoria.setEstado("1");
         convocatoria.setFechaCambio(new Date());
-        convocatoria.setRegistradoPor("REGISTRO_WEB");
+        convocatoria.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         Long convId = convocatoriaRepository.save(convocatoria).getId();
         log.info("Convocatoria creada. id={}", convId);
 
@@ -168,7 +170,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 entity.setFechaFin(fecha.fechaFin());
                 entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMeses(fecha.fechaInicio(), fecha.fechaFin()));
                 entity.setFechaCambio(new Date());
-                entity.setRegistradoPor("REGISTRO_WEB");
+                entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
                 fechasConvocatoriaRepository.save(entity);
             }
         }
@@ -179,7 +181,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 cotc.setIdConvocatoria(convId);
                 cotc.setIdModalidadContratacion(cotcDto.idModalidadContratacion());
                 cotc.setFechaCambio(new Date());
-                cotc.setRegistradoPor("REGISTRO_WEB");
+                cotc.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
                 Long cotcId = convocatoriaTipoContratacionRepository.save(cotc).getId();
 
                 boolean esPlanta =
@@ -199,7 +201,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                                         fecha.fechaInicio(),
                                         fecha.fechaFin()));
                         entity.setFechaCambio(new Date());
-                        entity.setRegistradoPor("REGISTRO_WEB");
+                        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
                         fechasConvocatoriaRepository.save(entity);
                     }
                 }
