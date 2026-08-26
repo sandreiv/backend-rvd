@@ -53,14 +53,14 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdminis
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TipoActividadAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.RestriccionCargaAdministracionService;
 import lombok.RequiredArgsConstructor;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RestriccionCargaAdministracionServiceImpl implements RestriccionCargaAdministracionService {
-
-    private static final String REGISTRADO_POR = "REGISTRO_WEB";
 
     private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final RestriccionCargaRepository restriccionCargaRepository;
@@ -214,8 +214,12 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         validateRestriction(dto);
 
-        RestriccionCargaEntity entity = restriccionCargaRepository
-                .findById(dto.idModalidadContratacion())
+        var restrictionExistente = restriccionCargaRepository
+        .findById(dto.idModalidadContratacion());
+
+        boolean isNewRestriction = restrictionExistente.isEmpty();
+
+        RestriccionCargaEntity entity = restrictionExistente
                 .orElseGet(() -> {
                     RestriccionCargaEntity created = new RestriccionCargaEntity();
                     created.setIdModalidadContratacion(dto.idModalidadContratacion());
@@ -229,7 +233,11 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         entity.setTipoContrato(clean(dto.tipoContrato()));
         entity.setTipoHoras(clean(dto.tipoHoras()));
         entity.setExcepcion(buildExcepcion(dto));
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(
+        RegistradoPorUtils.value(
+                        isNewRestriction ? Accion.INSERT : Accion.UPDATE
+                )
+        );
         entity.setFechaCambio(new Date());
 
         restriccionCargaRepository.save(entity);
@@ -447,7 +455,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         int cleared = cargaDocenteRepository.clearHorasDeExcepcionByModalidad(
                 idModalidadContratacion,
-                REGISTRADO_POR
+                RegistradoPorUtils.value(Accion.UPDATE)
         );
 
         int updated = 0;
@@ -465,7 +473,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                     idModalidadContratacion,
                     persona.idPersona(),
                     maximoHoras,
-                    REGISTRADO_POR
+                    RegistradoPorUtils.value(Accion.UPDATE)
             );
         }
 
@@ -486,7 +494,9 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
             CategoriaModalidadEntity entity = new CategoriaModalidadEntity();
             entity.setIdModalidadContratacion(idModalidadContratacion);
             entity.setIdCategoriaCatedratico(idCategoriaCatedratico);
-            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setRegistradoPor(
+                    RegistradoPorUtils.value(Accion.INSERT)
+            );
             entity.setFechaCambio(new Date());
 
             categoriaModalidadRepository.save(entity);
@@ -505,7 +515,9 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
             entity.setIdModalidadContratacion(idModalidadContratacion);
             entity.setIdTipoActividades(idTipoActividad);
             entity.setOrden(String.valueOf(orden++));
-            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setRegistradoPor(
+                    RegistradoPorUtils.value(Accion.INSERT)
+            );
             entity.setFechaCambio(new Date());
 
             tipoActividadModalidadRepository.save(entity);

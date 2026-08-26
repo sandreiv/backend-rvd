@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
+ * 25/08/2026 - Sebastian Jaimes - registradoPor con idPersona, acción e IP
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -146,6 +147,8 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadP
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -352,7 +355,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             carga.setIdEstadoCarga(resolveEstadoCargaInicialId());
         }
 
-        carga.setRegistradoPor(REGISTRADO_POR);
+        carga.setRegistradoPor(RegistradoPorUtils.value(isNewCarga ? Accion.INSERT : Accion.UPDATE));
         carga.setFechaCambio(new Date());
 
         cargaRepository.save(carga);
@@ -458,7 +461,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         copia.setNivelFormacion(origen.getNivelFormacion());
         copia.setMomento(origen.getMomento());
         copia.setOnceMeses(origen.getOnceMeses());
-        copia.setRegistradoPor(REGISTRADO_POR);
+        copia.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         copia.setFechaCambio(new Date());
         return copia;
     }
@@ -770,7 +773,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta modalidad de contratacion");
         }
         CargaDocenteEntity entity = cargaDocenteMapper.toEntity(dto);
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         entity.setFechaCambio(new Date());
         entity.setEstado("0");
         entity.setVigente("1");
@@ -1094,7 +1097,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         validatePreassignmentWriteAllowedByCarga(entity.getIdCarga());
 
         cargaDocenteMapper.updateEntity(dto, entity);
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
         entity.setFechaCambio(new Date());
         entity.setOnceMeses(
                 FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
@@ -1117,12 +1120,14 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         validatePreassignmentWriteAllowedByCarga(entity.getIdCarga());
 
-        cargaDocenteRepository.deleteByProcedure(idCargaDocente, REGISTRADO_POR);
-        
+        String registradoPor = RegistradoPorUtils.value(Accion.DELETE);
+        cargaDocenteRepository.deleteByProcedure(idCargaDocente, registradoPor);
+
         // Eliminar su historial de estados
         List<HistorialCargaDocenteEntity> historialCargaDocente = historialCargaDocenteRepository.findByIdCargaDocente(idCargaDocente);
         for (HistorialCargaDocenteEntity registro : historialCargaDocente) {
-            historialCargaDocenteRepository.deleteByProcedure(registro.getId(), REGISTRADO_POR);
+            historialCargaDocenteRepository.deleteByProcedure(
+                    registro.getId(), registradoPor);
         }
 
         log.info("deleteProfessor ===> Docente eliminado. idCargaDocente={}", idCargaDocente);
@@ -1144,7 +1149,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         
         historialCargaDocente.setIdCargaDocente(idCargaDocente);
         historialCargaDocente.setEstado(cargaDocente.getEstado());
-        historialCargaDocente.setRegistradoPor(REGISTRADO_POR);
+        historialCargaDocente.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT));
         historialCargaDocente.setFechaCambio(new Date());
         historialCargaDocenteRepository.save(historialCargaDocente);
 
@@ -1307,7 +1313,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             Long idCentroCosto = resolveIdCentroCosto(detalle, idCoordinacion);
             DetalleCargaDocenteEntity entity = detalleCargaDocenteMapper.toEntity(
                     dto.idCargaDocente(), detalle, idCentroCosto);
-            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
             entity.setFechaCambio(new Date());
             DetalleCargaDocenteEntity saved = detalleCargaDocenteRepository.save(entity);
             saveRelacionesCargaProyecto(saved.getId(), detalle.relacionCargaProyecto());
@@ -1352,7 +1358,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 .resolveTipoActividadFromActividad(
                         actividad,
                         detallePersistido.getIdTipoActividad()));
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
         entity.setFechaCambio(new Date());
         detalleCargaDocenteRepository.save(entity);
 
@@ -1578,7 +1584,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
         for (RelacionCargaProyectoDTO relacion : relaciones) {
             RelacionCargaProyectoEntity entity = relacionCargaProyectoMapper.toEntity(idDetalleCargaDocente, relacion);
-            entity.setRegistradoPor(REGISTRADO_POR);
+            entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
             entity.setFechaCambio(new Date());
             relacionCargaProyectoRepository.save(entity);
         }
@@ -1621,7 +1627,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         CargaDocenteEntity entity = cargaDocenteMapper.toEntityFromPlanta(dto);
         entity.setIdFechasConvocatoria(fechaConvocatoria.getId());
         entity.setIdCategoriaCatedratico(categoriaModalidad.getIdCategoriaCatedratico());
-        entity.setRegistradoPor(REGISTRADO_POR);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         entity.setFechaCambio(new Date());
         entity.setEstado("0");
         entity.setVigente("1");
@@ -1661,7 +1667,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         validatePreassignmentWriteAllowedByDetalle(idDetalleCargaDocente);
 
-        detalleCargaDocenteRepository.deleteByProcedure(idDetalleCargaDocente, REGISTRADO_POR);
+        detalleCargaDocenteRepository.deleteByProcedure(
+                idDetalleCargaDocente,
+                RegistradoPorUtils.value(Accion.DELETE));
 
         log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
     }
@@ -1723,7 +1731,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         int updated = cargaDocenteRepository.approvePreassignmentById(
                 dto.idCargaDocente(),
-                REGISTRADO_POR
+                RegistradoPorUtils.value(Accion.UPDATE)
         );
 
 
@@ -1822,7 +1830,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         int updated = cargaDocenteRepository.approvePreassignmentById(
                 idCargaDocente,
-                REGISTRADO_POR
+                RegistradoPorUtils.value(Accion.UPDATE)
         );
 
         if (updated == 0) {
@@ -2077,7 +2085,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         RestriccionPorCoordinacionEntity restriccion =
                 restriccionPorCoordinacionMapper.toEntity(dto);
 
-        restriccion.setRegistradoPor(REGISTRADO_POR);
+        restriccion.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         restriccion.setFechaCambio(new Date());
 
         restriccionPorCoordinacionRepository.save(restriccion);
@@ -2189,7 +2197,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             carga.setIdEstadoCarga(resolveEstadoCargaInicialId());
         }
 
-        carga.setRegistradoPor(REGISTRADO_POR);
+        carga.setRegistradoPor(RegistradoPorUtils.value(
+                carga.getId() == null ? Accion.INSERT : Accion.UPDATE));
         carga.setFechaCambio(new Date());
 
         cargaRepository.save(carga);
@@ -2235,9 +2244,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         );
 
         restriccionPorCoordinacionMapper.updateEntity(dto, entity);
-                entity.setRegistradoPor(REGISTRADO_POR);
-                entity.setFechaCambio(new Date());
-                restriccionPorCoordinacionRepository.save(entity);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        entity.setFechaCambio(new Date());
+        restriccionPorCoordinacionRepository.save(entity);
 
         convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(oldIdFechasConvocatoria);
         convocatoriaEstadoService.syncEstadoConvocatoriaByFecha(dto.idFechasConvocatoria());
