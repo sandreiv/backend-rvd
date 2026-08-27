@@ -31,6 +31,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
@@ -113,6 +114,8 @@ public interface CoordinacionService {
     List<ActividadHorasResumenDTO> listActivityHours(Long idCargaDocente);
 
     List<CentroCostoResumenDTO> listCostCenters(Long idCargaDocente);
+
+    List<ObservacionCargaDTO> listPreloadObservations(Long idCarga);
 
     ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente);
 
