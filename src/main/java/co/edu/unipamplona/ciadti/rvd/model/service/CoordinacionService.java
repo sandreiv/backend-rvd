@@ -139,7 +139,7 @@ public interface CoordinacionService {
 
     void endorsePreloadDean(Long idCarga);
 
-    void declinePreloadDean(Long idCarga, ObservacionDecanoDTO dto);
+    void declinePreload(Long idCarga, ObservacionDecanoDTO dto);
 
     void approvePreloadDean(Long idCarga);
 

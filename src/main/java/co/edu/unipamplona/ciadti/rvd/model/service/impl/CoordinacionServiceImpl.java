@@ -158,7 +158,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CoordinacionServiceImpl implements CoordinacionService {
 
-    private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
     private static final String ESTADO_CARGA_INSCRITA = "INSCRITO";
     private static final String ESTADO_CARGA_APROBADO_DECANO = "APROBADO DECANO";
@@ -2592,7 +2591,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void declinePreloadDean(Long idCarga, ObservacionDecanoDTO dto) {
+    public void declinePreload(Long idCarga, ObservacionDecanoDTO dto) {
         log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
         CargaEntity carga = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
         
@@ -2602,15 +2601,30 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         carga.setIdEstadoCarga(idEstadoRegistrado);
         cargaRepository.save(carga);
 
+        // Usuario quien registra
+        AuthUserDetails user;
+        String rolPersonaRegistra = null;
+        try {
+            user = SecurityUtils.requireUser();
+        } catch (IllegalStateException ex) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        }
+
+        if (hasRole(user, ROL_DECANO)) {
+            rolPersonaRegistra = ROL_DECANO;
+        } else if (hasRole(user, ROL_DESARROLLO)) {
+            rolPersonaRegistra = ROL_DESARROLLO;
+        }
+
         // Trazabilidad observaciones
         ObservacionCargaEntity observacionCarga = new ObservacionCargaEntity();
 
         observacionCarga.setIdCarga(idCarga);
         observacionCarga.setIdPersonaGeneralRegistra(dto.idPersonaGeneral());
-        observacionCarga.setRolPersonaGeneralRegistra(ROL_DECANO);
+        observacionCarga.setRolPersonaGeneralRegistra(rolPersonaRegistra);
         observacionCarga.setTexto(dto.observacion());
         observacionCarga.setFecha(new Date());
-        observacionCarga.setRegistradoPor(REGISTRADO_POR);
+        observacionCarga.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
         observacionCarga.setFechaCambio(new Date());
         observacionCargaRepository.save(observacionCarga);
 

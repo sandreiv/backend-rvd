@@ -509,7 +509,7 @@ public class CoordinationController {
     )
     @PutMapping("/decline-preload-dean/{idCarga}")
     public ResponseEntity<Void> declinePreloadDean(@PathVariable Long idCarga, @RequestBody ObservacionDecanoDTO dto) {
-        coordinacionService.declinePreloadDean(idCarga, dto);
+        coordinacionService.declinePreload(idCarga, dto);
         return ResponseEntity.ok().build();
     }
 
@@ -534,7 +534,7 @@ public class CoordinationController {
             @PathVariable Long idCarga,
             @RequestBody ObservacionDecanoDTO dto
     ) {
-        coordinacionService.declinePreloadDean(idCarga, dto);
+        coordinacionService.declinePreload(idCarga, dto);
         return ResponseEntity.ok().build();
     }
 
