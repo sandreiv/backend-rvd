@@ -9,14 +9,14 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public record ProyectosFormularioDTO(
     String nombre,
     String descripcion,
     String monto,
-    Date fechaInicio,
-    Date fechaFin,
+    LocalDate fechaInicio,
+    LocalDate fechaFin,
     Long idConvocatoriaProyectos,
     Long idTipoProyecto,
     Long idCoordinacion,

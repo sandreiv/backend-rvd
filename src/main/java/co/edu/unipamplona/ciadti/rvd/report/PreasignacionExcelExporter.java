@@ -12,8 +12,8 @@ package co.edu.unipamplona.ciadti.rvd.report;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -196,7 +196,7 @@ public class PreasignacionExcelExporter {
             return rowIdx;
         }
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         for (DocentePreasignacionReporteDTO docente : docentes) {
             writeDocenteRow(sheet.createRow(rowIdx++), docente, styles, dateFormat);
         }
@@ -250,7 +250,7 @@ public class PreasignacionExcelExporter {
             Row row,
             DocentePreasignacionReporteDTO docente,
             Styles styles,
-            SimpleDateFormat dateFormat) {
+            DateTimeFormatter dateFormat) {
 
         setText(row, 0, docente.nombreCompleto(), styles.data);
         setText(row, 1, docente.documento(), styles.data);
@@ -294,11 +294,11 @@ public class PreasignacionExcelExporter {
         setNumber(row, COL_TOTAL_HORAS, totalHoras, styles.number);
     }
 
-    private String formatDate(Date date, SimpleDateFormat dateFormat) {
+    private String formatDate(LocalDate date, DateTimeFormatter dateFormat) {
         if (date == null) {
             return "";
         }
-        return dateFormat.format(date);
+        return date.format(dateFormat);
     }
 
     private String nullToEmpty(String value) {

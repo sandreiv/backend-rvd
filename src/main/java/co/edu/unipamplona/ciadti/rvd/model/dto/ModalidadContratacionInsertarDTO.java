@@ -1,6 +1,6 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -8,7 +8,7 @@ public record ModalidadContratacionInsertarDTO(
     @JsonProperty("idModalidadContratacion")
     Long id,
     String vacaciones, 
-    Date fechaInicio,
-    Date fechaFin, 
+    LocalDate fechaInicio,
+    LocalDate fechaFin, 
     String semanas
 ) {}

@@ -1,7 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 
 public record CargaDocenteFormularioDTO(
     Long idPersonaGeneral,
@@ -9,8 +9,8 @@ public record CargaDocenteFormularioDTO(
     Long idCategoriaCatedratico,
     Long idCarga,
     FechasConvocatoriaFormularioDTO fechasConvocatoria,
-    Date fechaInicio,
-    Date fechaFin,
+    LocalDate fechaInicio,
+    LocalDate fechaFin,
     BigDecimal valorContrato,
     BigDecimal valorPrestaciones,
     BigDecimal asignacionSalarial,

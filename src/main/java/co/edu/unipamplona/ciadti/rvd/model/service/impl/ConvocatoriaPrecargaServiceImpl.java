@@ -9,6 +9,7 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -458,7 +459,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         );
     }
 
-    private String resolveOnceMeses(Date fechaInicio, Date fechaFin) {
+    private String resolveOnceMeses(LocalDate fechaInicio, LocalDate fechaFin) {
         if (fechaInicio == null || fechaFin == null) {
             return "0";
         }

@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +44,8 @@ public interface FechasConvocatoriaRepository
             """)
     int updateGeneral(
             @Param("codigo") String codigo,
-            @Param("fechaInicio") Date fechaInicio,
-            @Param("fechaFin") Date fechaFin,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
             @Param("onceMeses") String onceMeses,
             @Param("fechaCambio") Date fechaCambio,
             @Param("id") Long id);
@@ -61,8 +62,8 @@ public interface FechasConvocatoriaRepository
             where f.id = :id
             """)
     int updateModalidad(
-            @Param("fechaInicio") Date fechaInicio,
-            @Param("fechaFin") Date fechaFin,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
             @Param("semanas") String semanas,
             @Param("vacaciones") String vacaciones,
             @Param("onceMeses") String onceMeses,

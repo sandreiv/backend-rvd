@@ -11,7 +11,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Map;
 
 public record DocentePreasignacionReporteDTO(
@@ -20,8 +20,8 @@ public record DocentePreasignacionReporteDTO(
     String documento,
     String puntos,
     String categoria,
-    Date fechaInicio,
-    Date fechaFin,
+    LocalDate fechaInicio,
+    LocalDate fechaFin,
     String semanas,
     BigDecimal asignacionSalarial,
     ValorContratacionDTO valorContratacion,

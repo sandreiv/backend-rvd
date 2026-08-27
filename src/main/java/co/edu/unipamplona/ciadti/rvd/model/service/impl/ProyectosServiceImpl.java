@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -737,12 +738,12 @@ public class ProyectosServiceImpl implements ProyectosService {
             validateProjectConfiguration(dto);
         }
 
-        Date fechaInicio =
+        LocalDate fechaInicio =
                 parent != null
                         ? parent.getFechaInicio()
                         : dto.fechaInicio();
 
-        Date fechaFin =
+        LocalDate fechaFin =
                 parent != null
                         ? parent.getFechaFin()
                         : dto.fechaFin();
@@ -750,7 +751,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         if (
             fechaInicio != null
             && fechaFin != null
-            && !fechaFin.after(fechaInicio)
+            && !fechaFin.isAfter(fechaInicio)
         ) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,

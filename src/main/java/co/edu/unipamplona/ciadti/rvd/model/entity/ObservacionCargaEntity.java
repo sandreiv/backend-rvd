@@ -64,6 +64,9 @@ public class ObservacionCargaEntity implements Serializable, Cloneable {
     @Column(name = "PEGE_IDREGISTRA")
     private Long idPersonaGeneralRegistra;
 
+    @Column(name = "OBCA_PEGEROL")
+    private String rolPersonaGeneralRegistra;
+
     @Column(name = "OBSE_TEXTO")
     private String texto;
 
@@ -103,6 +106,7 @@ public class ObservacionCargaEntity implements Serializable, Cloneable {
                 "id=" + id +
                 ", idCarga=" + idCarga +
                 ", idPersonaGeneralRegistra=" + idPersonaGeneralRegistra +
+                ", rolPersonaGeneralRegistra=" + rolPersonaGeneralRegistra +
                 ", texto=" + texto +
                 ", fecha=" + fecha +
                 ", registradoPor=" + registradoPor +
