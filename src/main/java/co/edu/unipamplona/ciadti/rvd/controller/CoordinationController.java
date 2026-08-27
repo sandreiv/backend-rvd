@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
+ * 27/08/2026 - Horas de actividades por carga
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -41,6 +42,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -548,6 +550,16 @@ public class CoordinationController {
     ) {
         coordinacionService.approvePreloadDevelopment(idCarga);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Obtiene las horas de actividades por carga",
+        description = "Retorna las horas agrupadas por tipo de actividad padre (FAD, FAI, AC, ISU, CTEI) y el total de horas"
+    )
+    @GetMapping("/activities-hours")
+    public ResponseEntity<HorasActividadesCargaDTO> getActivitiesHours(@RequestParam Long idCarga) {
+        HorasActividadesCargaDTO horas = coordinacionService.getActivitiesHours(idCarga);
+        return new ResponseEntity<>(horas, HttpStatus.OK);
     }
 
 }

@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 27/08/2026 - Horas agrupadas por actividad padre
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -20,6 +21,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasActividadPadreProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TotalHorasPreasignacionProjection;
@@ -136,6 +138,48 @@ public interface DetalleCargaDocenteRepository
                 TA.TIAC_NOMBRE
             """, nativeQuery = true)
     List<TotalHorasPreasignacionProjection> findTotalHorasPreasignacionByCargaId(
+            @Param("cargId") Long cargId);
+
+    @Query(value = """
+            SELECT
+                PADRE.TIAC_CODIGO AS codigo,
+                PADRE.TIAC_NOMBRE AS nombre,
+                NVL(HORAS.totalHoras, 0) AS horas
+            FROM RVD.TIPOACTIVIDADES PADRE
+            LEFT JOIN (
+                SELECT
+                    NVL(TA.TIAC_IDPADRE, TA.TIAC_ID) AS idActividadPadre,
+                    SUM(
+                        NVL(
+                            TO_NUMBER(
+                                REPLACE(TRIM(DECD.DECD_HORAS), ',', '.')
+                                DEFAULT NULL ON CONVERSION ERROR
+                            ),
+                            0
+                        )
+                    ) AS totalHoras
+                FROM RVD.CARGA CARG
+                INNER JOIN RVD.CARGADOCENTE CADO
+                    ON CADO.CARG_ID = CARG.CARG_ID
+                INNER JOIN RVD.DETALLECARGADOCENTE DECD
+                    ON DECD.CADO_ID = CADO.CADO_ID
+                INNER JOIN RVD.TIPOACTIVIDADES TA
+                    ON TA.TIAC_ID = DECD.TIAC_ID
+                WHERE CARG.CARG_ID = :cargId
+                GROUP BY
+                    NVL(TA.TIAC_IDPADRE, TA.TIAC_ID)
+            ) HORAS
+                ON HORAS.idActividadPadre = PADRE.TIAC_ID
+            WHERE PADRE.TIAC_IDPADRE IS NULL
+            ORDER BY
+                CASE
+                    WHEN REGEXP_LIKE(NVL(PADRE.TIAC_ORDEN, '0'), '^[0-9]+$')
+                    THEN TO_NUMBER(PADRE.TIAC_ORDEN)
+                    ELSE 999999
+                END,
+                PADRE.TIAC_NOMBRE
+            """, nativeQuery = true)
+    List<HorasActividadPadreProjection> findHorasPorActividadPadreByCargaId(
             @Param("cargId") Long cargId);
 
     @Query(value = """

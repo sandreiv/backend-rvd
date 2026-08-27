@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
+ * 27/08/2026 - Horas de actividades por carga
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -30,6 +31,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -108,6 +110,8 @@ public interface CoordinacionService {
     void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto);
 
     TotalPreasignacionDTO getTotalPreload(Long idCarga);
+
+    HorasActividadesCargaDTO getActivitiesHours(Long idCarga);
 
     ValorContratacionDTO getContractValue(Long idCargaDocente);
 
