@@ -162,7 +162,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String ESTADO_CARGA_INSCRITA = "INSCRITO";
     private static final String ROL_COORDINADOR = "Coordinador";
     private static final String ROL_DECANO = "Decano";
-    
+    private static final String ROL_DESARROLLO = "Desarrollo academico";
+
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
     
@@ -270,7 +271,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (user.getIdPersonaGeneral() == null) {
             throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
         }
-        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO)) {
+        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "El listado de coordinaciones requiere rol Coordinador o Decano");
         }
         return user;
