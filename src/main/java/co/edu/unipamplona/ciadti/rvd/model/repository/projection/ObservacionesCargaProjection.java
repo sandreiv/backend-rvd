@@ -1,6 +1,6 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public interface ObservacionesCargaProjection {
     
@@ -8,6 +8,5 @@ public interface ObservacionesCargaProjection {
     String getNombrePersonaGeneral();
     String getRolPersonaGeneral();
     String getObservacion();
-    Date getFecha();
-
+    LocalDateTime getFecha();
 }
