@@ -50,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
@@ -80,6 +81,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
@@ -225,6 +227,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
     private final RestriccionPorCoordinacionMapper restriccionPorCoordinacionMapper;
     private final TotalPreasignacionMapper totalPreasignacionMapper;
+    private final ObservacionesCargaMapper observacionesCargaMapper;
     private final ConvocatoriaEstadoService convocatoriaEstadoService;
 
     @Override
@@ -2397,6 +2400,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.debug("listCostCenters ===> idCargaDocente={}", idCargaDocente);
         ValorContratacionDTO valor = getContractValue(idCargaDocente);
         return buildCostCenters(idCargaDocente, valor.totalContrato());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ObservacionCargaDTO> listPreloadObservations(Long idCarga) {
+        log.debug("listPreloadObservations ===> idCarga={}", idCarga);
+
+        List<ObservacionCargaDTO> result = observacionesCargaMapper.toDtoList(observacionCargaRepository.findAllWithPreload(idCarga));
+        return result;
     }
 
     @Override

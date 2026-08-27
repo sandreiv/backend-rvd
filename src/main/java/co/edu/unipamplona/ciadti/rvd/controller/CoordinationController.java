@@ -42,6 +42,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
@@ -481,6 +482,15 @@ public class CoordinationController {
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file.content());
+    }
+
+    @Operation(
+        summary = "Obtiene las observaciones por carga",
+        description = "Retorna lista con la observación, fecha y persona quien la realizo"
+    )
+    @GetMapping("/preload-observations/{idCarga}")
+    public ResponseEntity<List<ObservacionCargaDTO>> getPreloadObservations(@PathVariable Long idCarga) {
+        return new ResponseEntity<>(coordinacionService.listPreloadObservations(idCarga), HttpStatus.OK);
     }
 
     @Operation(
