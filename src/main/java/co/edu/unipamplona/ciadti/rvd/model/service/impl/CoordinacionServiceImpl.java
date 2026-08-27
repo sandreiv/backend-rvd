@@ -8,6 +8,7 @@
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  * 25/08/2026 - Sebastian Jaimes - registradoPor con idPersona, acción e IP
+ * 27/08/2026 - Horas de actividades por carga
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -49,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.DocentePlantaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.HorasActividadesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
@@ -80,6 +82,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadPadreDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -229,6 +233,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
     private final RestriccionPorCoordinacionMapper restriccionPorCoordinacionMapper;
     private final TotalPreasignacionMapper totalPreasignacionMapper;
+    private final HorasActividadesCargaMapper horasActividadesCargaMapper;
     private final ObservacionesCargaMapper observacionesCargaMapper;
     private final ConvocatoriaEstadoService convocatoriaEstadoService;
 
@@ -2014,6 +2019,39 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         log.info("getTotalPreload ===> Total de preasignacion obtenido. idCarga={}, totalDocentes={}, totalPreasignacion={}", idCarga, result.totalDocentes(), result.totalPreasignacion());
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HorasActividadesCargaDTO getActivitiesHours(Long idCarga) {
+        log.debug("getActivitiesHours ===> Obteniendo horas de actividades. idCarga={}", idCarga);
+        assertCargaExists(idCarga);
+        HorasActividadesCargaDTO result = buildHorasActividadesCarga(idCarga);
+        log.info("getActivitiesHours ===> Horas de actividades obtenidas. idCarga={}, totalHoras={}",
+                idCarga, result.totalHoras());
+        return result;
+    }
+
+    private void assertCargaExists(Long idCarga) {
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
+    }
+
+    private HorasActividadesCargaDTO buildHorasActividadesCarga(Long idCarga) {
+        List<HorasActividadPadreDTO> horasPorPadre =
+                horasActividadesCargaMapper.toDtoList(
+                        detalleCargaDocenteRepository.findHorasPorActividadPadreByCargaId(idCarga));
+        if (horasPorPadre == null) {
+            horasPorPadre = Collections.emptyList();
+        }
+        BigDecimal sumaHoras = horasPorPadre.stream()
+                .map(item -> item.horas() != null ? item.horas() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return new HorasActividadesCargaDTO(horasPorPadre, sumaHoras);
     }
 
     private Object[] extractTotalRow(List<Object[]> totalesRows) {
