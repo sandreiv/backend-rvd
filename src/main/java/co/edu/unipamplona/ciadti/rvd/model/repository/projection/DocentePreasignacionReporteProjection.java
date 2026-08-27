@@ -11,7 +11,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 
 public interface DocentePreasignacionReporteProjection {
 
@@ -39,9 +39,9 @@ public interface DocentePreasignacionReporteProjection {
 
     BigDecimal getSalario();
 
-    Date getFechaInicio();
+    LocalDate getFechaInicio();
 
-    Date getFechaFin();
+    LocalDate getFechaFin();
 
     String getSemanas();
 }

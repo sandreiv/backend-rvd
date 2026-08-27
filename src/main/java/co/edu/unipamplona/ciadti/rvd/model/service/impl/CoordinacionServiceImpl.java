@@ -14,7 +14,6 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2601,21 +2600,16 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     private long resolveCantidadDiasContrato(CargaDocenteEntity cargaDocente) {
-        Date fechaInicio = cargaDocente.getFechaInicio();
-        Date fechaFin = cargaDocente.getFechaFin();
+        LocalDate fechaInicio = cargaDocente.getFechaInicio();
+        LocalDate fechaFin = cargaDocente.getFechaFin();
         if (fechaInicio == null || fechaFin == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente no tiene fechas de inicio y fin");
         }
-        LocalDate inicio = fechaInicio.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-        LocalDate fin = fechaFin.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-        if (fin.isBefore(inicio)) {
+
+        if (fechaFin.isBefore(fechaInicio)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La fecha fin no puede ser anterior a la fecha inicio");
         }
-        return ChronoUnit.DAYS.between(inicio, fin) + 1;
+        return ChronoUnit.DAYS.between(fechaInicio, fechaFin) + 1;
     }
 
     private String resolveCodigoActividad(DetalleCargaDocenteListadoProjection detalle) {

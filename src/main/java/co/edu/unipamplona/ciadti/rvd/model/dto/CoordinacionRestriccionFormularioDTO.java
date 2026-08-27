@@ -1,11 +1,11 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public record CoordinacionRestriccionFormularioDTO(
     Long idCoordinacion,
     Long idFechasConvocatoria,
-    Date fechaInicio,
-    Date fechaFin,
+    LocalDate fechaInicio,
+    LocalDate fechaFin,
     String estado
 ) {}

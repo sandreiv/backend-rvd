@@ -11,7 +11,6 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,12 +20,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.NamedStoredProcedureQuery;
 import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.ParameterMode;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -67,10 +67,10 @@ public class FechasConvocatoriaEntity implements Serializable, Cloneable{
     private Long idTipoActividades;*/
 
     @Column(name = "FECO_FECHAINICIO")
-    private Date fechaInicio;
+    private LocalDate fechaInicio;
 
     @Column(name = "FECO_FECHAFIN")
-    private Date fechaFin;
+    private LocalDate fechaFin;
 
     @Column(name = "FECO_CODIGO")
     private String codigo;

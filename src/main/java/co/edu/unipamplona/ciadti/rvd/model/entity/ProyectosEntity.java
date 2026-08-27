@@ -11,6 +11,7 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -70,10 +71,10 @@ public class ProyectosEntity implements Serializable, Cloneable {
     private String descripcion;
 
     @Column(name = "PROY_FECHAINICIO")
-    private Date fechaInicio;
+    private LocalDate fechaInicio;
 
     @Column(name = "PROY_FECHAFIN")
-    private Date fechaFin;
+    private LocalDate fechaFin;
 
     @Column(name = "PROY_REGISTRADOPOR")
     private String registradoPor;

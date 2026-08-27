@@ -1,10 +1,10 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public record FechasConvocatoriaFormularioDTO(
     Long id,
     String codigo,
-    Date fechaInicio,
-    Date fechaFin
+    LocalDate fechaInicio,
+    LocalDate fechaFin
 ) {}

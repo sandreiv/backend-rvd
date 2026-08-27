@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 import jakarta.persistence.FetchType;
@@ -77,10 +78,10 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     private String observacionNovedad;
 
     @Column(name = "CADO_FECHAINICIO")
-    private Date fechaInicio;
+    private LocalDate fechaInicio;
 
     @Column(name = "CADO_FECHAFIN")
-    private Date fechaFin;
+    private LocalDate fechaFin;
 
     @Column(name = "CADO_VALORCONTRATO")
     private BigDecimal valorContrato;

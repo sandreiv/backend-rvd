@@ -10,8 +10,6 @@
 package co.edu.unipamplona.ciadti.rvd.util;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
 
 public final class FechasConvocatoriaCalculator {
 
@@ -26,9 +24,9 @@ public final class FechasConvocatoriaCalculator {
     private FechasConvocatoriaCalculator() {
     }
 
-    public static String calcularOnceMeses(Date fechaInicio, Date fechaFin) {
-        LocalDate inicio = toLocalDate(fechaInicio);
-        LocalDate fin = toLocalDate(fechaFin);
+    public static String calcularOnceMeses(LocalDate fechaInicio, LocalDate fechaFin) {
+        LocalDate inicio = fechaInicio;
+        LocalDate fin = fechaFin;
         LocalDate limiteOnceMeses = inicio
                 .plusMonths(MESES_ANTES_REDONDEO)
                 .plusDays(DIAS_MEDIO_MES);
@@ -53,21 +51,17 @@ public final class FechasConvocatoriaCalculator {
     /**
      * Activo ("1") si fechaFin es hoy o futura; inactivo ("0") si ya venció.
      */
-    public static String resolveEstadoByFechaFin(Date fechaFin) {
+    public static String resolveEstadoByFechaFin(LocalDate fechaFin) {
         if (fechaFin == null) {
             return ESTADO_ACTIVO;
         }
-        LocalDate hoy = LocalDate.now(ZoneId.systemDefault());
-        LocalDate fin = toLocalDate(fechaFin);
+        LocalDate hoy = LocalDate.now();
+        LocalDate fin = fechaFin;
         return fin.isBefore(hoy) ? ESTADO_INACTIVO : ESTADO_ACTIVO;
     }
 
-    public static boolean isVencida(Date fechaFin) {
+    public static boolean isVencida(LocalDate fechaFin) {
         return ESTADO_INACTIVO.equals(resolveEstadoByFechaFin(fechaFin));
-    }
-
-    private static LocalDate toLocalDate(Date date) {
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }
 
