@@ -13,6 +13,7 @@ public interface ObservacionCargaRepository extends JpaRepository<ObservacionCar
     
     @Query(value = """
             SELECT
+                OBCA.OBCA_ID AS idObservacion,
                 OBCA.PEGE_IDREGISTRA AS idPersonaGeneral,
                 TRIM(
                     PENG.PENG_PRIMERAPELLIDO || ' ' ||

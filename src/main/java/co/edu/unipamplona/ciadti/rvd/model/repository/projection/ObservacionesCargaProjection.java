@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public interface ObservacionesCargaProjection {
     
+    Long getIdObservacion();
     Long getIdPersonaGeneral();
     String getNombrePersonaGeneral();
     String getRolPersonaGeneral();
