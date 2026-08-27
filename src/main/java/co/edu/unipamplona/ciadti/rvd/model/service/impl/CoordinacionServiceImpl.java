@@ -2551,6 +2551,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         observacionCarga.setIdCarga(idCarga);
         observacionCarga.setIdPersonaGeneralRegistra(dto.idPersonaGeneral());
+        observacionCarga.setRolPersonaGeneralRegistra(ROL_DECANO);
         observacionCarga.setTexto(dto.observacion());
         observacionCarga.setFecha(new Date());
         observacionCarga.setRegistradoPor(REGISTRADO_POR);
