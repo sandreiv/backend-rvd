@@ -160,6 +160,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String REGISTRADO_POR = "REGISTRO_WEB";
     private static final String ESTADO_CARGA_INICIAL = "REGISTRADO"; // POR DEFINIR
     private static final String ESTADO_CARGA_INSCRITA = "INSCRITO";
+    private static final String ESTADO_CARGA_APROBADO_DECANO = "APROBADO DECANO";
+    private static final String ESTADO_CARGA_AVAL_DESARROLLO = "AVAL DESARROLLO";
     private static final String ROL_COORDINADOR = "Coordinador";
     private static final String ROL_DECANO = "Decano";
     private static final String ROL_DESARROLLO = "Desarrollo academico";
@@ -238,9 +240,16 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         Long idPersona = user.getIdPersonaGeneral();
         boolean coordinador = hasRole(user, ROL_COORDINADOR);
         boolean decano = hasRole(user, ROL_DECANO);
+        boolean desarrollo = hasRole(user, ROL_DESARROLLO);
         log.debug(
-                "findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, coordinador={}, decano={}",
-                idConvocatoria, idPeriodoUniversidad, idPersona, coordinador, decano);
+                "findCoordinationsByIdConvocatoria ===> Listando coordinaciones. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, coordinador={}, decano={}, desarrollo={}",
+                idConvocatoria,
+                idPeriodoUniversidad,
+                idPersona,
+                coordinador,
+                decano,
+                desarrollo
+        );
 
         validateListadoFiltros(idConvocatoria, idPeriodoUniversidad);
         List<CoordinacionListadoProjection> projections = new ArrayList<>();
@@ -251,6 +260,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (decano) {
             projections.addAll(listForDecano(
                     idConvocatoria, idPeriodoUniversidad, idPersona));
+        }
+        if (desarrollo) {
+            projections.addAll(listForDesarrollo(
+                    idConvocatoria, idPeriodoUniversidad));
         }
 
         List<CoordinacionDTO> result = coordinacionMapper.toDtoList(projections);
@@ -272,7 +285,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
         }
         if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO)) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "El listado de coordinaciones requiere rol Coordinador o Decano");
+            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano o Desarrollo academico");
         }
         return user;
     }
@@ -316,6 +329,29 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         System.out.println("[DEBUG] idPeriodoUniversidad: " + idPeriodoUniversidad);
         System.out.println("[DEBUG] idPersona: " + idPersona);
         return coordinacionRepository.findByPeriodoForDean(idPeriodoUniversidad, idPersona);
+    }
+
+    private List<CoordinacionListadoProjection> listForDesarrollo(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
+
+        if (idConvocatoria != null) {
+            log.debug(
+                    "listForDesarrollo ===> Listando cargas APROBADO DECANO. idConvocatoria={}",
+                    idConvocatoria
+            );
+
+            return coordinacionRepository
+                    .findByConvocatoriaForDevelopment(idConvocatoria);
+        }
+
+        log.debug(
+                "listForDesarrollo ===> Listando cargas APROBADO DECANO por periodo. idPeriodoUniversidad={}",
+                idPeriodoUniversidad
+        );
+
+        return coordinacionRepository
+                .findByPeriodoForDevelopment(idPeriodoUniversidad);
     }
 
     private static boolean hasRole(AuthUserDetails user, String role) {
@@ -584,6 +620,26 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return estadoCargaRepository.findByNombre(ESTADO_CARGA_INSCRITA)
                 .map(estado -> estado.getId())
                 .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"No existe el estado de carga inscrita: " + ESTADO_CARGA_INICIAL));
+    }
+
+    private Long resolveEstadoCargaAprobadoDecanoId() {
+        return estadoCargaRepository.findByNombre(ESTADO_CARGA_APROBADO_DECANO)
+                .map(estado -> estado.getId())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No existe el estado de carga aprobado decano: "
+                                + ESTADO_CARGA_APROBADO_DECANO
+                ));
+    }
+
+    private Long resolveEstadoCargaAvalDesarrolloId() {
+        return estadoCargaRepository.findByNombre(ESTADO_CARGA_AVAL_DESARROLLO)
+                .map(estado -> estado.getId())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No existe el estado de carga aval desarrollo: "
+                                + ESTADO_CARGA_AVAL_DESARROLLO
+                ));
     }
 
     private void validateSavePreload(RelacionConvocatoriaCoordinacionDTO dto) {
@@ -2547,6 +2603,70 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         observacionCargaRepository.save(observacionCarga);
 
         log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
+    }
+
+    @Override
+    @Transactional
+    public void approvePreloadDean(Long idCarga) {
+        log.info(
+                "approvePreloadDean ===> Aprobando carga por decano. idCarga={}",
+                idCarga
+        );
+
+        CargaEntity carga = cargaRepository.findById(idCarga)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga con id " + idCarga
+                ));
+
+        Long idEstadoAprobadoDecano =
+                resolveEstadoCargaAprobadoDecanoId();
+
+        carga.setIdEstadoCarga(idEstadoAprobadoDecano);
+
+        carga.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.UPDATE)
+        );
+        carga.setFechaCambio(new Date());
+
+        cargaRepository.save(carga);
+
+        log.info(
+                "approvePreloadDean ===> Carga aprobada por decano. idCarga={}",
+                idCarga
+        );
+    }
+
+    @Override
+    @Transactional
+    public void approvePreloadDevelopment(Long idCarga) {
+        log.info(
+                "endorsePreloadDevelopment ===> Avalando carga por desarrollo académico. idCarga={}",
+                idCarga
+        );
+
+        CargaEntity carga = cargaRepository.findById(idCarga)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga con id " + idCarga
+                ));
+
+        Long idEstadoAvalDesarrollo =
+                resolveEstadoCargaAvalDesarrolloId();
+
+        carga.setIdEstadoCarga(idEstadoAvalDesarrollo);
+
+        carga.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.UPDATE)
+        );
+        carga.setFechaCambio(new Date());
+
+        cargaRepository.save(carga);
+
+        log.info(
+                "endorsePreloadDevelopment ===> Carga avalada por desarrollo académico. idCarga={}",
+                idCarga
+        );
     }
 
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {

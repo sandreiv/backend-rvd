@@ -503,4 +503,41 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Aprueba la carga por parte del decano",
+        description = "Actualiza el estado de la carga a APROBADO DECANO"
+    )
+    @PutMapping("/approve-preload-dean/{idCarga}")
+    public ResponseEntity<Void> approvePreloadDean(
+            @PathVariable Long idCarga
+    ) {
+        coordinacionService.approvePreloadDean(idCarga);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Devuelve la carga por parte de desarrollo académico",
+        description = "Actualiza el estado de la carga a REGISTRADO y guarda la observación"
+    )
+    @PutMapping("/decline-preload-development/{idCarga}")
+    public ResponseEntity<Void> declinePreloadDevelopment(
+            @PathVariable Long idCarga,
+            @RequestBody ObservacionDecanoDTO dto
+    ) {
+        coordinacionService.declinePreloadDean(idCarga, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Aval de la carga por parte de desarrollo académico",
+        description = "Actualiza el estado de la carga a AVAL DESARROLLO"
+    )
+    @PutMapping("/approve-preload-development/{idCarga}")
+    public ResponseEntity<Void> approvePreloadDevelopment(
+            @PathVariable Long idCarga
+    ) {
+        coordinacionService.approvePreloadDevelopment(idCarga);
+        return ResponseEntity.ok().build();
+    }
+
 }
