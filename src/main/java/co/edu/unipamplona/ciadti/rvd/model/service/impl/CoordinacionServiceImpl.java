@@ -2624,8 +2624,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         observacionCarga.setRolPersonaGeneralRegistra(rolPersonaRegistra);
         observacionCarga.setTexto(dto.observacion());
         observacionCarga.setFecha(new Date());
-        observacionCarga.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        observacionCarga.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
         observacionCarga.setFechaCambio(new Date());
+
         observacionCargaRepository.save(observacionCarga);
 
         log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
