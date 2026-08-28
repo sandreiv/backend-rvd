@@ -625,7 +625,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private Long resolveEstadoCargaInscritaId() {
         return estadoCargaRepository.findByNombre(ESTADO_CARGA_INSCRITA)
                 .map(estado -> estado.getId())
-                .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"No existe el estado de carga inscrita: " + ESTADO_CARGA_INICIAL));
+                .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,"No existe el estado de carga inscrita: " + ESTADO_CARGA_INSCRITA));
     }
 
     private Long resolveEstadoCargaAprobadoDecanoId() {
@@ -2627,27 +2627,33 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void endorsePreloadDean(Long idCarga) {
-        log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
-        CargaEntity entity = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+        log.info("endorsePreloadDean ===> Inscribiendo carga por coordinador. idCarga={}", idCarga);
+        CargaEntity carga = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
         
-        validatePreassignmentWriteAllowed(entity);
+        validatePreassignmentWriteAllowed(carga);
         Long idEstadoInscrito = resolveEstadoCargaInscritaId();
 
-        entity.setIdEstadoCarga(idEstadoInscrito);
-        cargaRepository.save(entity);
-        log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
+        carga.setIdEstadoCarga(idEstadoInscrito);
+        carga.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        carga.setFechaCambio(new Date());
+
+        cargaRepository.save(carga);
+        log.info("endorsePreloadDean ===> Carga inscrita por coordinador. idCarga={}", idCarga);
     }
 
     @Override
     @Transactional
     public void declinePreload(Long idCarga, ObservacionDecanoDTO dto) {
-        log.info("updateCarga ===> Actualizando estado carga. idCarga={}", idCarga);
+        log.info("declinePreload ===> Rechazando carga. idCarga={}", idCarga);
         CargaEntity carga = cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
         
         validatePreassignmentWriteAllowed(carga);
         Long idEstadoRegistrado = resolveEstadoCargaInicialId();
 
         carga.setIdEstadoCarga(idEstadoRegistrado);
+        carga.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        carga.setFechaCambio(new Date());
+
         cargaRepository.save(carga);
 
         // Usuario quien registra
@@ -2681,7 +2687,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         observacionCargaRepository.save(observacionCarga);
 
-        log.info("updateCarga ===> Estado carga actualizado. idCarga={}", idCarga);
+        log.info("declinePreload ===> Carga rechazada. idCarga={}", idCarga);
     }
 
     @Override
