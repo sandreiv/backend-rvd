@@ -496,6 +496,16 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Cambia la observacion a Vista",
+        description = "Actualiza la bandera booleana de la observación a Vista"
+    )
+    @PutMapping("/mark-seen-observations/{idCarga}")
+    public ResponseEntity<Void> markSeenObservationsByPreload(@PathVariable Long idCarga) {
+        coordinacionService.markSeenObservationsByPreload(idCarga);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Cambia el estado de la carga a inscrito",
         description = "Actualiza el estado de la carga a inscrito"
     )

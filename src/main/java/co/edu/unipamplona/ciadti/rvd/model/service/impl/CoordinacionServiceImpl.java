@@ -2500,9 +2500,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional(readOnly = true)
     public List<ObservacionCargaDTO> listPreloadObservations(Long idCarga) {
         log.debug("listPreloadObservations ===> idCarga={}", idCarga);
+        cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
 
         List<ObservacionCargaDTO> result = observacionesCargaMapper.toDtoList(observacionCargaRepository.findAllWithPreload(idCarga));
         return result;
+    }
+
+    @Override
+    @Transactional
+    public void markSeenObservationsByPreload(Long idCarga) {
+        log.debug("updatePreloadObservations ===> Cambiando estado visto de las observaciones. idCarga={}", idCarga);
+        cargaRepository.findById(idCarga).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+
+        int updated = observacionCargaRepository.updateSeenObservations(idCarga, RegistradoPorUtils.value(Accion.UPDATE));
+        log.debug("updatePreloadObservations ===> Estado de observaciones cambiado. idCarga={}, updated={}", idCarga, updated);
     }
 
     @Override
@@ -2662,6 +2673,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         observacionCarga.setRolPersonaGeneralRegistra(rolPersonaRegistra);
         observacionCarga.setTexto(dto.observacion());
         observacionCarga.setFecha(new Date());
+        observacionCarga.setVisto(0);
         observacionCarga.setRegistradoPor(
                 RegistradoPorUtils.value(Accion.INSERT)
         );

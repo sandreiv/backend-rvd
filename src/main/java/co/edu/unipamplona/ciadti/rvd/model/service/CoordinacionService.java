@@ -121,6 +121,8 @@ public interface CoordinacionService {
 
     List<ObservacionCargaDTO> listPreloadObservations(Long idCarga);
 
+    void markSeenObservationsByPreload(Long idCarga);
+
     ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente);
 
     List<RestriccionProgramaHorasDTO> listProgramHourRestrictions(

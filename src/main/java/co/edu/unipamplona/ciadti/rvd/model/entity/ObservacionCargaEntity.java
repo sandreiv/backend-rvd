@@ -73,6 +73,9 @@ public class ObservacionCargaEntity implements Serializable, Cloneable {
     @Column(name = "OBSE_FECHA")
     private Date fecha;
 
+    @Column(name = "OBCA_VISTO")
+    private Integer visto;
+
     @Column(name = "OBCA_REGISTRADOPOR")
     private String registradoPor;
 
@@ -109,6 +112,7 @@ public class ObservacionCargaEntity implements Serializable, Cloneable {
                 ", rolPersonaGeneralRegistra=" + rolPersonaGeneralRegistra +
                 ", texto=" + texto +
                 ", fecha=" + fecha +
+                ", visto=" + visto +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

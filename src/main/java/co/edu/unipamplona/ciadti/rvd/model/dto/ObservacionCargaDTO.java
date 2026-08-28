@@ -8,5 +8,6 @@ public record ObservacionCargaDTO(
     String nombrePersonaGeneral,
     String rolPersonaGeneral,
     String observacion,
-    LocalDateTime fecha
+    LocalDateTime fecha,
+    Integer visto
 ) {}

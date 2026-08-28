@@ -10,4 +10,5 @@ public interface ObservacionesCargaProjection {
     String getRolPersonaGeneral();
     String getObservacion();
     LocalDateTime getFecha();
+    Integer getVisto();
 }
