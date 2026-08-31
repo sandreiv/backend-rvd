@@ -7,6 +7,7 @@
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
  * 27/08/2026 - Horas agrupadas por actividad padre
+ * 31/08/2026 - Sebastian Jaimes - Grupos y cupos para reporte PDF
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -21,6 +22,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.GrupoCuposReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasActividadPadreProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
@@ -211,6 +213,31 @@ public interface DetalleCargaDocenteRepository
                 UPPER(TRIM(NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)))
             """, nativeQuery = true)
     List<HorasCodigoActividadReporteProjection> findHorasPorCodigoPadreByCarga(
+            @Param("idCarga") Long idCarga);
+
+    @Query(value = """
+            SELECT
+                agrupado.IDCARGADOCENTE AS idCargaDocente,
+                LISTAGG(agrupado.NOMBREGRUPO, ', ')
+                    WITHIN GROUP (ORDER BY agrupado.NOMBREGRUPO) AS grupos,
+                SUM(agrupado.CUPOS) AS cupos
+            FROM (
+                SELECT DISTINCT
+                    DECD.CADO_ID AS IDCARGADOCENTE,
+                    GRUP.GRUP_ID AS IDGRUPO,
+                    GRUP.GRUP_NOMBRE AS NOMBREGRUPO,
+                    GRUP.GRUP_CUPOS AS CUPOS
+                FROM RVD.DETALLECARGADOCENTE DECD
+                INNER JOIN RVD.CARGADOCENTE CADO
+                    ON CADO.CADO_ID = DECD.CADO_ID
+                INNER JOIN ACADEMICO.GRUPO GRUP
+                    ON GRUP.GRUP_ID = DECD.GRUP_ID
+                WHERE CADO.CARG_ID = :idCarga
+                AND DECD.GRUP_ID IS NOT NULL
+            ) agrupado
+            GROUP BY agrupado.IDCARGADOCENTE
+            """, nativeQuery = true)
+    List<GrupoCuposReporteProjection> findGruposYCuposByCarga(
             @Param("idCarga") Long idCarga);
 
     @Query(value = """

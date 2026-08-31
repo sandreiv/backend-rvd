@@ -82,10 +82,8 @@ public class ProyectosServiceImpl implements ProyectosService {
     public List<ProyectosListaDTO> listProjects() {
         log.debug("listProjects ===> Listando proyectos padre");
 
-        List<ProyectosListaProjection> projects =
-                proyectosRepository.findParentProjectsList();
-        List<ProyectosListaDTO> result =
-                proyectosMapper.toProyectosListaDTOList(projects);
+        List<ProyectosListaProjection> projects = proyectosRepository.findParentProjectsList();
+        List<ProyectosListaDTO> result = proyectosMapper.toProyectosListaDTOList(projects);
 
         log.info("listProjects ===> Proyectos padre listados. total={}", result.size());
         return result;

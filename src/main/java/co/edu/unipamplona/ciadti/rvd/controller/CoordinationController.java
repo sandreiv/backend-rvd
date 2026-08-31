@@ -8,6 +8,8 @@
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  * 27/08/2026 - Horas de actividades por carga
+ * 31/08/2026 - Sebastian Jaimes - Columna V. Hora en reporte Excel
+ * 31/08/2026 - Sebastian Jaimes - Reporte PDF de preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -48,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionPdfFileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
@@ -494,8 +497,8 @@ public class CoordinationController {
         summary = "Genera el reporte Excel de preasignación de una carga",
         description = """
             Exporta el resumen de todos los docentes de la carga: encabezado
-            (unidad, facultad, coordinación, periodo, convocatoria), valores de
-            contratación, horas de actividades y centros de costo.
+            (unidad, facultad, coordinación, periodo, convocatoria), valor hora
+            (puntos vigencia), valores de contratación y horas de actividades.
             """
     )
     @GetMapping("/preload-report/{idCarga}")
@@ -594,6 +597,25 @@ public class CoordinationController {
     public ResponseEntity<HorasActividadesCargaDTO> getActivitiesHours(@RequestParam Long idCarga) {
         HorasActividadesCargaDTO horas = coordinacionService.getActivitiesHours(idCarga);
         return new ResponseEntity<>(horas, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Genera el reporte PDF de preasignación de una carga",
+        description = """
+            Exporta el PDF institucional de preasignación: encabezado, barras de
+            contexto, tablas por modalidad, resumen de totales y espacio de firmas.
+            """
+    )
+    @GetMapping("/preload-pdf-report/{idCarga}")
+    public ResponseEntity<byte[]> generatePreloadPdfReport(@PathVariable Long idCarga) {
+        PreasignacionPdfFileDTO file =
+                preasignacionReporteService.generatePreloadPdfReport(idCarga);
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.fileName() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file.content());
     }
 
 }

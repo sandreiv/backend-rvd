@@ -25,6 +25,8 @@ public interface EncabezadoPreasignacionProjection {
 
     String getPeriodoAcademico();
 
+    Long getAnio();
+
     Long getIdConvocatoria();
 
     String getConvocatoria();
