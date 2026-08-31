@@ -68,17 +68,23 @@
         table.docentes thead { display: table-header-group; }
         table.docentes th {
             background: #D9D9D9;
-            font-size: 6.5pt;
+            font-size: 5pt;
             text-align: center;
             font-weight: bold;
         }
-        table.docentes td.nombre { text-align: left; }
-        table.docentes td.num { text-align: right; }
-        table.docentes td.center { text-align: center; }
+        table.docentes td.nombre { text-align: left; font-size: 6.5pt; }
+        table.docentes td.num { text-align: right; font-size: 5pt; }
+        table.docentes td.center { text-align: center; font-size: 5pt; }
+        table.docentes td.money {
+            text-align: right;
+            font-size: 5pt;
+            white-space: nowrap;
+        }
         tr.total td {
             background: #EFEFEF;
             font-weight: bold;
         }
+        tr.total td.money { font-size: 5pt; }
         table.resumen {
             width: 100%;
             border-collapse: collapse;
@@ -158,27 +164,27 @@
         <table class="docentes">
             <thead>
                 <tr>
-                    <th style="width:11%">Nombre del docente</th>
+                    <th style="width:10%">Nombre del docente</th>
                     <th style="width:6%">Documento</th>
                     <th style="width:4%">Puntos</th>
                     <th style="width:5%">Categoría</th>
                     <th style="width:5%">Fecha inicio</th>
                     <th style="width:5%">Fecha fin</th>
                     <th style="width:4%">Semanas</th>
-                    <th style="width:6%">Asig. salarial</th>
-                    <th style="width:5%">Vacaciones</th>
-                    <th style="width:5%">V. Hora</th>
-                    <th style="width:4%">Horas</th>
-                    <th style="width:4%">Grupo</th>
+                    <th style="width:6.5%">Asig. salarial</th>
+                    <th style="width:5.5%">Vacaciones</th>
+                    <th style="width:5.5%">V. Hora</th>
+                    <th style="width:3.5%">Horas</th>
+                    <th style="width:3.5%">Grupo</th>
                     <th style="width:3%">Cupos</th>
                     <th style="width:3%">FAD</th>
                     <th style="width:3%">FAI</th>
                     <th style="width:3%">CTEI</th>
                     <th style="width:3%">ISU</th>
                     <th style="width:3%">AC</th>
-                    <th style="width:6%">Valor contrato</th>
-                    <th style="width:6%">Prestaciones</th>
-                    <th style="width:6%">Total contrato</th>
+                    <th style="width:7%">Valor contrato</th>
+                    <th style="width:7%">Prestaciones</th>
+                    <th style="width:7%">Total contrato</th>
                 </tr>
             </thead>
             <tbody>
@@ -193,23 +199,23 @@
                     <td class="center" th:text="${fmt.date(docente.fechaInicio())}"></td>
                     <td class="center" th:text="${fmt.date(docente.fechaFin())}"></td>
                     <td class="center" th:text="${fmt.text(docente.semanas())}"></td>
-                    <td class="num" th:text="${fmt.money(docente.asignacionSalarial())}"></td>
-                    <td class="num"
+                    <td class="money" th:text="${fmt.money(docente.asignacionSalarial())}"></td>
+                    <td class="money"
                         th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().valorVacaciones()) : ''}"></td>
-                    <td class="num" th:text="${fmt.money(docente.valorHora())}"></td>
+                    <td class="money" th:text="${fmt.money(docente.valorHora())}"></td>
                     <td class="num" th:text="${fmt.number(docente.horas())}"></td>
-                    <td class="center" th:text="${fmt.text(docente.grupo())}"></td>
+                    <td class="center" th:text="${fmt.entero(docente.grupos())}"></td>
                     <td class="center" th:text="${fmt.entero(docente.cupos())}"></td>
                     <td class="num" th:text="${fmt.horasCodigo(docente, 'FAD')}"></td>
                     <td class="num" th:text="${fmt.horasCodigo(docente, 'FAI')}"></td>
                     <td class="num" th:text="${fmt.horasCodigo(docente, 'CTEI')}"></td>
                     <td class="num" th:text="${fmt.horasCodigo(docente, 'ISU')}"></td>
                     <td class="num" th:text="${fmt.horasCodigo(docente, 'AC')}"></td>
-                    <td class="num"
+                    <td class="money"
                         th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().valorContrato()) : ''}"></td>
-                    <td class="num"
+                    <td class="money"
                         th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().totalPrestaciones()) : ''}"></td>
-                    <td class="num"
+                    <td class="money"
                         th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().totalContrato()) : ''}"></td>
                 </tr>
                 <tr class="total"
@@ -217,9 +223,9 @@
                     <td colspan="10">TOTAL DE LA MODALIDAD</td>
                     <td class="num" th:text="${fmt.number(modalidad.totales().totalHoras())}"></td>
                     <td colspan="7"></td>
-                    <td class="num" th:text="${fmt.money(modalidad.totales().totalContratos())}"></td>
-                    <td class="num" th:text="${fmt.money(modalidad.totales().totalPrestaciones())}"></td>
-                    <td class="num" th:text="${fmt.money(modalidad.totales().total())}"></td>
+                    <td class="money" th:text="${fmt.money(modalidad.totales().totalContratos())}"></td>
+                    <td class="money" th:text="${fmt.money(modalidad.totales().totalPrestaciones())}"></td>
+                    <td class="money" th:text="${fmt.money(modalidad.totales().total())}"></td>
                 </tr>
             </tbody>
         </table>
