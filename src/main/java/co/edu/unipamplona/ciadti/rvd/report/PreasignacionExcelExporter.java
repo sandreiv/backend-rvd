@@ -6,6 +6,7 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 31/08/2026 - Sebastian Jaimes - Columna V. Hora desde puntos vigencia
  */
 package co.edu.unipamplona.ciadti.rvd.report;
 
@@ -48,7 +49,7 @@ public class PreasignacionExcelExporter {
     };
 
     private static final String[] HEADERS = {
-            "Nombre del docente", "Documento", "Puntos", "Categoría",
+            "Nombre del docente", "Documento", "Puntos", "V. Hora", "Categoría",
             "Fecha inicio", "Fecha fin", "Semanas", "Asignación salarial",
             "Vacaciones", "Cesantías", "Intereses", "Prima legal",
             "Total prestaciones", "Valor contrato", "Total contrato",
@@ -56,17 +57,17 @@ public class PreasignacionExcelExporter {
     };
 
     private static final int COL_DOCENTE_INICIO = 0;
-    private static final int COL_DOCENTE_FIN = 7;
-    private static final int COL_CONTRATO_INICIO = 8;
-    private static final int COL_CONTRATO_FIN = 14;
-    private static final int COL_ACT_INICIO = 15;
-    private static final int COL_TOTAL_HORAS = 20;
+    private static final int COL_DOCENTE_FIN = 8;
+    private static final int COL_CONTRATO_INICIO = 9;
+    private static final int COL_CONTRATO_FIN = 15;
+    private static final int COL_ACT_INICIO = 16;
+    private static final int COL_TOTAL_HORAS = 21;
     private static final int LAST_COL = HEADERS.length - 1;
 
     private static final int COL_WIDTH_MIN = 4000;
     private static final int COL_WIDTH_MAX = 16000;
     private static final int[] COL_WIDTHS = {
-            9000, 5000, 4000, 5500,
+            9000, 5000, 4000, 4500, 5500,
             4500, 4500, 4000, 5500,
             5000, 5000, 5000, 5000,
             5500, 5500, 5500,
@@ -255,11 +256,12 @@ public class PreasignacionExcelExporter {
         setText(row, 0, docente.nombreCompleto(), styles.data);
         setText(row, 1, docente.documento(), styles.data);
         setText(row, 2, docente.puntos(), styles.data);
-        setText(row, 3, docente.categoria(), styles.data);
-        setText(row, 4, formatDate(docente.fechaInicio(), dateFormat), styles.data);
-        setText(row, 5, formatDate(docente.fechaFin(), dateFormat), styles.data);
-        setText(row, 6, docente.semanas(), styles.data);
-        setNumber(row, 7, docente.asignacionSalarial(), styles.money);
+        setNumber(row, 3, docente.valorHora(), styles.money);
+        setText(row, 4, docente.categoria(), styles.data);
+        setText(row, 5, formatDate(docente.fechaInicio(), dateFormat), styles.data);
+        setText(row, 6, formatDate(docente.fechaFin(), dateFormat), styles.data);
+        setText(row, 7, docente.semanas(), styles.data);
+        setNumber(row, 8, docente.asignacionSalarial(), styles.money);
 
         ValorContratacionDTO valor = docente.valorContratacion();
         if (valor == null) {
@@ -267,13 +269,13 @@ public class PreasignacionExcelExporter {
                 setText(row, col, "", styles.data);
             }
         } else {
-            setNumber(row, 8, valor.valorVacaciones(), styles.money);
-            setNumber(row, 9, valor.valorCesantias(), styles.money);
-            setNumber(row, 10, valor.valorIntereses(), styles.money);
-            setNumber(row, 11, valor.valorPrimaLegal(), styles.money);
-            setNumber(row, 12, valor.totalPrestaciones(), styles.money);
-            setNumber(row, 13, valor.valorContrato(), styles.money);
-            setNumber(row, 14, valor.totalContrato(), styles.money);
+            setNumber(row, 9, valor.valorVacaciones(), styles.money);
+            setNumber(row, 10, valor.valorCesantias(), styles.money);
+            setNumber(row, 11, valor.valorIntereses(), styles.money);
+            setNumber(row, 12, valor.valorPrimaLegal(), styles.money);
+            setNumber(row, 13, valor.totalPrestaciones(), styles.money);
+            setNumber(row, 14, valor.valorContrato(), styles.money);
+            setNumber(row, 15, valor.totalContrato(), styles.money);
         }
 
         Map<String, BigDecimal> horas = docente.horasPorCodigo() != null

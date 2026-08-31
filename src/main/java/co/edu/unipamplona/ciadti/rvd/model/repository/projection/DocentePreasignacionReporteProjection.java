@@ -7,6 +7,7 @@
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
  * 04/08/2026 - Sebastian Jaimes - Campos de contrato y fechas para reporte batch
+ * 31/08/2026 - Sebastian Jaimes - Horas de la carga docente para reporte PDF
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
@@ -44,4 +45,6 @@ public interface DocentePreasignacionReporteProjection {
     LocalDate getFechaFin();
 
     String getSemanas();
+
+    String getHoras();
 }

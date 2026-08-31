@@ -131,8 +131,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
             log.debug("Búsqueda de persona sin criterios. Se retorna lista vacía");
             return Collections.emptyList();
         }
-        List<PersonaAutorizaConvocatoriaDTO> result =
-                personaAutorizaConvocatoriaMapper.toDtoList(
+        List<PersonaAutorizaConvocatoriaDTO> result = personaAutorizaConvocatoriaMapper.toDtoList(
                         personaGeneralRepository.searchGeneralPerson(
                                 nombreParam, documentoParam));
         log.info("Personas autoriza encontradas. total={}", result.size());

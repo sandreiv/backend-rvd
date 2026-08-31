@@ -6,12 +6,16 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 31/08/2026 - Sebastian Jaimes - Reporte PDF de preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionPdfFileDTO;
 
 public interface PreasignacionReporteService {
 
     PreasignacionExcelFileDTO generatePreloadReport(Long idCarga);
+
+    PreasignacionPdfFileDTO generatePreloadPdfReport(Long idCarga);
 }

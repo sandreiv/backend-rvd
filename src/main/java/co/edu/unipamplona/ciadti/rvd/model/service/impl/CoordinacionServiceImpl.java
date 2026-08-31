@@ -2754,6 +2754,58 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CoordinacionDTO> findCdpRequests(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
+
+        AuthUserDetails user = requireListadoUser();
+
+        if (!hasRole(user, ROL_DECANO)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "Las solicitudes CPD requieren rol Decano"
+            );
+        }
+
+        Long idPersona = user.getIdPersonaGeneral();
+
+        validateListadoFiltros(
+                idConvocatoria,
+                idPeriodoUniversidad
+        );
+
+        List<CoordinacionListadoProjection> projections;
+
+        if (idConvocatoria != null) {
+            projections = coordinacionRepository
+                    .findByConvocatoriaForCdpDean(
+                            idConvocatoria,
+                            idPersona
+                    );
+        } else {
+            projections = coordinacionRepository
+                    .findByPeriodoForCdpDean(
+                            idPeriodoUniversidad,
+                            idPersona
+                    );
+        }
+
+        List<CoordinacionDTO> result =
+                coordinacionMapper.toDtoList(projections);
+
+        log.info(
+                "findCdpRequests ===> Solicitudes CPD listadas. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, total={}",
+                idConvocatoria,
+                idPeriodoUniversidad,
+                idPersona,
+                result.size()
+        );
+
+        return result;
+    }
+
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {
         Map<Long, DetalleCargaDocenteListadoProjection> unicos = loadDetallesUnicosByCargaDocente(idCargaDocente);
 
