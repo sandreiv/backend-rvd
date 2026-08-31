@@ -218,14 +218,12 @@ public interface DetalleCargaDocenteRepository
     @Query(value = """
             SELECT
                 agrupado.IDCARGADOCENTE AS idCargaDocente,
-                LISTAGG(agrupado.NOMBREGRUPO, ', ')
-                    WITHIN GROUP (ORDER BY agrupado.NOMBREGRUPO) AS grupos,
+                COUNT(*) AS cantidadGrupos,
                 SUM(agrupado.CUPOS) AS cupos
             FROM (
                 SELECT DISTINCT
                     DECD.CADO_ID AS IDCARGADOCENTE,
                     GRUP.GRUP_ID AS IDGRUPO,
-                    GRUP.GRUP_NOMBRE AS NOMBREGRUPO,
                     GRUP.GRUP_CUPOS AS CUPOS
                 FROM RVD.DETALLECARGADOCENTE DECD
                 INNER JOIN RVD.CARGADOCENTE CADO

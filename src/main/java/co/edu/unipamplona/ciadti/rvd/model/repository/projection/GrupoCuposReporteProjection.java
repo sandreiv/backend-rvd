@@ -6,6 +6,7 @@
  * Fecha de creación: 31/08/2026
  * Modificaciones:
  * 31/08/2026 - Sebastian Jaimes - Creación inicial
+ * 31/08/2026 - Sebastian Jaimes - Conteo de grupos en lugar de nombres
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
@@ -15,7 +16,7 @@ public interface GrupoCuposReporteProjection {
 
     Long getIdCargaDocente();
 
-    String getGrupos();
+    BigDecimal getCantidadGrupos();
 
     BigDecimal getCupos();
 }

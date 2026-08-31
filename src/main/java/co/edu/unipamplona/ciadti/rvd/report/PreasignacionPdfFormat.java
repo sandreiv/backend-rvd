@@ -53,9 +53,9 @@ public class PreasignacionPdfFormat {
         return value != null ? NUMBER.format(value) : "";
     }
 
-    public String entero(BigDecimal value) {
+    public String entero(Number value) {
         if (value == null) {
-            return "";
+            return "0";
         }
         return String.valueOf(value.longValue());
     }
