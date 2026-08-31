@@ -17,7 +17,8 @@ public record AsociacionCoordinacionCatalogosDTO(
         List<CatalogoAdministracionDTO> programas,
         List<MateriaCatalogoAdministracionDTO> materias,
         List<CatalogoAdministracionDTO> centrosCosto,
-        List<CatalogoAdministracionDTO> personas
+        List<CatalogoAdministracionDTO> personas,
+        List<CatalogoAdministracionDTO> docentes
 ) {}
 
 /* 17/07/2026 @:Daniel Arias */

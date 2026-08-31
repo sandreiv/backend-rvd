@@ -78,7 +78,8 @@ public class AdministracionServiceImpl implements AdministracionService {
                 mapCatalog(programaRepository.findAdministrationOptions()),
                 mapSubjectCatalog(materiaRepository.findAdministrationOptions()),
                 mapCatalog(centroCostoRepository.findAdministrationOptions()),
-                mapCatalog(personaGeneralRepository.findAdministrationOptions())
+                mapCatalog(personaGeneralRepository.findAdministrationOptions()),
+                mapCatalog(personaGeneralRepository.findCareerProfessorsOptions())
         );
 
         log.info("getAssociationCatalogs ===> Catálogos de administración consultados");
