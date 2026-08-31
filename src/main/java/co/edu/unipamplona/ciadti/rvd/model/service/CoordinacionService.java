@@ -52,6 +52,10 @@ public interface CoordinacionService {
     List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
             Long idConvocatoria,
             Long idPeriodoUniversidad);
+            
+    List<CoordinacionDTO> findCdpRequests(
+        Long idConvocatoria,
+        Long idPeriodoUniversidad);        
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 

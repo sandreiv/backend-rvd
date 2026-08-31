@@ -127,6 +127,30 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Obtiene las solicitudes CPD",
+        description = """
+            Lista para el Decano las coordinaciones cuya carga
+            se encuentra en estado AVAL DESARROLLO.
+            """
+    )
+    @GetMapping("/cdp-requests")
+    public ResponseEntity<List<CoordinacionDTO>> listCdpRequests(
+            @RequestParam(required = false) Long idConvocatoria,
+            @RequestParam(required = false) Long idPeriodoUniversidad) {
+
+        List<CoordinacionDTO> coordinations =
+                coordinacionService.findCdpRequests(
+                        idConvocatoria,
+                        idPeriodoUniversidad
+                );
+
+        return new ResponseEntity<>(
+                coordinations,
+                HttpStatus.OK
+        );
+    }
+
+    @Operation(
         summary = "Guarda la relacion coordinacion-convocatoria en carga",
         description = "Crea un registro en RVD.CARGA con COOR_ID y CONV_ID"
     )
