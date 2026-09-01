@@ -113,6 +113,8 @@ public interface CoordinacionService {
 
     void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto);
 
+    void disapproveProfessorActivityDistribution(Long idCargaDocente);
+
     TotalPreasignacionDTO getTotalPreload(Long idCarga);
 
     HorasActividadesCargaDTO getActivitiesHours(Long idCarga);

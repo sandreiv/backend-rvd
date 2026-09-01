@@ -1816,6 +1816,42 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         );
     }
 
+    @Override
+    @Transactional
+    public void disapproveProfessorActivityDistribution(Long idCargaDocente) {
+        log.info(
+                "disapproveProfessorActivityDistribution ===> Iniciando desaprobación de distribución. idCargaDocente={}", idCargaDocente
+        );
+
+        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente
+                ));
+
+        if ("0".equals(cargaDocente.getEstado())) {
+            log.info(
+                    "disapproveProfessorActivityDistribution ===> La preasignación ya estaba desaprobada. idCargaDocente={}", idCargaDocente
+            );
+            return;
+        }
+
+        cargaDocente.setEstado("0");
+        cargaDocente.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        cargaDocente.setFechaCambio(new Date());
+
+        cargaDocenteRepository.save(cargaDocente);
+
+        registerProfessorPreloadHistory(idCargaDocente);
+
+        log.info(
+                "disapproveProfessorActivityDistribution ===> Distribución desaprobada correctamente. idCargaDocente={}", idCargaDocente
+        );
+    }
+
+
     private void validateApproveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
         if (dto == null) {
             throw new ApiException(

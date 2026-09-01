@@ -438,6 +438,17 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Desaprueba la distribución de actividades de un docente",
+        description = "Actualiza el estado de la carga docente a en registro"
+    )
+    @PutMapping("/disapprove-professor-preassignment/{idCargaDocente}")
+    public ResponseEntity<Void> disapproveProfessorActivityDistribution(
+            @PathVariable Long idCargaDocente) {
+        coordinacionService.disapproveProfessorActivityDistribution(idCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Obtiene el total de una preasignación por carga",
         description = "Retorna totales de docentes, prestaciones, contratos y preasignación,además de las horas agrupadas por tipo de actividad y el total de horas"
     )
