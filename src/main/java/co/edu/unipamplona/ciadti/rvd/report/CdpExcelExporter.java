@@ -313,7 +313,7 @@ public class CdpExcelExporter {
         setText(row, 0, docente.nombreCompleto(), styles.data);
         setText(row, 1, docente.documento(), styles.data);
         setText(row, 2, docente.puntos(), styles.data);
-        setNumber(row, 3, docente.valorHora(), styles.money);
+        setNumber(row, 3, docente.valor(), styles.money);
         setText(row, 4, docente.categoria(), styles.data);
         setText(row, 5, formatDate(docente.fechaInicio(), dateFormat), styles.data);
         setText(row, 6, formatDate(docente.fechaFin(), dateFormat), styles.data);

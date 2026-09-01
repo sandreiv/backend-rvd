@@ -247,7 +247,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
                     projection.getIdCargaDocente(),
                     error);
         }
-        BigDecimal valorHora = valorHoraVigencia != null
+        BigDecimal valorPunto = valorHoraVigencia != null
                 ? valorHoraVigencia
                 : projection.getValorPunto();
         BigDecimal horas = resolveHoras(projection.getHoras(), horasPorCodigo);
@@ -258,7 +258,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
                 projection.getNombreCompleto(),
                 projection.getDocumento(),
                 projection.getPuntos(),
-                valorHora,
+                valorPunto,
                 projection.getCategoria(),
                 projection.getFechaInicio(),
                 projection.getFechaFin(),
@@ -267,6 +267,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
                 grupos,
                 cupos,
                 asignacion,
+                projection.getValorHora(),
                 valor,
                 Map.copyOf(horasPorCodigo),
                 error);

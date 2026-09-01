@@ -262,6 +262,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CADO.CADO_PUNTOS AS puntos,
                 CADO.CADO_VALORPUNTO AS valorPunto,
                 CADO.CADO_SALARIO AS salario,
+                CADO.CADO_VALORHORA AS valorHora,
                 CADO.CADO_FECHAINICIO AS fechaInicio,
                 CADO.CADO_FECHAFIN AS fechaFin,
                 CADO.CADO_SEMANAS AS semanas,

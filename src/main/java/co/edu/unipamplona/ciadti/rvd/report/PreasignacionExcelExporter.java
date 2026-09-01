@@ -30,6 +30,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -49,28 +50,26 @@ public class PreasignacionExcelExporter {
     };
 
     private static final String[] HEADERS = {
-            "Nombre del docente", "Documento", "Puntos", "V. Hora", "Categoría",
-            "Fecha inicio", "Fecha fin", "Semanas", "Asignación salarial",
-            "Vacaciones", "Cesantías", "Intereses", "Prima legal",
-            "Total prestaciones", "Valor contrato", "Total contrato",
+            "Nombre del docente", "Puntos", "Valor", "Categoría",
+            "Fecha inicio", "Fecha fin", "Num. semanas", "Asignación salarial",
+            "Valor hora", "Valor prestaciones", "Valor contrato", "Total",
             "FAD", "FAI", "CTEI", "ISU", "AC", "Total horas"
     };
 
     private static final int COL_DOCENTE_INICIO = 0;
-    private static final int COL_DOCENTE_FIN = 8;
-    private static final int COL_CONTRATO_INICIO = 9;
-    private static final int COL_CONTRATO_FIN = 15;
-    private static final int COL_ACT_INICIO = 16;
-    private static final int COL_TOTAL_HORAS = 21;
+    private static final int COL_DOCENTE_FIN = 7;
+    private static final int COL_CONTRATO_INICIO = 8;
+    private static final int COL_CONTRATO_FIN = 11;
+    private static final int COL_ACT_INICIO = 12;
+    private static final int COL_TOTAL_HORAS = 17;
     private static final int LAST_COL = HEADERS.length - 1;
 
     private static final int COL_WIDTH_MIN = 4000;
     private static final int COL_WIDTH_MAX = 16000;
     private static final int[] COL_WIDTHS = {
-            9000, 5000, 4000, 4500, 5500,
+            9000, 4000, 4500, 5500,
             4500, 4500, 4000, 5500,
-            5000, 5000, 5000, 5000,
-            5500, 5500, 5500,
+            4500, 5500, 5500, 5500,
             4000, 4000, 4000, 4000, 4000, 4500
     };
 
@@ -115,7 +114,9 @@ public class PreasignacionExcelExporter {
         Cell titleCell = title.createCell(0);
         titleCell.setCellValue("Resumen de preasignación");
         titleCell.setCellStyle(styles.title);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+
+        CellRangeAddress region = new CellRangeAddress(0, 0, 0, 3);
+        sheet.addMergedRegion(region);
 
         rowIdx = writeKv(sheet, rowIdx, "Unidad", encabezado.unidad(), styles);
         rowIdx = writeKv(
@@ -154,6 +155,14 @@ public class PreasignacionExcelExporter {
         Cell value = row.createCell(1);
         value.setCellValue(valor != null ? valor : "");
         value.setCellStyle(styles.value);
+
+        CellRangeAddress region = new CellRangeAddress(rowIdx, rowIdx, 1, 3);
+        sheet.addMergedRegion(region);
+        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+
         return rowIdx + 1;
     }
 
@@ -254,14 +263,13 @@ public class PreasignacionExcelExporter {
             DateTimeFormatter dateFormat) {
 
         setText(row, 0, docente.nombreCompleto(), styles.data);
-        setText(row, 1, docente.documento(), styles.data);
-        setText(row, 2, docente.puntos(), styles.data);
-        setNumber(row, 3, docente.valorHora(), styles.money);
-        setText(row, 4, docente.categoria(), styles.data);
-        setText(row, 5, formatDate(docente.fechaInicio(), dateFormat), styles.data);
-        setText(row, 6, formatDate(docente.fechaFin(), dateFormat), styles.data);
-        setText(row, 7, docente.semanas(), styles.data);
-        setNumber(row, 8, docente.asignacionSalarial(), styles.money);
+        setText(row, 1, docente.puntos(), styles.data);
+        setNumber(row, 2, docente.valor(), styles.money);
+        setText(row, 3, docente.categoria(), styles.data);
+        setText(row, 4, formatDate(docente.fechaInicio(), dateFormat), styles.data);
+        setText(row, 5, formatDate(docente.fechaFin(), dateFormat), styles.data);
+        setText(row, 6, docente.semanas(), styles.data);
+        setNumber(row, 7, docente.asignacionSalarial(), styles.money);
 
         ValorContratacionDTO valor = docente.valorContratacion();
         if (valor == null) {
@@ -269,13 +277,10 @@ public class PreasignacionExcelExporter {
                 setText(row, col, "", styles.data);
             }
         } else {
-            setNumber(row, 9, valor.valorVacaciones(), styles.money);
-            setNumber(row, 10, valor.valorCesantias(), styles.money);
-            setNumber(row, 11, valor.valorIntereses(), styles.money);
-            setNumber(row, 12, valor.valorPrimaLegal(), styles.money);
-            setNumber(row, 13, valor.totalPrestaciones(), styles.money);
-            setNumber(row, 14, valor.valorContrato(), styles.money);
-            setNumber(row, 15, valor.totalContrato(), styles.money);
+            setNumber(row, 8, docente.valorHora(), styles.money);
+            setNumber(row, 9, valor.totalPrestaciones(), styles.money);
+            setNumber(row, 10, valor.valorContrato(), styles.money);
+            setNumber(row, 11, valor.totalContrato(), styles.money);
         }
 
         Map<String, BigDecimal> horas = docente.horasPorCodigo() != null
@@ -351,6 +356,9 @@ public class PreasignacionExcelExporter {
 
         CellStyle label = workbook.createCellStyle();
         label.setFont(boldFont);
+        label.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        label.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        applyBorder(label);
 
         CellStyle value = workbook.createCellStyle();
 
