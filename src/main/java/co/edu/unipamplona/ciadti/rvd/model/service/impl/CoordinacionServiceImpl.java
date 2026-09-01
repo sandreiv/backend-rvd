@@ -101,6 +101,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
@@ -149,6 +150,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoo
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
@@ -2840,6 +2842,48 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         );
 
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CdpContextDTO getCdpContext() {
+
+        AuthUserDetails user = requireListadoUser();
+
+        if (!hasRole(user, ROL_DECANO)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "El contexto CPD requiere rol Decano"
+            );
+        }
+
+        Long idPersona = user.getIdPersonaGeneral();
+
+        List<CdpContextProjection> contextos =
+                coordinacionRepository.findCdpContextByPersona(idPersona);
+
+        if (contextos.isEmpty()) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "El Decano no tiene una facultad asociada"
+            );
+        }
+
+        CdpContextProjection contexto = contextos.get(0);
+
+        log.info(
+                "getCdpContext ===> Contexto CPD obtenido. idPersona={}, idUnidadAcademica={}, idFacultad={}",
+                idPersona,
+                contexto.getIdUnidadAcademica(),
+                contexto.getIdFacultad()
+        );
+
+        return new CdpContextDTO(
+                contexto.getIdUnidadAcademica(),
+                contexto.getUnidadAcademica(),
+                contexto.getIdFacultad(),
+                contexto.getFacultad()
+        );
     }
 
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {

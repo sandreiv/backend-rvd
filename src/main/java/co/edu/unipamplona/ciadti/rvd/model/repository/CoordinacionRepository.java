@@ -13,6 +13,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
 
 public interface CoordinacionRepository extends JpaRepository<CoordinacionesEntity, Long> {
 
@@ -868,6 +869,28 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
     List<CoordinacionesEntity> searchCoordinationAvailableForRestriction(
             @Param("nombre") String nombre,
             @Param("idConvocatoria") Long idConvocatoria
+    );
+
+    @Query(value = """
+            SELECT DISTINCT
+                UNID_REG.UNID_ID AS idUnidadAcademica,
+                UNID_REG.UNID_NOMBRE AS unidadAcademica,
+                UNID_AREA.UNID_ID AS idFacultad,
+                UNID_AREA.UNID_NOMBRE AS facultad
+            FROM RVD.PERSONACOORDINACION PECO
+            INNER JOIN RVD.COORDINACIONES FAC
+                ON FAC.COOR_ID = PECO.COOR_ID
+            INNER JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_IDPADRE = FAC.COOR_ID
+            INNER JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            INNER JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            WHERE PECO.PEGE_ID = :idPersonaGeneral
+            AND FAC.COOR_IDPADRE IS NULL
+            """, nativeQuery = true)
+    List<CdpContextProjection> findCdpContextByPersona(
+            @Param("idPersonaGeneral") Long idPersonaGeneral
     );
 
 }

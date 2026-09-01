@@ -10,12 +10,11 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
-import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionPdfFileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 
 public interface PreasignacionReporteService {
 
-    PreasignacionExcelFileDTO generatePreloadReport(Long idCarga);
+    FileDTO generatePreloadReport(Long idCarga);
 
-    PreasignacionPdfFileDTO generatePreloadPdfReport(Long idCarga);
+    FileDTO generatePreloadPdfReport(Long idCarga);
 }

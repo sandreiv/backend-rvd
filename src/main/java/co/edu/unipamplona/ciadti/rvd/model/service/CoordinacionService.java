@@ -46,6 +46,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 
 public interface CoordinacionService {
 
@@ -55,7 +56,9 @@ public interface CoordinacionService {
             
     List<CoordinacionDTO> findCdpRequests(
         Long idConvocatoria,
-        Long idPeriodoUniversidad);        
+        Long idPeriodoUniversidad);     
+        
+    CdpContextDTO getCdpContext();    
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 

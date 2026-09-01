@@ -1,14 +1,11 @@
 /**
  * Aplicación: rvd
- * Archivo: PreasignacionReporteServiceImpl.java
+ * Archivo: CdpReporteServiceImpl.java
  * Paquete: co.edu.unipamplona.ciadti.rvd.model.service.impl
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
- * Fecha de creación: 04/08/2026
+ * Fecha de creación: 01/09/2026
  * Modificaciones:
- * 04/08/2026 - Sebastian Jaimes - Creación inicial
- * 31/08/2026 - Sebastian Jaimes - Valor hora desde puntos vigencia
- * 31/08/2026 - Sebastian Jaimes - Reporte PDF con totales, grupo y cupos
- * 31/08/2026 - Sebastian Jaimes - Grupo como conteo numérico
+ * 01/09/2026 - Sebastian Jaimes - Creación inicial
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -19,8 +16,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,8 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionReporteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EncabezadoCargaReporteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadPreasignacionReporteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ReportePreasignacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TotalesPreasignacionReporteDTO;
@@ -43,18 +44,19 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasign
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.EncabezadoPreasignacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.GrupoCuposReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
-import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
-import co.edu.unipamplona.ciadti.rvd.report.PreasignacionExcelExporter;
+import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
+import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import co.edu.unipamplona.ciadti.rvd.report.CdpExcelExporter;
 import co.edu.unipamplona.ciadti.rvd.report.PreasignacionPdfExporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
+
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PreasignacionReporteServiceImpl implements PreasignacionReporteService {
-
+public class CdpReporteServiceImpl implements CdpReporteService {
+    
     private static final int ESCALA_MONETARIA = 2;
     private static final BigDecimal DIAS_MES = new BigDecimal("30");
     private static final BigDecimal DIAS_ANIO = new BigDecimal("360");
@@ -66,36 +68,57 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
     private final CargaDocenteRepository cargaDocenteRepository;
     private final DetalleCargaDocenteRepository detalleCargaDocenteRepository;
     private final PuntosVigenciaRepository puntosVigenciaRepository;
-    private final PreasignacionExcelExporter excelExporter;
+    private final CoordinacionService coordinacionService;
+    private final CdpExcelExporter excelExporter;
     private final PreasignacionPdfExporter pdfExporter;
 
     @Override
     @Transactional(readOnly = true)
-    public FileDTO generatePreloadReport(Long idCarga) {
-        log.debug("generatePreloadReport ===> idCarga={}", idCarga);
-        ReportePreasignacionCargaDTO reporte = buildReport(idCarga);
-        byte[] content = excelExporter.export(reporte);
-        String fileName = buildFileName(reporte.encabezado(), "xlsx");
+    public FileDTO generateCdpReport(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
+
+        log.debug(
+                "generateCdpReport ===> Generando reporte CDP. idConvocatoria={}, idPeriodoUniversidad={}",
+                idConvocatoria,
+                idPeriodoUniversidad);
+
+        List<CoordinacionDTO> solicitudes = coordinacionService.findCdpRequests(
+                idConvocatoria,
+                idPeriodoUniversidad);
+        List<Long> idsCarga = resolveCargaIds(solicitudes);
+        if (idsCarga.isEmpty()) {
+            log.warn(
+                    "generateCdpReport ===> Sin cargas Aval Desarrollo. idConvocatoria={}, idPeriodoUniversidad={}",
+                    idConvocatoria,
+                    idPeriodoUniversidad);
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No hay coordinaciones con carga en Aval Desarrollo para generar el reporte");
+        }
+
+        List<ReportePreasignacionCargaDTO> reportes = new ArrayList<>();
+        for (Long idCarga : idsCarga) {
+            reportes.add(buildReport(idCarga));
+        }
+
+        byte[] content = excelExporter.export(reportes);
+        String fileName = buildCdpFileName(reportes.getFirst().encabezado());
         log.info(
-                "generatePreloadReport ===> idCarga={}, modalidades={}, bytes={}",
-                idCarga,
-                reporte.modalidades().size(),
+                "generateCdpReport ===> Reporte CDP generado. cargas={}, bytes={}",
+                idsCarga.size(),
                 content.length);
         return new FileDTO(fileName, content);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public FileDTO generatePreloadPdfReport(Long idCarga) {
-        log.debug("generatePreloadPdfReport ===> idCarga={}", idCarga);
+    public FileDTO generateCdpPdfReport(Long idCarga) {
+
         ReportePreasignacionCargaDTO reporte = buildReport(idCarga);
         byte[] content = pdfExporter.export(reporte);
         String fileName = buildFileName(reporte.encabezado(), "pdf");
-        log.info(
-                "generatePreloadPdfReport ===> idCarga={}, modalidades={}, bytes={}",
-                idCarga,
-                reporte.modalidades().size(),
-                content.length);
+
         return new FileDTO(fileName, content);
     }
 
@@ -133,15 +156,13 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
 
     private BigDecimal resolveValorHoraVigencia(Long anio) {
         if (anio == null) {
-            log.warn("resolveValorHoraVigencia ===> La carga no tiene año de periodo");
+           
             return null;
         }
         return puntosVigenciaRepository.findByAnio(anio)
                 .map(this::parseValorPuntoVigencia)
                 .orElseGet(() -> {
-                    log.warn(
-                            "resolveValorHoraVigencia ===> No hay puntos vigencia. anio={}",
-                            anio);
+                    
                     return null;
                 });
     }
@@ -154,9 +175,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
             return new BigDecimal(vigencia.getValorPunto().trim())
                     .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
         } catch (NumberFormatException ex) {
-            log.warn(
-                    "parseValorPuntoVigencia ===> Valor de punto no numerico. anio={}",
-                    vigencia.getAnio());
+            
             return null;
         }
     }
@@ -242,10 +261,6 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
             valor = calculateContractValue(projection, asignacion);
         } catch (ApiException ex) {
             error = ex.getMessage();
-            log.warn(
-                    "toDocenteReporte ===> contrato incompleto idCargaDocente={}, motivo={}",
-                    projection.getIdCargaDocente(),
-                    error);
         }
         BigDecimal valorHora = valorHoraVigencia != null
                 ? valorHoraVigencia
@@ -429,6 +444,38 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
                     "La fecha fin no puede ser anterior a la fecha inicio");
         }
         return ChronoUnit.DAYS.between(fechaInicio, fechaFin) + 1;
+    }
+
+    private List<Long> resolveCargaIds(List<CoordinacionDTO> solicitudes) {
+        Set<Long> ids = new LinkedHashSet<>();
+        if (solicitudes == null) {
+            return List.of();
+        }
+        for (CoordinacionDTO coordinacion : solicitudes) {
+            if (coordinacion == null || coordinacion.carga() == null) {
+                continue;
+            }
+            Long idCarga = coordinacion.carga().id();
+            if (idCarga != null) {
+                ids.add(idCarga);
+            }
+        }
+        return List.copyOf(ids);
+    }
+
+    private String buildCdpFileName(EncabezadoCargaReporteDTO encabezado) {
+        String facultad = sanitizeFilePart(
+                encabezado != null ? encabezado.facultad() : null);
+        String periodo = sanitizeFilePart(
+                encabezado != null ? encabezado.periodoAcademico() : null);
+        String base = "cdp";
+        if (StringUtils.hasText(facultad)) {
+            base += "-" + facultad;
+        }
+        if (StringUtils.hasText(periodo)) {
+            base += "-" + periodo;
+        }
+        return base + ".xlsx";
     }
 
     private String buildFileName(
