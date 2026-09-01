@@ -47,7 +47,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActi
 import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.report.CdpExcelExporter;
-import co.edu.unipamplona.ciadti.rvd.report.PreasignacionPdfExporter;
+import co.edu.unipamplona.ciadti.rvd.report.CdpPdfExporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,7 +70,7 @@ public class CdpReporteServiceImpl implements CdpReporteService {
     private final PuntosVigenciaRepository puntosVigenciaRepository;
     private final CoordinacionService coordinacionService;
     private final CdpExcelExporter excelExporter;
-    private final PreasignacionPdfExporter pdfExporter;
+    private final CdpPdfExporter pdfExporter;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,48 +78,52 @@ public class CdpReporteServiceImpl implements CdpReporteService {
             Long idConvocatoria,
             Long idPeriodoUniversidad) {
 
-        log.debug(
-                "generateCdpReport ===> Generando reporte CDP. idConvocatoria={}, idPeriodoUniversidad={}",
+        List<ReportePreasignacionCargaDTO> reportes = loadFacultyReports(
                 idConvocatoria,
                 idPeriodoUniversidad);
+        byte[] content = excelExporter.export(reportes);
+        String fileName = buildCdpFileName(
+                reportes.getFirst().encabezado(),
+                "xlsx");
+
+        return new FileDTO(fileName, content);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FileDTO generateCdpPdfReport(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
+
+        List<ReportePreasignacionCargaDTO> reportes = loadFacultyReports(
+                idConvocatoria,
+                idPeriodoUniversidad);
+        byte[] content = pdfExporter.export(reportes);
+        String fileName = buildCdpFileName(
+                reportes.getFirst().encabezado(),
+                "pdf");
+
+        return new FileDTO(fileName, content);
+    }
+
+    private List<ReportePreasignacionCargaDTO> loadFacultyReports(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
 
         List<CoordinacionDTO> solicitudes = coordinacionService.findCdpRequests(
                 idConvocatoria,
                 idPeriodoUniversidad);
         List<Long> idsCarga = resolveCargaIds(solicitudes);
         if (idsCarga.isEmpty()) {
-            log.warn(
-                    "generateCdpReport ===> Sin cargas Aval Desarrollo. idConvocatoria={}, idPeriodoUniversidad={}",
-                    idConvocatoria,
-                    idPeriodoUniversidad);
             throw new ApiException(
                     HttpStatus.NOT_FOUND,
                     "No hay coordinaciones con carga en Aval Desarrollo para generar el reporte");
         }
-
         List<ReportePreasignacionCargaDTO> reportes = new ArrayList<>();
         for (Long idCarga : idsCarga) {
             reportes.add(buildReport(idCarga));
         }
-
-        byte[] content = excelExporter.export(reportes);
-        String fileName = buildCdpFileName(reportes.getFirst().encabezado());
-        log.info(
-                "generateCdpReport ===> Reporte CDP generado. cargas={}, bytes={}",
-                idsCarga.size(),
-                content.length);
-        return new FileDTO(fileName, content);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public FileDTO generateCdpPdfReport(Long idCarga) {
-
-        ReportePreasignacionCargaDTO reporte = buildReport(idCarga);
-        byte[] content = pdfExporter.export(reporte);
-        String fileName = buildFileName(reporte.encabezado(), "pdf");
-
-        return new FileDTO(fileName, content);
+        return reportes;
     }
 
     private ReportePreasignacionCargaDTO buildReport(Long idCarga) {
@@ -463,29 +467,19 @@ public class CdpReporteServiceImpl implements CdpReporteService {
         return List.copyOf(ids);
     }
 
-    private String buildCdpFileName(EncabezadoCargaReporteDTO encabezado) {
+    private String buildCdpFileName(
+            EncabezadoCargaReporteDTO encabezado,
+            String extension) {
         String facultad = sanitizeFilePart(
                 encabezado != null ? encabezado.facultad() : null);
         String periodo = sanitizeFilePart(
                 encabezado != null ? encabezado.periodoAcademico() : null);
-        String base = "cdp";
+        String base = "preasignacion";
         if (StringUtils.hasText(facultad)) {
             base += "-" + facultad;
         }
         if (StringUtils.hasText(periodo)) {
             base += "-" + periodo;
-        }
-        return base + ".xlsx";
-    }
-
-    private String buildFileName(
-            EncabezadoCargaReporteDTO encabezado,
-            String extension) {
-        String coordinacion = sanitizeFilePart(encabezado.coordinacion());
-        String periodo = sanitizeFilePart(encabezado.periodoAcademico());
-        String base = "preasignacion-" + coordinacion + "-" + periodo;
-        if (!StringUtils.hasText(coordinacion) && !StringUtils.hasText(periodo)) {
-            base = "preasignacion-carga-" + encabezado.idCarga();
         }
         return base + "." + extension;
     }

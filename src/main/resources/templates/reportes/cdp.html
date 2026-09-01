@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Preasignación docente</title>
+    <style type="text/css">
+        @page {
+            size: A4 landscape;
+            margin: 10mm 8mm 16mm 8mm;
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 8px;
+            }
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.5pt;
+            color: #111;
+            margin: 0;
+        }
+        img.header {
+            width: 100%;
+            height: auto;
+            display: block;
+            border: 1px solid #000;
+        }
+        table.context {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0 8px 0;
+        }
+        table.context td {
+            border: 1px solid #000;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+        table.context td.label {
+            width: 18%;
+            background: #1F4D3A;
+            color: #fff;
+        }
+        table.context td.value { background: #F2F2F2; }
+        .bloque-coordinacion {
+            margin-top: 10px;
+            margin-bottom: 16px;
+        }
+        .titulo-coordinacion {
+            background: #16382B;
+            color: #fff;
+            font-weight: bold;
+            font-size: 9pt;
+            padding: 5px 6px;
+            border: 1px solid #000;
+            text-transform: uppercase;
+        }
+        .bloque-modalidad { margin-bottom: 10px; }
+        .titulo-modalidad {
+            background: #1F4D3A;
+            color: #fff;
+            font-weight: bold;
+            font-size: 8pt;
+            padding: 4px 6px;
+            border: 1px solid #000;
+            text-transform: uppercase;
+        }
+        table.docentes {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        table.docentes th,
+        table.docentes td {
+            border: 1px solid #000;
+            padding: 2px 3px;
+            vertical-align: middle;
+        }
+        table.docentes thead { display: table-header-group; }
+        table.docentes th {
+            background: #D9D9D9;
+            font-size: 5pt;
+            text-align: center;
+            font-weight: bold;
+        }
+        table.docentes td.nombre { text-align: left; font-size: 6.5pt; }
+        table.docentes td.num { text-align: right; font-size: 5pt; }
+        table.docentes td.center { text-align: center; font-size: 5pt; }
+        table.docentes td.money {
+            text-align: right;
+            font-size: 5pt;
+            white-space: nowrap;
+        }
+        tr.total td {
+            background: #EFEFEF;
+            font-weight: bold;
+        }
+        tr.total td.money { font-size: 5pt; }
+        .titulo-resumen {
+            background: #1F4D3A;
+            color: #fff;
+            font-weight: bold;
+            font-size: 8pt;
+            padding: 4px 6px;
+            border: 1px solid #000;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+        table.resumen {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.resumen th,
+        table.resumen td {
+            border: 1px solid #000;
+            padding: 5px 8px;
+            text-align: center;
+        }
+        table.resumen th {
+            background: #1F4D3A;
+            color: #fff;
+            font-size: 8pt;
+        }
+        table.resumen td {
+            background: #F7F7F7;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+        .firmas {
+            margin-top: 36px;
+            width: 100%;
+            page-break-inside: avoid;
+        }
+        .firmas td {
+            width: 50%;
+            text-align: center;
+            padding-top: 36px;
+        }
+        .linea-firma {
+            border-top: 1px solid #000;
+            width: 55%;
+            margin: 0 auto 4px auto;
+        }
+        .cargo-firma {
+            font-weight: bold;
+            font-size: 8pt;
+        }
+    </style>
+</head>
+<body>
+    <img class="header" th:src="${headerImage}" alt="Encabezado institucional"/>
+
+    <table class="context">
+        <tr>
+            <td class="label">Unidad</td>
+            <td class="value" th:text="${fmt.text(encabezado.unidad())}">Unidad</td>
+        </tr>
+        <tr>
+            <td class="label">Facultad</td>
+            <td class="value" th:text="${fmt.text(encabezado.facultad())}">Facultad</td>
+        </tr>
+        <tr>
+            <td class="label">Periodo académico</td>
+            <td class="value" th:text="${fmt.text(encabezado.periodoAcademico())}">Periodo</td>
+        </tr>
+        <tr>
+            <td class="label">Convocatoria</td>
+            <td class="value" th:text="${fmt.text(encabezado.convocatoria())}">Convocatoria</td>
+        </tr>
+    </table>
+
+    <div class="bloque-coordinacion"
+         th:each="reporte : ${coordinaciones}"
+         th:with="encCoord=${reporte.encabezado()},
+                  modalidades=${reporte.modalidades()},
+                  resumen=${reporte.resumen() != null ? reporte.resumen() : totalesVacios}">
+
+        <div class="titulo-coordinacion"
+             th:text="'Coordinación: ' + ${fmt.text(encCoord != null ? encCoord.coordinacion() : null)}">
+            Coordinación
+        </div>
+
+        <p th:if="${modalidades == null or modalidades.isEmpty()}">
+            No hay docentes preasignados en esta carga.
+        </p>
+
+        <div class="bloque-modalidad" th:each="modalidad : ${modalidades}">
+            <div class="titulo-modalidad"
+                 th:text="'Modalidad de contratación: ' + ${fmt.text(modalidad.nombreModalidad())}">
+                Modalidad
+            </div>
+            <table class="docentes">
+                <thead>
+                    <tr>
+                        <th style="width:10%">Nombre del docente</th>
+                        <th style="width:6%">Documento</th>
+                        <th style="width:4%">Puntos</th>
+                        <th style="width:5%">Categoría</th>
+                        <th style="width:5%">Fecha inicio</th>
+                        <th style="width:5%">Fecha fin</th>
+                        <th style="width:4%">Semanas</th>
+                        <th style="width:6.5%">Asig. salarial</th>
+                        <th style="width:5.5%">Vacaciones</th>
+                        <th style="width:5.5%">V. Hora</th>
+                        <th style="width:3.5%">Horas</th>
+                        <th style="width:3.5%">Grupo</th>
+                        <th style="width:3%">Cupos</th>
+                        <th style="width:3%">FAD</th>
+                        <th style="width:3%">FAI</th>
+                        <th style="width:3%">CTEI</th>
+                        <th style="width:3%">ISU</th>
+                        <th style="width:3%">AC</th>
+                        <th style="width:7%">Valor contrato</th>
+                        <th style="width:7%">Prestaciones</th>
+                        <th style="width:7%">Total contrato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${modalidad.docentes() == null or modalidad.docentes().isEmpty()}">
+                        <td colspan="21" class="center">Sin docentes en esta modalidad</td>
+                    </tr>
+                    <tr th:each="docente : ${modalidad.docentes()}">
+                        <td class="nombre" th:text="${fmt.text(docente.nombreCompleto())}"></td>
+                        <td class="center" th:text="${fmt.text(docente.documento())}"></td>
+                        <td class="center" th:text="${fmt.text(docente.puntos())}"></td>
+                        <td class="center" th:text="${fmt.text(docente.categoria())}"></td>
+                        <td class="center" th:text="${fmt.date(docente.fechaInicio())}"></td>
+                        <td class="center" th:text="${fmt.date(docente.fechaFin())}"></td>
+                        <td class="center" th:text="${fmt.text(docente.semanas())}"></td>
+                        <td class="money" th:text="${fmt.money(docente.asignacionSalarial())}"></td>
+                        <td class="money"
+                            th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().valorVacaciones()) : ''}"></td>
+                        <td class="money" th:text="${fmt.money(docente.valorHora())}"></td>
+                        <td class="num" th:text="${fmt.number(docente.horas())}"></td>
+                        <td class="center" th:text="${fmt.entero(docente.grupos())}"></td>
+                        <td class="center" th:text="${fmt.entero(docente.cupos())}"></td>
+                        <td class="num" th:text="${fmt.horasCodigo(docente, 'FAD')}"></td>
+                        <td class="num" th:text="${fmt.horasCodigo(docente, 'FAI')}"></td>
+                        <td class="num" th:text="${fmt.horasCodigo(docente, 'CTEI')}"></td>
+                        <td class="num" th:text="${fmt.horasCodigo(docente, 'ISU')}"></td>
+                        <td class="num" th:text="${fmt.horasCodigo(docente, 'AC')}"></td>
+                        <td class="money"
+                            th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().valorContrato()) : ''}"></td>
+                        <td class="money"
+                            th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().totalPrestaciones()) : ''}"></td>
+                        <td class="money"
+                            th:text="${docente.valorContratacion() != null ? fmt.money(docente.valorContratacion().totalContrato()) : ''}"></td>
+                    </tr>
+                    <tr class="total"
+                        th:if="${modalidad.totales() != null and modalidad.docentes() != null and !modalidad.docentes().isEmpty()}">
+                        <td colspan="10">TOTAL DE LA MODALIDAD</td>
+                        <td class="num" th:text="${fmt.number(modalidad.totales().totalHoras())}"></td>
+                        <td colspan="7"></td>
+                        <td class="money" th:text="${fmt.money(modalidad.totales().totalContratos())}"></td>
+                        <td class="money" th:text="${fmt.money(modalidad.totales().totalPrestaciones())}"></td>
+                        <td class="money" th:text="${fmt.money(modalidad.totales().total())}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="titulo-resumen">Total de la coordinación</div>
+        <table class="resumen">
+            <tr>
+                <th>Docentes</th>
+                <th>Prestaciones</th>
+                <th>Contratos</th>
+                <th>Total</th>
+            </tr>
+            <tr>
+                <td th:text="${resumen.totalDocentes()}">0</td>
+                <td th:text="${fmt.money(resumen.totalPrestaciones())}">$0</td>
+                <td th:text="${fmt.money(resumen.totalContratos())}">$0</td>
+                <td th:text="${fmt.money(resumen.total())}">$0</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="firmas">
+        <tr>
+            <td>
+                <div class="linea-firma"></div>
+                <div class="cargo-firma">Decano de Facultad</div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
