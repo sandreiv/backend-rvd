@@ -7,12 +7,14 @@
  * Modificaciones:
  * 31/08/2026 - Sebastian Jaimes - Creación inicial
  * 01/09/2026 - Daniel Arias - PDF CDP con un bloque por coordinación
+ * 01/09/2026 - Daniel Arias - Resumen de totales de la facultad
  */
 package co.edu.unipamplona.ciadti.rvd.report;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
@@ -62,11 +64,43 @@ public class CdpPdfExporter {
         context.setVariable("encabezado", reportes.getFirst().encabezado());
         context.setVariable("coordinaciones", reportes);
         context.setVariable("totalesVacios", TOTALES_VACIOS);
+        context.setVariable("resumenFacultad", sumCoordinaciones(reportes));
         context.setVariable("fmt", new CdpPdfFormat());
         context.setVariable("headerImage", loadHeaderDataUri());
 
         String html = templateEngine.process(TEMPLATE, context);
         return renderPdf(toXhtml(html));
+    }
+
+    private TotalesPreasignacionReporteDTO sumCoordinaciones(
+            List<ReportePreasignacionCargaDTO> reportes) {
+        int totalDocentes = 0;
+        BigDecimal totalHoras = BigDecimal.ZERO;
+        BigDecimal totalPrestaciones = BigDecimal.ZERO;
+        BigDecimal totalContratos = BigDecimal.ZERO;
+        for (ReportePreasignacionCargaDTO reporte : reportes) {
+            TotalesPreasignacionReporteDTO t =
+                    reporte != null ? reporte.resumen() : null;
+            if (t == null) {
+                continue;
+            }
+            totalDocentes += t.totalDocentes();
+            totalHoras = totalHoras.add(nvl(t.totalHoras()));
+            totalPrestaciones = totalPrestaciones.add(
+                    nvl(t.totalPrestaciones()));
+            totalContratos = totalContratos.add(nvl(t.totalContratos()));
+        }
+        return new TotalesPreasignacionReporteDTO(
+                totalDocentes,
+                totalHoras,
+                totalPrestaciones,
+                totalContratos,
+                totalPrestaciones.add(totalContratos)
+                        .setScale(2, RoundingMode.HALF_UP));
+    }
+
+    private BigDecimal nvl(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
     }
 
     private String loadHeaderDataUri() {

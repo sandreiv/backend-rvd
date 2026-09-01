@@ -40,7 +40,7 @@
         }
         table.context td.label {
             width: 18%;
-            background: #1F4D3A;
+            background: #295f49;
             color: #fff;
         }
         table.context td.value { background: #F2F2F2; }
@@ -59,7 +59,7 @@
         }
         .bloque-modalidad { margin-bottom: 10px; }
         .titulo-modalidad {
-            background: #1F4D3A;
+            background: #295f49;
             color: #fff;
             font-weight: bold;
             font-size: 8pt;
@@ -99,14 +99,30 @@
         }
         tr.total td.money { font-size: 5pt; }
         .titulo-resumen {
-            background: #1F4D3A;
-            color: #fff;
+            background: #D9D9D9;
+            color: #111;
             font-weight: bold;
             font-size: 8pt;
             padding: 4px 6px;
             border: 1px solid #000;
             margin-top: 8px;
             text-transform: uppercase;
+        }
+        .bloque-facultad {
+            margin-top: 18px;
+            page-break-inside: avoid;
+        }
+        .titulo-facultad {
+            background: #D9D9D9;
+            font-size: 9pt;
+        }
+        table.resumen-facultad th {
+            background: #D9D9D9;
+            color: #111;
+        }
+        table.resumen-facultad td {
+            background: #F2F2F2;
+            font-size: 10pt;
         }
         table.resumen {
             width: 100%;
@@ -119,8 +135,8 @@
             text-align: center;
         }
         table.resumen th {
-            background: #1F4D3A;
-            color: #fff;
+            background: #D9D9D9;
+            color: #111;
             font-size: 8pt;
         }
         table.resumen td {
@@ -274,6 +290,24 @@
                 <td th:text="${fmt.money(resumen.totalPrestaciones())}">$0</td>
                 <td th:text="${fmt.money(resumen.totalContratos())}">$0</td>
                 <td th:text="${fmt.money(resumen.total())}">$0</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="bloque-facultad">
+        <div class="titulo-resumen titulo-facultad">Total de la facultad</div>
+        <table class="resumen resumen-facultad">
+            <tr>
+                <th>Docentes</th>
+                <th>Prestaciones</th>
+                <th>Contratos</th>
+                <th>Total</th>
+            </tr>
+            <tr>
+                <td th:text="${resumenFacultad.totalDocentes()}">0</td>
+                <td th:text="${fmt.money(resumenFacultad.totalPrestaciones())}">$0</td>
+                <td th:text="${fmt.money(resumenFacultad.totalContratos())}">$0</td>
+                <td th:text="${fmt.money(resumenFacultad.total())}">$0</td>
             </tr>
         </table>
     </div>
