@@ -8,6 +8,7 @@
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
  * 31/08/2026 - Sebastian Jaimes - Valor hora desde puntos vigencia
  * 31/08/2026 - Sebastian Jaimes - Reporte PDF con totales, grupo y cupos
+ * 31/08/2026 - Sebastian Jaimes - Grupo como conteo numérico
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -197,7 +198,9 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
             }
             result.put(
                     row.getIdCargaDocente(),
-                    new GrupoCupos(row.getGrupos(), row.getCupos()));
+                    new GrupoCupos(
+                            toEntero(row.getCantidadGrupos()),
+                            row.getCupos()));
         }
         return result;
     }
@@ -258,7 +261,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
                 ? valorHoraVigencia
                 : projection.getValorPunto();
         BigDecimal horas = resolveHoras(projection.getHoras(), horasPorCodigo);
-        String grupo = grupoCupos != null ? grupoCupos.grupos() : null;
+        Integer grupos = grupoCupos != null ? grupoCupos.cantidad() : 0;
         BigDecimal cupos = grupoCupos != null ? grupoCupos.cupos() : null;
         return new DocentePreasignacionReporteDTO(
                 projection.getIdCargaDocente(),
@@ -271,7 +274,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
                 projection.getFechaFin(),
                 projection.getSemanas(),
                 horas,
-                grupo,
+                grupos,
                 cupos,
                 asignacion,
                 valor,
@@ -475,5 +478,12 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
         }
     }
 
-    private record GrupoCupos(String grupos, BigDecimal cupos) {}
+    private Integer toEntero(BigDecimal value) {
+        if (value == null) {
+            return 0;
+        }
+        return value.intValue();
+    }
+
+    private record GrupoCupos(Integer cantidad, BigDecimal cupos) {}
 }

@@ -127,5 +127,30 @@ public interface PersonaGeneralRepository
             """, nativeQuery = true)
     List<CatalogoAdministracionProjection> findAdministrationOptions();
 
-
+    @Query(value = """
+            SELECT
+                PEGE.PEGE_ID AS id,
+                TRIM(
+                    PEGE.PEGE_DOCUMENTOIDENTIDAD || ' - ' ||
+                    PENG.PENG_PRIMERAPELLIDO || ' ' ||
+                    NVL(PENG.PENG_SEGUNDOAPELLIDO, '') || ' ' ||
+                    PENG.PENG_PRIMERNOMBRE || ' ' ||
+                    NVL(PENG.PENG_SEGUNDONOMBRE, '')
+                ) AS label,
+                PEGE.PEGE_DOCUMENTOIDENTIDAD AS codigo
+            FROM GENERAL.PERSONAGENERAL PEGE
+            INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+            INNER JOIN TALENTOV3.TRABAJADORLABOR TRLA
+                ON TRLA.PEGE_ID = PENG.PEGE_ID
+            WHERE PEGE.PEGE_DOCUMENTOIDENTIDAD IS NOT NULL
+                AND TRLA.CLDO_ID IS NULL
+                AND TRLA.DEDO_ID IS NULL
+                AND TRLA.TRLA_FECHAFINAL IS NULL
+            ORDER BY PENG.PENG_PRIMERAPELLIDO,
+                    PENG.PENG_SEGUNDOAPELLIDO,
+                    PENG.PENG_PRIMERNOMBRE,
+                    PENG.PENG_SEGUNDONOMBRE
+            """, nativeQuery = true)
+    List<CatalogoAdministracionProjection> findCareerProfessorsOptions();
 }

@@ -9,6 +9,7 @@
  * 04/08/2026 - Sebastian Jaimes - Fila plana por docente con horas por código
  * 31/08/2026 - Sebastian Jaimes - Columna valor hora desde puntos vigencia
  * 31/08/2026 - Sebastian Jaimes - Horas, grupo y cupos para reporte PDF
+ * 31/08/2026 - Sebastian Jaimes - Grupo como conteo numérico
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
@@ -27,7 +28,7 @@ public record DocentePreasignacionReporteDTO(
     LocalDate fechaFin,
     String semanas,
     BigDecimal horas,
-    String grupo,
+    Integer grupos,
     BigDecimal cupos,
     BigDecimal asignacionSalarial,
     ValorContratacionDTO valorContratacion,
