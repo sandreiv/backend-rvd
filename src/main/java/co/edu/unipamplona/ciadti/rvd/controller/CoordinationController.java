@@ -49,8 +49,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionExcelFileDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.PreasignacionPdfFileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
@@ -69,6 +67,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 
 @RequiredArgsConstructor
 @RestController
@@ -469,6 +468,7 @@ public class CoordinationController {
         return new ResponseEntity<>(coordinacionService.listCostCenters(idCargaDocente), HttpStatus.OK);
     }
 
+    /* CAMBIAR A VISTA SEGÚN LANZADOR */
     @Operation(
         summary = "Genera el reporte Excel de preasignación de una carga",
         description = """
@@ -479,7 +479,7 @@ public class CoordinationController {
     )
     @GetMapping("/preload-report/{idCarga}")
     public ResponseEntity<byte[]> generatePreloadReport(@PathVariable Long idCarga) {
-        PreasignacionExcelFileDTO file = preasignacionReporteService.generatePreloadReport(idCarga);
+        FileDTO file = preasignacionReporteService.generatePreloadReport(idCarga);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
@@ -575,7 +575,7 @@ public class CoordinationController {
         return new ResponseEntity<>(horas, HttpStatus.OK);
     }
 
-    @Operation(
+    /*@Operation(
         summary = "Genera el reporte PDF de preasignación de una carga",
         description = """
             Exporta el PDF institucional de preasignación: encabezado, barras de
@@ -584,14 +584,13 @@ public class CoordinationController {
     )
     @GetMapping("/preload-pdf-report/{idCarga}")
     public ResponseEntity<byte[]> generatePreloadPdfReport(@PathVariable Long idCarga) {
-        PreasignacionPdfFileDTO file =
-                preasignacionReporteService.generatePreloadPdfReport(idCarga);
+        FileDTO file = preasignacionReporteService.generatePreloadPdfReport(idCarga);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
-    }
+    }*/
 
 }

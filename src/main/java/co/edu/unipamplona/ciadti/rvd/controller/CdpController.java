@@ -12,7 +12,9 @@ package co.edu.unipamplona.ciadti.rvd.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 public class CdpController {
 
     private final CoordinacionService coordinacionService;
+    private final CdpReporteService cdpReporteService;
 
     @Operation(
         summary = "Obtiene las solicitudes CPD",
@@ -72,6 +77,32 @@ public class CdpController {
         return ResponseEntity.ok(context);
     }
     
+
+    @Operation(
+        summary = "Genera el reporte Excel CDP de la facultad",
+        description = """
+            Exporta, para el Decano, un libro Excel con una hoja por cada
+            coordinación de su facultad cuya carga está en Aval Desarrollo.
+            Cada hoja conserva el resumen de docentes: encabezado, valor hora,
+            valores de contratación y horas de actividades.
+            """
+    )
+    @GetMapping("/cdp-report")
+    public ResponseEntity<byte[]> generateCdpReport(
+            @RequestParam(required = false) Long idConvocatoria,
+            @RequestParam(required = false) Long idPeriodoUniversidad) {
+
+        FileDTO file = cdpReporteService.generateCdpReport(
+                idConvocatoria,
+                idPeriodoUniversidad);
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.fileName() + "\"")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file.content());
+    }
 }
 
 /* 31/08/2026 @:Daniel Arias */
