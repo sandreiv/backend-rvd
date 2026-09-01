@@ -17,5 +17,7 @@ public interface CdpReporteService {
             Long idConvocatoria,
             Long idPeriodoUniversidad);
 
-    FileDTO generateCdpPdfReport(Long idCarga);
+    FileDTO generateCdpPdfReport(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad);
 }

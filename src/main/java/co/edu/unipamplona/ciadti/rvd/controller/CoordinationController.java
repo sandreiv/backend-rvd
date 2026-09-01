@@ -575,7 +575,7 @@ public class CoordinationController {
         return new ResponseEntity<>(horas, HttpStatus.OK);
     }
 
-    /*@Operation(
+    @Operation(
         summary = "Genera el reporte PDF de preasignación de una carga",
         description = """
             Exporta el PDF institucional de preasignación: encabezado, barras de
@@ -591,6 +591,6 @@ public class CoordinationController {
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
-    }*/
+    }
 
 }

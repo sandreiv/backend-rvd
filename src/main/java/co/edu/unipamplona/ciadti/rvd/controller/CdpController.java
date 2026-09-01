@@ -103,6 +103,29 @@ public class CdpController {
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file.content());
     }
+
+    @Operation(
+        summary = "Genera el reporte PDF CDP de la facultad",
+        description = """
+            Exporta, para el Decano, el PDF institucional con encabezado de
+            facultad, un bloque por cada coordinación en Aval Desarrollo
+            (modalidades, docentes y total de la coordinación) y espacio
+            de firma del decano al final.
+            """
+    )
+    @GetMapping("/cdp-pdf-report")
+    public ResponseEntity<byte[]> generateCdpPdfReport(
+            @RequestParam(required = false) Long idConvocatoria,
+            @RequestParam(required = false) Long idPeriodoUniversidad) {
+
+        FileDTO file = cdpReporteService.generateCdpPdfReport(idConvocatoria, idPeriodoUniversidad);
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.fileName() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file.content());
+    }
 }
 
 /* 31/08/2026 @:Daniel Arias */
