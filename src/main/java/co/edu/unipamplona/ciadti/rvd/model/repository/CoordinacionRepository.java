@@ -50,6 +50,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 CECO.CECO_DESCRIPCION AS descripcionCentroCosto,
 
                 CASE
+                    WHEN ESCA.ESCA_NOMBRE <> 'REGISTRADO' THEN '0'
                     WHEN NOT EXISTS (
                         SELECT 1
                         FROM RVD.RESTRICCIONXCOORDINACION REXC_ANY
@@ -74,6 +75,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 END AS canEditPreassignment,
 
                 CASE
+                    WHEN ESCA.ESCA_NOMBRE <> 'REGISTRADO' THEN 'READ_ONLY'
                     WHEN NOT EXISTS (
                         SELECT 1
                         FROM RVD.RESTRICCIONXCOORDINACION REXC_ANY
@@ -98,6 +100,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 END AS editionMode,
 
                 CASE
+                    WHEN ESCA.ESCA_NOMBRE <> 'REGISTRADO' THEN 'La coordinación no está habilitada para edición en esta convocatoria.'
                     WHEN NOT EXISTS (
                         SELECT 1
                         FROM RVD.RESTRICCIONXCOORDINACION REXC_ANY
