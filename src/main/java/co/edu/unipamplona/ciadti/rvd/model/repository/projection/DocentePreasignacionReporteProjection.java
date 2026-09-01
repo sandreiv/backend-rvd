@@ -40,6 +40,8 @@ public interface DocentePreasignacionReporteProjection {
 
     BigDecimal getSalario();
 
+    BigDecimal getValorHora();
+
     LocalDate getFechaInicio();
 
     LocalDate getFechaFin();

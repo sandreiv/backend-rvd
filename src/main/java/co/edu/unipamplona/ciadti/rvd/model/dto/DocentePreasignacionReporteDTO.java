@@ -22,7 +22,7 @@ public record DocentePreasignacionReporteDTO(
     String nombreCompleto,
     String documento,
     String puntos,
-    BigDecimal valorHora,
+    BigDecimal valor,
     String categoria,
     LocalDate fechaInicio,
     LocalDate fechaFin,
@@ -31,6 +31,7 @@ public record DocentePreasignacionReporteDTO(
     Integer grupos,
     BigDecimal cupos,
     BigDecimal asignacionSalarial,
+    BigDecimal valorHora,
     ValorContratacionDTO valorContratacion,
     Map<String, BigDecimal> horasPorCodigo,
     String errorContrato
