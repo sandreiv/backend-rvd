@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenSolicitudCdpDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +39,7 @@ public class CdpController {
     private final CdpReporteService cdpReporteService;
 
     @Operation(
-        summary = "Obtiene las solicitudes CPD",
+        summary = "Obtiene las solicitudes CDP",
         description = """
             Lista para el Decano las coordinaciones cuya carga
             se encuentra en estado AVAL DESARROLLO.
@@ -62,7 +63,23 @@ public class CdpController {
     }
 
     @Operation(
-        summary = "Obtiene el contexto del Decano para solicitudes CPD",
+        summary = "Obtiene las solicitudes CDP para desarollo academico",
+        description = """
+            Lista para Desarrollo Academico las facultades que tienen
+            solicitudes CDP en estado DESARROLLO ACADEMICO.
+            """
+    )
+    @GetMapping("/requests-for-academic-development")
+    public ResponseEntity<List<ResumenSolicitudCdpDTO>> listCdpRequestsForAcademicDevelopment(
+            @RequestParam(required = false) Long idPeriodoUniversidad) {
+
+        List<ResumenSolicitudCdpDTO> faculties = coordinacionService.findCdpRequestsForAcademicDevelopment(idPeriodoUniversidad);
+
+        return new ResponseEntity<>(faculties, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene el contexto del Decano para solicitudes CDP",
         description = """
                 Obtiene la Unidad Académica y Facultad asociadas
                 al Decano autenticado.
