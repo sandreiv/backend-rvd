@@ -266,7 +266,7 @@ public class CdpReporteServiceImpl implements CdpReporteService {
         } catch (ApiException ex) {
             error = ex.getMessage();
         }
-        BigDecimal valorHora = valorHoraVigencia != null
+        BigDecimal valorPunto = valorHoraVigencia != null
                 ? valorHoraVigencia
                 : projection.getValorPunto();
         BigDecimal horas = resolveHoras(projection.getHoras(), horasPorCodigo);
@@ -277,7 +277,7 @@ public class CdpReporteServiceImpl implements CdpReporteService {
                 projection.getNombreCompleto(),
                 projection.getDocumento(),
                 projection.getPuntos(),
-                valorHora,
+                valorPunto,
                 projection.getCategoria(),
                 projection.getFechaInicio(),
                 projection.getFechaFin(),
@@ -286,6 +286,7 @@ public class CdpReporteServiceImpl implements CdpReporteService {
                 grupos,
                 cupos,
                 asignacion,
+                projection.getValorHora(),
                 valor,
                 Map.copyOf(horasPorCodigo),
                 error);
