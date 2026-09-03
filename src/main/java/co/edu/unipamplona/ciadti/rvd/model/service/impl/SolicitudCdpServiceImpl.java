@@ -55,6 +55,12 @@ public class SolicitudCdpServiceImpl
 
     private final ObjectMapper objectMapper;
 
+    private static final long MAX_FILE_SIZE =
+            10L * 1024L * 1024L;
+
+    private static final long MAX_REQUEST_FILES_SIZE =
+            100L * 1024L * 1024L;
+
     @Override
     @Transactional(readOnly = true)
     public CdpRequestDTO getCurrentRequest() {
@@ -122,6 +128,8 @@ public class SolicitudCdpServiceImpl
 
         String observacionNormalizada =
         normalizeObservation(observacion);
+
+        validateAttachments(archivos);
 
         SolicitudCdpEntity solicitud =
                 new SolicitudCdpEntity();
@@ -406,6 +414,43 @@ public class SolicitudCdpServiceImpl
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "No fue posible leer los archivos adjuntos de la solicitud CPD"
+            );
+        }
+    }
+
+    private void validateAttachments(
+            List<MultipartFile> archivos) {
+
+        if (archivos == null || archivos.isEmpty()) {
+            return;
+        }
+
+        long totalSize = 0L;
+
+        for (MultipartFile archivo : archivos) {
+
+            if (archivo == null || archivo.isEmpty()) {
+                continue;
+            }
+
+            if (archivo.getSize() > MAX_FILE_SIZE) {
+
+                throw new ApiException(
+                        HttpStatus.PAYLOAD_TOO_LARGE,
+                        "El archivo "
+                                + archivo.getOriginalFilename()
+                                + " supera el tamaño máximo permitido de 10 MB"
+                );
+            }
+
+            totalSize += archivo.getSize();
+        }
+
+        if (totalSize > MAX_REQUEST_FILES_SIZE) {
+
+            throw new ApiException(
+                    HttpStatus.PAYLOAD_TOO_LARGE,
+                    "Los archivos adjuntos superan el tamaño máximo permitido de 100 MB por solicitud"
             );
         }
     }

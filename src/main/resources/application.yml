@@ -1,6 +1,12 @@
 spring:
   main:
     allow-bean-definition-overriding: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 101MB
+  
   datasource:
     url: jdbc:oracle:thin:@172.26.4.137:1521/XEPDB1?oracle.net.ENCODING=UTF8&oracle.net.legacyFormat=false
     username: system
