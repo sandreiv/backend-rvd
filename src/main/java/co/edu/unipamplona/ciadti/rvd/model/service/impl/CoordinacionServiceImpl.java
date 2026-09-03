@@ -379,33 +379,83 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void savePreload(RelacionConvocatoriaCoordinacionDTO dto) {
-        log.info("savePreload ===> Guardando preasignación. idCoordinacion={}, idConvocatoria={}",
-                dto != null ? dto.idCoordinacion() : null,
-                dto != null ? dto.idConvocatoria() : null);
+    public void savePreload(
+            RelacionConvocatoriaCoordinacionDTO dto) {
+
+        log.info(
+                "savePreload ===> Guardando preasignación. idCoordinacion={}, idConvocatoria={}",
+                dto != null
+                        ? dto.idCoordinacion()
+                        : null,
+                dto != null
+                        ? dto.idConvocatoria()
+                        : null
+        );
+
         validateSavePreload(dto);
 
-        Optional<CargaEntity> cargaExistente = cargaRepository
-                .findFirstByIdCoordinacionAndIdConvocatoria(
-                        dto.idCoordinacion(),
-                        dto.idConvocatoria());
-        boolean isNewCarga = cargaExistente.isEmpty();
+        ConvocatoriaEntity convocatoriaDestino =
+                convocatoriaRepository
+                        .findById(
+                                dto.idConvocatoria()
+                        )
+                        .orElseThrow(() ->
+                                new ApiException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Convocatoria no encontrada"
+                                )
+                        );
 
-        CargaEntity carga = cargaExistente.orElseGet(CargaEntity::new);
+        Optional<CargaEntity> cargaExistente =
+                cargaRepository
+                        .findFirstByCoordinacionAndPeriodo(
+                                dto.idCoordinacion(),
+                                convocatoriaDestino
+                                        .getIdPeriodoUniversidad()
+                        );
 
-        carga.setIdCoordinacion(dto.idCoordinacion());
-        carga.setIdConvocatoria(dto.idConvocatoria());
+        boolean isNewCarga =
+                cargaExistente.isEmpty();
+
+        CargaEntity carga =
+                cargaExistente.orElseGet(
+                        CargaEntity::new
+                );
+
+        carga.setIdCoordinacion(
+                dto.idCoordinacion()
+        );
+
+        carga.setIdConvocatoria(
+                dto.idConvocatoria()
+        );
 
         if (carga.getIdEstadoCarga() == null) {
-            carga.setIdEstadoCarga(resolveEstadoCargaInicialId());
+            carga.setIdEstadoCarga(
+                    resolveEstadoCargaInicialId()
+            );
         }
 
-        carga.setRegistradoPor(RegistradoPorUtils.value(isNewCarga ? Accion.INSERT : Accion.UPDATE));
-        carga.setFechaCambio(new Date());
+        carga.setRegistradoPor(
+                RegistradoPorUtils.value(
+                        isNewCarga
+                                ? Accion.INSERT
+                                : Accion.UPDATE
+                )
+        );
+
+        carga.setFechaCambio(
+                new Date()
+        );
 
         cargaRepository.save(carga);
-        log.info("savePreload ===> Preasignación guardada. idCarga={}, idCoordinacion={}, idConvocatoria={}",
-                carga.getId(), dto.idCoordinacion(), dto.idConvocatoria());
+
+        log.info(
+                "savePreload ===> Preasignación guardada. idCarga={}, idCoordinacion={}, idConvocatoria={}",
+                carga.getId(),
+                dto.idCoordinacion(),
+                dto.idConvocatoria()
+        );
 
         if (isNewCarga) {
             inheritOnceMesesTeachers(carga);

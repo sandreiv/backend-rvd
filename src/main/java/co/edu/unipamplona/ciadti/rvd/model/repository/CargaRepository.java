@@ -81,4 +81,19 @@ public interface CargaRepository extends JpaRepository<CargaEntity, Long> {
     Optional<EncabezadoPreasignacionProjection> findEncabezadoReporteByIdCarga(
             @Param("idCarga") Long idCarga);
 
+    @Query(value = """
+            SELECT carg.*
+            FROM RVD.CARGA carg
+            INNER JOIN RVD.CONVOCATORIA conv
+                ON conv.CONV_ID = carg.CONV_ID
+            WHERE carg.COOR_ID = :idCoordinacion
+            AND conv.PEUN_ID = :idPeriodoUniversidad
+            ORDER BY carg.CARG_ID DESC
+            FETCH FIRST 1 ROW ONLY
+            """, nativeQuery = true)
+    Optional<CargaEntity> findFirstByCoordinacionAndPeriodo(
+            @Param("idCoordinacion") Long idCoordinacion,
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad
+    );        
+
 }
