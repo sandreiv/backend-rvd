@@ -890,4 +890,17 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             @Param("idPersonaGeneral") Long idPersonaGeneral
     );
 
+    @Query(value = """
+            SELECT FAC.COOR_ID
+            FROM RVD.PERSONACOORDINACION PECO
+            INNER JOIN RVD.COORDINACIONES FAC
+                ON FAC.COOR_ID = PECO.COOR_ID
+            WHERE PECO.PEGE_ID = :idPersonaGeneral
+            AND FAC.COOR_IDPADRE IS NULL
+            FETCH FIRST 1 ROW ONLY
+            """, nativeQuery = true)
+    Long findCdpFacultyCoordinationIdByPersona(
+            @Param("idPersonaGeneral") Long idPersonaGeneral
+    );
+
 }

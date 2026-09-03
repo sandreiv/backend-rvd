@@ -15,6 +15,8 @@ spring:
 file:
   storage:
     root-path: C:/rvd/uploads
+  cdp:
+    path: C:/Users/USER/Documents/GitHub/backend-rvd/archivos/cdp
 
 
 # SpringDoc OpenAPI (Swagger)

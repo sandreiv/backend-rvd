@@ -20,10 +20,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
+import co.edu.unipamplona.ciadti.rvd.model.service.SolicitudCdpService;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +41,7 @@ public class CdpController {
 
     private final CoordinacionService coordinacionService;
     private final CdpReporteService cdpReporteService;
+    private final SolicitudCdpService solicitudCdpService;
 
     @Operation(
         summary = "Obtiene las solicitudes CPD",
@@ -126,6 +132,59 @@ public class CdpController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
     }
+
+    @Operation(
+        summary = "Crea una solicitud CPD",
+        description = """
+                Registra una solicitud CPD para la facultad
+                asociada al Decano autenticado, incluyendo
+                observación y archivos adjuntos.
+                """
+    )
+    @PostMapping(
+        value = "/requests",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<Void> createCdpRequest(
+        @RequestPart(
+            value = "observacion",
+            required = false
+        )
+        String observacion,
+
+        @RequestPart(
+            value = "archivos",
+            required = false
+        )
+        List<MultipartFile> archivos) {
+
+        solicitudCdpService.create(
+            observacion,
+            archivos
+        );
+
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .build();
+    }
+
+    @Operation(
+        summary = "Obtiene la solicitud CPD del Decano",
+        description = """
+                Consulta la solicitud CPD registrada para la
+                facultad asociada al Decano autenticado.
+                """
+    )
+    @GetMapping("/request")
+        public ResponseEntity<CdpRequestDTO> getCurrentCdpRequest() {
+
+        CdpRequestDTO request =
+                solicitudCdpService.getCurrentRequest();
+
+        return ResponseEntity.ok(request);
+    }       
+
+
 }
 
 /* 31/08/2026 @:Daniel Arias */
