@@ -271,7 +271,9 @@ public class SolicitudCdpServiceImpl
 
                 String pathRelativo =
                         "archivos/cdp/"
-                                + idSolicitud;
+                                + idSolicitud
+                                + "/"
+                                + nombreSeguro;
 
                 adjuntos.add(
                         new CdpAdjuntoDTO(

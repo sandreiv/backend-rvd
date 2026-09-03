@@ -15,7 +15,9 @@ spring:
 file:
   storage:
     root-path: C:/rvd/uploads
+
   cdp:
+    root-path: C:/Users/USER/Documents/GitHub/backend-rvd
     path: C:/Users/USER/Documents/GitHub/backend-rvd/archivos/cdp
 
 
