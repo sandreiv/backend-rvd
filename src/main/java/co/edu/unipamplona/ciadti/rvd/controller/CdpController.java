@@ -173,11 +173,18 @@ public class CdpController {
             value = "archivos",
             required = false
         )
-        List<MultipartFile> archivos) {
+        List<MultipartFile> archivos,
+    
+        @RequestPart(
+            value = "idPeriodo",
+            required = false
+        )
+        String idPeriodo) {
 
         solicitudCdpService.create(
             observacion,
-            archivos
+            archivos,
+            idPeriodo
         );
 
         return ResponseEntity

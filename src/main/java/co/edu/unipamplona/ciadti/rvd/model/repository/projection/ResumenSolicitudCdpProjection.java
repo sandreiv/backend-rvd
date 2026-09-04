@@ -1,6 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
 import java.sql.Clob;
+import java.util.Date;
 
 public interface ResumenSolicitudCdpProjection {
     Long getIdCoordinacion();
@@ -23,4 +24,5 @@ public interface ResumenSolicitudCdpProjection {
     String getEstadoSolicitud();
     String getObservacionSolicitud();
     Clob getAdjuntoSolicitud();
+    Date getFechaCambioSolicitud();
 }
