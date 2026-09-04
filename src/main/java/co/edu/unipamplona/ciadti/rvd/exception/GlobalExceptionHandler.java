@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ErrorResponseDTO;
 
@@ -36,6 +37,20 @@ public class GlobalExceptionHandler {
             IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponseDTO> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex) {
+
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(
+                        new ErrorResponseDTO(
+                                "El tamaño de los archivos supera el límite permitido. "
+                                        + "Cada archivo puede pesar máximo 10 MB y "
+                                        + "el total de adjuntos por solicitud no puede superar 100 MB."
+                        )
+                );
     }
 
     @ExceptionHandler(Exception.class)
