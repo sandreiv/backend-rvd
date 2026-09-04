@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
@@ -164,7 +165,9 @@ public class CdpExcelExporter {
         Cell titleCell = title.createCell(0);
         titleCell.setCellValue("Resumen de preasignación");
         titleCell.setCellStyle(styles.title);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+
+        CellRangeAddress region = new CellRangeAddress(0, 0, 0, 3);
+        sheet.addMergedRegion(region);
 
         if (encabezado == null) {
             return rowIdx;
@@ -206,6 +209,14 @@ public class CdpExcelExporter {
         Cell value = row.createCell(1);
         value.setCellValue(valor != null ? valor : "");
         value.setCellStyle(styles.value);
+
+        CellRangeAddress region = new CellRangeAddress(rowIdx, rowIdx, 1, 3);
+        sheet.addMergedRegion(region);
+        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+
         return rowIdx + 1;
     }
 
@@ -408,6 +419,9 @@ public class CdpExcelExporter {
 
         CellStyle label = workbook.createCellStyle();
         label.setFont(boldFont);
+        label.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        label.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        applyBorder(label);
 
         CellStyle value = workbook.createCellStyle();
 

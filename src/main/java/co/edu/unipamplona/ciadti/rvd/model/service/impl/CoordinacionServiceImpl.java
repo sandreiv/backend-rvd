@@ -57,6 +57,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RestriccionPorCoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.SolicitudCdpMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
@@ -92,6 +93,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenSolicitudCdpDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionProgramaHorasDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
@@ -149,6 +151,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDoc
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ResumenSolicitudCdpProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -200,6 +203,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CategoriaModalidadRepository categoriaModalidadRepository;
     private final EscalafonRepository escalafonRepository;
     private final CoordinacionMapper coordinacionMapper;
+    private final SolicitudCdpMapper solicitudCdpMapper;
     private final DocentePlantaCoordinacionMapper docentePlantaCoordinacionMapper;
     private final DocentePreasignacionMapper docentePreasignacionMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
@@ -2853,7 +2857,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (!hasRole(user, ROL_DECANO)) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "Las solicitudes CPD requieren rol Decano"
+                    "Las solicitudes CDP requieren rol Decano"
             );
         }
 
@@ -2884,11 +2888,38 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 coordinacionMapper.toDtoList(projections);
 
         log.info(
-                "findCdpRequests ===> Solicitudes CPD listadas. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, total={}",
+                "findCdpRequests ===> Solicitudes CDP listadas. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, total={}",
                 idConvocatoria,
                 idPeriodoUniversidad,
                 idPersona,
                 result.size()
+        );
+
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad) {
+        AuthUserDetails user = requireListadoUser();
+
+        if (!hasRole(user, ROL_DESARROLLO)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "Las revisiones CDP requieren rol Desarrollo Academico"
+            );
+        }
+        if (idPeriodoUniversidad == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
+        }
+
+        List<ResumenSolicitudCdpProjection> projections = coordinacionRepository.findByPeriodoForCdpAcademicDevelopment(idPeriodoUniversidad);
+
+        List<ResumenSolicitudCdpDTO> result = solicitudCdpMapper.toDtoList(projections);
+        
+        log.info(
+                "findCdpRequestsDevelopment ===> Solicitudes CDP listadas. idPeriodoUniversidad={}",
+                idPeriodoUniversidad
         );
 
         return result;
@@ -2903,7 +2934,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (!hasRole(user, ROL_DECANO)) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "El contexto CPD requiere rol Decano"
+                    "El contexto CDP requiere rol Decano"
             );
         }
 
@@ -2922,7 +2953,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         CdpContextProjection contexto = contextos.get(0);
 
         log.info(
-                "getCdpContext ===> Contexto CPD obtenido. idPersona={}, idUnidadAcademica={}, idFacultad={}",
+                "getCdpContext ===> Contexto CDP obtenido. idPersona={}, idUnidadAcademica={}, idFacultad={}",
                 idPersona,
                 contexto.getIdUnidadAcademica(),
                 contexto.getIdFacultad()

@@ -39,6 +39,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenSolicitudCdpDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionProgramaHorasDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
@@ -56,9 +57,11 @@ public interface CoordinacionService {
             
     List<CoordinacionDTO> findCdpRequests(
         Long idConvocatoria,
-        Long idPeriodoUniversidad);     
+        Long idPeriodoUniversidad);
+    
+    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad);
         
-    CdpContextDTO getCdpContext();    
+    CdpContextDTO getCdpContext();
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 

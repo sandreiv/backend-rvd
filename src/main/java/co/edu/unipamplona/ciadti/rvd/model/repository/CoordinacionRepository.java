@@ -13,6 +13,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.CoordinacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionAdministracionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ResumenSolicitudCdpProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
 
 public interface CoordinacionRepository extends JpaRepository<CoordinacionesEntity, Long> {
@@ -637,7 +638,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 MOCO.MOCO_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findByConvocatoriaForDevelopment(
-            @Param("convId") Long convId);    
+            @Param("convId") Long convId); 
             
     @Query(value = """
             SELECT
@@ -711,7 +712,52 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 MOCO.MOCO_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findByPeriodoForDevelopment(
-            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);        
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
+        
+    @Query(value = """
+            SELECT
+                COOR.COOR_ID AS idCoordinacion,
+                COOR.COOR_NOMBRE AS nombreCoordinacion,
+                COOR.COOR_DESCRIPCION AS descripcionCoordinacion,
+                COOR.COOR_CODIGO AS codigo,
+                COOR.COOR_ESACADEMICA AS esAcademica,
+                UNID_REG.UNID_ID AS idUnidadRegional,
+                UNID_REG.UNID_NOMBRE AS nombreUnidadRegional,
+                UNID_AREA.UNID_ID AS idUnidadArea,
+                UNID_AREA.UNID_NOMBRE AS nombreUnidadArea,
+                METO.METO_ID AS idMetodologia,
+                METO.METO_DESCRIPCION AS descripcionMetodologia,
+                MODA.MODA_ID AS idModalidad,
+                MODA.MODA_DESCRIPCION AS descripcionModalidad,
+                SOCD.SOCD_ID AS idSolicitud,
+                SOCD.SOCD_ESTADO AS estadoSolicitud,
+                SOCD.SOCD_OBSERVACION AS observacionSolicitud,
+                SOCD.SOCD_ADJUNTO AS adjuntoSolicitud,
+                PEUN.PEUN_ID AS idPeriodoUniversidad,
+                PEUN.PEUN_ANO AS anioPeriodo,
+                PEUN.PEUN_PERIODO AS descripcionPeriodo
+            FROM RVD.COORDINACIONES COOR
+            INNER JOIN RVD.SOLICITUDCDP SOCD
+                ON SOCD.COOR_ID = COOR.COOR_ID
+            INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = :idPeriodoUniversidad
+            INNER JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            INNER JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            INNER JOIN ACADEMICO.METODOLOGIA METO
+                ON METO.METO_ID = COOR.METO_ID
+            INNER JOIN ACADEMICO.MODALIDAD MODA
+                ON MODA.MODA_ID = COOR.MODA_ID
+            WHERE COOR.COOR_IDPADRE IS NULL
+                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = 'DESARROLLO ACADEMICO'
+            ORDER BY
+                UNID_REG.UNID_NOMBRE,
+                UNID_AREA.UNID_NOMBRE,
+                COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademicDevelopment(
+        @Param("idPeriodoUniversidad") Long idPeriodoUniversidad); 
 
     @Query(value = """
             SELECT
