@@ -9,6 +9,7 @@
  * 31/08/2026 - Sebastian Jaimes - Valor hora desde puntos vigencia
  * 31/08/2026 - Sebastian Jaimes - Reporte PDF con totales, grupo y cupos
  * 31/08/2026 - Sebastian Jaimes - Grupo como conteo numérico
+ * 04/09/2026 - Exclusion de once meses heredados solo en segundo periodo
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -46,6 +47,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActi
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
 import co.edu.unipamplona.ciadti.rvd.report.PreasignacionExcelExporter;
 import co.edu.unipamplona.ciadti.rvd.report.PreasignacionPdfExporter;
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
@@ -73,7 +75,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
     @Transactional(readOnly = true)
     public FileDTO generatePreloadReport(Long idCarga) {
         log.debug("generatePreloadReport ===> idCarga={}", idCarga);
-        ReportePreasignacionCargaDTO reporte = buildReport(idCarga);
+        ReportePreasignacionCargaDTO reporte = buildReport(idCarga, true);
         byte[] content = excelExporter.export(reporte);
         String fileName = buildFileName(reporte.encabezado(), "xlsx");
         log.info(
@@ -88,7 +90,7 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
     @Transactional(readOnly = true)
     public FileDTO generatePreloadPdfReport(Long idCarga) {
         log.debug("generatePreloadPdfReport ===> idCarga={}", idCarga);
-        ReportePreasignacionCargaDTO reporte = buildReport(idCarga);
+        ReportePreasignacionCargaDTO reporte = buildReport(idCarga, false);
         byte[] content = pdfExporter.export(reporte);
         String fileName = buildFileName(reporte.encabezado(), "pdf");
         log.info(
@@ -99,25 +101,42 @@ public class PreasignacionReporteServiceImpl implements PreasignacionReporteServ
         return new FileDTO(fileName, content);
     }
 
-    private ReportePreasignacionCargaDTO buildReport(Long idCarga) {
+    private ReportePreasignacionCargaDTO buildReport(
+            Long idCarga,
+            boolean excludeOnceMesesSegundoPeriodo) {
         if (idCarga == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
         }
-        EncabezadoCargaReporteDTO encabezado = loadEncabezado(idCarga);
+        EncabezadoPreasignacionProjection encabezadoProjection = cargaRepository
+                .findEncabezadoReporteByIdCarga(idCarga)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga con id " + idCarga));
+        EncabezadoCargaReporteDTO encabezado = toEncabezado(encabezadoProjection);
         BigDecimal valorHoraVigencia = resolveValorHoraVigencia(encabezado.anio());
-        List<DocentePreasignacionReporteProjection> docentes = cargaDocenteRepository.findReportProfessorsByCarga(idCarga);
+        List<DocentePreasignacionReporteProjection> docentes =
+                cargaDocenteRepository.findReportProfessorsByCarga(idCarga);
+        if (excludeOnceMesesSegundoPeriodo) {
+            docentes = docentes.stream()
+                    .filter(d -> !OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
+                            d.getOnceMeses(),
+                            encabezadoProjection.getPeriodo()))
+                    .toList();
+        }
         Map<Long, Map<String, BigDecimal>> horasByDocente = loadHorasPorDocente(idCarga);
         Map<Long, GrupoCupos> grupoCuposByDocente = loadGrupoCuposPorDocente(idCarga);
-        List<ModalidadPreasignacionReporteDTO> modalidades = buildModalidades(docentes, horasByDocente, grupoCuposByDocente, valorHoraVigencia);
+        List<ModalidadPreasignacionReporteDTO> modalidades = buildModalidades(
+                docentes,
+                horasByDocente,
+                grupoCuposByDocente,
+                valorHoraVigencia);
         TotalesPreasignacionReporteDTO resumen = sumModalidades(modalidades);
 
         return new ReportePreasignacionCargaDTO(encabezado, modalidades, resumen);
     }
 
-    private EncabezadoCargaReporteDTO loadEncabezado(Long idCarga) {
-        EncabezadoPreasignacionProjection projection = cargaRepository
-                .findEncabezadoReporteByIdCarga(idCarga)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+    private EncabezadoCargaReporteDTO toEncabezado(
+            EncabezadoPreasignacionProjection projection) {
         return new EncabezadoCargaReporteDTO(
                 projection.getIdCarga(),
                 projection.getIdCoordinacion(),

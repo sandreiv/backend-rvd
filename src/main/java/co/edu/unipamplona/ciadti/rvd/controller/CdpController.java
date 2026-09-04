@@ -6,6 +6,7 @@
  * Fecha de creación: 31/08/2026
  * Modificaciones:
  * 31/08/2026 - Daniel Arias - Creación inicial
+ * 04/09/2026 - Exclusion de once meses heredados en segundo periodo
  */
 
 package co.edu.unipamplona.ciadti.rvd.controller;
@@ -108,6 +109,8 @@ public class CdpController {
             coordinación de su facultad cuya carga está en Aval Desarrollo.
             Cada hoja conserva el resumen de docentes: encabezado, valor hora,
             valores de contratación y horas de actividades.
+            Excluye docentes con CADO_ONCEMESES = 1 si la convocatoria
+            corresponde al segundo periodo del año.
             """
     )
     @GetMapping("/cdp-report")
@@ -134,6 +137,8 @@ public class CdpController {
             facultad, un bloque por cada coordinación en Aval Desarrollo
             (modalidades, docentes y total de la coordinación) y espacio
             de firma del decano al final.
+            Excluye docentes con CADO_ONCEMESES = 1 si la convocatoria
+            corresponde al segundo periodo del año.
             """
     )
     @GetMapping("/cdp-pdf-report")

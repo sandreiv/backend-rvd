@@ -6,6 +6,7 @@
  * Fecha de creación: 01/09/2026
  * Modificaciones:
  * 01/09/2026 - Sebastian Jaimes - Creación inicial
+ * 04/09/2026 - Exclusion de once meses heredados solo en segundo periodo
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -48,6 +49,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.report.CdpExcelExporter;
 import co.edu.unipamplona.ciadti.rvd.report.CdpPdfExporter;
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -130,21 +132,34 @@ public class CdpReporteServiceImpl implements CdpReporteService {
         if (idCarga == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
         }
-        EncabezadoCargaReporteDTO encabezado = loadEncabezado(idCarga);
+        EncabezadoPreasignacionProjection encabezadoProjection = cargaRepository
+                .findEncabezadoReporteByIdCarga(idCarga)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga con id " + idCarga));
+        EncabezadoCargaReporteDTO encabezado = toEncabezado(encabezadoProjection);
         BigDecimal valorHoraVigencia = resolveValorHoraVigencia(encabezado.anio());
-        List<DocentePreasignacionReporteProjection> docentes = cargaDocenteRepository.findReportProfessorsByCarga(idCarga);
+        List<DocentePreasignacionReporteProjection> docentes =
+                cargaDocenteRepository.findReportProfessorsByCarga(idCarga)
+                        .stream()
+                        .filter(d -> !OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
+                                d.getOnceMeses(),
+                                encabezadoProjection.getPeriodo()))
+                        .toList();
         Map<Long, Map<String, BigDecimal>> horasByDocente = loadHorasPorDocente(idCarga);
         Map<Long, GrupoCupos> grupoCuposByDocente = loadGrupoCuposPorDocente(idCarga);
-        List<ModalidadPreasignacionReporteDTO> modalidades = buildModalidades(docentes, horasByDocente, grupoCuposByDocente, valorHoraVigencia);
+        List<ModalidadPreasignacionReporteDTO> modalidades = buildModalidades(
+                docentes,
+                horasByDocente,
+                grupoCuposByDocente,
+                valorHoraVigencia);
         TotalesPreasignacionReporteDTO resumen = sumModalidades(modalidades);
 
         return new ReportePreasignacionCargaDTO(encabezado, modalidades, resumen);
     }
 
-    private EncabezadoCargaReporteDTO loadEncabezado(Long idCarga) {
-        EncabezadoPreasignacionProjection projection = cargaRepository
-                .findEncabezadoReporteByIdCarga(idCarga)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
+    private EncabezadoCargaReporteDTO toEncabezado(
+            EncabezadoPreasignacionProjection projection) {
         return new EncabezadoCargaReporteDTO(
                 projection.getIdCarga(),
                 projection.getIdCoordinacion(),

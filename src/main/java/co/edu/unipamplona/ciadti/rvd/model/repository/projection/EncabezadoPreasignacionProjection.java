@@ -6,6 +6,7 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 04/09/2026 - PEUN_PERIODO para filtrar once meses en segundo periodo
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
@@ -24,6 +25,8 @@ public interface EncabezadoPreasignacionProjection {
     Long getIdPeriodoUniversidad();
 
     String getPeriodoAcademico();
+
+    String getPeriodo();
 
     Long getAnio();
 

@@ -9,6 +9,7 @@
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  * 25/08/2026 - Sebastian Jaimes - registradoPor con idPersona, acción e IP
  * 27/08/2026 - Horas de actividades por carga
+ * 04/09/2026 - Docentes once meses heredados con estado pendiente
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -549,7 +550,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         //copia.setValorContrato(origen.getValorContrato());
         //copia.setValorPrestaciones(origen.getValorPrestaciones());
         //copia.setSalario(origen.getSalario());
-        copia.setEstado(origen.getEstado());
+        copia.setEstado("0");
         copia.setVigente(origen.getVigente());
         copia.setHoras(origen.getHoras());
         copia.setValorHora(origen.getValorHora());
@@ -571,8 +572,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         CargaEntity carga = cargaRepository.findById(idCarga)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe la carga con id " + idCarga));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga));
 
         validatePreassignmentWriteAllowed(carga);
     }
@@ -583,8 +583,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id " + idCargaDocente));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
 
         validatePreassignmentWriteAllowedByCarga(cargaDocente.getIdCarga());
     }
@@ -595,8 +594,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         DetalleCargaDocenteEntity detalle = detalleCargaDocenteRepository.findById(idDetalleCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe el detalle de carga docente con id " + idDetalleCargaDocente));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + idDetalleCargaDocente));
 
         validatePreassignmentWriteAllowedByCargaDocente(detalle.getIdCargaDocente());
     }
@@ -628,11 +626,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             return false;
         }
 
-        Long totalRestricciones = restriccionPorCoordinacionRepository
-                .countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
+        Long totalRestricciones = restriccionPorCoordinacionRepository.countActiveNonExpiredRestrictionsByConvocatoria(idConvocatoria);
 
-        boolean tieneRestriccionesNoVencidas =
-                totalRestricciones != null && totalRestricciones > 0;
+        boolean tieneRestriccionesNoVencidas = totalRestricciones != null && totalRestricciones > 0;
 
         if (!tieneRestriccionesNoVencidas) {
             return "1".equals(convocatoria.getEstado());

@@ -10,6 +10,7 @@
  * 27/08/2026 - Horas de actividades por carga
  * 31/08/2026 - Sebastian Jaimes - Columna V. Hora en reporte Excel
  * 31/08/2026 - Sebastian Jaimes - Reporte PDF de preasignación
+ * 04/09/2026 - Exclusion de once meses heredados en segundo periodo
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -483,9 +484,11 @@ public class CoordinationController {
     @Operation(
         summary = "Genera el reporte Excel de preasignación de una carga",
         description = """
-            Exporta el resumen de todos los docentes de la carga: encabezado
+            Exporta el resumen de los docentes de la carga: encabezado
             (unidad, facultad, coordinación, periodo, convocatoria), valor hora
             (puntos vigencia), valores de contratación y horas de actividades.
+            Excluye docentes con CADO_ONCEMESES = 1 si la convocatoria
+            corresponde al segundo periodo del año.
             """
     )
     @GetMapping("/preload-report/{idCarga}")
