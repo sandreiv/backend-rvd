@@ -7,6 +7,7 @@
  * Modificaciones:
  * 01/07/2026 - Sebastian Jaimes - Creación inicial
  * 31/08/2026 - Sebastian Jaimes - Año del periodo en encabezado de reporte
+ * 04/09/2026 - PEUN_PERIODO en encabezado de reporte
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -62,6 +63,7 @@ public interface CargaRepository extends JpaRepository<CargaEntity, Long> {
                 COOR.COOR_NOMBRE AS coordinacion,
                 PEUN.PEUN_ID AS idPeriodoUniversidad,
                 TRIM(PEUN.PEUN_ANO || '-' || PEUN.PEUN_PERIODO) AS periodoAcademico,
+                PEUN.PEUN_PERIODO AS periodo,
                 PEUN.PEUN_ANO AS anio,
                 CONV.CONV_ID AS idConvocatoria,
                 CONV.CONV_NOMBRE AS convocatoria

@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 31/08/2026 - Sebastian Jaimes - Horas en consulta de reporte de preasignación
+ * 04/09/2026 - Once meses en consulta de reporte de preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -266,7 +267,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CADO.CADO_FECHAINICIO AS fechaInicio,
                 CADO.CADO_FECHAFIN AS fechaFin,
                 CADO.CADO_SEMANAS AS semanas,
-                CADO.CADO_HORAS AS horas
+                CADO.CADO_HORAS AS horas,
+                CADO.CADO_ONCEMESES AS onceMeses
             FROM RVD.CARGADOCENTE CADO
             LEFT JOIN GENERAL.PERSONAGENERAL PEGE
                 ON PEGE.PEGE_ID = CADO.PEGE_ID
