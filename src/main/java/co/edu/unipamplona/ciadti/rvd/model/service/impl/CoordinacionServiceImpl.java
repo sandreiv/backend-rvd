@@ -545,7 +545,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         //copia.setValorContrato(origen.getValorContrato());
         //copia.setValorPrestaciones(origen.getValorPrestaciones());
         //copia.setSalario(origen.getSalario());
-        copia.setEstado(origen.getEstado());
+        copia.setEstado("0");
         copia.setVigente(origen.getVigente());
         copia.setHoras(origen.getHoras());
         copia.setValorHora(origen.getValorHora());
