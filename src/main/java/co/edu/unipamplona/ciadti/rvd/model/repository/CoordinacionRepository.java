@@ -866,7 +866,31 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             @Param("idPadre") Long idPadre
     );
 
-    boolean existsByIdCoordinacionPadre(Long idCoordinacionPadre);    
+    boolean existsByIdCoordinacionPadre(Long idCoordinacionPadre);
+
+    @Query(value = """
+            SELECT DISTINCT
+                COOR.*
+            FROM RVD.COORDINACIONES COOR
+            INNER JOIN RVD.CARGA CARG
+                ON CARG.COOR_ID = COOR.COOR_ID
+            INNER JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CARG.CONV_ID
+            WHERE COOR.COOR_IDPADRE IS NOT NULL
+                AND TRIM(COOR.COOR_ESACADEMICA) = '1'
+                AND CARG.CONV_ID = :idConvocatoria
+                AND CONV.PEUN_ID = :idPeriodoUniversidad
+                AND EXISTS (
+                    SELECT 1
+                    FROM RVD.CARGADOCENTE CADO
+                    WHERE CADO.CARG_ID = CARG.CARG_ID
+                        AND CADO.CADO_ESTADO = '1'
+                )
+            ORDER BY COOR.COOR_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionesEntity> findAcademicChildCoordinations(
+            @Param("idConvocatoria") Long idConvocatoria,
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
 
     @Procedure(name = "CoordinacionesEntity.deleteByProcedure")

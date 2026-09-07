@@ -10,6 +10,9 @@
  * 25/08/2026 - Sebastian Jaimes - registradoPor con idPersona, acción e IP
  * 27/08/2026 - Horas de actividades por carga
  * 04/09/2026 - Docentes once meses heredados con estado pendiente
+ * 07/09/2026 - Sebastian Jaimes - Listado coordinaciones académicas hijas
+ * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
+ * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -926,6 +929,59 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
         log.info("listProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocenteCoordinacionDTO> listProfessorsForVerification(
+            Long idPeriodoUniversidad,
+            Long idConvocatoria,
+            Long idCoordinacion) {
+        log.debug(
+                "listProfessorsForVerification ===> Listando docentes. idPeriodoUniversidad={}, idConvocatoria={}, idCoordinacion={}",
+                idPeriodoUniversidad,
+                idConvocatoria,
+                idCoordinacion
+        );
+
+        validateVerificationFilters(
+                idPeriodoUniversidad,
+                idConvocatoria,
+                idCoordinacion
+        );
+
+        List<DocenteCargaCoordinacionProjection> projections =
+                cargaDocenteRepository.findProfessorsByCoordinationCallAndPeriod(
+                        idCoordinacion,
+                        idConvocatoria,
+                        idPeriodoUniversidad
+                );
+        List<DocenteCoordinacionDTO> result =
+                docenteCoordinacionMapper.toDtoList(projections);
+        log.info(
+                "listProfessorsForVerification ===> Docentes listados. total={}",
+                result.size()
+        );
+        return result;
+    }
+
+    private void validateVerificationFilters(
+            Long idPeriodoUniversidad,
+            Long idConvocatoria,
+            Long idCoordinacion) {
+        if (idCoordinacion == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El periodo, la convocatoria y la coordinación son obligatorios"
+            );
+        }
+        validatePeriodAndCall(idPeriodoUniversidad, idConvocatoria);
+        if (!coordinacionRepository.existsById(idCoordinacion)) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la coordinación con id " + idCoordinacion
+            );
+        }
     }
 
     private void applyHorasDeExcepcion(CargaDocenteEntity entity) {
@@ -2173,6 +2229,56 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         } catch (NumberFormatException ex) {
             log.warn("toBigDecimalValue ===> Valor numérico inválido en total preasignación: {}", row[index]);
             return BigDecimal.ZERO;
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CoordinacionBusquedaDTO> listAcademicCoordinations(
+            Long idPeriodoUniversidad,
+            Long idConvocatoria) {
+        log.debug(
+                "listAcademicCoordinations ===> Listando coordinaciones académicas. idPeriodoUniversidad={}, idConvocatoria={}",
+                idPeriodoUniversidad,
+                idConvocatoria
+        );
+        validatePeriodAndCall(idPeriodoUniversidad, idConvocatoria);
+        List<CoordinacionBusquedaDTO> result =
+                coordinacionMapper.toBusquedaDtoList(
+                        coordinacionRepository.findAcademicChildCoordinations(
+                                idConvocatoria,
+                                idPeriodoUniversidad
+                        )
+                );
+        log.info(
+                "listAcademicCoordinations ===> Coordinaciones académicas listadas. total={}",
+                result.size()
+        );
+        return result;
+    }
+
+    private void validatePeriodAndCall(
+            Long idPeriodoUniversidad,
+            Long idConvocatoria) {
+        if (idPeriodoUniversidad == null || idConvocatoria == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El periodo y la convocatoria son obligatorios"
+            );
+        }
+        if (!convocatoriaRepository.existsById(idConvocatoria)) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la convocatoria con id " + idConvocatoria
+            );
+        }
+        if (!convocatoriaRepository.existsByIdAndIdPeriodoUniversidad(
+                idConvocatoria,
+                idPeriodoUniversidad)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria no pertenece al periodo seleccionado"
+            );
         }
     }
 

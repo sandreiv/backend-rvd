@@ -8,6 +8,9 @@
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  * 27/08/2026 - Horas de actividades por carga
+ * 07/09/2026 - Sebastian Jaimes - Listado coordinaciones académicas hijas
+ * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
+ * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -83,6 +86,11 @@ public interface CoordinacionService {
 
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
 
+    List<DocenteCoordinacionDTO> listProfessorsForVerification(
+            Long idPeriodoUniversidad,
+            Long idConvocatoria,
+            Long idCoordinacion);
+
     void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto);
 
     void deleteProfessor(Long idCargaDocente);
@@ -140,6 +148,10 @@ public interface CoordinacionService {
     List<RestriccionProgramaHorasDTO> listProgramHourRestrictions(
             Long idModalidadContratacion,
             Long idCargaDocente);
+
+    List<CoordinacionBusquedaDTO> listAcademicCoordinations(
+            Long idPeriodoUniversidad,
+            Long idConvocatoria);
 
     List<CoordinacionBusquedaDTO> searchCoordination(String nombre);
 

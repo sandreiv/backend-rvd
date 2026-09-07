@@ -286,5 +286,9 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
     List<ConvocatoriaEntity> findAssignableActivePreloadCalls(
             @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
+    boolean existsByIdAndIdPeriodoUniversidad(
+            Long id,
+            Long idPeriodoUniversidad);
+
 }
 

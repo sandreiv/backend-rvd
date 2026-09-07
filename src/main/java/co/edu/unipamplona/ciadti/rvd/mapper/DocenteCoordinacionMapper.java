@@ -17,7 +17,7 @@ public interface DocenteCoordinacionMapper {
     @Mapping(target = "tieneCarga",
             expression = "java(projection.getIdCargaDocente() != null)")
     @Mapping(target = "tieneDetalleActividades",
-            expression = "java(projection.getTieneActividades() != 0)")
+            expression = "java(hasActivities(projection))")
     DocenteCoordinacionDTO toDto(
             DocenteCargaCoordinacionProjection projection);
 
@@ -38,5 +38,11 @@ public interface DocenteCoordinacionMapper {
             return projection.getCargaFechaFin();
         }
         return projection.getFechaConvocatoriaFin();
+    }
+
+    default boolean hasActivities(
+            DocenteCargaCoordinacionProjection projection) {
+        return projection.getTieneActividades() != null
+                && projection.getTieneActividades() != 0;
     }
 }
