@@ -50,6 +50,18 @@ public class HistorialCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "HICD_FECHACAMBIO")
     private Date fechaCambio;
 
+    @Column(name = "PEGE_IDREGISTRA")
+    private Long idPersonaGeneralRegistra;
+
+    @Column(name = "HICD_FECHA")
+    private Date fecha;
+
+    @Column(name = "HICD_OBSERVACION")
+    private String observacion;
+
+    @Column(name = "HICD_PEGEROL")
+    private String rolPersonaGeneralRegistra;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CADO_ID", insertable = false, updatable = false)
     private CargaDocenteEntity cargaDocente;

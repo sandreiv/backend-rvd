@@ -48,6 +48,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
@@ -419,8 +420,15 @@ public class CoordinationController {
     )
     @PutMapping("/disapprove-professor-preassignment/{idCargaDocente}")
     public ResponseEntity<Void> disapproveProfessorActivityDistribution(
-            @PathVariable Long idCargaDocente) {
-        coordinacionService.disapproveProfessorActivityDistribution(idCargaDocente);
+            @PathVariable Long idCargaDocente,
+            @RequestBody ObservacionCargaDocenteDTO dto) {
+
+        coordinacionService
+                .disapproveProfessorActivityDistribution(
+                        idCargaDocente,
+                        dto
+                );
+
         return ResponseEntity.ok().build();
     }
 
