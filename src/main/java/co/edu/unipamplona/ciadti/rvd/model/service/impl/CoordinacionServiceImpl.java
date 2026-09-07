@@ -1321,6 +1321,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             Long idCargaDocente,
             String observacion) {
 
+        registerProfessorPreloadHistory(
+                idCargaDocente,
+                observacion,
+                null
+        );
+    }
+
+    private void registerProfessorPreloadHistory(
+            Long idCargaDocente,
+            String observacion,
+            String rolDeLaAccion) {
+
         log.info(
                 "registerProfessorPreloadHistory ===> Registrando estado de carga docente. idCargaDocente={}",
                 idCargaDocente
@@ -1364,8 +1376,16 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             );
         }
 
-        String rolPersonaRegistra =
-                resolveHistorialCargaDocenteRol(user);
+        if (rolDeLaAccion != null && !hasRole(user, rolDeLaAccion)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "El usuario no tiene el rol requerido para registrar esta acción"
+            );
+        }
+
+        String rolPersonaRegistra = rolDeLaAccion != null
+                ? rolDeLaAccion
+                : resolveHistorialCargaDocenteRol(user);
 
         Date fechaRegistro = new Date();
 
@@ -2085,6 +2105,121 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
+    public void verifyProfessor(
+            Long idCargaDocente,
+            ObservacionCargaDocenteDTO dto) {
+
+        reviewProfessorVerification(
+                idCargaDocente,
+                dto,
+                "2"
+        );
+    }
+
+    @Override
+    @Transactional
+    public void declineProfessorVerification(
+            Long idCargaDocente,
+            ObservacionCargaDocenteDTO dto) {
+
+        reviewProfessorVerification(
+                idCargaDocente,
+                dto,
+                "0"
+        );
+    }
+
+    private void reviewProfessorVerification(
+            Long idCargaDocente,
+            ObservacionCargaDocenteDTO dto,
+            String estadoDestino) {
+
+        if (idCargaDocente == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id de la carga docente es obligatorio"
+            );
+        }
+
+        if (!"2".equals(estadoDestino) && !"0".equals(estadoDestino)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El estado de destino no es válido para la revisión"
+            );
+        }
+
+        AuthUserDetails user;
+
+        try {
+            user = SecurityUtils.requireUser();
+        } catch (IllegalStateException ex) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    ex.getMessage()
+            );
+        }
+
+        if (!hasRole(user, ROL_DESARROLLO)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "Solo Desarrollo académico puede verificar o devolver docentes"
+            );
+        }
+
+        if (user.getIdPersonaGeneral() == null) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "El token no trae idPersona"
+            );
+        }
+
+        String observacion = normalizeHistorialCargaDocenteObservacion(
+                dto != null ? dto.observacion() : null
+        );
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+                .findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente
+                ));
+
+        validatePreassignmentWriteAllowedByCargaDocente(
+                idCargaDocente
+        );
+
+        if (!"1".equals(cargaDocente.getEstado())) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente debe estar en estado Para verificar para realizar esta acción"
+            );
+        }
+
+        cargaDocente.setEstado(estadoDestino);
+        cargaDocente.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.UPDATE)
+        );
+        cargaDocente.setFechaCambio(new Date());
+
+        cargaDocenteRepository.save(cargaDocente);
+
+        registerProfessorPreloadHistory(
+                idCargaDocente,
+                observacion,
+                ROL_DESARROLLO
+        );
+
+        log.info(
+                "reviewProfessorVerification ===> Revisión registrada. "
+                        + "idCargaDocente={}, estadoDestino={}, idPersona={}",
+                idCargaDocente,
+                estadoDestino,
+                user.getIdPersonaGeneral()
+        );
+    }
+
+    @Override
+    @Transactional
     public void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
         log.info(
                 "approveProfessorActivityDistribution ===> Iniciando aprobación de distribución. idCargaDocente={}",
@@ -2101,12 +2236,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         validatePreassignmentWriteAllowedByCargaDocente(dto.idCargaDocente());
 
-        if ("1".equals(cargaDocente.getEstado())) {
-            log.info(
-                    "approveProfessorActivityDistribution ===> La preasignación ya estaba aprobada. idCargaDocente={}",
-                    dto.idCargaDocente()
-            );
+        if ("4".equals(cargaDocente.getEstado())) {
             return;
+        }
+
+        if (!"2".equals(cargaDocente.getEstado())) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente debe estar Verificado para aprobar su preasignación"
+            );
         }
 
         List<DetalleCargaDocenteDTO> detallesActualizados =
@@ -2152,7 +2290,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         // Como ya se aprobo, se actualiza el contexto para mantener la trazabilidad en el historial
-        cargaDocente.setEstado("1");
+        cargaDocente.setEstado("4");
         // Registrar el estado dentro del historial
         registerProfessorPreloadHistory(dto.idCargaDocente());
 
@@ -2161,42 +2299,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 dto.idCargaDocente()
         );
     }
-
-    @Override
-    @Transactional
-    public void disapproveProfessorActivityDistribution(Long idCargaDocente, ObservacionCargaDocenteDTO dto) {
-        log.info(
-                "disapproveProfessorActivityDistribution ===> Iniciando desaprobación de distribución. idCargaDocente={}", idCargaDocente
-        );
-
-        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
-
-        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id " + idCargaDocente
-                ));
-
-        if ("0".equals(cargaDocente.getEstado())) {
-            log.info(
-                    "disapproveProfessorActivityDistribution ===> La preasignación ya estaba desaprobada. idCargaDocente={}", idCargaDocente
-            );
-            return;
-        }
-
-        cargaDocente.setEstado("0");
-        cargaDocente.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
-        cargaDocente.setFechaCambio(new Date());
-
-        cargaDocenteRepository.save(cargaDocente);
-
-        registerProfessorPreloadHistory(idCargaDocente, dto != null ? dto.observacion() : null);
-
-        log.info(
-                "disapproveProfessorActivityDistribution ===> Distribución desaprobada correctamente. idCargaDocente={}", idCargaDocente
-        );
-    }
-
 
     private void validateApproveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
         if (dto == null) {
@@ -2265,10 +2367,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
 
-        if ("1".equals(entity.getEstado())) {
-            log.info("approveProfessorPreassignment ===> La preasignación ya estaba aprobada. idCargaDocente={}",
-                    idCargaDocente);
+        if ("4".equals(entity.getEstado())) {
             return;
+        }
+
+        if (!"2".equals(entity.getEstado())) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente debe estar Verificado para aprobar su preasignación"
+            );
         }
 
         validatePlantaHasCteiOrIsuProject(entity);
@@ -2282,6 +2389,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "No fue posible aprobar la preasignación del docente");
         }
+
+        entity.setEstado("4");
+        registerProfessorPreloadHistory(idCargaDocente);
 
         log.info("approveProfessorPreassignment ===> Preasignación aprobada. idCargaDocente={}",
                 idCargaDocente);

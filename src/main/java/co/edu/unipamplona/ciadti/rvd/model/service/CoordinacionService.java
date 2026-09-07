@@ -129,9 +129,11 @@ public interface CoordinacionService {
 
     void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto);
 
-    void disapproveProfessorActivityDistribution(Long idCargaDocente, ObservacionCargaDocenteDTO dto);
-
     void sendProfessorToVerification(EnvioVerificacionDetalleCargaDocenteDTO dto);
+
+    void verifyProfessor(Long idCargaDocente, ObservacionCargaDocenteDTO dto);
+
+    void declineProfessorVerification(Long idCargaDocente, ObservacionCargaDocenteDTO dto);
 
     TotalPreasignacionDTO getTotalPreload(Long idCarga);
 

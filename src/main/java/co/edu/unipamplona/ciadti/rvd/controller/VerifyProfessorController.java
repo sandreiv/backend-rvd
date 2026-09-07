@@ -18,15 +18,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -108,6 +112,46 @@ public class VerifyProfessorController {
     @GetMapping("/professor-load-summary/{idCargaDocente}")
     public ResponseEntity<ResumenCargaDocenteDTO> getProfessorLoadSummary(@PathVariable Long idCargaDocente) {
         return new ResponseEntity<>(coordinacionService.getProfessorLoadSummary(idCargaDocente), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Verifica una carga docente",
+        description = """
+            Cambia la carga docente de Para verificar a Verificado
+            y registra la observación en el historial de carga docente.
+            """
+    )
+    @PutMapping("/verify/{idCargaDocente}")
+    public ResponseEntity<Void> verifyProfessor(
+            @PathVariable Long idCargaDocente,
+            @RequestBody ObservacionCargaDocenteDTO dto) {
+
+        coordinacionService.verifyProfessor(
+                idCargaDocente,
+                dto
+        );
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+        summary = "Devuelve una carga docente",
+        description = """
+            Cambia la carga docente de Para verificar a En registro
+            y registra la observación en el historial de carga docente.
+            """
+    )
+    @PutMapping("/decline/{idCargaDocente}")
+    public ResponseEntity<Void> declineProfessorVerification(
+            @PathVariable Long idCargaDocente,
+            @RequestBody ObservacionCargaDocenteDTO dto) {
+
+        coordinacionService.declineProfessorVerification(
+                idCargaDocente,
+                dto
+        );
+
+        return ResponseEntity.noContent().build();
     }
     
 }

@@ -238,10 +238,11 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
     @Modifying
     @Query(value = """
             UPDATE RVD.CARGADOCENTE CADO
-            SET CADO.CADO_ESTADO = '1',
+            SET CADO.CADO_ESTADO = '4',
                 CADO.CADO_REGISTRADOPOR = :registradoPor,
                 CADO.CADO_FECHACAMBIO = SYSDATE
             WHERE CADO.CADO_ID = :idCargaDocente
+            AND CADO.CADO_ESTADO = '2'
             """, nativeQuery = true)
     int approvePreassignmentById(
             @Param("idCargaDocente") Long idCargaDocente,
