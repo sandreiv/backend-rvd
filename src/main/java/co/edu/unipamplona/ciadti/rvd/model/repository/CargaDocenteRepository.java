@@ -367,4 +367,18 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     @Param("idConvocatoria") Long idConvocatoria,
                     @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.CARGADOCENTE
+            SET CADO_ESTADO = '1',
+                CADO_REGISTRADOPOR = :registradoPor,
+                CADO_FECHACAMBIO = SYSDATE
+            WHERE CADO_ID = :idCargaDocente
+            AND CADO_ESTADO = '0'
+            """, nativeQuery = true)
+    int sendProfessorToVerificationById(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("registradoPor") String registradoPor
+    );        
+
 }

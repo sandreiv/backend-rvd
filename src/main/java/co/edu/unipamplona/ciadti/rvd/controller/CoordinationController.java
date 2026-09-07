@@ -63,6 +63,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
@@ -613,6 +614,20 @@ public class CoordinationController {
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
+    }
+
+    @Operation(
+        summary = "Envía un docente para verificación",
+        description = "Guarda la distribución de actividades y cambia "
+                + "el estado del docente de En registro a Para verificar"
+    )
+    @PostMapping("/to-verify-professor")
+    public ResponseEntity<Void> sendProfessorToVerification(
+            @RequestBody EnvioVerificacionDetalleCargaDocenteDTO dto) {
+
+        coordinacionService.sendProfessorToVerification(dto);
+
+        return ResponseEntity.ok().build();
     }
 
 }

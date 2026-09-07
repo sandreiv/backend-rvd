@@ -109,6 +109,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
@@ -1980,6 +1981,106 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 RegistradoPorUtils.value(Accion.DELETE));
 
         log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
+    }
+
+    @Override
+    @Transactional
+    public void sendProfessorToVerification(
+            EnvioVerificacionDetalleCargaDocenteDTO dto) {
+
+        if (dto == null || dto.idCargaDocente() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente es obligatoria para enviar a verificación"
+            );
+        }
+
+        Long idCargaDocente = dto.idCargaDocente();
+
+        log.info(
+                "sendProfessorToVerification ===> "
+                        + "Iniciando envío para verificación. idCargaDocente={}",
+                idCargaDocente
+        );
+
+        CargaDocenteEntity cargaDocente =
+                cargaDocenteRepository.findById(idCargaDocente)
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "No existe la carga docente con id "
+                                        + idCargaDocente
+                        ));
+
+        validatePreassignmentWriteAllowedByCargaDocente(
+                idCargaDocente
+        );
+
+        if (!"0".equals(cargaDocente.getEstado())) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "Solo se pueden enviar para verificación "
+                            + "docentes en estado En registro"
+            );
+        }
+
+        List<DetalleCargaDocenteDTO> detallesActualizados =
+                dto.detallesActualizados() != null
+                        ? dto.detallesActualizados()
+                        : List.of();
+
+        List<DetalleCargaDocenteItemDTO> detallesNuevos =
+                dto.detallesNuevos() != null
+                        ? dto.detallesNuevos()
+                        : List.of();
+
+        // Reutilizamos el guardado existente, no la aprobación.
+        for (DetalleCargaDocenteDTO detalle : detallesActualizados) {
+            updateDetailProfessorPreload(detalle);
+        }
+
+        if (!detallesNuevos.isEmpty()) {
+            saveDetailProfessorPreload(
+                    new DetalleCargaDocenteFormularioDTO(
+                            idCargaDocente,
+                            detallesNuevos
+                    )
+            );
+        }
+
+        // Las validaciones consultan la distribución ya actualizada,
+        // siempre dentro de esta misma transacción.
+        detalleCargaDocenteRepository.flush();
+        relacionCargaProyectoRepository.flush();
+
+        // Conservamos la regla vigente de proyectos para Planta.
+        validatePlantaHasCteiOrIsuProject(cargaDocente);
+
+        int updated =
+                cargaDocenteRepository.sendProfessorToVerificationById(
+                        idCargaDocente,
+                        RegistradoPorUtils.value(Accion.UPDATE)
+                );
+
+        if (updated != 1) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "No fue posible enviar el docente para verificación. "
+                            + "Actualice la información y vuelva a intentarlo"
+            );
+        }
+
+        // Sincronizamos la entidad para que el historial registre estado 1.
+        cargaDocente.setEstado("1");
+
+        registerProfessorPreloadHistory(
+                idCargaDocente
+        );
+
+        log.info(
+                "sendProfessorToVerification ===> "
+                        + "Docente enviado para verificación. idCargaDocente={}",
+                idCargaDocente
+        );
     }
 
     @Override
