@@ -11,6 +11,7 @@
  * 07/09/2026 - Sebastian Jaimes - Listado coordinaciones académicas hijas
  * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
+ * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -31,6 +32,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormulario
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
@@ -91,6 +93,8 @@ public interface CoordinacionService {
             Long idPeriodoUniversidad,
             Long idConvocatoria,
             Long idCoordinacion);
+
+    DocenteVerificacionPendienteListadoDTO listPendingProfessors();
 
     void updateProfessor(Long idCargaDocente, CargaDocenteFormularioDTO dto);
 

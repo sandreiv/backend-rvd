@@ -13,6 +13,7 @@
  * 07/09/2026 - Sebastian Jaimes - Listado coordinaciones académicas hijas
  * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
+ * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -80,6 +81,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
@@ -962,6 +964,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.info(
                 "listProfessorsForVerification ===> Docentes listados. total={}",
                 result.size()
+        );
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DocenteVerificacionPendienteListadoDTO listPendingProfessors() {
+        log.debug(
+                "listPendingProfessors ===> Listando docentes pendientes de verificación"
+        );
+        DocenteVerificacionPendienteListadoDTO result =
+                docenteCoordinacionMapper.toPendienteListado(
+                        cargaDocenteRepository
+                                .findPendingProfessorsForVerification()
+                );
+        log.info(
+                "listPendingProfessors ===> Pendientes listados. total={}",
+                result.total()
         );
         return result;
     }
