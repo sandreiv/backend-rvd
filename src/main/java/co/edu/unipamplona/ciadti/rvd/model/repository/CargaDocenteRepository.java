@@ -10,6 +10,7 @@
  * 04/09/2026 - Once meses en consulta de reporte de preasignación
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  * 07/09/2026 - Sebastian Jaimes - Filtro CADO_ESTADO = 1 en verificación
+ * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -25,6 +26,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
 
 public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity, Long> {
 
@@ -345,6 +347,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 AND CARG.CONV_ID = :idConvocatoria
                 AND CONV.PEUN_ID = :idPeriodoUniversidad
                 AND CADO.CADO_ESTADO = '1'
+                AND NVL(CADO.CADO_VIGENTE, '1') = '1'
             ORDER BY
                 CASE
                     WHEN PEGE.PEGE_ID IS NULL THEN 1
@@ -380,5 +383,62 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             @Param("idCargaDocente") Long idCargaDocente,
             @Param("registradoPor") String registradoPor
     );        
+
+    @Query(value = """
+            SELECT
+                CADO.CADO_ID AS idCargaDocente,
+                TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                ) AS nombreCompleto,
+                CONV.PEUN_ID AS idPeriodoUniversidad,
+                CONV.CONV_ID AS idConvocatoria,
+                COOR.COOR_ID AS idCoordinacion,
+                COOR.COOR_NOMBRE AS nombreCoordinacion
+            FROM RVD.CARGADOCENTE CADO
+            INNER JOIN RVD.CARGA CARG
+                ON CARG.CARG_ID = CADO.CARG_ID
+            INNER JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CARG.CONV_ID
+            INNER JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+            INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
+            LEFT JOIN GENERAL.PERSONAGENERAL PEGE
+                ON PEGE.PEGE_ID = CADO.PEGE_ID
+            LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+            WHERE CADO.CADO_ESTADO = '1'
+                AND NVL(CADO.CADO_VIGENTE, '1') = '1'
+                AND COOR.COOR_IDPADRE IS NOT NULL
+                AND TRIM(COOR.COOR_ESACADEMICA) = '1'
+                AND CONV.CONV_ESTADO = '1'
+                AND PEUN.PEUN_ID IN (
+                    SELECT P.PEUN_ID
+                    FROM ACADEMICO.PERIODOUNIVERSIDAD P
+                    WHERE TRIM(P.PEUN_ACTUAL) = '1'
+                    UNION ALL
+                    SELECT P.PEUN_ID
+                    FROM ACADEMICO.PERIODOUNIVERSIDAD P
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM ACADEMICO.PERIODOUNIVERSIDAD X
+                        WHERE TRIM(X.PEUN_ACTUAL) = '1'
+                    )
+                    AND TRUNC(SYSDATE) BETWEEN
+                        TRUNC(P.PEUN_FECHAINICIO)
+                        AND TRUNC(NVL(P.PEUN_FECHAFIN, SYSDATE))
+                )
+            ORDER BY
+                UPPER(COOR.COOR_NOMBRE),
+                UPPER(TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                )) NULLS LAST
+            """, nativeQuery = true)
+    List<DocenteVerificacionPendienteProjection>
+            findPendingProfessorsForVerification();
 
 }
