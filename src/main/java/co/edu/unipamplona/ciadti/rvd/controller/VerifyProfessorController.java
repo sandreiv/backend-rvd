@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
@@ -81,6 +82,23 @@ public class VerifyProfessorController {
                         idConvocatoria
                 );
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista docentes pendientes de verificación",
+        description = """
+            Listado ligero para el header. El servidor resuelve el
+            periodo vigente o las convocatorias activas.
+            Incluye CADO_ESTADO = 1, vigentes y coordinaciones académicas con carga.
+            """
+    )
+    @GetMapping("/pending")
+    public ResponseEntity<DocenteVerificacionPendienteListadoDTO>
+            listPendingProfessors() {
+        return new ResponseEntity<>(
+                coordinacionService.listPendingProfessors(),
+                HttpStatus.OK
+        );
     }
 
     @Operation(

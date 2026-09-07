@@ -887,6 +887,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                     FROM RVD.CARGADOCENTE CADO
                     WHERE CADO.CARG_ID = CARG.CARG_ID
                         AND CADO.CADO_ESTADO = '1'
+                        AND NVL(CADO.CADO_VIGENTE, '1') = '1'
                 )
             ORDER BY COOR.COOR_NOMBRE
             """, nativeQuery = true)

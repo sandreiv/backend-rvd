@@ -5,7 +5,10 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
 
 @Mapper(componentModel = "spring")
 public interface DocenteCoordinacionMapper {
@@ -44,5 +47,31 @@ public interface DocenteCoordinacionMapper {
             DocenteCargaCoordinacionProjection projection) {
         return projection.getTieneActividades() != null
                 && projection.getTieneActividades() != 0;
+    }
+
+    default DocenteVerificacionPendienteDTO toPendienteDto(
+            DocenteVerificacionPendienteProjection projection) {
+        return new DocenteVerificacionPendienteDTO(
+                projection.getIdCargaDocente(),
+                projection.getNombreCompleto(),
+                projection.getIdPeriodoUniversidad(),
+                projection.getIdConvocatoria(),
+                projection.getIdCoordinacion(),
+                projection.getNombreCoordinacion()
+        );
+    }
+
+    default DocenteVerificacionPendienteListadoDTO toPendienteListado(
+            List<DocenteVerificacionPendienteProjection> projections) {
+        if (projections == null || projections.isEmpty()) {
+            return new DocenteVerificacionPendienteListadoDTO(0L, List.of());
+        }
+        List<DocenteVerificacionPendienteDTO> items = projections.stream()
+                .map(this::toPendienteDto)
+                .toList();
+        return new DocenteVerificacionPendienteListadoDTO(
+                (long) items.size(),
+                items
+        );
     }
 }
