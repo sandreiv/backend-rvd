@@ -107,6 +107,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
@@ -1305,27 +1306,163 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     @Override
-    public void registerProfessorPreloadHistory(Long idCargaDocente) {
-        log.info("registerProfessorPreloadHistory ===> Registrando estado de carga docente. idCargaDocente={}", idCargaDocente);
+    public void registerProfessorPreloadHistory(
+            Long idCargaDocente) {
 
-        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
-                .orElseThrow(() -> {
-                    log.warn("registerProfessorPreloadHistory ===> Carga docente no encontrada. id={}", idCargaDocente);
-                    return new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id" + idCargaDocente);
-                });
-        
-        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
+        registerProfessorPreloadHistory(
+                idCargaDocente,
+                null
+        );
+    }
 
-        HistorialCargaDocenteEntity historialCargaDocente = new HistorialCargaDocenteEntity();
-        
-        historialCargaDocente.setIdCargaDocente(idCargaDocente);
-        historialCargaDocente.setEstado(cargaDocente.getEstado());
+    
+    private void registerProfessorPreloadHistory(
+            Long idCargaDocente,
+            String observacion) {
+
+        log.info(
+                "registerProfessorPreloadHistory ===> Registrando estado de carga docente. idCargaDocente={}",
+                idCargaDocente
+        );
+
+        CargaDocenteEntity cargaDocente =
+                cargaDocenteRepository
+                        .findById(idCargaDocente)
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "registerProfessorPreloadHistory ===> Carga docente no encontrada. id={}",
+                                    idCargaDocente
+                            );
+
+                            return new ApiException(
+                                    HttpStatus.NOT_FOUND,
+                                    "No existe la carga docente con id "
+                                            + idCargaDocente
+                            );
+                        });
+
+        validatePreassignmentWriteAllowedByCargaDocente(
+                idCargaDocente
+        );
+
+        AuthUserDetails user;
+
+        try {
+            user = SecurityUtils.requireUser();
+        } catch (IllegalStateException ex) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    ex.getMessage()
+            );
+        }
+
+        if (user.getIdPersonaGeneral() == null) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "El token no trae idPersona"
+            );
+        }
+
+        String rolPersonaRegistra =
+                resolveHistorialCargaDocenteRol(user);
+
+        Date fechaRegistro = new Date();
+
+        HistorialCargaDocenteEntity historialCargaDocente =
+                new HistorialCargaDocenteEntity();
+
+        historialCargaDocente.setIdCargaDocente(
+                idCargaDocente
+        );
+
+        historialCargaDocente.setEstado(
+                cargaDocente.getEstado()
+        );
+
+        historialCargaDocente.setIdPersonaGeneralRegistra(
+                user.getIdPersonaGeneral()
+        );
+
+        historialCargaDocente.setFecha(
+                fechaRegistro
+        );
+
+        historialCargaDocente.setObservacion(
+                normalizeHistorialCargaDocenteObservacion(
+                        observacion
+                )
+        );
+
+        historialCargaDocente.setRolPersonaGeneralRegistra(
+                rolPersonaRegistra
+        );
+
         historialCargaDocente.setRegistradoPor(
-                RegistradoPorUtils.value(Accion.INSERT));
-        historialCargaDocente.setFechaCambio(new Date());
-        historialCargaDocenteRepository.save(historialCargaDocente);
+                RegistradoPorUtils.value(
+                        Accion.INSERT
+                )
+        );
 
-        log.info("registerProfessorPreloadHistory ===> Estado de carga docente registrado. idCargaDocente={}", idCargaDocente);
+        historialCargaDocente.setFechaCambio(
+                fechaRegistro
+        );
+
+        historialCargaDocenteRepository.save(
+                historialCargaDocente
+        );
+
+        log.info(
+                "registerProfessorPreloadHistory ===> Estado registrado. idCargaDocente={}, idPersona={}, rol={}, estado={}",
+                idCargaDocente,
+                user.getIdPersonaGeneral(),
+                rolPersonaRegistra,
+                cargaDocente.getEstado()
+        );
+    }
+
+    private String normalizeHistorialCargaDocenteObservacion(
+            String observacion) {
+
+        if (!StringUtils.hasText(observacion)) {
+            return null;
+        }
+
+        String value = observacion.trim();
+
+        if (value.length() > 500) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La observación no puede superar los 500 caracteres"
+            );
+        }
+
+        return value;
+    }
+
+
+
+    private String resolveHistorialCargaDocenteRol(
+            AuthUserDetails user) {
+
+        if (hasRole(user, ROL_COORDINADOR)) {
+            return ROL_COORDINADOR;
+        }
+
+        if (hasRole(user, ROL_DECANO)) {
+            return ROL_DECANO;
+        }
+
+        if (hasRole(user, ROL_DESARROLLO)) {
+            return ROL_DESARROLLO;
+        }
+
+        return user.getRoles()
+                .stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(role -> !role.isEmpty())
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -1926,7 +2063,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void disapproveProfessorActivityDistribution(Long idCargaDocente) {
+    public void disapproveProfessorActivityDistribution(Long idCargaDocente, ObservacionCargaDocenteDTO dto) {
         log.info(
                 "disapproveProfessorActivityDistribution ===> Iniciando desaprobación de distribución. idCargaDocente={}", idCargaDocente
         );
@@ -1952,7 +2089,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         cargaDocenteRepository.save(cargaDocente);
 
-        registerProfessorPreloadHistory(idCargaDocente);
+        registerProfessorPreloadHistory(idCargaDocente, dto != null ? dto.observacion() : null);
 
         log.info(
                 "disapproveProfessorActivityDistribution ===> Distribución desaprobada correctamente. idCargaDocente={}", idCargaDocente

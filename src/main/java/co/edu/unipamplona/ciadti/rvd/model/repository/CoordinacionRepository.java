@@ -733,6 +733,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 SOCD.SOCD_ESTADO AS estadoSolicitud,
                 SOCD.SOCD_OBSERVACION AS observacionSolicitud,
                 SOCD.SOCD_ADJUNTO AS adjuntoSolicitud,
+                SOCD.SOCD_FECHACAMBIO AS fechaCambioSolicitud,
                 PEUN.PEUN_ID AS idPeriodoUniversidad,
                 PEUN.PEUN_ANO AS anioPeriodo,
                 PEUN.PEUN_PERIODO AS descripcionPeriodo
@@ -751,6 +752,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON MODA.MODA_ID = COOR.MODA_ID
             WHERE COOR.COOR_IDPADRE IS NULL
                 AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = 'DESARROLLO ACADEMICO'
+                AND SOCD.PEUN_ID = PEUN.PEUN_ID
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,

@@ -95,12 +95,17 @@ public class SolicitudCdpServiceImpl
     @Transactional
     public void create(
             String observacion,
-            List<MultipartFile> archivos) {
+            List<MultipartFile> archivos,
+            String idPeriodo) {
 
         AuthUserDetails user = requireDecano();
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
+        
+        if (idPeriodo.isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
+        }
 
         Long idCoordinacion =
                 coordinacionRepository
@@ -147,6 +152,8 @@ public class SolicitudCdpServiceImpl
         solicitud.setObservacion(
                 observacionNormalizada
         );
+
+        solicitud.setIdPeriodoUniversitario(Long.valueOf(idPeriodo));
 
         solicitud.setRegistradoPor(
                 RegistradoPorUtils.value(

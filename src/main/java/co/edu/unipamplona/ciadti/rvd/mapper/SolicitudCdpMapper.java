@@ -68,9 +68,11 @@ public interface SolicitudCdpMapper {
     default SolicitudCdpListadoDTO toSolicitud(ResumenSolicitudCdpProjection projection) {
         return new SolicitudCdpListadoDTO(
                 projection.getIdSolicitud(),
+                projection.getIdCoordinacion(),
                 projection.getEstadoSolicitud(),
                 projection.getObservacionSolicitud(),
-                toAnexos(projection.getAdjuntoSolicitud()));
+                toAnexos(projection.getAdjuntoSolicitud()),
+                projection.getFechaCambioSolicitud());
     }
 
     @Named("toPeriodo")

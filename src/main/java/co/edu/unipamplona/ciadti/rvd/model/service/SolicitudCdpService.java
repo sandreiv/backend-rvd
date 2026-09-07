@@ -10,7 +10,8 @@ public interface SolicitudCdpService {
 
     void create(
             String observacion,
-            List<MultipartFile> archivos
+            List<MultipartFile> archivos,
+            String idPeriodo
     );
 
     CdpRequestDTO getCurrentRequest();

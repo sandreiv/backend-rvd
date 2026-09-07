@@ -51,6 +51,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 
 public interface CoordinacionService {
 
@@ -127,7 +128,7 @@ public interface CoordinacionService {
 
     void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto);
 
-    void disapproveProfessorActivityDistribution(Long idCargaDocente);
+    void disapproveProfessorActivityDistribution(Long idCargaDocente, ObservacionCargaDocenteDTO dto);
 
     TotalPreasignacionDTO getTotalPreload(Long idCarga);
 
