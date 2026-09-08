@@ -108,7 +108,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
@@ -2240,100 +2239,37 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
+    public void disapproveProfessorActivityDistribution(Long idCargaDocente) {
         log.info(
-                "approveProfessorActivityDistribution ===> Iniciando aprobación de distribución. idCargaDocente={}",
-                dto != null ? dto.idCargaDocente() : null
+                "disapproveProfessorActivityDistribution ===> Iniciando desaprobación de distribución. idCargaDocente={}", idCargaDocente
         );
 
-        validateApproveProfessorActivityDistribution(dto);
+        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
 
-        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(dto.idCargaDocente())
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id " + dto.idCargaDocente()
+                        "No existe la carga docente con id " + idCargaDocente
                 ));
 
-        validatePreassignmentWriteAllowedByCargaDocente(dto.idCargaDocente());
-
-        if ("4".equals(cargaDocente.getEstado())) {
+        if ("0".equals(cargaDocente.getEstado())) {
+            log.info(
+                    "disapproveProfessorActivityDistribution ===> La preasignación ya estaba desaprobada. idCargaDocente={}", idCargaDocente
+            );
             return;
         }
 
-        if (!"2".equals(cargaDocente.getEstado())) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "El docente debe estar Verificado para aprobar su preasignación"
-            );
-        }
+        cargaDocente.setEstado("0");
+        cargaDocente.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        cargaDocente.setFechaCambio(new Date());
 
-        List<DetalleCargaDocenteDTO> detallesActualizados =
-        dto.detallesActualizados() != null ? dto.detallesActualizados() : List.of();
+        cargaDocenteRepository.save(cargaDocente);
 
-        List<DetalleCargaDocenteItemDTO> detallesNuevos =
-                dto.detallesNuevos() != null ? dto.detallesNuevos() : List.of();
-
-        for (DetalleCargaDocenteDTO detalle : detallesActualizados) {
-            updateDetailProfessorPreload(detalle);
-        }
-
-        if (!detallesNuevos.isEmpty()) {
-            saveDetailProfessorPreload(
-                    new DetalleCargaDocenteFormularioDTO(
-                            dto.idCargaDocente(),
-                            detallesNuevos
-                    )
-            );
-        }
-
-        /*
-        * Validamos DESPUÉS de aplicar la distribución,
-        * pero dentro de la misma transacción.
-        * Si falla, el ApiException hace rollback de lo guardado.
-        */
-        detalleCargaDocenteRepository.flush();
-        relacionCargaProyectoRepository.flush();
-
-        validatePlantaHasCteiOrIsuProject(cargaDocente);
-
-        int updated = cargaDocenteRepository.approvePreassignmentById(
-                dto.idCargaDocente(),
-                RegistradoPorUtils.value(Accion.UPDATE)
-        );
-
-
-        if (updated == 0) {
-            throw new ApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible aprobar la preasignación del docente"
-            );
-        }
-
-        // Como ya se aprobo, se actualiza el contexto para mantener la trazabilidad en el historial
-        cargaDocente.setEstado("4");
-        // Registrar el estado dentro del historial
-        registerProfessorPreloadHistory(dto.idCargaDocente());
+        registerProfessorPreloadHistory(idCargaDocente);
 
         log.info(
-                "approveProfessorActivityDistribution ===> Distribución aprobada correctamente. idCargaDocente={}",
-                dto.idCargaDocente()
+                "disapproveProfessorActivityDistribution ===> Distribución desaprobada correctamente. idCargaDocente={}", idCargaDocente
         );
-    }
-
-    private void validateApproveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto) {
-        if (dto == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La información de aprobación es obligatoria"
-            );
-        }
-
-        if (dto.idCargaDocente() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente es obligatoria para aprobar la preasignación"
-            );
-        }
     }
 
     private boolean isDocentePlanta(CargaDocenteEntity cargaDocente) {
@@ -2372,49 +2308,35 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional
-    public void approveProfessorPreassignment(Long idCargaDocente) {
-        log.info("approveProfessorPreassignment ===> Aprobando preasignación docente. idCargaDocente={}",
-                idCargaDocente);
+    public void approveProfessorsPreassignment(Long idCarga) {
+        log.info("approveProfessorsPreassignment ===> Aprobando preasignación docente. idCarga={}",
+                idCarga);
 
-        if (idCargaDocente == null) {
+        if (idCarga == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "La carga docente es obligatoria para aprobar la preasignación");
+                    "La carga es obligatoria para aprobar la preasignación");
         }
 
-        CargaDocenteEntity entity = cargaDocenteRepository.findById(idCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id " + idCargaDocente));
+        validatePreassignmentWriteAllowedByCarga(idCarga);
 
-        validatePreassignmentWriteAllowedByCargaDocente(idCargaDocente);
+        List<Long> idsProfessorsPreassignment = cargaDocenteRepository.findIdsPreassignmentsByIdCarga(idCarga);
 
-        if ("4".equals(entity.getEstado())) {
-            return;
-        }
-
-        if (!"2".equals(entity.getEstado())) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "El docente debe estar Verificado para aprobar su preasignación"
-            );
-        }
-
-        validatePlantaHasCteiOrIsuProject(entity);
-
-        int updated = cargaDocenteRepository.approvePreassignmentById(
-                idCargaDocente,
+        int updated = cargaDocenteRepository.approvePreassignmentByIds(
+                idsProfessorsPreassignment,
                 RegistradoPorUtils.value(Accion.UPDATE)
         );
 
         if (updated == 0) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible aprobar la preasignación del docente");
+                    "No fue posible aprobar la preasignación de los docentes");
         }
 
-        entity.setEstado("4");
-        registerProfessorPreloadHistory(idCargaDocente);
+        for (Long idCargaDocente : idsProfessorsPreassignment) {
+            registerProfessorPreloadHistory(idCargaDocente);
+        }
 
-        log.info("approveProfessorPreassignment ===> Preasignación aprobada. idCargaDocente={}",
-                idCargaDocente);
+        log.info("approveProfessorsPreassignment ===> Preasignación aprobada. idCarga={}",
+                idCarga);
     }
     
     private void validatePlantaHasCteiOrIsuProject(

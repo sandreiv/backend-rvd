@@ -34,7 +34,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
@@ -129,9 +128,9 @@ public interface CoordinacionService {
 
     void deleteProfessorActivity(Long idDetalleCargaDocente);
 
-    void approveProfessorPreassignment(Long idCargaDocente);
+    void approveProfessorsPreassignment(Long idCarga);
 
-    void approveProfessorActivityDistribution(AprobacionDetalleCargaDocenteDTO dto);
+    void disapproveProfessorActivityDistribution(Long idCargaDocente);
 
     void sendProfessorToVerification(EnvioVerificacionDetalleCargaDocenteDTO dto);
 

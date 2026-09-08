@@ -236,6 +236,14 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             @Param("idPersonaGeneral") Long idPersonaGeneral,
             @Param("horasDeExcepcion") String horasDeExcepcion,
             @Param("registradoPor") String registradoPor);
+    
+    @Query(value = """
+            SELECT CADO.CADO_ID
+            FROM RVD.CARGADOCENTE CADO
+            WHERE CADO.CARG_ID = :idCarga
+                AND CADO.CADO_ESTADO = '2'
+            """, nativeQuery = true)
+    List<Long> findIdsPreassignmentsByIdCarga(@Param("idCarga") Long idCarga);
 
     @Modifying
     @Query(value = """
@@ -243,11 +251,10 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             SET CADO.CADO_ESTADO = '4',
                 CADO.CADO_REGISTRADOPOR = :registradoPor,
                 CADO.CADO_FECHACAMBIO = SYSDATE
-            WHERE CADO.CADO_ID = :idCargaDocente
-            AND CADO.CADO_ESTADO = '2'
+            WHERE CADO.CADO_ID IN (:ids)
             """, nativeQuery = true)
-    int approvePreassignmentById(
-            @Param("idCargaDocente") Long idCargaDocente,
+    int approvePreassignmentByIds(
+            @Param("ids") List<Long> ids,
             @Param("registradoPor") String registradoPor);
 
     @Query(value = """

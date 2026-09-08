@@ -61,7 +61,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.TotalPreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.AprobacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -393,24 +392,24 @@ public class CoordinationController {
     }
 
     @Operation(
-        summary = "Aprueba la preasignación de un docente",
-        description = "Actualiza el estado de la carga docente a aprobada"
+        summary = "Aprueba la preasignación de varios docentes",
+        description = "Actualiza el estado de la carga docente de Verificado a Aprobada segun la carga"
     )
-    @PutMapping("/approve-professor-preassignment/{idCargaDocente}")
-    public ResponseEntity<Void> approveProfessorPreassignment(
-            @PathVariable Long idCargaDocente) {
-        coordinacionService.approveProfessorPreassignment(idCargaDocente);
+    @PutMapping("/approve-professors-preassignment/{idCarga}")
+    public ResponseEntity<Void> approveProfessorsPreassignment(
+            @PathVariable Long idCarga) {
+        coordinacionService.approveProfessorsPreassignment(idCarga);
         return ResponseEntity.ok().build();
     }
 
     @Operation(
-        summary = "Guarda y aprueba la distribución de actividades del docente",
-        description = "Valida, guarda actividades y aprueba la preasignación del docente en una única transacción"
+        summary = "Desaprueba la distribución de actividades de un docente",
+        description = "Actualiza el estado de la carga docente a En registro"
     )
-    @PostMapping("/approve-professor-activity-distribution")
-    public ResponseEntity<Void> approveProfessorActivityDistribution(
-            @RequestBody AprobacionDetalleCargaDocenteDTO dto) {
-        coordinacionService.approveProfessorActivityDistribution(dto);
+    @PutMapping("/disapprove-professor-preassignment/{idCargaDocente}")
+    public ResponseEntity<Void> disapproveProfessorActivityDistribution(
+            @PathVariable Long idCargaDocente) {
+        coordinacionService.disapproveProfessorActivityDistribution(idCargaDocente);
         return ResponseEntity.ok().build();
     }
 
