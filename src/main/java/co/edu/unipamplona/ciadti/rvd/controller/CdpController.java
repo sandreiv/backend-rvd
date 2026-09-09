@@ -72,17 +72,17 @@ public class CdpController {
     }
 
     @Operation(
-        summary = "Obtiene las solicitudes CDP para desarollo academico",
+        summary = "Obtiene las solicitudes CDP para desarollo academico o vicerrectoria academica",
         description = """
-            Lista para Desarrollo Academico las facultades que tienen
-            solicitudes CDP en estado DESARROLLO ACADEMICO.
+            Lista para Desarrollo Academico o Vicerrectoria academica las facultades que tienen
+            solicitudes CDP en estado DESARROLLO ACADEMICO o VICERRECTORIA ACADEMICA respectivamente.
             """
     )
-    @GetMapping("/requests-for-academic-development")
-    public ResponseEntity<List<ResumenSolicitudCdpDTO>> listCdpRequestsForAcademicDevelopment(
+    @GetMapping("/requests-for-academics")
+    public ResponseEntity<List<ResumenSolicitudCdpDTO>> listCdpRequestsForAcademics(
             @RequestParam(required = false) Long idPeriodoUniversidad) {
 
-        List<ResumenSolicitudCdpDTO> faculties = coordinacionService.findCdpRequestsForAcademicDevelopment(idPeriodoUniversidad);
+        List<ResumenSolicitudCdpDTO> faculties = coordinacionService.findCdpRequestsForAcademics(idPeriodoUniversidad);
 
         return new ResponseEntity<>(faculties, HttpStatus.OK);
     }

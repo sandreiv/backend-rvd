@@ -751,15 +751,16 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
             WHERE COOR.COOR_IDPADRE IS NULL
-                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = 'DESARROLLO ACADEMICO'
+                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = :estadoSolicitud
                 AND SOCD.PEUN_ID = PEUN.PEUN_ID
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
                 COOR.COOR_NOMBRE
             """, nativeQuery = true)
-    List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademicDevelopment(
-        @Param("idPeriodoUniversidad") Long idPeriodoUniversidad); 
+    List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademics(
+        @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
+        @Param("estadoSolicitud") String estadoSolicitud); 
 
     @Query(value = """
             SELECT

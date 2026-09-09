@@ -65,7 +65,7 @@ public interface CoordinacionService {
         Long idConvocatoria,
         Long idPeriodoUniversidad);
     
-    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad);
+    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademics(Long idPeriodoUniversidad);
         
     CdpContextDTO getCdpContext();
 

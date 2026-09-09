@@ -181,6 +181,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String ROL_COORDINADOR = "Coordinador";
     private static final String ROL_DECANO = "Decano";
     private static final String ROL_DESARROLLO = "Desarrollo academico";
+    private static final String ROL_VICERRECTORIA = "Vicerrectoria academica";
 
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
@@ -303,8 +304,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (user.getIdPersonaGeneral() == null) {
             throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
         }
-        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO)) {
-            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano o Desarrollo academico");
+        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA)) {
+            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano, Desarrollo academico o Vicerrectoria academica");
         }
         return user;
     }
@@ -3292,20 +3293,27 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad) {
+    public List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademics(Long idPeriodoUniversidad) {
         AuthUserDetails user = requireListadoUser();
 
-        if (!hasRole(user, ROL_DESARROLLO)) {
+        if (!hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA)) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "Las revisiones CDP requieren rol Desarrollo Academico"
+                    "Las revisiones CDP requieren rol Desarrollo Academico o Vicerrectoria academica"
             );
         }
         if (idPeriodoUniversidad == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
         }
 
-        List<ResumenSolicitudCdpProjection> projections = coordinacionRepository.findByPeriodoForCdpAcademicDevelopment(idPeriodoUniversidad);
+        String estadoSolicitud;
+        if (hasRole(user, ROL_DESARROLLO)) {
+            estadoSolicitud = "DESARROLLO ACADEMICO";
+        } else {
+            estadoSolicitud = "VICERRECTORIA ACADEMICA";
+        }
+
+        List<ResumenSolicitudCdpProjection> projections = coordinacionRepository.findByPeriodoForCdpAcademics(idPeriodoUniversidad, estadoSolicitud);
 
         List<ResumenSolicitudCdpDTO> result = solicitudCdpMapper.toDtoList(projections);
         
