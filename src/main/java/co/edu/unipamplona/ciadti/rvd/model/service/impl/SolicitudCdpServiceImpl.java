@@ -128,7 +128,7 @@ public class SolicitudCdpServiceImpl
         ) {
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "Ya existe una solicitud CPD para la facultad asociada al Decano"
+                    "Ya existe una solicitud CDP para la facultad asociada al Decano"
             );
         }
 
@@ -179,7 +179,7 @@ public class SolicitudCdpServiceImpl
         if (idSolicitud == null) {
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible obtener el identificador de la solicitud CPD"
+                    "No fue posible obtener el identificador de la solicitud CDP"
             );
         }
 
@@ -213,7 +213,7 @@ public class SolicitudCdpServiceImpl
         } catch (JsonProcessingException ex) {
 
             log.error(
-                    "create ===> Error generando JSON de adjuntos para solicitud CPD id={}",
+                    "create ===> Error generando JSON de adjuntos para solicitud CDP id={}",
                     idSolicitud,
                     ex
             );
@@ -225,7 +225,7 @@ public class SolicitudCdpServiceImpl
         }
 
         log.info(
-                "create ===> Solicitud CPD creada. id={}, idCoordinacion={}, idPersonaGeneral={}, adjuntos={}",
+                "create ===> Solicitud CDP creada. id={}, idCoordinacion={}, idPersonaGeneral={}, adjuntos={}",
                 solicitud.getId(),
                 idCoordinacion,
                 idPersonaGeneral,
@@ -243,12 +243,12 @@ public class SolicitudCdpServiceImpl
         }
 
         SolicitudCdpEntity solicitud = solicitudCdpRepository.findById(idSolicitud).orElseThrow(() -> {
-            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud cdp con id " + idSolicitud);
+            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud CDP con id " + idSolicitud);
         });
 
         if (ESTADO_VICERRECTORIA_ACADEMICA.equals(solicitud.getEstado())) {
             log.info(
-                "sendRequestToVice ===> La solicitud cdp ya se encuentra en vicerrectoria academica. idSolicitud={}", idSolicitud
+                "sendRequestToVice ===> La solicitud CDP ya se encuentra en vicerrectoria academica. idSolicitud={}", idSolicitud
             );
             return;
         }
@@ -263,7 +263,7 @@ public class SolicitudCdpServiceImpl
 
         solicitudCdpRepository.save(solicitud);
 
-        log.info("sendRequestToVice ===> Solicitud CPD actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
+        log.info("sendRequestToVice ===> Solicitud CDP actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
     }
 
     private List<CdpAdjuntoDTO> saveAttachments(
@@ -335,14 +335,14 @@ public class SolicitudCdpServiceImpl
         } catch (IOException ex) {
 
             log.error(
-                    "saveAttachments ===> Error guardando adjuntos de solicitud CPD id={}",
+                    "saveAttachments ===> Error guardando adjuntos de solicitud CDP id={}",
                     idSolicitud,
                     ex
             );
 
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible guardar los archivos adjuntos de la solicitud CPD"
+                    "No fue posible guardar los archivos adjuntos de la solicitud CDP"
             );
         }
 
@@ -381,7 +381,7 @@ public class SolicitudCdpServiceImpl
         if (!rolRequired) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "La solicitud CPD requiere rol " + rolRequerido
+                    "La solicitud CDP requiere rol " + rolRequerido
             );
         }
 
@@ -448,13 +448,13 @@ public class SolicitudCdpServiceImpl
         } catch (JsonProcessingException ex) {
 
             log.error(
-                    "parseAttachments ===> Error leyendo JSON de adjuntos CPD",
+                    "parseAttachments ===> Error leyendo JSON de adjuntos CDP",
                     ex
             );
 
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible leer los archivos adjuntos de la solicitud CPD"
+                    "No fue posible leer los archivos adjuntos de la solicitud CDP"
             );
         }
     }
