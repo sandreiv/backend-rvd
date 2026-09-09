@@ -15,4 +15,6 @@ public interface SolicitudCdpService {
     );
 
     CdpRequestDTO getCurrentRequest();
+
+    void sendRequestToVice(Long idSolicitud);
 }

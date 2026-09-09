@@ -44,9 +44,10 @@ public class SolicitudCdpServiceImpl
     private String cdpStoragePath;
 
     private static final String ROL_DECANO = "Decano";
+    private static final String ROL_DESARROLLO_ACADEMICO = "Desarrollo academico";
 
-    private static final String ESTADO_DESARROLLO_ACADEMICO =
-            "DESARROLLO ACADEMICO";
+    private static final String ESTADO_DESARROLLO_ACADEMICO = "DESARROLLO ACADEMICO";
+    private static final String ESTADO_VICERRECTORIA_ACADEMICA = "VICERRECTORIA ACADEMICA";
 
     private static final int MAX_OBSERVACION = 250;
 
@@ -65,7 +66,7 @@ public class SolicitudCdpServiceImpl
     @Transactional(readOnly = true)
     public CdpRequestDTO getCurrentRequest() {
 
-        AuthUserDetails user = requireDecano();
+        AuthUserDetails user = requireRol(ROL_DECANO);
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
@@ -98,7 +99,7 @@ public class SolicitudCdpServiceImpl
             List<MultipartFile> archivos,
             String idPeriodo) {
 
-        AuthUserDetails user = requireDecano();
+        AuthUserDetails user = requireRol(ROL_DECANO);
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
@@ -232,6 +233,39 @@ public class SolicitudCdpServiceImpl
         );
     }
 
+    @Override
+    @Transactional
+    public void sendRequestToVice(Long idSolicitud) {
+        requireRol(ROL_DESARROLLO_ACADEMICO);
+
+        if (idSolicitud == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El ID de la solicitud es obligatorio");
+        }
+
+        SolicitudCdpEntity solicitud = solicitudCdpRepository.findById(idSolicitud).orElseThrow(() -> {
+            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud cdp con id " + idSolicitud);
+        });
+
+        if (ESTADO_VICERRECTORIA_ACADEMICA.equals(solicitud.getEstado())) {
+            log.info(
+                "sendRequestToVice ===> La solicitud cdp ya se encuentra en vicerrectoria academica. idSolicitud={}", idSolicitud
+            );
+            return;
+        }
+
+        solicitud.setEstado(ESTADO_VICERRECTORIA_ACADEMICA);
+        solicitud.setRegistradoPor(
+            RegistradoPorUtils.value(
+                Accion.UPDATE
+            )
+        );
+        solicitud.setFechaCambio(new Date());
+
+        solicitudCdpRepository.save(solicitud);
+
+        log.info("sendRequestToVice ===> Solicitud CPD actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
+    }
+
     private List<CdpAdjuntoDTO> saveAttachments(
             List<MultipartFile> archivos,
             Long idSolicitud) {
@@ -315,7 +349,7 @@ public class SolicitudCdpServiceImpl
         return adjuntos;
     }
 
-    private AuthUserDetails requireDecano() {
+    private AuthUserDetails requireRol(String rolRequerido) {
 
         AuthUserDetails user =
                 SecurityUtils.currentUser()
@@ -333,21 +367,21 @@ public class SolicitudCdpServiceImpl
             );
         }
 
-        boolean decano =
+        boolean rolRequired =
                 user.getRoles() != null
                 && user.getRoles()
                         .stream()
                         .anyMatch(
                                 role ->
-                                        ROL_DECANO.equalsIgnoreCase(
+                                        rolRequerido.equalsIgnoreCase(
                                                 role
                                         )
                         );
 
-        if (!decano) {
+        if (!rolRequired) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "La solicitud CPD requiere rol Decano"
+                    "La solicitud CPD requiere rol " + rolRequerido
             );
         }
 
