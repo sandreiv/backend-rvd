@@ -15,5 +15,6 @@ public record ResumenCargaDocenteDTO(
     Long idCargaDocente,
     ValorContratacionDTO valorContratacion,
     List<ActividadHorasResumenDTO> horasActividades,
-    List<CentroCostoResumenDTO> centrosCosto
+    List<CentroCostoResumenDTO> centrosCosto,
+    List<HistorialCargaDocenteObservacionDTO> observaciones
 ) {}

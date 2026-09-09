@@ -111,6 +111,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialCargaDocenteObservacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
@@ -161,6 +162,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoP
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ResumenSolicitudCdpProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialCargaDocenteObservacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
@@ -2054,11 +2056,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 idCargaDocente
         );
 
-        if (!"0".equals(cargaDocente.getEstado())) {
+        if (!"0".equals(cargaDocente.getEstado())
+                && !"3".equals(cargaDocente.getEstado())) {
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "Solo se pueden enviar para verificación "
-                            + "docentes en estado En registro"
+                    "Solo se pueden enviar para verificación docentes "
+                            + "en estado En registro o Devuelto"
             );
         }
 
@@ -2144,7 +2147,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         reviewProfessorVerification(
                 idCargaDocente,
                 dto,
-                "0"
+                "3"
         );
     }
 
@@ -2160,7 +2163,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             );
         }
 
-        if (!"2".equals(estadoDestino) && !"0".equals(estadoDestino)) {
+        if (!"2".equals(estadoDestino) && !"3".equals(estadoDestino)) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "El estado de destino no es válido para la revisión"
@@ -3032,19 +3035,28 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                         totalContrato
                 );
 
+        List<HistorialCargaDocenteObservacionDTO> observaciones =
+        historialCargaDocenteRepository
+                .findObservationsByIdCargaDocente(idCargaDocente)
+                .stream()
+                .map(this::toHistorialCargaDocenteObservacionDTO)
+                .toList();        
+
         log.info(
-                "getProfessorLoadSummary ===> id={}, planta={}, actividades={}, centros={}",
+                "getProfessorLoadSummary ===> id={}, planta={}, actividades={}, centros={}, observaciones={}",
                 idCargaDocente,
                 docentePlanta,
                 horasActividades.size(),
-                centrosCosto.size()
+                centrosCosto.size(),
+                observaciones.size()
         );
 
         return new ResumenCargaDocenteDTO(
                 idCargaDocente,
                 valorContratacion,
                 horasActividades,
-                centrosCosto
+                centrosCosto,
+                observaciones
         );
     }
 
@@ -3564,6 +3576,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             this.idCentroCosto = idCentroCosto;
             this.nombre = nombre;
         }
+    }
+
+    private HistorialCargaDocenteObservacionDTO toHistorialCargaDocenteObservacionDTO(
+            HistorialCargaDocenteObservacionProjection projection) {
+
+        return new HistorialCargaDocenteObservacionDTO(
+                projection.getIdHistorial(),
+                projection.getIdPersonaGeneral(),
+                projection.getNombrePersonaGeneral(),
+                projection.getRolPersonaGeneral(),
+                projection.getObservacion(),
+                projection.getFecha(),
+                projection.getEstado()
+        );
     }
 
 }

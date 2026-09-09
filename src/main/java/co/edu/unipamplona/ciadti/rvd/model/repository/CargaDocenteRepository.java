@@ -385,7 +385,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CADO_REGISTRADOPOR = :registradoPor,
                 CADO_FECHACAMBIO = SYSDATE
             WHERE CADO_ID = :idCargaDocente
-            AND CADO_ESTADO = '0'
+            AND CADO_ESTADO IN ('0', '3')
             """, nativeQuery = true)
     int sendProfessorToVerificationById(
             @Param("idCargaDocente") Long idCargaDocente,
