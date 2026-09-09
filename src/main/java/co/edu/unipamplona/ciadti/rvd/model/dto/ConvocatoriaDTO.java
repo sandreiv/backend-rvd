@@ -6,6 +6,7 @@
  * Fecha de creación: 03/06/2026
  * Modificaciones:
  * 03/06/2026 - Sebastian Jaimes - Creación inicial
+ * 09/09/2026 - Sebastian Jaimes - Campo contratacion
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
@@ -21,6 +22,7 @@ public record ConvocatoriaDTO(
     Date fechaFin,
     String nombreCompleto,
     String estado,
-    Long idRelacion
+    Long idRelacion,
+    String contratacion
 ) {}
 /* 03/06/2026 @:Sebastian Jaimes */

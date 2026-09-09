@@ -25,6 +25,7 @@ public interface ConvocatoriaDatosInsertarMapper {
     @Mapping(source = "periodoUniversidad", target = "periodo")
     @Mapping(source = "nivelEducativo", target = "nivelEducativo")
     @Mapping(source = "convocatoria.idRelacion", target = "idRelacion")
+    @Mapping(source = "convocatoria.contratacion", target = "contratacion")
     ConvocatoriaDatosInsertarDTO toDto(
             ConvocatoriaEntity convocatoria,
             PersonaGeneralEntity autoriza,

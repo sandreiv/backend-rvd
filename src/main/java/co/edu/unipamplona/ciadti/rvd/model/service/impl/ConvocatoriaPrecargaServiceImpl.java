@@ -6,6 +6,8 @@
  * Fecha de creación: 04/06/2026
  * Modificaciones:
  * 04/06/2026 - Sebastian Jaimes - Creación inicial
+ * 09/09/2026 - Sebastian Jaimes - Campo contratacion en insert y update
+ * 09/09/2026 - Sebastian Jaimes - Relación contratación-preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -14,6 +16,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -105,6 +108,25 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         return result;
     }
 
+    @Override
+    @Transactional
+    public List<ConvocatoriaDTO> findPreassignmentCallListByPeriod(Long idPeriodoUniversidad) {
+        log.debug("findPreassignmentCallListByPeriod ===> Listando preasignaciones. idPeriodoUniversidad={}",
+                idPeriodoUniversidad);
+
+        convocatoriaEstadoService.syncEstadosConvocatoriasConRestricciones();
+
+        List<ConvocatoriaDTO> result = convocatoriaRepository
+                .findPreassignmentCallListByPeriod(idPeriodoUniversidad)
+                .stream()
+                .map(this::toListDtoAndSyncEstado)
+                .collect(Collectors.toList());
+
+        log.info("findPreassignmentCallListByPeriod ===> Preasignaciones listadas. periodo={}, total={}",
+                idPeriodoUniversidad, result.size());
+        return result;
+    }
+
     private ConvocatoriaDTO toListDtoAndSyncEstado(ConvocatoriaEntity convocatoria) {
         convocatoriaEstadoService.syncEstadoConvocatoria(convocatoria.getId());
 
@@ -155,6 +177,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         convocatoria.setIdPeriodoUniversidad(datos.periodo().id());
         convocatoria.setIdNivelEducativo(datos.nivelEducativo().id());
         convocatoria.setIdRelacion(resolveIdRelacion(datos.idRelacion(), null));
+        convocatoria.setContratacion(normalizeParam(datos.contratacion()));
         convocatoria.setEstado("1");
         convocatoria.setFechaCambio(new Date());
         convocatoria.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
@@ -225,6 +248,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 datos.periodo().id(),
                 datos.nivelEducativo().id(),
                 resolveIdRelacion(datos.idRelacion(), id),
+                normalizeParam(datos.contratacion()),
                 new Date(),
                 id);
         if (updated == 0) {
@@ -492,6 +516,36 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         log.info("updateRelation ===> Relación actualizada. idConvocatoria={}, idRelacion={}", idConvocatoria, idRelacionResuelto);
     }
 
+    @Override
+    @Transactional
+    public void updatePreassignmentRelation(Long idConvocatoria, Long idRelacion) {
+        log.info("updatePreassignmentRelation ===> Relacionando contratación. idConvocatoria={}, idRelacion={}",
+                idConvocatoria, idRelacion);
+
+        ConvocatoriaEntity convocatoria = convocatoriaRepository.findById(idConvocatoria)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "Convocatoria no encontrada"));
+
+        if (!isConvocatoriaContratacion(convocatoria.getContratacion())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Solo se puede relacionar una convocatoria de contratación");
+        }
+
+        Long idRelacionResuelto = resolveIdRelacionPreasignacion(idRelacion, convocatoria);
+        int updated = convocatoriaRepository.updateIdRelacion(
+                idRelacionResuelto,
+                new Date(),
+                idConvocatoria);
+        if (updated == 0) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Convocatoria no encontrada");
+        }
+
+        log.info("updatePreassignmentRelation ===> Relación actualizada. idConvocatoria={}, idRelacion={}",
+                idConvocatoria, idRelacionResuelto);
+    }
+
     private Long resolveIdRelacion(Long idRelacion, Long idConvocatoriaActual) {
         if (idRelacion == null) {
             return null;
@@ -515,6 +569,47 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                     "La convocatoria relacionada debe pertenecer al primer periodo");
         }
         return idRelacion;
+    }
+
+    private Long resolveIdRelacionPreasignacion(
+            Long idRelacion,
+            ConvocatoriaEntity convocatoriaActual) {
+        if (idRelacion == null) {
+            return null;
+        }
+        if (convocatoriaActual.getId() != null
+                && idRelacion.equals(convocatoriaActual.getId())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Una convocatoria no puede relacionarse consigo misma");
+        }
+
+        ConvocatoriaEntity relacionada = convocatoriaRepository.findById(idRelacion)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la convocatoria relacionada con id " + idRelacion));
+
+        if (!isConvocatoriaPreasignacion(relacionada.getContratacion())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria relacionada debe ser de preasignación");
+        }
+        if (!Objects.equals(
+                convocatoriaActual.getIdPeriodoUniversidad(),
+                relacionada.getIdPeriodoUniversidad())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria de preasignación debe pertenecer al mismo periodo");
+        }
+        return idRelacion;
+    }
+
+    private boolean isConvocatoriaContratacion(String contratacion) {
+        return "1".equals(contratacion);
+    }
+
+    private boolean isConvocatoriaPreasignacion(String contratacion) {
+        return contratacion == null || "0".equals(contratacion);
     }
 
     private boolean isModalidadPlanta(Long idModalidadContratacion) {

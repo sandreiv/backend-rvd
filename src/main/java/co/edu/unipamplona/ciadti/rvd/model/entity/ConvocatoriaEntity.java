@@ -6,6 +6,7 @@
  * Fecha de creación: 02/06/2026
  * Modificaciones:
  * 02/06/2026 - Sebastian Jaimes - Creación inicial
+ * 09/09/2026 - Sebastian Jaimes - Campo CONV_CONTRATACION
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
@@ -76,6 +77,9 @@ public class ConvocatoriaEntity implements Serializable, Cloneable{
     @Column(name = "CONV_IDRELACION")
     private Long idRelacion;
 
+    @Column(name = "CONV_CONTRATACION")
+    private String contratacion;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CONV_IDRELACION", insertable = false, updatable = false)
     private ConvocatoriaEntity relacion;
@@ -108,6 +112,7 @@ public class ConvocatoriaEntity implements Serializable, Cloneable{
                 ", descripcion=" + descripcion +
                 ", estado=" + estado +
                 ", idRelacion=" + idRelacion +
+                ", contratacion=" + contratacion +
                 '}';
     }
 

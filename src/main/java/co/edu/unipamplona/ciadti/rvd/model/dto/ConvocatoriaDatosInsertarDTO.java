@@ -7,5 +7,6 @@ public record ConvocatoriaDatosInsertarDTO(
     PersonaAutorizaConvocatoriaDTO autoriza,
     PeriodoUniversidadDTO periodo,
     NivelEducativoDTO nivelEducativo,
-    Long idRelacion
+    Long idRelacion,
+    String contratacion
 ) {}

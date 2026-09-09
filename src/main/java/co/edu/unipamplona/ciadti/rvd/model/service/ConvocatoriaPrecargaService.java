@@ -6,6 +6,7 @@
  * Fecha de creación: 02/06/2026
  * Modificaciones:
  * 02/06/2026 - Sebastian Jaimes - Creación inicial
+ * 09/09/2026 - Sebastian Jaimes - Relación contratación-preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -20,6 +21,8 @@ public interface ConvocatoriaPrecargaService {
     List<ConvocatoriaDTO> findCallListWithDates(Long idPeriodoUniversidad);
 
     List<ConvocatoriaDTO> findCallListByFirstPeriodByYear(Long year);
+
+    List<ConvocatoriaDTO> findPreassignmentCallListByPeriod(Long idPeriodoUniversidad);
 
     List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(String nombre, String documento);
 
@@ -38,5 +41,7 @@ public interface ConvocatoriaPrecargaService {
     List<ConvocatoriaDTO> findAssignableActivePreloadCalls(Long idPeriodoUniversidad);
 
     void updateRelation(Long idConvocatoria, Long idRelacion);
+
+    void updatePreassignmentRelation(Long idConvocatoria, Long idRelacion);
 }
 /* 02/06/2026 @:Sebastian Jaimes */

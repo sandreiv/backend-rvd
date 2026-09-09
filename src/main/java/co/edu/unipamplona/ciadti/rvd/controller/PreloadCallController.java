@@ -6,6 +6,7 @@
  * Fecha de creación: 02/06/2026
  * Modificaciones:
  * 02/06/2026 - Sebastian Jaimes - Creación inicial
+ * 09/09/2026 - Sebastian Jaimes - Relación contratación-preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -236,6 +237,32 @@ public class PreloadCallController {
     @PutMapping("/update-relation/{idConvocatoria}")
     public ResponseEntity<Void> updateRelation(@PathVariable Long idConvocatoria, @RequestBody ConvocatoriaRelacionDTO dto) {
         convocatoriaPrecargaService.updateRelation(idConvocatoria, dto.idRelacion());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Obtiene la lista de convocatorias de preasignación de un periodo",
+        description = "Obtiene las convocatorias de preasignación (CONV_CONTRATACION nulo o 0) del periodo universitario indicado"
+    )
+    @GetMapping("/list-preassignment")
+    public ResponseEntity<List<ConvocatoriaDTO>> listPreassignmentCalls(
+            @RequestParam Long idPeriodoUniversidad) {
+        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService
+                .findPreassignmentCallListByPeriod(idPeriodoUniversidad);
+        return new ResponseEntity<>(callList, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Relaciona una convocatoria de contratación con una de preasignación",
+        description = "Actualiza CONV_IDRELACION de una convocatoria de contratación para que dependa de una preasignación del mismo periodo"
+    )
+    @PutMapping("/update-preassignment-relation/{idConvocatoria}")
+    public ResponseEntity<Void> updatePreassignmentRelation(
+            @PathVariable Long idConvocatoria,
+            @RequestBody ConvocatoriaRelacionDTO dto) {
+        convocatoriaPrecargaService.updatePreassignmentRelation(
+                idConvocatoria,
+                dto.idRelacion());
         return ResponseEntity.ok().build();
     }
 }

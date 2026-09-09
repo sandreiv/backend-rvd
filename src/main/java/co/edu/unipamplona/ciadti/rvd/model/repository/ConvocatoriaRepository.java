@@ -29,7 +29,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
                 CONV.CONV_FECHACAMBIO,
-                CONV.CONV_IDRELACION
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.CONV_ID = CONV.CONV_ID
@@ -50,7 +51,32 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
                 CONV.CONV_FECHACAMBIO,
-                CONV.CONV_IDRELACION
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
+            FROM RVD.CONVOCATORIA CONV
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.CONV_ID = CONV.CONV_ID
+            WHERE FECO.FECO_CODIGO = 'CNV'
+                AND CONV.PEUN_ID = :idPeriodoUniversidad
+                AND NVL(CONV.CONV_CONTRATACION, '0') = '0'
+            ORDER BY CONV.CONV_ID
+            """, nativeQuery = true)
+    List<ConvocatoriaEntity> findPreassignmentCallListByPeriod(
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
+
+    @Query(value = """
+            SELECT DISTINCT
+                CONV.CONV_ID,
+                CONV.PEUN_ID,
+                CONV.NIED_ID,
+                CONV.PEGE_IDAUTORIZA,
+                CONV.CONV_NOMBRE,
+                CONV.CONV_DESCRIPCION,
+                CONV.CONV_ESTADO,
+                CONV.CONV_REGISTRADOPOR,
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.CONV_ID = CONV.CONV_ID
@@ -95,7 +121,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
                 CONV.CONV_FECHACAMBIO,
-                CONV.CONV_IDRELACION
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ID = :id
             """, nativeQuery = true)
@@ -203,6 +230,7 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             c.idPeriodoUniversidad = :idPeriodoUniversidad,
             c.idNivelEducativo = :idNivelEducativo,
             c.idRelacion = :idRelacion,
+            c.contratacion = :contratacion,
             c.fechaCambio = :fechaCambio
             where c.id = :id
             """)
@@ -213,6 +241,7 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
             @Param("idNivelEducativo") Long idNivelEducativo,
             @Param("idRelacion") Long idRelacion,
+            @Param("contratacion") String contratacion,
             @Param("fechaCambio") Date fechaCambio,
             @Param("id") Long id);
 
@@ -248,7 +277,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
                 CONV.CONV_FECHACAMBIO,
-                CONV.CONV_IDRELACION
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ESTADO = '1'
             AND CONV.PEUN_ID = :idPeriodoUniversidad
@@ -268,7 +298,8 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
                 CONV.CONV_ESTADO,
                 CONV.CONV_REGISTRADOPOR,
                 CONV.CONV_FECHACAMBIO,
-                CONV.CONV_IDRELACION
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ESTADO = '1'
             AND CONV.PEUN_ID = :idPeriodoUniversidad
