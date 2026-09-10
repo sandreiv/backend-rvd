@@ -11,6 +11,8 @@
  * 31/08/2026 - Sebastian Jaimes - Columna V. Hora en reporte Excel
  * 31/08/2026 - Sebastian Jaimes - Reporte PDF de preasignación
  * 04/09/2026 - Exclusion de once meses heredados en segundo periodo
+ * 10/09/2026 - Sebastian Jaimes - Precarga activas solo preasignación
+ * 10/09/2026 - Sebastian Jaimes - parseNullableLong a ParseUtils
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -66,6 +68,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
+import co.edu.unipamplona.ciadti.rvd.util.ParseUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
@@ -82,7 +85,7 @@ public class CoordinationController {
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
-        description = "Obtiene las convocatorias activas del periodo universitario para filtrar coordinaciones"
+        description = "Obtiene las convocatorias de preasignación activas del periodo (CONV_CONTRATACION nulo o 0)"
     )
     @GetMapping("/list-active-preload-calls") 
     public ResponseEntity<?> listActivePreloadCalls(@RequestParam Long idPeriodoUniversidad) throws Exception {
@@ -179,16 +182,9 @@ public class CoordinationController {
             @RequestParam Long idCategoriaCatedratico,
             @RequestParam(required = false) String idPersonaGeneral,
             @RequestParam Long idModalidadContratacion) {
-        Long idPersona = parseNullableLong(idPersonaGeneral);
+        Long idPersona = ParseUtils.parseNullableLong(idPersonaGeneral);
         ValorPuntosPrecargaDTO valores = coordinacionService.getValuePointsPreload(anio, idCategoriaCatedratico, idPersona, idModalidadContratacion);
         return new ResponseEntity<>(valores, HttpStatus.OK);
-    }
-
-    private Long parseNullableLong(String value) {
-        if (value == null || value.isBlank() || "null".equalsIgnoreCase(value.trim())) {
-            return null;
-        }
-        return Long.valueOf(value.trim());
     }
 
     @Operation(

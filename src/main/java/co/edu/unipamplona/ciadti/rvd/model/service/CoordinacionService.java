@@ -12,6 +12,8 @@
  * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
+ * 10/09/2026 - Sebastian Jaimes - Coordinaciones contratación (preasignación + Aval Desarrollo)
+ * 10/09/2026 - Sebastian Jaimes - Docentes aprobados para contratación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -60,6 +62,10 @@ public interface CoordinacionService {
     List<CoordinacionDTO> findCoordinationsByIdConvocatoria(
             Long idConvocatoria,
             Long idPeriodoUniversidad);
+
+    List<CoordinacionDTO> findHiringCoordinations(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad);
             
     List<CoordinacionDTO> findCdpRequests(
         Long idConvocatoria,
@@ -88,6 +94,10 @@ public interface CoordinacionService {
     void addProfessor(CargaDocenteFormularioDTO dto);
 
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
+
+    List<DocenteCoordinacionDTO> listApprovedProfessorsForHiring(
+            Long idCarga,
+            Long idModalidadContratacion);
 
     List<DocenteCoordinacionDTO> listProfessorsForVerification(
             Long idPeriodoUniversidad,

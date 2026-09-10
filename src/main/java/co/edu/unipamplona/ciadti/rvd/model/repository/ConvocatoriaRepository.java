@@ -80,6 +80,30 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             FROM RVD.CONVOCATORIA CONV
             INNER JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.CONV_ID = CONV.CONV_ID
+            WHERE FECO.FECO_CODIGO = 'CNV'
+                AND CONV.PEUN_ID = :idPeriodoUniversidad
+                AND CONV.CONV_CONTRATACION = '1'
+            ORDER BY CONV.CONV_ID
+            """, nativeQuery = true)
+    List<ConvocatoriaEntity> findHiringCallListByPeriod(
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
+
+    @Query(value = """
+            SELECT DISTINCT
+                CONV.CONV_ID,
+                CONV.PEUN_ID,
+                CONV.NIED_ID,
+                CONV.PEGE_IDAUTORIZA,
+                CONV.CONV_NOMBRE,
+                CONV.CONV_DESCRIPCION,
+                CONV.CONV_ESTADO,
+                CONV.CONV_REGISTRADOPOR,
+                CONV.CONV_FECHACAMBIO,
+                CONV.CONV_IDRELACION,
+                CONV.CONV_CONTRATACION
+            FROM RVD.CONVOCATORIA CONV
+            INNER JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.CONV_ID = CONV.CONV_ID
             INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
                 ON PEUN.PEUN_ID = CONV.PEUN_ID
             WHERE FECO.FECO_CODIGO = 'CNV'
@@ -282,6 +306,7 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ESTADO = '1'
             AND CONV.PEUN_ID = :idPeriodoUniversidad
+            AND NVL(CONV.CONV_CONTRATACION, '0') = '0'
             ORDER BY CONV.CONV_ID
             """, nativeQuery = true)
     List<ConvocatoriaEntity> findActivePreloadCalls(

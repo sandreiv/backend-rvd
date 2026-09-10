@@ -127,6 +127,25 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         return result;
     }
 
+    @Override
+    @Transactional
+    public List<ConvocatoriaDTO> findHiringCallListByPeriod(Long idPeriodoUniversidad) {
+        log.debug("findHiringCallListByPeriod ===> Listando convocatorias de contratación. idPeriodoUniversidad={}",
+                idPeriodoUniversidad);
+
+        convocatoriaEstadoService.syncEstadosConvocatoriasConRestricciones();
+
+        List<ConvocatoriaDTO> result = convocatoriaRepository
+                .findHiringCallListByPeriod(idPeriodoUniversidad)
+                .stream()
+                .map(this::toListDtoAndSyncEstado)
+                .collect(Collectors.toList());
+
+        log.info("findHiringCallListByPeriod ===> Convocatorias de contratación listadas. periodo={}, total={}",
+                idPeriodoUniversidad, result.size());
+        return result;
+    }
+
     private ConvocatoriaDTO toListDtoAndSyncEstado(ConvocatoriaEntity convocatoria) {
         convocatoriaEstadoService.syncEstadoConvocatoria(convocatoria.getId());
 

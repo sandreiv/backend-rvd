@@ -24,6 +24,8 @@ public interface ConvocatoriaPrecargaService {
 
     List<ConvocatoriaDTO> findPreassignmentCallListByPeriod(Long idPeriodoUniversidad);
 
+    List<ConvocatoriaDTO> findHiringCallListByPeriod(Long idPeriodoUniversidad);
+
     List<PersonaAutorizaConvocatoriaDTO> searchGeneralPerson(String nombre, String documento);
 
     void save(ConvocatoriaFormularioDTO dto);

@@ -14,6 +14,8 @@
  * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
+ * 10/09/2026 - Sebastian Jaimes - Coordinaciones contratación (preasignación + Aval Desarrollo)
+ * 10/09/2026 - Sebastian Jaimes - Docentes aprobados para contratación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -292,6 +294,65 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 "findCoordinationsByIdConvocatoria ===> Coordinaciones listadas. idConvocatoria={}, idPeriodoUniversidad={}, total={}",
                 idConvocatoria, idPeriodoUniversidad, result.size());
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CoordinacionDTO> findHiringCoordinations(
+            Long idConvocatoria,
+            Long idPeriodoUniversidad) {
+        AuthUserDetails user = requireListadoUser();
+        if (!hasRole(user, ROL_COORDINADOR)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "El listado de coordinaciones de contratación requiere rol Coordinador");
+        }
+
+        Long idPersona = user.getIdPersonaGeneral();
+        log.debug(
+                "findHiringCoordinations ===> Listando coordinaciones. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}",
+                idConvocatoria,
+                idPeriodoUniversidad,
+                idPersona);
+
+        validateListadoFiltros(idConvocatoria, idPeriodoUniversidad);
+        if (idConvocatoria != null) {
+            validateHiringConvocatoria(idConvocatoria);
+        }
+
+        List<CoordinacionListadoProjection> projections;
+        if (idConvocatoria != null) {
+            projections = coordinacionRepository
+                    .findByConvocatoriaForHiringCoordinator(idConvocatoria, idPersona);
+        } else {
+            projections = coordinacionRepository
+                    .findByPeriodoForHiringCoordinator(idPeriodoUniversidad, idPersona);
+        }
+
+        List<CoordinacionDTO> result = coordinacionMapper.toDtoList(projections);
+        log.info(
+                "findHiringCoordinations ===> Coordinaciones listadas. idConvocatoria={}, idPeriodoUniversidad={}, total={}",
+                idConvocatoria,
+                idPeriodoUniversidad,
+                result.size());
+        return result;
+    }
+
+    private void validateHiringConvocatoria(Long idConvocatoria) {
+        ConvocatoriaEntity convocatoria = convocatoriaRepository.findById(idConvocatoria)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "Convocatoria no encontrada"));
+        if (!"1".equals(convocatoria.getContratacion())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id debe corresponder a una convocatoria de contratación");
+        }
+        if (convocatoria.getIdRelacion() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria de contratación no está relacionada con una de preasignación");
+        }
     }
 
     private AuthUserDetails requireListadoUser() {
@@ -933,6 +994,43 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
         log.info("listProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocenteCoordinacionDTO> listApprovedProfessorsForHiring(
+            Long idCarga,
+            Long idModalidadContratacion) {
+        log.debug(
+                "listApprovedProfessorsForHiring ===> Listando docentes aprobados. idCarga={}, idModalidad={}",
+                idCarga,
+                idModalidadContratacion);
+
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
+
+        List<DocenteCargaCoordinacionProjection> projections;
+        if (isModalidadPlanta(idModalidadContratacion)) {
+            projections = cargaDocenteRepository
+                    .findApprovedPlantProfessorsByCargaAndModality(
+                            idCarga,
+                            idModalidadContratacion);
+        } else {
+            projections = cargaDocenteRepository
+                    .findApprovedProfessorsByCargaAndModality(
+                            idCarga,
+                            idModalidadContratacion);
+        }
+        List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
+        log.info(
+                "listApprovedProfessorsForHiring ===> Docentes aprobados listados. idCarga={}, total={}",
+                idCarga,
+                result.size());
         return result;
     }
 
