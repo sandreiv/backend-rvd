@@ -548,14 +548,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             WHERE CONV.CONV_ID = :convId
             AND CONV.CONV_ESTADO = '1'
             AND UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'AVAL DESARROLLO'
-            AND COOR.COOR_IDPADRE IN (
-                SELECT FAC.COOR_ID
-                FROM RVD.PERSONACOORDINACION PECO
-                INNER JOIN RVD.COORDINACIONES FAC
-                    ON FAC.COOR_ID = PECO.COOR_ID
-                WHERE PECO.PEGE_ID = :idPersonaGeneral
-                AND FAC.COOR_IDPADRE IS NULL
-            )
+            AND COOR.COOR_IDPADRE = :idCoordinacionFacultad
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
@@ -563,8 +556,9 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 MOCO.MOCO_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findByConvocatoriaForCdpDean(
-        @Param("convId") Long convId,
-        @Param("idPersonaGeneral") Long idPersonaGeneral);      
+            @Param("convId") Long convId,
+            @Param("idCoordinacionFacultad") Long idCoordinacionFacultad
+    );     
 
     @Query(value = """
             SELECT
@@ -714,14 +708,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             WHERE CONV.PEUN_ID = :idPeriodoUniversidad
             AND CONV.CONV_ESTADO = '1'
             AND UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'AVAL DESARROLLO'
-            AND COOR.COOR_IDPADRE IN (
-                SELECT FAC.COOR_ID
-                FROM RVD.PERSONACOORDINACION PECO
-                INNER JOIN RVD.COORDINACIONES FAC
-                    ON FAC.COOR_ID = PECO.COOR_ID
-                WHERE PECO.PEGE_ID = :idPersonaGeneral
-                AND FAC.COOR_IDPADRE IS NULL
-            )
+            AND COOR.COOR_IDPADRE = :idCoordinacionFacultad
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
@@ -729,8 +716,9 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 MOCO.MOCO_NOMBRE
             """, nativeQuery = true)
     List<CoordinacionListadoProjection> findByPeriodoForCdpDean(
-        @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
-        @Param("idPersonaGeneral") Long idPersonaGeneral);       
+            @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
+            @Param("idCoordinacionFacultad") Long idCoordinacionFacultad
+    );     
 
     @Query(value = """
             SELECT
@@ -917,15 +905,16 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
             WHERE COOR.COOR_IDPADRE IS NULL
-                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = 'DESARROLLO ACADEMICO'
+                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = :estadoSolicitud
                 AND SOCD.PEUN_ID = PEUN.PEUN_ID
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
                 COOR.COOR_NOMBRE
             """, nativeQuery = true)
-    List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademicDevelopment(
-        @Param("idPeriodoUniversidad") Long idPeriodoUniversidad); 
+    List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademics(
+        @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
+        @Param("estadoSolicitud") String estadoSolicitud); 
 
     @Query(value = """
             SELECT
@@ -1112,6 +1101,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
 
     @Query(value = """
             SELECT DISTINCT
+                FAC.COOR_ID AS idCoordinacionFacultad,
                 UNID_REG.UNID_ID AS idUnidadAcademica,
                 UNID_REG.UNID_NOMBRE AS unidadAcademica,
                 UNID_AREA.UNID_ID AS idFacultad,
@@ -1127,6 +1117,10 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
             WHERE PECO.PEGE_ID = :idPersonaGeneral
             AND FAC.COOR_IDPADRE IS NULL
+            ORDER BY
+                UNID_AREA.UNID_NOMBRE,
+                UNID_REG.UNID_NOMBRE,
+                FAC.COOR_ID
             """, nativeQuery = true)
     List<CdpContextProjection> findCdpContextByPersona(
             @Param("idPersonaGeneral") Long idPersonaGeneral
@@ -1138,11 +1132,13 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             INNER JOIN RVD.COORDINACIONES FAC
                 ON FAC.COOR_ID = PECO.COOR_ID
             WHERE PECO.PEGE_ID = :idPersonaGeneral
+            AND FAC.COOR_ID = :idCoordinacionFacultad
             AND FAC.COOR_IDPADRE IS NULL
             FETCH FIRST 1 ROW ONLY
             """, nativeQuery = true)
-    Long findCdpFacultyCoordinationIdByPersona(
-            @Param("idPersonaGeneral") Long idPersonaGeneral
+    Long findCdpFacultyCoordinationIdByPersonaAndId(
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idCoordinacionFacultad") Long idCoordinacionFacultad
     );
 
 }

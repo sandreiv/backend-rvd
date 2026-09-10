@@ -68,12 +68,14 @@ public interface CoordinacionService {
             Long idPeriodoUniversidad);
             
     List<CoordinacionDTO> findCdpRequests(
-        Long idConvocatoria,
-        Long idPeriodoUniversidad);
+                Long idConvocatoria,
+                Long idPeriodoUniversidad,
+                Long idCoordinacionFacultad
+        );
+
+    List<CdpContextDTO> getCdpContexts();
     
-    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad);
-        
-    CdpContextDTO getCdpContext();
+    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademics(Long idPeriodoUniversidad);
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 

@@ -44,9 +44,12 @@ public class SolicitudCdpServiceImpl
     private String cdpStoragePath;
 
     private static final String ROL_DECANO = "Decano";
+    private static final String ROL_DESARROLLO_ACADEMICO = "Desarrollo academico";
+    private static final String ROL_VICERRECTORIA_ACADEMICA = "Vicerrectoria academica";
 
-    private static final String ESTADO_DESARROLLO_ACADEMICO =
-            "DESARROLLO ACADEMICO";
+    private static final String ESTADO_DESARROLLO_ACADEMICO = "DESARROLLO ACADEMICO";
+    private static final String ESTADO_VICERRECTORIA_ACADEMICA = "VICERRECTORIA ACADEMICA";
+    private static final String ESTADO_CDP_APROBADO = "CDP APROBADO";
 
     private static final int MAX_OBSERVACION = 250;
 
@@ -63,72 +66,66 @@ public class SolicitudCdpServiceImpl
 
     @Override
     @Transactional(readOnly = true)
-    public CdpRequestDTO getCurrentRequest() {
+        public CdpRequestDTO getCurrentRequest(
+                Long idCoordinacionFacultad) {
 
-        AuthUserDetails user = requireDecano();
+        AuthUserDetails user = requireRol(ROL_DECANO);
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
 
-        Long idCoordinacion =
-                coordinacionRepository
-                        .findCdpFacultyCoordinationIdByPersona(
-                                idPersonaGeneral
-                        );
-
-        if (idCoordinacion == null) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "El Decano no tiene una coordinación de facultad asociada"
-            );
-        }
+        validateCdpFacultyAccess(
+                idPersonaGeneral,
+                idCoordinacionFacultad
+        );
 
         return solicitudCdpRepository
                 .findFirstByIdCoordinacionOrderByIdDesc(
-                        idCoordinacion
+                        idCoordinacionFacultad
                 )
                 .map(this::toDto)
                 .orElse(null);
-    }        
+     }
 
     @Override
     @Transactional
     public void create(
-            String observacion,
-            List<MultipartFile> archivos,
-            String idPeriodo) {
+        String observacion,
+        List<MultipartFile> archivos,
+        String idPeriodo,
+        String idCoordinacionFacultad) {
 
-        AuthUserDetails user = requireDecano();
+        AuthUserDetails user = requireRol(ROL_DECANO);
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
         
-        if (idPeriodo.isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
-        }
+        Long idPeriodoUniversitario =
+                parseRequiredId(
+                        idPeriodo,
+                        "El periodo universitario es obligatorio"
+                );
 
         Long idCoordinacion =
-                coordinacionRepository
-                        .findCdpFacultyCoordinationIdByPersona(
-                                idPersonaGeneral
-                        );
+                parseRequiredId(
+                        idCoordinacionFacultad,
+                        "La facultad es obligatoria"
+                );
 
-        if (idCoordinacion == null) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "El Decano no tiene una coordinación de facultad asociada"
-            );
-        }
+        validateCdpFacultyAccess(
+                idPersonaGeneral,
+                idCoordinacion
+        );        
 
         if (
-            solicitudCdpRepository.existsByIdCoordinacion(
+        solicitudCdpRepository.existsByIdCoordinacion(
                 idCoordinacion
-            )
+        )
         ) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "Ya existe una solicitud CPD para la facultad asociada al Decano"
-            );
+        throw new ApiException(
+                HttpStatus.CONFLICT,
+                "Ya existe una solicitud CDP para la facultad seleccionada"
+        );
         }
 
         String observacionNormalizada =
@@ -153,7 +150,11 @@ public class SolicitudCdpServiceImpl
                 observacionNormalizada
         );
 
-        solicitud.setIdPeriodoUniversitario(Long.valueOf(idPeriodo));
+        solicitud.setIdPeriodoUniversitario(
+                idPeriodoUniversitario
+        );
+
+        solicitud.setNumero(null);
 
         solicitud.setRegistradoPor(
                 RegistradoPorUtils.value(
@@ -178,7 +179,7 @@ public class SolicitudCdpServiceImpl
         if (idSolicitud == null) {
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible obtener el identificador de la solicitud CPD"
+                    "No fue posible obtener el identificador de la solicitud CDP"
             );
         }
 
@@ -212,7 +213,7 @@ public class SolicitudCdpServiceImpl
         } catch (JsonProcessingException ex) {
 
             log.error(
-                    "create ===> Error generando JSON de adjuntos para solicitud CPD id={}",
+                    "create ===> Error generando JSON de adjuntos para solicitud CDP id={}",
                     idSolicitud,
                     ex
             );
@@ -224,12 +225,81 @@ public class SolicitudCdpServiceImpl
         }
 
         log.info(
-                "create ===> Solicitud CPD creada. id={}, idCoordinacion={}, idPersonaGeneral={}, adjuntos={}",
+                "create ===> Solicitud CDP creada. id={}, idCoordinacion={}, idPersonaGeneral={}, adjuntos={}",
                 solicitud.getId(),
                 idCoordinacion,
                 idPersonaGeneral,
                 adjuntos.size()
         );
+    }
+
+    @Override
+    @Transactional
+    public void sendRequestToVice(Long idSolicitud) {
+        requireRol(ROL_DESARROLLO_ACADEMICO);
+
+        if (idSolicitud == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El ID de la solicitud es obligatorio");
+        }
+
+        SolicitudCdpEntity solicitud = solicitudCdpRepository.findById(idSolicitud).orElseThrow(() -> {
+            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud CDP con id " + idSolicitud);
+        });
+
+        if (ESTADO_VICERRECTORIA_ACADEMICA.equals(solicitud.getEstado())) {
+            log.info(
+                "sendRequestToVice ===> La solicitud CDP ya se encuentra en vicerrectoria academica. idSolicitud={}", idSolicitud
+            );
+            return;
+        }
+
+        solicitud.setEstado(ESTADO_VICERRECTORIA_ACADEMICA);
+        solicitud.setRegistradoPor(
+            RegistradoPorUtils.value(
+                Accion.UPDATE
+            )
+        );
+        solicitud.setFechaCambio(new Date());
+
+        solicitudCdpRepository.save(solicitud);
+
+        log.info("sendRequestToVice ===> Solicitud CDP actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
+    }
+
+    @Override
+    @Transactional
+    public void approveCdpRequest(Long idSolicitud) {
+        requireRol(ROL_VICERRECTORIA_ACADEMICA);
+
+        if (idSolicitud == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El ID de la solicitud es obligatorio");
+        }
+
+        SolicitudCdpEntity solicitud = solicitudCdpRepository.findById(idSolicitud).orElseThrow(() -> {
+            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud CDP con id " + idSolicitud);
+        });
+
+        if (ESTADO_CDP_APROBADO.equals(solicitud.getEstado())) {
+            log.info(
+                "approveCdpRequest ===> La solicitud CDP ya se encuentra aprobada por vicerrectoria academica. idSolicitud={}", idSolicitud
+            );
+            return;
+        }
+
+        String numeroCdp = generateRandomCdpCode();
+
+        solicitud.setEstado(ESTADO_CDP_APROBADO);
+        solicitud.setNumero(numeroCdp);
+        solicitud.setRegistradoPor(
+            RegistradoPorUtils.value(
+                Accion.UPDATE
+            )
+        );
+        solicitud.setFechaCambio(new Date());
+
+        solicitudCdpRepository.save(solicitud);
+
+        log.info("approveCdpRequest ===> Solicitud CDP actualizada. id={}, estado={}, numero={}", idSolicitud, ESTADO_CDP_APROBADO, numeroCdp);
     }
 
     private List<CdpAdjuntoDTO> saveAttachments(
@@ -301,21 +371,21 @@ public class SolicitudCdpServiceImpl
         } catch (IOException ex) {
 
             log.error(
-                    "saveAttachments ===> Error guardando adjuntos de solicitud CPD id={}",
+                    "saveAttachments ===> Error guardando adjuntos de solicitud CDP id={}",
                     idSolicitud,
                     ex
             );
 
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible guardar los archivos adjuntos de la solicitud CPD"
+                    "No fue posible guardar los archivos adjuntos de la solicitud CDP"
             );
         }
 
         return adjuntos;
     }
 
-    private AuthUserDetails requireDecano() {
+    private AuthUserDetails requireRol(String rolRequerido) {
 
         AuthUserDetails user =
                 SecurityUtils.currentUser()
@@ -333,21 +403,21 @@ public class SolicitudCdpServiceImpl
             );
         }
 
-        boolean decano =
+        boolean rolRequired =
                 user.getRoles() != null
                 && user.getRoles()
                         .stream()
                         .anyMatch(
                                 role ->
-                                        ROL_DECANO.equalsIgnoreCase(
+                                        rolRequerido.equalsIgnoreCase(
                                                 role
                                         )
                         );
 
-        if (!decano) {
+        if (!rolRequired) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "La solicitud CPD requiere rol Decano"
+                    "La solicitud CDP requiere rol " + rolRequerido
             );
         }
 
@@ -414,13 +484,13 @@ public class SolicitudCdpServiceImpl
         } catch (JsonProcessingException ex) {
 
             log.error(
-                    "parseAttachments ===> Error leyendo JSON de adjuntos CPD",
+                    "parseAttachments ===> Error leyendo JSON de adjuntos CDP",
                     ex
             );
 
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible leer los archivos adjuntos de la solicitud CPD"
+                    "No fue posible leer los archivos adjuntos de la solicitud CDP"
             );
         }
     }
@@ -462,4 +532,55 @@ public class SolicitudCdpServiceImpl
         }
     }
 
+    private void validateCdpFacultyAccess(
+                Long idPersonaGeneral,
+                Long idCoordinacionFacultad) {
+
+        if (idCoordinacionFacultad == null) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "La facultad es obligatoria"
+                );
+        }
+
+        Long idCoordinacionAsociada =
+                coordinacionRepository
+                        .findCdpFacultyCoordinationIdByPersonaAndId(
+                                idPersonaGeneral,
+                                idCoordinacionFacultad
+                        );
+
+        if (idCoordinacionAsociada == null) {
+                throw new ApiException(
+                        HttpStatus.FORBIDDEN,
+                        "La facultad seleccionada no está asociada al Decano autenticado"
+                );
+        }
+    }
+
+    private Long parseRequiredId(
+        String value,
+        String requiredMessage) {
+
+        if (!StringUtils.hasText(value)) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        requiredMessage
+                );
+        }
+
+        try {
+                return Long.valueOf(value.trim());
+        } catch (NumberFormatException ex) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El identificador recibido no es válido"
+                );
+        }
+    }
+
+    private String generateRandomCdpCode() {
+        int number = (int) (Math.random() * 1_000_000);
+        return String.format("%06d", number);
+    }
 }

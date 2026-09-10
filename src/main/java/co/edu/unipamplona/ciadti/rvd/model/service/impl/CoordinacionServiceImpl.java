@@ -185,6 +185,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String ROL_COORDINADOR = "Coordinador";
     private static final String ROL_DECANO = "Decano";
     private static final String ROL_DESARROLLO = "Desarrollo academico";
+    private static final String ROL_VICERRECTORIA = "Vicerrectoria academica";
 
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
@@ -366,8 +367,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (user.getIdPersonaGeneral() == null) {
             throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
         }
-        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO)) {
-            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano o Desarrollo academico");
+        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA)) {
+            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano, Desarrollo academico o Vicerrectoria academica");
         }
         return user;
     }
@@ -3351,8 +3352,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional(readOnly = true)
     public List<CoordinacionDTO> findCdpRequests(
-            Long idConvocatoria,
-            Long idPeriodoUniversidad) {
+        Long idConvocatoria,
+        Long idPeriodoUniversidad,
+        Long idCoordinacionFacultad) {
 
         AuthUserDetails user = requireListadoUser();
 
@@ -3365,6 +3367,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         Long idPersona = user.getIdPersonaGeneral();
 
+        validateCdpFacultyAccess(
+                idPersona,
+                idCoordinacionFacultad
+        );
+
         validateListadoFiltros(
                 idConvocatoria,
                 idPeriodoUniversidad
@@ -3376,13 +3383,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             projections = coordinacionRepository
                     .findByConvocatoriaForCdpDean(
                             idConvocatoria,
-                            idPersona
+                            idCoordinacionFacultad
                     );
         } else {
             projections = coordinacionRepository
                     .findByPeriodoForCdpDean(
                             idPeriodoUniversidad,
-                            idPersona
+                            idCoordinacionFacultad
                     );
         }
 
@@ -3390,10 +3397,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 coordinacionMapper.toDtoList(projections);
 
         log.info(
-                "findCdpRequests ===> Solicitudes CDP listadas. idConvocatoria={}, idPeriodoUniversidad={}, idPersona={}, total={}",
+                "findCdpRequests ===> Solicitudes CDP listadas. "
+                        + "idConvocatoria={}, idPeriodoUniversidad={}, "
+                        + "idPersona={}, idCoordinacionFacultad={}, total={}",
                 idConvocatoria,
                 idPeriodoUniversidad,
                 idPersona,
+                idCoordinacionFacultad,
                 result.size()
         );
 
@@ -3402,20 +3412,27 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad) {
+    public List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademics(Long idPeriodoUniversidad) {
         AuthUserDetails user = requireListadoUser();
 
-        if (!hasRole(user, ROL_DESARROLLO)) {
+        if (!hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA)) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "Las revisiones CDP requieren rol Desarrollo Academico"
+                    "Las revisiones CDP requieren rol Desarrollo Academico o Vicerrectoria academica"
             );
         }
         if (idPeriodoUniversidad == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
         }
 
-        List<ResumenSolicitudCdpProjection> projections = coordinacionRepository.findByPeriodoForCdpAcademicDevelopment(idPeriodoUniversidad);
+        String estadoSolicitud;
+        if (hasRole(user, ROL_DESARROLLO)) {
+            estadoSolicitud = "DESARROLLO ACADEMICO";
+        } else {
+            estadoSolicitud = "VICERRECTORIA ACADEMICA";
+        }
+
+        List<ResumenSolicitudCdpProjection> projections = coordinacionRepository.findByPeriodoForCdpAcademics(idPeriodoUniversidad, estadoSolicitud);
 
         List<ResumenSolicitudCdpDTO> result = solicitudCdpMapper.toDtoList(projections);
         
@@ -3429,7 +3446,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public CdpContextDTO getCdpContext() {
+    public List<CdpContextDTO> getCdpContexts() {
 
         AuthUserDetails user = requireListadoUser();
 
@@ -3443,7 +3460,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         Long idPersona = user.getIdPersonaGeneral();
 
         List<CdpContextProjection> contextos =
-                coordinacionRepository.findCdpContextByPersona(idPersona);
+                coordinacionRepository.findCdpContextByPersona(
+                        idPersona
+                );
 
         if (contextos.isEmpty()) {
             throw new ApiException(
@@ -3452,21 +3471,27 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             );
         }
 
-        CdpContextProjection contexto = contextos.get(0);
+        List<CdpContextDTO> result =
+                contextos.stream()
+                        .map(contexto ->
+                                new CdpContextDTO(
+                                        contexto.getIdCoordinacionFacultad(),
+                                        contexto.getIdUnidadAcademica(),
+                                        contexto.getUnidadAcademica(),
+                                        contexto.getIdFacultad(),
+                                        contexto.getFacultad()
+                                )
+                        )
+                        .toList();
 
         log.info(
-                "getCdpContext ===> Contexto CDP obtenido. idPersona={}, idUnidadAcademica={}, idFacultad={}",
+                "getCdpContexts ===> Contextos CDP obtenidos. "
+                        + "idPersona={}, total={}",
                 idPersona,
-                contexto.getIdUnidadAcademica(),
-                contexto.getIdFacultad()
+                result.size()
         );
 
-        return new CdpContextDTO(
-                contexto.getIdUnidadAcademica(),
-                contexto.getUnidadAcademica(),
-                contexto.getIdFacultad(),
-                contexto.getFacultad()
-        );
+        return result;
     }
 
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {
@@ -3688,6 +3713,32 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 projection.getFecha(),
                 projection.getEstado()
         );
+    }
+
+    private void validateCdpFacultyAccess(
+            Long idPersonaGeneral,
+            Long idCoordinacionFacultad) {
+
+        if (idCoordinacionFacultad == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La facultad es obligatoria"
+            );
+        }
+
+        Long idCoordinacionAsociada =
+                coordinacionRepository
+                        .findCdpFacultyCoordinationIdByPersonaAndId(
+                                idPersonaGeneral,
+                                idCoordinacionFacultad
+                        );
+
+        if (idCoordinacionAsociada == null) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "La facultad seleccionada no está asociada al Decano autenticado"
+            );
+        }
     }
 
 }

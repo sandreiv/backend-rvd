@@ -46,6 +46,9 @@ public class SolicitudCdpEntity implements Serializable, Cloneable {
     @Column(name = "SOCD_ESTADO")
     private String estado;
 
+    @Column(name = "SOCD_NUMERO")
+    private String numero;
+
     @Lob
     @Column(name = "SOCD_ADJUNTO")
     private String adjunto;
@@ -75,6 +78,7 @@ public class SolicitudCdpEntity implements Serializable, Cloneable {
                 + ", idCoordinacion=" + idCoordinacion
                 + ", idPeriodoUniversitario=" + idPeriodoUniversitario
                 + ", estado=" + estado
+                + ", numero=" + numero
                 + ", adjunto=" + adjunto
                 + ", observacion=" + observacion
                 + ", registradoPor=" + registradoPor

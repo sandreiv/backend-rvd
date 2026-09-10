@@ -14,10 +14,14 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 public interface CdpReporteService {
 
     FileDTO generateCdpReport(
-            Long idConvocatoria,
-            Long idPeriodoUniversidad);
+                Long idConvocatoria,
+                Long idPeriodoUniversidad,
+                Long idCoordinacionFacultad
+        );
 
     FileDTO generateCdpPdfReport(
-            Long idConvocatoria,
-            Long idPeriodoUniversidad);
+                Long idConvocatoria,
+                Long idPeriodoUniversidad,
+                Long idCoordinacionFacultad
+        );
 }
