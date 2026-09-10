@@ -18,10 +18,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -72,17 +74,17 @@ public class CdpController {
     }
 
     @Operation(
-        summary = "Obtiene las solicitudes CDP para desarollo academico",
+        summary = "Obtiene las solicitudes CDP para desarollo academico o vicerrectoria academica",
         description = """
-            Lista para Desarrollo Academico las facultades que tienen
-            solicitudes CDP en estado DESARROLLO ACADEMICO.
+            Lista para Desarrollo Academico o Vicerrectoria academica las facultades que tienen
+            solicitudes CDP en estado DESARROLLO ACADEMICO o VICERRECTORIA ACADEMICA respectivamente.
             """
     )
-    @GetMapping("/requests-for-academic-development")
-    public ResponseEntity<List<ResumenSolicitudCdpDTO>> listCdpRequestsForAcademicDevelopment(
+    @GetMapping("/requests-for-academics")
+    public ResponseEntity<List<ResumenSolicitudCdpDTO>> listCdpRequestsForAcademics(
             @RequestParam(required = false) Long idPeriodoUniversidad) {
 
-        List<ResumenSolicitudCdpDTO> faculties = coordinacionService.findCdpRequestsForAcademicDevelopment(idPeriodoUniversidad);
+        List<ResumenSolicitudCdpDTO> faculties = coordinacionService.findCdpRequestsForAcademics(idPeriodoUniversidad);
 
         return new ResponseEntity<>(faculties, HttpStatus.OK);
     }
@@ -213,6 +215,41 @@ public class CdpController {
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .build();
+    }
+
+    @Operation(
+        summary = "Actualiza el estado de una solicitud CDP",
+        description = """
+                Actualiza una solicitud CDP para la facultad
+                asociada al Desarrollo academico autenticado, cambiando
+                su estado de envio a Vicerrectoria academica.
+                """
+    )
+    @PutMapping("/send-request-to-vice/{idSolicitud}")
+    public ResponseEntity<Void> sendRequestToVice(
+        @PathVariable Long idSolicitud) {
+
+        solicitudCdpService.sendRequestToVice(idSolicitud);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Operation(
+        summary = "Actualiza el estado y codigo de una solicitud CDP",
+        description = """
+                Actualiza una solicitud CDP para la facultad
+                asociada a Vicerrectoria academica autenticada,
+                cambiando su estado de envio a CDP aprobado y
+                generando su codigo de identificación.
+                """
+    )
+    @PutMapping("/approve-cdp-request/{idSolicitud}")
+    public ResponseEntity<Void> approveCdpRequest(
+        @PathVariable Long idSolicitud) {
+
+        solicitudCdpService.approveCdpRequest(idSolicitud);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Operation(

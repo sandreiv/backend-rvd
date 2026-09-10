@@ -18,4 +18,8 @@ public interface SolicitudCdpService {
     CdpRequestDTO getCurrentRequest(
             Long idCoordinacionFacultad
     );
+
+    void sendRequestToVice(Long idSolicitud);
+
+    void approveCdpRequest(Long idSolicitud);
 }

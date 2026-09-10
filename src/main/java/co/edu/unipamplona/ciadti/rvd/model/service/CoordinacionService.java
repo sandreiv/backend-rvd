@@ -69,7 +69,7 @@ public interface CoordinacionService {
 
     List<CdpContextDTO> getCdpContexts();
     
-    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademicDevelopment(Long idPeriodoUniversidad);
+    List<ResumenSolicitudCdpDTO> findCdpRequestsForAcademics(Long idPeriodoUniversidad);
 
     void savePreload(RelacionConvocatoriaCoordinacionDTO dto);
 
