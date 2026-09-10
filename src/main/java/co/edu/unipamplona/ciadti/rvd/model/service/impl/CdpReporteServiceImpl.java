@@ -78,53 +78,91 @@ public class CdpReporteServiceImpl implements CdpReporteService {
     @Transactional(readOnly = true)
     public FileDTO generateCdpReport(
             Long idConvocatoria,
-            Long idPeriodoUniversidad) {
+            Long idPeriodoUniversidad,
+            Long idCoordinacionFacultad) {
 
-        List<ReportePreasignacionCargaDTO> reportes = loadFacultyReports(
-                idConvocatoria,
-                idPeriodoUniversidad);
-        byte[] content = excelExporter.export(reportes);
-        String fileName = buildCdpFileName(
-                reportes.getFirst().encabezado(),
-                "xlsx");
+        List<ReportePreasignacionCargaDTO> reportes =
+                loadFacultyReports(
+                        idConvocatoria,
+                        idPeriodoUniversidad,
+                        idCoordinacionFacultad
+                );
 
-        return new FileDTO(fileName, content);
+        byte[] content =
+                excelExporter.export(reportes);
+
+        String fileName =
+                buildCdpFileName(
+                        reportes.getFirst().encabezado(),
+                        "xlsx"
+                );
+
+        return new FileDTO(
+                fileName,
+                content
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public FileDTO generateCdpPdfReport(
             Long idConvocatoria,
-            Long idPeriodoUniversidad) {
+            Long idPeriodoUniversidad,
+            Long idCoordinacionFacultad) {
 
-        List<ReportePreasignacionCargaDTO> reportes = loadFacultyReports(
-                idConvocatoria,
-                idPeriodoUniversidad);
-        byte[] content = pdfExporter.export(reportes);
-        String fileName = buildCdpFileName(
-                reportes.getFirst().encabezado(),
-                "pdf");
+        List<ReportePreasignacionCargaDTO> reportes =
+                loadFacultyReports(
+                        idConvocatoria,
+                        idPeriodoUniversidad,
+                        idCoordinacionFacultad
+                );
 
-        return new FileDTO(fileName, content);
+        byte[] content =
+                pdfExporter.export(reportes);
+
+        String fileName =
+                buildCdpFileName(
+                        reportes.getFirst().encabezado(),
+                        "pdf"
+                );
+
+        return new FileDTO(
+                fileName,
+                content
+        );
     }
 
     private List<ReportePreasignacionCargaDTO> loadFacultyReports(
             Long idConvocatoria,
-            Long idPeriodoUniversidad) {
+            Long idPeriodoUniversidad,
+            Long idCoordinacionFacultad) {
 
-        List<CoordinacionDTO> solicitudes = coordinacionService.findCdpRequests(
-                idConvocatoria,
-                idPeriodoUniversidad);
-        List<Long> idsCarga = resolveCargaIds(solicitudes);
+        List<CoordinacionDTO> solicitudes =
+                coordinacionService.findCdpRequests(
+                        idConvocatoria,
+                        idPeriodoUniversidad,
+                        idCoordinacionFacultad
+                );
+
+        List<Long> idsCarga =
+                resolveCargaIds(solicitudes);
+
         if (idsCarga.isEmpty()) {
             throw new ApiException(
                     HttpStatus.NOT_FOUND,
-                    "No hay coordinaciones con carga en Aval Desarrollo para generar el reporte");
+                    "No hay coordinaciones con carga en Aval Desarrollo para generar el reporte"
+            );
         }
-        List<ReportePreasignacionCargaDTO> reportes = new ArrayList<>();
+
+        List<ReportePreasignacionCargaDTO> reportes =
+                new ArrayList<>();
+
         for (Long idCarga : idsCarga) {
-            reportes.add(buildReport(idCarga));
+            reportes.add(
+                    buildReport(idCarga)
+            );
         }
+
         return reportes;
     }
 

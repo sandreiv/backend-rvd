@@ -54,13 +54,15 @@ public class CdpController {
     )
     @GetMapping("/requests")
     public ResponseEntity<List<CoordinacionDTO>> listCdpRequests(
-            @RequestParam(required = false) Long idConvocatoria,
-            @RequestParam(required = false) Long idPeriodoUniversidad) {
+        @RequestParam(required = false) Long idConvocatoria,
+        @RequestParam(required = false) Long idPeriodoUniversidad,
+        @RequestParam Long idCoordinacionFacultad) {
 
         List<CoordinacionDTO> coordinations =
                 coordinacionService.findCdpRequests(
                         idConvocatoria,
-                        idPeriodoUniversidad
+                        idPeriodoUniversidad,
+                        idCoordinacionFacultad
                 );
 
         return new ResponseEntity<>(
@@ -93,12 +95,12 @@ public class CdpController {
                 """
     )
     @GetMapping("/context")
-    public ResponseEntity<CdpContextDTO> getCdpContext() {
+    public ResponseEntity<List<CdpContextDTO>> getCdpContext() {
 
-        CdpContextDTO context =
-                coordinacionService.getCdpContext();
+        List<CdpContextDTO> contexts =
+                coordinacionService.getCdpContexts();
 
-        return ResponseEntity.ok(context);
+        return ResponseEntity.ok(contexts);
     }
     
 
@@ -116,11 +118,13 @@ public class CdpController {
     @GetMapping("/cdp-report")
     public ResponseEntity<byte[]> generateCdpReport(
             @RequestParam(required = false) Long idConvocatoria,
-            @RequestParam(required = false) Long idPeriodoUniversidad) {
+            @RequestParam(required = false) Long idPeriodoUniversidad,
+            @RequestParam Long idCoordinacionFacultad) {
 
         FileDTO file = cdpReporteService.generateCdpReport(
                 idConvocatoria,
-                idPeriodoUniversidad);
+                idPeriodoUniversidad,
+                idCoordinacionFacultad);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
@@ -143,10 +147,16 @@ public class CdpController {
     )
     @GetMapping("/cdp-pdf-report")
     public ResponseEntity<byte[]> generateCdpPdfReport(
-            @RequestParam(required = false) Long idConvocatoria,
-            @RequestParam(required = false) Long idPeriodoUniversidad) {
+        @RequestParam(required = false) Long idConvocatoria,
+        @RequestParam(required = false) Long idPeriodoUniversidad,
+        @RequestParam Long idCoordinacionFacultad) {
 
-        FileDTO file = cdpReporteService.generateCdpPdfReport(idConvocatoria, idPeriodoUniversidad);
+    FileDTO file =
+            cdpReporteService.generateCdpPdfReport(
+                    idConvocatoria,
+                    idPeriodoUniversidad,
+                    idCoordinacionFacultad
+            );
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
@@ -184,12 +194,20 @@ public class CdpController {
             value = "idPeriodo",
             required = false
         )
-        String idPeriodo) {
+
+        String idPeriodo,
+
+        @RequestPart(
+            value = "idCoordinacionFacultad",
+            required = false
+        )
+        String idCoordinacionFacultad) {
 
         solicitudCdpService.create(
-            observacion,
-            archivos,
-            idPeriodo
+                observacion,
+                archivos,
+                idPeriodo,
+                idCoordinacionFacultad
         );
 
         return ResponseEntity
@@ -205,13 +223,16 @@ public class CdpController {
                 """
     )
     @GetMapping("/request")
-        public ResponseEntity<CdpRequestDTO> getCurrentCdpRequest() {
+        public ResponseEntity<CdpRequestDTO> getCurrentCdpRequest(
+                @RequestParam Long idCoordinacionFacultad) {
 
         CdpRequestDTO request =
-                solicitudCdpService.getCurrentRequest();
+                solicitudCdpService.getCurrentRequest(
+                        idCoordinacionFacultad
+                );
 
         return ResponseEntity.ok(request);
-    }       
+        }       
 
 
 }

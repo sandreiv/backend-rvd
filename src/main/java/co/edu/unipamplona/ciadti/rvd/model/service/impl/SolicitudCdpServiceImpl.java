@@ -63,72 +63,66 @@ public class SolicitudCdpServiceImpl
 
     @Override
     @Transactional(readOnly = true)
-    public CdpRequestDTO getCurrentRequest() {
+        public CdpRequestDTO getCurrentRequest(
+                Long idCoordinacionFacultad) {
 
         AuthUserDetails user = requireDecano();
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
 
-        Long idCoordinacion =
-                coordinacionRepository
-                        .findCdpFacultyCoordinationIdByPersona(
-                                idPersonaGeneral
-                        );
-
-        if (idCoordinacion == null) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "El Decano no tiene una coordinación de facultad asociada"
-            );
-        }
+        validateCdpFacultyAccess(
+                idPersonaGeneral,
+                idCoordinacionFacultad
+        );
 
         return solicitudCdpRepository
                 .findFirstByIdCoordinacionOrderByIdDesc(
-                        idCoordinacion
+                        idCoordinacionFacultad
                 )
                 .map(this::toDto)
                 .orElse(null);
-    }        
+     }
 
     @Override
     @Transactional
     public void create(
-            String observacion,
-            List<MultipartFile> archivos,
-            String idPeriodo) {
+        String observacion,
+        List<MultipartFile> archivos,
+        String idPeriodo,
+        String idCoordinacionFacultad) {
 
         AuthUserDetails user = requireDecano();
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
         
-        if (idPeriodo.isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
-        }
+        Long idPeriodoUniversitario =
+                parseRequiredId(
+                        idPeriodo,
+                        "El periodo universitario es obligatorio"
+                );
 
         Long idCoordinacion =
-                coordinacionRepository
-                        .findCdpFacultyCoordinationIdByPersona(
-                                idPersonaGeneral
-                        );
+                parseRequiredId(
+                        idCoordinacionFacultad,
+                        "La facultad es obligatoria"
+                );
 
-        if (idCoordinacion == null) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "El Decano no tiene una coordinación de facultad asociada"
-            );
-        }
+        validateCdpFacultyAccess(
+                idPersonaGeneral,
+                idCoordinacion
+        );        
 
         if (
-            solicitudCdpRepository.existsByIdCoordinacion(
+        solicitudCdpRepository.existsByIdCoordinacion(
                 idCoordinacion
-            )
+        )
         ) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "Ya existe una solicitud CPD para la facultad asociada al Decano"
-            );
+        throw new ApiException(
+                HttpStatus.CONFLICT,
+                "Ya existe una solicitud CDP para la facultad seleccionada"
+        );
         }
 
         String observacionNormalizada =
@@ -153,7 +147,9 @@ public class SolicitudCdpServiceImpl
                 observacionNormalizada
         );
 
-        solicitud.setIdPeriodoUniversitario(Long.valueOf(idPeriodo));
+        solicitud.setIdPeriodoUniversitario(
+                idPeriodoUniversitario
+        );
 
         solicitud.setRegistradoPor(
                 RegistradoPorUtils.value(
@@ -459,6 +455,53 @@ public class SolicitudCdpServiceImpl
                     HttpStatus.PAYLOAD_TOO_LARGE,
                     "Los archivos adjuntos superan el tamaño máximo permitido de 100 MB por solicitud"
             );
+        }
+    }
+
+    private void validateCdpFacultyAccess(
+                Long idPersonaGeneral,
+                Long idCoordinacionFacultad) {
+
+        if (idCoordinacionFacultad == null) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "La facultad es obligatoria"
+                );
+        }
+
+        Long idCoordinacionAsociada =
+                coordinacionRepository
+                        .findCdpFacultyCoordinationIdByPersonaAndId(
+                                idPersonaGeneral,
+                                idCoordinacionFacultad
+                        );
+
+        if (idCoordinacionAsociada == null) {
+                throw new ApiException(
+                        HttpStatus.FORBIDDEN,
+                        "La facultad seleccionada no está asociada al Decano autenticado"
+                );
+        }
+    }
+
+    private Long parseRequiredId(
+        String value,
+        String requiredMessage) {
+
+        if (!StringUtils.hasText(value)) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        requiredMessage
+                );
+        }
+
+        try {
+                return Long.valueOf(value.trim());
+        } catch (NumberFormatException ex) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El identificador recibido no es válido"
+                );
         }
     }
 

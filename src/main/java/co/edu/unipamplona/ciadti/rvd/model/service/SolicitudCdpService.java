@@ -11,8 +11,11 @@ public interface SolicitudCdpService {
     void create(
             String observacion,
             List<MultipartFile> archivos,
-            String idPeriodo
+            String idPeriodo,
+            String idCoordinacionFacultad
     );
 
-    CdpRequestDTO getCurrentRequest();
+    CdpRequestDTO getCurrentRequest(
+            Long idCoordinacionFacultad
+    );
 }
