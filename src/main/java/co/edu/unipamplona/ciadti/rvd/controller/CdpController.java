@@ -217,6 +217,24 @@ public class CdpController {
     }
 
     @Operation(
+        summary = "Actualiza el estado y codigo de una solicitud CDP",
+        description = """
+                Actualiza una solicitud CDP para la facultad
+                asociada a Vicerrectoria academica autenticada,
+                cambiando su estado de envio a CDP aprobado y
+                generando su codigo de identificación.
+                """
+    )
+    @PutMapping("/approve-cdp-request/{idSolicitud}")
+    public ResponseEntity<Void> approveCdpRequest(
+        @PathVariable Long idSolicitud) {
+
+        solicitudCdpService.approveCdpRequest(idSolicitud);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Operation(
         summary = "Obtiene la solicitud CDP del Decano",
         description = """
                 Consulta la solicitud CDP registrada para la

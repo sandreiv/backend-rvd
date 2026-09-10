@@ -45,9 +45,11 @@ public class SolicitudCdpServiceImpl
 
     private static final String ROL_DECANO = "Decano";
     private static final String ROL_DESARROLLO_ACADEMICO = "Desarrollo academico";
+    private static final String ROL_VICERRECTORIA_ACADEMICA = "Vicerrectoria academica";
 
     private static final String ESTADO_DESARROLLO_ACADEMICO = "DESARROLLO ACADEMICO";
     private static final String ESTADO_VICERRECTORIA_ACADEMICA = "VICERRECTORIA ACADEMICA";
+    private static final String ESTADO_CDP_APROBADO = "CDP APROBADO";
 
     private static final int MAX_OBSERVACION = 250;
 
@@ -155,6 +157,8 @@ public class SolicitudCdpServiceImpl
         );
 
         solicitud.setIdPeriodoUniversitario(Long.valueOf(idPeriodo));
+
+        solicitud.setNumero(null);
 
         solicitud.setRegistradoPor(
                 RegistradoPorUtils.value(
@@ -264,6 +268,42 @@ public class SolicitudCdpServiceImpl
         solicitudCdpRepository.save(solicitud);
 
         log.info("sendRequestToVice ===> Solicitud CDP actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
+    }
+
+    @Override
+    @Transactional
+    public void approveCdpRequest(Long idSolicitud) {
+        requireRol(ROL_VICERRECTORIA_ACADEMICA);
+
+        if (idSolicitud == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El ID de la solicitud es obligatorio");
+        }
+
+        SolicitudCdpEntity solicitud = solicitudCdpRepository.findById(idSolicitud).orElseThrow(() -> {
+            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud CDP con id " + idSolicitud);
+        });
+
+        if (ESTADO_CDP_APROBADO.equals(solicitud.getEstado())) {
+            log.info(
+                "approveCdpRequest ===> La solicitud CDP ya se encuentra aprobada por vicerrectoria academica. idSolicitud={}", idSolicitud
+            );
+            return;
+        }
+
+        String numeroCdp = generateRandomCdpCode();
+
+        solicitud.setEstado(ESTADO_CDP_APROBADO);
+        solicitud.setNumero(numeroCdp);
+        solicitud.setRegistradoPor(
+            RegistradoPorUtils.value(
+                Accion.UPDATE
+            )
+        );
+        solicitud.setFechaCambio(new Date());
+
+        solicitudCdpRepository.save(solicitud);
+
+        log.info("approveCdpRequest ===> Solicitud CDP actualizada. id={}, estado={}, numero={}", idSolicitud, ESTADO_CDP_APROBADO, numeroCdp);
     }
 
     private List<CdpAdjuntoDTO> saveAttachments(
@@ -496,4 +536,8 @@ public class SolicitudCdpServiceImpl
         }
     }
 
+    private String generateRandomCdpCode() {
+        int number = (int) (Math.random() * 1_000_000);
+        return String.format("%06d", number);
+    }
 }
