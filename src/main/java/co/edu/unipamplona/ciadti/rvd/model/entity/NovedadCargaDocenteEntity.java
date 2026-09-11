@@ -55,6 +55,9 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "TINO_ID")
     private Long idTipoNovedad;
 
+    @Column(name = "NOVE_ID")
+    private Long idNovedadCatalogo;
+
     @Column(name = "CADO_IDNOVEDAD")
     private Long idNovedad;
 
@@ -140,6 +143,14 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     private TipoNovedadEntity tipoNovedad;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "NOVE_ID",
+        insertable = false,
+        updatable = false
+    )
+    private NovedadEntity novedad;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CADO_IDNOVEDAD", referencedColumnName = "CADO_ID", insertable = false, updatable = false)
     private CargaDocenteEntity cargaDocenteNovedad;
 
@@ -178,6 +189,7 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
                 ", momento=" + momento +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
+                ", idNovedadCatalogo=" + idNovedadCatalogo +
                 '}';
     }
 }
