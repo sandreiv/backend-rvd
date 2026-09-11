@@ -59,6 +59,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.HorasActividadesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.NovedadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
@@ -94,6 +95,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadPadreDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
@@ -144,6 +146,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.HistorialCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
@@ -216,6 +219,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final EscalafonRepository escalafonRepository;
     private final CoordinacionMapper coordinacionMapper;
     private final SolicitudCdpMapper solicitudCdpMapper;
+    private final NovedadMapper novedadMapper;
     private final DocentePlantaCoordinacionMapper docentePlantaCoordinacionMapper;
     private final DocentePreasignacionMapper docentePreasignacionMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
@@ -249,6 +253,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
     private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
+    private final NovedadRepository novedadRepository;
     private final RestriccionPorCoordinacionMapper restriccionPorCoordinacionMapper;
     private final TotalPreasignacionMapper totalPreasignacionMapper;
     private final HorasActividadesCargaMapper horasActividadesCargaMapper;
@@ -3442,6 +3447,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         );
 
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NovedadListadoDTO> listNovelties() {
+        List<NovedadListadoDTO> novedades = novedadMapper.toNovedadListadoDTOList(novedadRepository.findAllNovedadesDeActualizacion());
+        return novedades;
     }
 
     @Override

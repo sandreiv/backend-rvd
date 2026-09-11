@@ -23,6 +23,17 @@ public interface NovedadRepository
             """, nativeQuery = true)
     List<NovedadEntity> findAllNovedades();
 
+    @Query(value = """
+            SELECT
+                NOVE.*
+            FROM RVD.NOVEDADES NOVE
+            WHERE NOVE.NOVE_ACCION = 'ACTUALIZAR'
+            ORDER BY
+                NOVE.NOVE_ACCION,
+                NOVE.NOVE_TIPO
+            """, nativeQuery = true)
+    List<NovedadEntity> findAllNovedadesDeActualizacion();
+
     @Procedure(name = "NovedadEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(
             @Param("P_NOVE_ID")

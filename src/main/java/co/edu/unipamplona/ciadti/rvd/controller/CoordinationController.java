@@ -49,6 +49,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
@@ -606,4 +607,14 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+
+    @Operation(
+        summary = "Obtiene todas las novedades con acción ACTUALIZAR",
+        description = "Retorna las novedades acción ACTUALIZAR que se pueden realizar a un docente"
+    )
+    @GetMapping("/list-novelties")
+    public ResponseEntity<List<NovedadListadoDTO>> listNovelties() {
+        List<NovedadListadoDTO> novedades = coordinacionService.listNovelties();
+        return new ResponseEntity<>(novedades, HttpStatus.OK);
+    }
 }

@@ -39,6 +39,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
@@ -196,4 +197,5 @@ public interface CoordinacionService {
 
     void approvePreloadDevelopment(Long idCarga);
     
+    List<NovedadListadoDTO> listNovelties();
 }
