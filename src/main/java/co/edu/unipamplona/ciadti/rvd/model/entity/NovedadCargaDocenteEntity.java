@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 import jakarta.persistence.FetchType;
@@ -68,10 +69,10 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     private String observacionNovedad;
 
     @Column(name = "CADO_FECHAINICIO")
-    private Date fechaInicio;
+    private LocalDate fechaInicio;
 
     @Column(name = "CADO_FECHAFIN")
-    private Date fechaFin;
+    private LocalDate fechaFin;
 
     @Column(name = "CADO_VALORCONTRATO")
     private BigDecimal valorContrato;
@@ -90,6 +91,9 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
 
     @Column(name = "CADO_HORAS")
     private String horas;
+
+    @Column(name = "CADO_HORASDEEXCEPCION")
+    private String horasDeExcepcion;
 
     @Column(name = "CADO_VALORHORA")
     private BigDecimal valorHora;
@@ -111,6 +115,12 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
 
     @Column(name = "CADO_MOMENTO")
     private String momento;
+
+    @Column(name = "CADO_ONCEMESES")
+    private String onceMeses;
+
+    @Column(name = "CADO_ESTADONOVEDAD")
+    private String estadoNovedad;
 
     @Column(name = "CADO_REGISTRADOPOR")
     private String registradoPor;
@@ -181,12 +191,15 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
                 ", estado=" + estado +
                 ", vigente=" + vigente +
                 ", horas=" + horas +
+                ", horasDeExcepcion=" + horasDeExcepcion +
                 ", valorHora=" + valorHora +
                 ", puntos=" + puntos +
                 ", valorPunto=" + valorPunto +
                 ", semanas=" + semanas +
                 ", nivelFormacion=" + nivelFormacion +
                 ", momento=" + momento +
+                ", onceMeses=" + onceMeses +
+                ", estadoNovedad=" + estadoNovedad +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 ", idNovedadCatalogo=" + idNovedadCatalogo +
