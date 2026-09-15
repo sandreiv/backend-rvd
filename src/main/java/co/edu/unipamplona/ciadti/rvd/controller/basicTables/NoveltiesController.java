@@ -31,7 +31,7 @@ public class NoveltiesController {
 
     @Operation(
         summary = "Lista novedades",
-        description = "Lista las novedades configuradas en la tabla básica"
+        description = "Lista las novedades configuradas, incluyendo el componente de formulario asociado"
     )
     @GetMapping("/list")
     public ResponseEntity<List<NovedadListadoDTO>>

@@ -72,9 +72,10 @@ public class NovedadesServiceImpl
     ) {
 
         log.info(
-                "saveNovedad ===> Guardando novedad. tipo={}, accion={}",
+                "saveNovedad ===> Guardando novedad. tipo={}, accion={}, componente={}",
                 dto != null ? dto.tipo() : null,
-                dto != null ? dto.accion() : null
+                dto != null ? dto.accion() : null,
+                dto != null ? dto.componente() : null
         );
 
         validateNovedad(dto);
@@ -104,10 +105,11 @@ public class NovedadesServiceImpl
     ) {
 
         log.info(
-                "updateNovedad ===> Actualizando novedad. id={}, tipo={}, accion={}",
+                "updateNovedad ===> Actualizando novedad. id={}, tipo={}, accion={}, componente={}",
                 id,
                 dto != null ? dto.tipo() : null,
-                dto != null ? dto.accion() : null
+                dto != null ? dto.accion() : null,
+                dto != null ? dto.componente() : null
         );
 
         validateNovedad(dto);
@@ -264,6 +266,12 @@ public class NovedadesServiceImpl
                         .toUpperCase()
         );
 
+        entity.setComponente(
+                StringUtils.hasText(dto.componente())
+                        ? dto.componente().trim()
+                        : null
+        );
+
         entity.setRegistradoPor(
                 RegistradoPorUtils.value(
                         entity.getId() == null
@@ -332,6 +340,16 @@ public class NovedadesServiceImpl
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "La acción de la novedad no es válida"
+            );
+        }
+
+        if (
+            StringUtils.hasText(dto.componente()) &&
+            dto.componente().trim().length() > 100
+        ) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El componente no puede superar 100 caracteres"
             );
         }
     }

@@ -4,5 +4,6 @@ public record NovedadListadoDTO(
         Long id,
         String tipo,
         String descripcion,
-        String accion
+        String accion,
+        String componente
 ) {}

@@ -610,7 +610,7 @@ public class CoordinationController {
 
     @Operation(
         summary = "Obtiene todas las novedades con acción ACTUALIZAR",
-        description = "Retorna las novedades acción ACTUALIZAR que se pueden realizar a un docente"
+        description = "Retorna las novedades acción ACTUALIZAR, incluyendo el componente de formulario asociado"
     )
     @GetMapping("/list-novelties")
     public ResponseEntity<List<NovedadListadoDTO>> listNovelties() {

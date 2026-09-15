@@ -57,6 +57,9 @@ public class NovedadEntity implements Serializable, Cloneable {
     @Column(name = "NOVE_ACCION")
     private String accion;
 
+    @Column(name = "NOVE_COMPONENTE", length = 100)
+    private String componente;
+
     @Column(name = "NOVE_REGISTRADOPOR")
     private String registradoPor;
 
@@ -75,6 +78,7 @@ public class NovedadEntity implements Serializable, Cloneable {
                 ", tipo='" + tipo + '\'' +
                 ", descripcion='" + descripcion + '\'' +
                 ", accion='" + accion + '\'' +
+                ", componente='" + componente + '\'' +
                 ", registradoPor='" + registradoPor + '\'' +
                 ", fechaCambio=" + fechaCambio +
                 '}';
