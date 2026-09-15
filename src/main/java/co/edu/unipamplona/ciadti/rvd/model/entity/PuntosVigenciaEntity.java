@@ -1,34 +1,48 @@
-/**
- * Aplicación: rvd
- * Archivo: PuntosVigenciaEntity.java
- * Paquete: co.edu.unipamplona.ciadti.rvd.model.entity
- * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
- * Fecha de creación: 22/06/2026
- * Modificaciones:
- * 22/06/2026 - Sebastian Jaimes - Creación inicial
- */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+@NamedStoredProcedureQuery(
+    name = "PuntosVigenciaEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_PUNTOSVIGENCIA",
+    parameters = {
+        @StoredProcedureParameter(
+            name = "P_PUVI_ID",
+            mode = ParameterMode.IN,
+            type = Long.class
+        ),
+        @StoredProcedureParameter(
+            name = "P_PUVI_REGISTRADOPOR",
+            mode = ParameterMode.IN,
+            type = String.class
+        ),
+        @StoredProcedureParameter(
+            name = "P_EXITO",
+            mode = ParameterMode.OUT,
+            type = BigDecimal.class
+        )
+    }
+)
 @Getter
 @Setter
 @Entity
 @Table(name = "PUNTOSVIGENCIA", schema = "RVD")
-public class PuntosVigenciaEntity implements Serializable, Cloneable {
+public class PuntosVigenciaEntity
+        implements Serializable, Cloneable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +62,8 @@ public class PuntosVigenciaEntity implements Serializable, Cloneable {
     private Date fechaCambio;
 
     @Override
-    public Object clone() throws CloneNotSupportedException {
+    public Object clone()
+            throws CloneNotSupportedException {
         return super.clone();
     }
 
@@ -57,10 +72,9 @@ public class PuntosVigenciaEntity implements Serializable, Cloneable {
         return "PuntosVigenciaEntity{" +
                 "id=" + id +
                 ", anio=" + anio +
-                ", valorPunto=" + valorPunto +
-                ", registradoPor=" + registradoPor +
+                ", valorPunto='" + valorPunto + '\'' +
+                ", registradoPor='" + registradoPor + '\'' +
                 ", fechaCambio=" + fechaCambio +
                 '}';
     }
 }
-/* 22/06/2026 @:Sebastian Jaimes */
