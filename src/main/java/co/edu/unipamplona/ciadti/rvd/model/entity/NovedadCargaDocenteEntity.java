@@ -34,7 +34,7 @@ import lombok.Setter;
 public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CADO_ID", nullable = false)
     private Long id;
 

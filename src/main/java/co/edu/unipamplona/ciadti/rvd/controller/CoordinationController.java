@@ -648,4 +648,14 @@ public class CoordinationController {
         List<ModalidadContratacionDTO> modalities = modalidadContratacionService.findModalityList();
         return new ResponseEntity<>(modalities, HttpStatus.OK);
     }
+
+    /*@Operation(
+        summary = "Guarda una novedad de tipo cambio de modalidad y horas catedratico de carga docente",
+        description = "Guarda una novedad de tipo cambio de modalidad y horas catedratico de carga docente"
+    )
+    @PostMapping("/save-contract-modality-professor")
+    public ResponseEntity<Void> saveContractModalityProfessor(@RequestBody NovedadCargaDocenteFormularioDTO dto) {
+        coordinacionService.saveContractModalityProfessor(dto);
+        return ResponseEntity.ok().build();
+    }*/
 }
