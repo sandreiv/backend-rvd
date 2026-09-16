@@ -68,6 +68,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ModalidadContratacionService;
@@ -88,6 +90,7 @@ public class CoordinationController {
     private final ModalidadContratacionService modalidadContratacionService;
     private final PreasignacionReporteService preasignacionReporteService;
     private final PeriodoUniversidadService periodoUniversidadService;
+    private final NovedadCargaDocenteService novedadCargaDocenteService;
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
@@ -161,6 +164,29 @@ public class CoordinationController {
         @RequestParam(required = true) Long idModalidadContratacion) {
         List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
+
+    @Operation(
+    summary = "Busca docentes libres para novedades",
+    description = "Busca por documento o nombre y modalidad, excluyendo docentes con carga vigente"
+    )
+    @GetMapping("/search-free-professor")
+    public ResponseEntity<List<DocentePreasignacionDTO>> searchFreeProfessor(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String documento,
+            @RequestParam(required = true) Long idModalidadContratacion) {
+
+        List<DocentePreasignacionDTO> docentes =
+                coordinacionService.searchFreeProfessor(
+                        nombre,
+                        documento,
+                        idModalidadContratacion
+                );
+
+        return new ResponseEntity<>(
+                docentes,
+                HttpStatus.OK
+        );
     }
 
     @Operation(
@@ -658,4 +684,22 @@ public class CoordinationController {
         coordinacionService.saveContractModalityProfessor(dto);
         return ResponseEntity.ok().build();
     }*/
+
+    @Operation(
+        summary = "Asigna nombre a una carga NN",
+        description = "Genera una novedad en revisión asignando una persona a una carga NN"
+    )
+    @PostMapping("/novelties/assign-name-nn")
+    public ResponseEntity<Void> assignNameToNn(
+            @RequestBody AsignarNombreNnDTO dto
+    ) {
+
+        novedadCargaDocenteService.assignNameToNn(
+                dto
+        );
+
+        return ResponseEntity
+                .ok()
+                .build();
+    }
 }

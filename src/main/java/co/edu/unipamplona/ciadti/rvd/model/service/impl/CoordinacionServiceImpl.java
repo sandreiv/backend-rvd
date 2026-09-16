@@ -833,6 +833,44 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocentePreasignacionDTO> searchFreeProfessor(
+            String nombre,
+            String documento,
+            Long idModalidadContratacion) {
+
+        log.debug(
+                "searchFreeProfessor ===> Buscando docente libre. nombre={}, documento={}, idModalidad={}",
+                nombre,
+                documento,
+                idModalidadContratacion
+        );
+
+        String nombreParam = normalizeParam(nombre);
+        String documentoParam = normalizeParam(documento);
+
+        if (nombreParam == null && documentoParam == null) {
+            return Collections.emptyList();
+        }
+
+        List<DocentePreasignacionDTO> result =
+                docentePreasignacionMapper.toDtoList(
+                        personaGeneralRepository.searchFreeProfessorsForNovelty(
+                                nombreParam,
+                                documentoParam,
+                                idModalidadContratacion
+                        )
+                );
+
+        log.info(
+                "searchFreeProfessor ===> Docentes libres encontrados. total={}",
+                result.size()
+        );
+
+        return result;
+    }
+
     private String normalizeParam(String value) {
         if (!StringUtils.hasText(value)) {
             return null;
