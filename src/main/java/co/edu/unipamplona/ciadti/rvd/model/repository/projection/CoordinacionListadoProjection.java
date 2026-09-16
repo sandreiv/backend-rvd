@@ -1,5 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
+import java.math.BigDecimal;
+
 public interface CoordinacionListadoProjection {
 
     Long getIdCoordinacion();
@@ -25,6 +27,8 @@ public interface CoordinacionListadoProjection {
     Long getAnioPeriodo();
     String getDescripcionPeriodo();
     Long getIdCarga();
+    BigDecimal getValor();
+    BigDecimal getValorAutorizado();
     Long getIdEstadoCarga();
     String getNombreEstadoCarga();
     String getDescripcionEstadoCarga();

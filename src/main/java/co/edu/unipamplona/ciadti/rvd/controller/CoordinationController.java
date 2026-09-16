@@ -13,6 +13,7 @@
  * 04/09/2026 - Exclusion de once meses heredados en segundo periodo
  * 10/09/2026 - Sebastian Jaimes - Precarga activas solo preasignación
  * 10/09/2026 - Sebastian Jaimes - parseNullableLong a ParseUtils
+ * 16/09/2026 - Listado de modalidades de contratación
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -49,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -67,6 +69,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ModalidadContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import co.edu.unipamplona.ciadti.rvd.util.ParseUtils;
@@ -81,6 +84,7 @@ public class CoordinationController {
 
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
+    private final ModalidadContratacionService modalidadContratacionService;
     private final PreasignacionReporteService preasignacionReporteService;
     private final PeriodoUniversidadService periodoUniversidadService;
     
@@ -122,6 +126,8 @@ public class CoordinationController {
             Coordinador: sus coordinaciones en PERSONACOORDINACION.
             Decano: coordinaciones hijas de sus facultades, carga INSCRITO.
             Sin idConvocatoria: requiere idPeriodoUniversidad.
+            La carga incluye valor (CARG_VALOR) y valorAutorizado
+            (CARG_VALORAUTORIZADO).
             """
     )
     @GetMapping("/list")
@@ -616,5 +622,15 @@ public class CoordinationController {
     public ResponseEntity<List<NovedadListadoDTO>> listNovelties() {
         List<NovedadListadoDTO> novedades = coordinacionService.listNovelties();
         return new ResponseEntity<>(novedades, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene la lista de modalidades de contratación",
+        description = "Lista los tipos de modalidad de contratación desde CONTRATOS.MODALIDADCONTRATACION"
+    )
+    @GetMapping("/list-modality")
+    public ResponseEntity<List<ModalidadContratacionDTO>> listModality() {
+        List<ModalidadContratacionDTO> modalities = modalidadContratacionService.findModalityList();
+        return new ResponseEntity<>(modalities, HttpStatus.OK);
     }
 }
