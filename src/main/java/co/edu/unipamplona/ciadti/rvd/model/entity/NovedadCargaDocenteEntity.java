@@ -22,6 +22,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -30,13 +31,13 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@IdClass(NovedadCargaDocenteEntityId.class)
 @Table(name = "NOVEDADCARGADOCENTE", schema = "RVD")
 public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CADO_ID", nullable = false)
-    private Long id;
+    private Long idCargaDocente;
 
     @Column(name = "CARG_ID")
     private Long idCarga;
@@ -158,7 +159,7 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Override
     public String toString() {
         return "NovedadCargaDocenteEntity{" +
-                "id=" + id +
+                "idCargaDocente=" + idCargaDocente +
                 ", idCarga=" + idCarga +
                 ", idPersonaGeneral=" + idPersonaGeneral +
                 ", idModalidadContratacion=" + idModalidadContratacion +
