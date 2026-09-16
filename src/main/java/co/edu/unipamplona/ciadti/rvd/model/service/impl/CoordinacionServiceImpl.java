@@ -59,6 +59,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.HorasActividadesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.NovedadDocenteCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.NovedadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
@@ -95,6 +96,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadPadreDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -146,6 +148,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.HistorialCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.MateriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
@@ -164,6 +167,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDoc
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ResumenSolicitudCdpProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
@@ -225,10 +229,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
     private final CategoriaCatedraticoMapper categoriaCatedraticoMapper;
     private final CargaDocenteRepository cargaDocenteRepository;
+    private final NovedadCargaDocenteRepository novedadCargaDocenteRepository;
     private final HistorialCargaDocenteRepository historialCargaDocenteRepository;
     private final ObservacionCargaRepository observacionCargaRepository;
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
+    private final NovedadDocenteCoordinacionMapper novedadDocenteCoordinacionMapper;
     private final UnidadRepository unidadRepository;
     private final ProgramaRepository programaRepository;
     private final UnidadMapper unidadMapper;
@@ -1000,6 +1006,32 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
         log.info("listProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NovedadDocenteCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion) {
+        log.debug("listAlterationProfessors ===> Listando docentes. idCarga={}, idModalidad={}",
+                idCarga, idModalidadContratacion);
+
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
+
+        List<NovedadDocenteCargaCoordinacionProjection> projections;
+        if (isModalidadPlanta(idModalidadContratacion)) {
+            projections = novedadCargaDocenteRepository.findPlantProfessorsByCargaAndModalityInNovelties(
+                    idCarga, idModalidadContratacion);
+        } else {
+            projections = novedadCargaDocenteRepository.findProfessorsByCargaAndModalityInNovelties(
+                    idCarga, idModalidadContratacion);
+        }
+        List<NovedadDocenteCoordinacionDTO> result = novedadDocenteCoordinacionMapper.toDtoList(projections);
+        log.info("listAlterationProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
         return result;
     }
 

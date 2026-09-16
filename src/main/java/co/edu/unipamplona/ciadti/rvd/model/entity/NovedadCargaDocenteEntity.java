@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Date;
 
 import jakarta.persistence.FetchType;
@@ -52,70 +53,73 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "FECO_ID")
     private Long idFechasConvocatoria;
 
-    @Column(name = "TINO_ID")
-    private Long idTipoNovedad;
-
     @Column(name = "NOVE_ID")
     private Long idNovedadCatalogo;
 
-    @Column(name = "CADO_IDNOVEDAD")
-    private Long idNovedad;
-
-    @Column(name = "CADO_FECHANOVEDAD")
+    @Column(name = "NOCD_FECHANOVEDAD")
     private Date fechaNovedad;
 
-    @Column(name = "CADO_OBSERVACIONNOVEDAD")
+    @Column(name = "NOCD_OBSERVACIONNOVEDAD")
     private String observacionNovedad;
 
-    @Column(name = "CADO_FECHAINICIO")
-    private Date fechaInicio;
+    @Column(name = "NOCD_FECHAINICIO")
+    private LocalDate fechaInicio;
 
-    @Column(name = "CADO_FECHAFIN")
-    private Date fechaFin;
+    @Column(name = "NOCD_FECHAFIN")
+    private LocalDate fechaFin;
 
-    @Column(name = "CADO_VALORCONTRATO")
+    @Column(name = "NOCD_VALORCONTRATO")
     private BigDecimal valorContrato;
 
-    @Column(name = "CADO_VALORPRESTACIONES")
+    @Column(name = "NOCD_VALORPRESTACIONES")
     private BigDecimal valorPrestaciones;
 
-    @Column(name = "CADO_SALARIO")
+    @Column(name = "NOCD_SALARIO")
     private BigDecimal salario;
 
-    @Column(name = "CADO_ESTADO")
+    @Column(name = "NOCD_ESTADO")
     private String estado;
 
-    @Column(name = "CADO_VIGENTE")
+    @Column(name = "NOCD_VIGENTE")
     private String vigente;
 
-    @Column(name = "CADO_HORAS")
+    @Column(name = "NOCD_HORAS")
     private String horas;
 
-    @Column(name = "CADO_VALORHORA")
+    @Column(name = "NOCD_HORASDEEXCEPCION")
+    private String horasDeExcepcion;
+
+    @Column(name = "NOCD_VALORHORA")
     private BigDecimal valorHora;
 
-    @Column(name = "CADO_PUNTOS")
+    @Column(name = "NOCD_PUNTOS")
     private String puntos;
 
-    @Column(name = "CADO_VALORPUNTO")
+    @Column(name = "NOCD_VALORPUNTO")
     private BigDecimal valorPunto;
 
-    @Column(name = "CADO_TOTALCONTRATO")
+    @Column(name = "NOCD_TOTALCONTRATO")
     private BigDecimal totalContrato;
 
-    @Column(name = "CADO_SEMANAS")
+    @Column(name = "NOCD_SEMANAS")
     private String semanas;
 
-    @Column(name = "CADO_NIVELFORMACION")
+    @Column(name = "NOCD_NIVELFORMACION")
     private String nivelFormacion;
 
-    @Column(name = "CADO_MOMENTO")
+    @Column(name = "NOCD_MOMENTO")
     private String momento;
 
-    @Column(name = "CADO_REGISTRADOPOR")
+    @Column(name = "NOCD_ONCEMESES")
+    private String onceMeses;
+
+    @Column(name = "NOCD_ESTADONOVEDAD")
+    private String estadoNovedad;
+
+    @Column(name = "NOCD_REGISTRADOPOR")
     private String registradoPor;
 
-    @Column(name = "CADO_FECHACAMBIO")
+    @Column(name = "NOCD_FECHACAMBIO")
     private Date fechaCambio;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -139,20 +143,12 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     private FechasConvocatoriaEntity fechaConvocatoria;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "TINO_ID", insertable = false, updatable = false)
-    private TipoNovedadEntity tipoNovedad;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
         name = "NOVE_ID",
         insertable = false,
         updatable = false
     )
     private NovedadEntity novedad;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CADO_IDNOVEDAD", referencedColumnName = "CADO_ID", insertable = false, updatable = false)
-    private CargaDocenteEntity cargaDocenteNovedad;
 
     @Override
     public Object clone() throws CloneNotSupportedException {
@@ -168,8 +164,6 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
                 ", idModalidadContratacion=" + idModalidadContratacion +
                 ", idCategoriaCatedratico=" + idCategoriaCatedratico +
                 ", idFechasConvocatoria=" + idFechasConvocatoria +
-                ", idTipoNovedad=" + idTipoNovedad +
-                ", idNovedad=" + idNovedad +
                 ", fechaNovedad=" + fechaNovedad +
                 ", observacionNovedad=" + observacionNovedad +
                 ", fechaInicio=" + fechaInicio +
@@ -181,12 +175,15 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
                 ", estado=" + estado +
                 ", vigente=" + vigente +
                 ", horas=" + horas +
+                ", horasDeExcepcion=" + horasDeExcepcion +
                 ", valorHora=" + valorHora +
                 ", puntos=" + puntos +
                 ", valorPunto=" + valorPunto +
                 ", semanas=" + semanas +
                 ", nivelFormacion=" + nivelFormacion +
                 ", momento=" + momento +
+                ", onceMeses=" + onceMeses +
+                ", estadoNovedad=" + estadoNovedad +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 ", idNovedadCatalogo=" + idNovedadCatalogo +

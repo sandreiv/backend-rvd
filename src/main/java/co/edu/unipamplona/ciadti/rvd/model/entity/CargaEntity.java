@@ -10,8 +10,8 @@
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
@@ -21,7 +21,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,10 +49,10 @@ public class CargaEntity implements Serializable, Cloneable {
     private Long idEstadoCarga;
 
     @Column(name = "CARG_VALOR")
-    private String valor;
+    private BigDecimal valor;
 
     @Column(name = "CARG_VALORAUTORIZADO")
-    private String valorAutorizado;
+    private BigDecimal valorAutorizado;
 
     @Column(name = "CARG_REGISTRADOPOR")
     private String registradoPor;

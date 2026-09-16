@@ -51,6 +51,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -225,6 +226,20 @@ public class CoordinationController {
     @GetMapping("/list-professors-modality")
     public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
         List<DocenteCoordinacionDTO> docentes = coordinacionService.listProfessors(idCarga, idModalidadContratacion);
+        return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los docentes de una carga según la modalidad de contratacion para la sección de novedades",
+        description = """
+            Si la modalidad es planta: lista todos los de DOCENTESPLANTACOORDINACION
+            de la coordinación de la carga, con datos de CARGADOCENTE solo de esa carga.
+            Para otras modalidades: solo docentes con registro en CARGADOCENTE de esa carga.
+            """
+    )
+    @GetMapping("/list-alteration-professors-modality")
+    public ResponseEntity<List<NovedadDocenteCoordinacionDTO>> listAlterationProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
+        List<NovedadDocenteCoordinacionDTO> docentes = coordinacionService.listAlterationProfessors(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
 

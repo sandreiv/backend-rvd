@@ -39,6 +39,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -97,6 +98,8 @@ public interface CoordinacionService {
     void addProfessor(CargaDocenteFormularioDTO dto);
 
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
+
+    List<NovedadDocenteCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion);
 
     List<DocenteCoordinacionDTO> listApprovedProfessorsForHiring(
             Long idCarga,
