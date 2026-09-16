@@ -39,7 +39,8 @@ public interface PersonaProyectoMapper {
                 tipoActividad,
                 projection.getTipo(),
                 projection.getHoras(),
-                projection.getObservacion()
+                projection.getObservacion(),
+                projection.getEsActivo()
         );
     }
 

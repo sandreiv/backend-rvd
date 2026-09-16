@@ -849,6 +849,7 @@ public class ProyectosServiceImpl implements ProyectosService {
         entity.setTipo(normalizeOptional(dto.tipo()));
         entity.setHoras(normalizeOptional(dto.horas()));
         entity.setObservacion(normalizeOptional(dto.observacion()));
+        entity.setEsActivo(normalizeCheck(dto.esActivo()));
         entity.setRegistradoPor(
         RegistradoPorUtils.value(
                         entity.getId() == null
@@ -1029,6 +1030,22 @@ public class ProyectosServiceImpl implements ProyectosService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeCheck(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "0";
+        }
+
+        String normalized = value.trim().toUpperCase();
+
+        return "1".equals(normalized)
+                || "ACTIVO".equals(normalized)
+                || "TRUE".equals(normalized)
+                || "SI".equals(normalized)
+                || "S".equals(normalized)
+                ? "1"
+                : "0";
     }
 
     private void validateProcedureResult(BigDecimal result, String message) {

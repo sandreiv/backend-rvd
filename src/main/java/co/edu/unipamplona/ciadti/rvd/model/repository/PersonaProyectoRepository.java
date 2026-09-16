@@ -82,7 +82,8 @@ public interface PersonaProyectoRepository
                 TIAC.TIAC_NOMBRE AS nombreTipoActividad,
                 PEPR.PEPR_TIPO AS tipo,
                 PEPR.PEPR_HORAS AS horas,
-                PEPR.PEPR_OBSERVACION AS observacion
+                PEPR.PEPR_OBSERVACION AS observacion,
+                PEPR.PEPR_ESACTIVO AS esActivo
             FROM RVD.PERSONAPROYECTO PEPR
             LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
                 ON PENG.PEGE_ID = PEPR.PEGE_ID

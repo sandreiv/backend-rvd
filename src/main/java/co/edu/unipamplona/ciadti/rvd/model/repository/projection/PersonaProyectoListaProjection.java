@@ -19,4 +19,5 @@ public interface PersonaProyectoListaProjection {
     String getTipo();
     String getHoras();
     String getObservacion();
+    String getEsActivo();
 }

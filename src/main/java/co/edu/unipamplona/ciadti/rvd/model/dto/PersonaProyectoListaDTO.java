@@ -18,5 +18,6 @@ public record PersonaProyectoListaDTO(
     IdNombreDTO tipoActividad,
     String tipo,
     String horas,
-    String observacion
+    String observacion,
+    String esActivo
 ) {}

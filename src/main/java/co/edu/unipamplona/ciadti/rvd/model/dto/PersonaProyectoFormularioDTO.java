@@ -15,5 +15,6 @@ public record PersonaProyectoFormularioDTO(
     Long idTipoActividad,
     String tipo,
     String horas,
-    String observacion
+    String observacion,
+    String esActivo
 ) {}
