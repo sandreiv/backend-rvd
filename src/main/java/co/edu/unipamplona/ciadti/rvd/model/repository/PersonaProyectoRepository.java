@@ -52,8 +52,9 @@ public interface PersonaProyectoRepository
                 ON pepr.TIAC_ID = tiac.TIAC_ID
 
             WHERE pepr.PEGE_ID = :idPersonaGeneral
-            AND reco.CONV_ID = :idConvocatoria
-            AND TRIM(reco.RECO_ESTADO) = '1'
+                AND TRIM(pepr.PEPR_ESACTIVO) = '1'
+                AND reco.CONV_ID = :idConvocatoria
+                AND TRIM(reco.RECO_ESTADO) = '1'
 
             ORDER BY proy.PROY_NOMBRE, pepr.PEPR_ID
             """, nativeQuery = true)

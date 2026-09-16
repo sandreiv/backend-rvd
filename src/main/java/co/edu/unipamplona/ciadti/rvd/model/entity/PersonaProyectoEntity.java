@@ -69,6 +69,9 @@ public class PersonaProyectoEntity implements Serializable, Cloneable {
     @Column(name = "PEPR_OBSERVACION")
     private String observacion;
 
+    @Column(name = "PEPR_ESACTIVO")
+    private String esActivo;
+
     @Column(name = "PEPR_REGISTRADOPOR")
     private String registradoPor;
 
@@ -107,6 +110,7 @@ public class PersonaProyectoEntity implements Serializable, Cloneable {
                 ", tipo=" + tipo +
                 ", horas=" + horas +
                 ", observacion=" + observacion +
+                ", esActivo=" + esActivo +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';
