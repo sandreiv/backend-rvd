@@ -1,6 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -314,4 +315,17 @@ public interface NovedadCargaDocenteRepository
     List<NovedadDocenteCargaCoordinacionProjection> findPlantProfessorsByCargaAndModalityInNovelties(
             @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
+
+    // Busca si el registro para duplicar esta en la tabla novedad. Si no lo retorna, se debe consultar el repositorio de carga docente y construir el nuevo
+    @Query(value = """
+            SELECT NOCD.*
+            FROM RVD.NOVEDADCARGADOCENTE NOCD
+            WHERE NOCD.CADO_ID = :idCargaDocente
+                AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+            ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+            FETCH FIRST 1 ROW ONLY
+            """, nativeQuery = true)
+    Optional<NovedadCargaDocenteEntity> findProfessorRecordToDuplicateNovelty(
+            @Param("idCargaDocente") Long idCargaDocente
+    );
 }
