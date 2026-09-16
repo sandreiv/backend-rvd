@@ -65,12 +65,6 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "FECO_ID")
     private Long idFechasConvocatoria;
 
-    @Column(name = "TINO_ID")
-    private Long idTipoNovedad;
-
-    @Column(name = "CADO_IDNOVEDAD")
-    private Long idNovedad;
-
     @Column(name = "CADO_FECHANOVEDAD")
     private Date fechaNovedad;
 
@@ -154,14 +148,6 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @JoinColumn(name = "FECO_ID", insertable = false, updatable = false)
     private FechasConvocatoriaEntity fechaConvocatoria;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "TINO_ID", insertable = false, updatable = false)
-    private TipoNovedadEntity tipoNovedad;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CADO_IDNOVEDAD", referencedColumnName = "CADO_ID", insertable = false, updatable = false)
-    private CargaDocenteEntity novedad;
-
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -176,8 +162,6 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
                 ", idModalidadContratacion=" + idModalidadContratacion +
                 ", idCategoriaCatedratico=" + idCategoriaCatedratico +
                 ", idFechasConvocatoria=" + idFechasConvocatoria +
-                ", idTipoNovedad=" + idTipoNovedad +
-                ", idNovedad=" + idNovedad +
                 ", fechaNovedad=" + fechaNovedad +
                 ", observacionNovedad=" + observacionNovedad +
                 ", fechaInicio=" + fechaInicio +

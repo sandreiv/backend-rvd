@@ -26,8 +26,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "fechaFin", source = "fechasConvocatoria.fechaFin")
     @Mapping(target = "salario", source = "asignacionSalarial")
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "idTipoNovedad", ignore = true)
-    @Mapping(target = "idNovedad", ignore = true)
     @Mapping(target = "fechaNovedad", ignore = true)
     @Mapping(target = "observacionNovedad", ignore = true)
     @Mapping(target = "estado", ignore = true)
@@ -41,8 +39,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "modalidadContratacion", ignore = true)
     @Mapping(target = "categoriaCatedratico", ignore = true)
     @Mapping(target = "fechaConvocatoria", ignore = true)
-    @Mapping(target = "tipoNovedad", ignore = true)
-    @Mapping(target = "novedad", ignore = true)
     @Mapping(target = "horas", ignore = true)
     @Mapping(target = "onceMeses", ignore = true)
     CargaDocenteEntity toEntity(CargaDocenteFormularioDTO dto);
@@ -53,8 +49,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "idCategoriaCatedratico", ignore = true)
     @Mapping(target = "idFechasConvocatoria", ignore = true)
-    @Mapping(target = "idTipoNovedad", ignore = true)
-    @Mapping(target = "idNovedad", ignore = true)
     @Mapping(target = "fechaNovedad", ignore = true)
     @Mapping(target = "observacionNovedad", ignore = true)
     @Mapping(target = "fechaInicio", ignore = true)
@@ -80,8 +74,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "modalidadContratacion", ignore = true)
     @Mapping(target = "categoriaCatedratico", ignore = true)
     @Mapping(target = "fechaConvocatoria", ignore = true)
-    @Mapping(target = "tipoNovedad", ignore = true)
-    @Mapping(target = "novedad", ignore = true)
     @Mapping(target = "onceMeses", ignore = true)
     CargaDocenteEntity toEntityFromPlanta(CargaDocentePlantaDTO dto);
 }
