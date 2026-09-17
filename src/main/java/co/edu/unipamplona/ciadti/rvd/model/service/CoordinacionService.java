@@ -140,6 +140,8 @@ public interface CoordinacionService {
 
     List<DetalleCargaDocenteDTO> listDetailProfessorPreload(Long idCargaDocente);
 
+    List<DetalleCargaDocenteDTO> listNoveltyDetailProfessorPreload(Long idCargaDocente);
+
     void updateDetailProfessorPreload(DetalleCargaDocenteDTO dto);
 
     void saveCareerProfessorPreload(CargaDocentePlantaDTO dto);

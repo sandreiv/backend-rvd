@@ -140,6 +140,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoReposi
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaModalidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
@@ -255,6 +256,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final PersonaProyectoRepository personaProyectoRepository;
     private final ProyectoMapper proyectoMapper;
     private final DetalleCargaDocenteRepository detalleCargaDocenteRepository;
+    private final DetalleNovedadCargaDocenteRepository detalleNovedadCargaDocenteRepository;
     private final RelacionCargaProyectoRepository relacionCargaProyectoRepository;
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
@@ -1859,6 +1861,23 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 proyectoMapper);
         
         log.info("listDetailProfessorPreload ===> Detalle precarga docente listado. idCargaDocente={}, total={}", idCargaDocente, result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DetalleCargaDocenteDTO> listNoveltyDetailProfessorPreload(Long idCargaDocente) {
+        log.debug("Listando novedad detalle precarga docente. idCargaDocente={}", idCargaDocente);
+        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
+            log.warn("Carga docente no encontrada. id={}", idCargaDocente);
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
+        }
+
+        List<DetalleCargaDocenteDTO> result = detalleCargaDocenteMapper.toDtoList(
+                detalleNovedadCargaDocenteRepository.findByIdCargaDocente(idCargaDocente),
+                proyectoMapper);
+        
+        log.info("listNoveltyDetailProfessorPreload ===> Detalle precarga docente listado. idCargaDocente={}, total={}", idCargaDocente, result.size());
         return result;
     }
 

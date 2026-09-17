@@ -1,9 +1,12 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
+import java.util.Optional;
+
 public interface DetalleCargaDocenteListadoProjection {
 
     Long getIdCargaDocente();
     Long getIdDetalleCargaDocente();
+    Optional<Integer> getEsDeNovedad();
     String getHoras();
 
     Long getIdTipoActividadResuelto();

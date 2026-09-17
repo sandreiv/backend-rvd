@@ -119,6 +119,7 @@ public interface DetalleCargaDocenteMapper {
                 : mapTipoActividadResuelto(primera);
         return new DetalleCargaDocenteActividadDTO(
                 tipoActividad,
+                primera.getEsDeNovedad(),
                 resolveTipoActividadesHijas(primera),
                 mapUnidad(primera),
                 mapPrograma(primera),

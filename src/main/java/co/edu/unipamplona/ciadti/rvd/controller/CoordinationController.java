@@ -395,6 +395,16 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Lista el detalle novedad de carga de un docente",
+        description = "Lista el detalle novedad de carga por idCargaDocente"
+    )
+    @GetMapping("/list-novelty-detail-professor-preload")
+    public ResponseEntity<List<DetalleCargaDocenteDTO>> listNoveltyDetailProfessorPreload(@RequestParam Long idCargaDocente) {
+        List<DetalleCargaDocenteDTO> detalle = coordinacionService.listNoveltyDetailProfessorPreload(idCargaDocente);
+        return new ResponseEntity<>(detalle, HttpStatus.OK);
+    }
+
+    @Operation(
         summary = "Consulta restricciones de horas por programa",
         description = """
             Lista los programas con máximo de horas configurado en la restricción
