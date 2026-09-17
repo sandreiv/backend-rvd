@@ -136,57 +136,52 @@ public class NovedadCargaDocenteServiceImpl
 
         validateContractModalityRequest(dto);
 
-        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+        CargaDocenteEntity cargaDocente =
+                cargaDocenteRepository
                         .findById(dto.idCargaDocente())
-                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"No existe la carga docente con id " + dto.idCargaDocente()));
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "No existe la carga docente con id "
+                                        + dto.idCargaDocente()));
 
         validateCargaDocenteMatch(cargaDocente, dto);
 
         NovedadEntity novedad =
                 novedadRepository
                         .findById(dto.idNovedad())
-                        .orElseThrow(
-                                () -> new ApiException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No existe la novedad seleccionada"
-                                )
-                        );
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "No existe la novedad seleccionada"));
 
         validateContractModalityType(novedad);
 
-        Optional<NovedadCargaDocenteEntity> existing =
+        /*
+         * Fuente de verdad: si existe fotografía vigente en
+         * NOVEDADCARGADOCENTE, se duplica desde ahí.
+         * Si no, se construye desde CARGADOCENTE.
+         */
+        Optional<NovedadCargaDocenteEntity> previous =
                 novedadCargaDocenteRepository
-                        .findByIdCargaDocente(
-                                dto.idCargaDocente()
-                        );
+                        .findProfessorRecordToDuplicateNovelty(
+                                dto.idCargaDocente());
 
-        validateNoOtherNoveltyInReview(existing, dto.idNovedad());
+        validateNoOtherNoveltyInReview(
+                previous,
+                dto.idNovedad());
 
-        boolean isNew = existing.isEmpty();
         NovedadCargaDocenteEntity entity =
-                existing.orElseGet(
-                        NovedadCargaDocenteEntity::new
-                );
+                resolveEntityToPersist(previous, dto.idCargaDocente());
+        boolean isNew = previous.isEmpty()
+                && entity.getIdCargaDocente() == null;
 
-        fillNovedad(
-                entity,
-                dto,
-                cargaDocente
-        );
-
-        persistNovedad(
-                entity,
-                isNew
-        );
-        replaceDetails(
-                dto.idCargaDocente(),
-                dto.detalles()
-        );
+        fillNovedad(entity, dto, previous.orElse(null), cargaDocente);
+        persistNovedad(entity, isNew);
+        replaceDetails(dto.idCargaDocente(), dto.detalles());
 
         log.info(
-                "saveContractModalityProfessor ===> Novedad guardada. idCargaDocente={}",
-                dto.idCargaDocente()
-        );
+                "saveContractModalityProfessor ===> Novedad guardada. fuente={}, idCargaDocente={}",
+                previous.isPresent() ? "NOVEDADCARGADOCENTE" : "CARGADOCENTE",
+                dto.idCargaDocente());
     }
 
     private void validateRequest(
@@ -207,31 +202,16 @@ public class NovedadCargaDocenteServiceImpl
         }
     }
 
-    private void validateNoveltyType(
-            NovedadEntity novedad
-    ) {
+    private void validateNoveltyType(NovedadEntity novedad) {
 
-        String component =
-                novedad.getComponente();
+        String component = novedad.getComponente();
 
-        if (
-            component == null ||
-            !COMPONENT_ASSIGN_NAME_NN
-                    .equalsIgnoreCase(
-                            component.trim()
-                    )
-        ) {
-
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La novedad seleccionada no corresponde a Asignar nombre a NN"
-            );
+        if (component == null ||!COMPONENT_ASSIGN_NAME_NN.equalsIgnoreCase(component.trim())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La novedad seleccionada no corresponde a Asignar nombre a NN");
         }
     }
 
-    private void validateContractModalityRequest(
-            CambioModalidadHoraCatedraticoDTO dto
-    ) {
+    private void validateContractModalityRequest(CambioModalidadHoraCatedraticoDTO dto) {
 
         if (
             dto == null ||
@@ -240,36 +220,18 @@ public class NovedadCargaDocenteServiceImpl
             dto.idNovedad() == null ||
             dto.idModalidadContratacion() == null
         ) {
-
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente, la carga, la novedad y la modalidad son obligatorias"
-            );
+                throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente, la carga, la novedad y la modalidad son obligatorias");
         }
 
-        FechasConvocatoriaFormularioDTO fechas =
-                dto.fechasConvocatoria();
+        FechasConvocatoriaFormularioDTO fechas = dto.fechasConvocatoria();
 
-        if (
-            fechas == null ||
-            fechas.id() == null
-        ) {
+        if (fechas == null || fechas.id() == null) {
 
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "Las fechas de convocatoria son obligatorias"
-            );
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Las fechas de convocatoria son obligatorias");
         }
 
-        if (
-            dto.detalles() == null ||
-            dto.detalles().isEmpty()
-        ) {
-
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "Los detalles de la novedad son obligatorios"
-            );
+        if (dto.detalles() == null || dto.detalles().isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,"Los detalles de la novedad son obligatorios");
         }
 
         for (DetalleCargaDocenteItemDTO detalle : dto.detalles()) {
@@ -294,59 +256,32 @@ public class NovedadCargaDocenteServiceImpl
         }
     }
 
-    private void validateContractModalityType(
-            NovedadEntity novedad
-    ) {
+    private void validateContractModalityType(NovedadEntity novedad) {
 
-        String component =
-                novedad.getComponente();
+        String component =novedad.getComponente();
 
-        if (
-            component == null ||
-            !COMPONENT_CONTRACT_MODALITY
-                    .equalsIgnoreCase(
-                            component.trim()
-                    )
-        ) {
-
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La novedad seleccionada no corresponde a cambio de modalidad"
-            );
+        if (component == null || !COMPONENT_CONTRACT_MODALITY.equalsIgnoreCase(component.trim())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La novedad seleccionada no corresponde a cambio de modalidad");
         }
     }
 
-    private void validateNoOtherNoveltyInReview(
-            Optional<NovedadCargaDocenteEntity> existing,
-            Long idNovedad
-    ) {
-
+    private void validateNoOtherNoveltyInReview(Optional<NovedadCargaDocenteEntity> existing, Long idNovedad) {
         if (existing.isEmpty()) {
             return;
         }
 
-        NovedadCargaDocenteEntity current =
-                existing.get();
+        NovedadCargaDocenteEntity current = existing.get();
 
-        if (
-            ESTADO_NOVEDAD_REVISION
-                    .equals(current.getEstadoNovedad()) &&
+        if (ESTADO_NOVEDAD_REVISION.equals(current.getEstadoNovedad()) &&
             current.getIdNovedadCatalogo() != null &&
-            !idNovedad.equals(
-                    current.getIdNovedadCatalogo()
-            )
+            !idNovedad.equals(current.getIdNovedadCatalogo())
         ) {
-
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "El docente tiene una novedad en revisión"
+                throw new ApiException(HttpStatus.CONFLICT, "El docente tiene una novedad en revisión"
             );
         }
     }
 
-    private void validateDetalleItem(
-            DetalleCargaDocenteItemDTO detalle
-    ) {
+    private void validateDetalleItem(DetalleCargaDocenteItemDTO detalle) {
 
         if (detalle == null || detalle.horas() == null) {
             throw new ApiException(
@@ -375,9 +310,24 @@ public class NovedadCargaDocenteServiceImpl
         }
     }
 
+    private NovedadCargaDocenteEntity resolveEntityToPersist(
+            Optional<NovedadCargaDocenteEntity> previous,
+            Long idCargaDocente
+    ) {
+
+        if (previous.isPresent()) {
+            return previous.get();
+        }
+
+        return novedadCargaDocenteRepository
+                .findByIdCargaDocente(idCargaDocente)
+                .orElseGet(NovedadCargaDocenteEntity::new);
+    }
+
     private void fillNovedad(
             NovedadCargaDocenteEntity entity,
             CambioModalidadHoraCatedraticoDTO dto,
+            NovedadCargaDocenteEntity previous,
             CargaDocenteEntity cargaDocente
     ) {
 
@@ -389,9 +339,7 @@ public class NovedadCargaDocenteServiceImpl
         entity.setIdCargaDocente(dto.idCargaDocente());
         entity.setIdCarga(dto.idCarga());
         entity.setIdPersonaGeneral(
-                dto.idPersonaGeneral() != null
-                        ? dto.idPersonaGeneral()
-                        : cargaDocente.getIdPersonaGeneral()
+                resolvePersonaGeneral(dto, previous, cargaDocente)
         );
         entity.setIdModalidadContratacion(
                 dto.idModalidadContratacion()
@@ -404,7 +352,8 @@ public class NovedadCargaDocenteServiceImpl
         entity.setFechaNovedad(now);
         entity.setFechaInicio(fechas.fechaInicio());
         entity.setFechaFin(fechas.fechaFin());
-        copyContractValues(entity, dto, cargaDocente);
+        copyContractValues(entity, dto);
+        copyBaselineFromSource(entity, previous, cargaDocente);
         entity.setEstadoNovedad(ESTADO_NOVEDAD_REVISION);
         entity.setRegistradoPor(
                 RegistradoPorUtils.value(
@@ -414,10 +363,24 @@ public class NovedadCargaDocenteServiceImpl
         entity.setFechaCambio(now);
     }
 
+    private Long resolvePersonaGeneral(
+            CambioModalidadHoraCatedraticoDTO dto,
+            NovedadCargaDocenteEntity previous,
+            CargaDocenteEntity cargaDocente
+    ) {
+
+        if (dto.idPersonaGeneral() != null) {
+            return dto.idPersonaGeneral();
+        }
+        if (previous != null) {
+            return previous.getIdPersonaGeneral();
+        }
+        return cargaDocente.getIdPersonaGeneral();
+    }
+
     private void copyContractValues(
             NovedadCargaDocenteEntity entity,
-            CambioModalidadHoraCatedraticoDTO dto,
-            CargaDocenteEntity cargaDocente
+            CambioModalidadHoraCatedraticoDTO dto
     ) {
 
         entity.setValorContrato(dto.valorContrato());
@@ -433,11 +396,25 @@ public class NovedadCargaDocenteServiceImpl
                 trimToNull(dto.horasDeExcepcion())
         );
         entity.setOnceMeses(resolveOnceMeses(dto));
+    }
+
+    private void copyBaselineFromSource(
+            NovedadCargaDocenteEntity entity,
+            NovedadCargaDocenteEntity previous,
+            CargaDocenteEntity cargaDocente
+    ) {
+
+        if (previous != null) {
+            entity.setEstado(previous.getEstado());
+            entity.setVigente(previous.getVigente());
+            entity.setNivelFormacion(previous.getNivelFormacion());
+            entity.setMomento(previous.getMomento());
+            return;
+        }
+
         entity.setEstado(cargaDocente.getEstado());
         entity.setVigente(cargaDocente.getVigente());
-        entity.setNivelFormacion(
-                cargaDocente.getNivelFormacion()
-        );
+        entity.setNivelFormacion(cargaDocente.getNivelFormacion());
         entity.setMomento(cargaDocente.getMomento());
     }
 

@@ -95,7 +95,8 @@ public interface NovedadCargaDocenteRepository
                     AND NOCD.RN = 1
 
                 WHERE CADO.CARG_ID = :idCarga
-                AND CADO.MOCO_ID = :idModalidadContratacion
+                AND COALESCE(NOCD.MOCO_ID, CADO.MOCO_ID)
+                    = :idModalidadContratacion
             )
             SELECT
                 PEGE.PEGE_ID AS idPersonaGeneral,
@@ -137,6 +138,11 @@ public interface NovedadCargaDocenteRepository
                 CASE
                     WHEN EXISTS (
                         SELECT 1
+                        FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                        WHERE DNCD.CADO_ID = CR.CADO_ID
+                    )
+                    OR EXISTS (
+                        SELECT 1
                         FROM RVD.DETALLECARGADOCENTE DECD
                         WHERE DECD.CADO_ID = CR.CADO_ID
                     )
@@ -175,7 +181,6 @@ public interface NovedadCargaDocenteRepository
             @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
 
-    // Falta determinar si tieneActividades se toma con la tabla detalles o novedad detalles. Siguiendo una logica parecida
     @Query(value = """
             WITH NOVEDADES_VALIDAS AS (
                 SELECT
@@ -283,10 +288,17 @@ public interface NovedadCargaDocenteRepository
 
                 CASE
                     WHEN CR.CADO_ID IS NOT NULL
-                        AND EXISTS (
-                            SELECT 1
-                            FROM RVD.DETALLECARGADOCENTE DECD
-                            WHERE DECD.CADO_ID = CR.CADO_ID
+                        AND (
+                            EXISTS (
+                                SELECT 1
+                                FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                                WHERE DNCD.CADO_ID = CR.CADO_ID
+                            )
+                            OR EXISTS (
+                                SELECT 1
+                                FROM RVD.DETALLECARGADOCENTE DECD
+                                WHERE DECD.CADO_ID = CR.CADO_ID
+                            )
                         )
                     THEN 1
                     ELSE 0
