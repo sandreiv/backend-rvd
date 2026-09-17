@@ -680,7 +680,11 @@ public class CoordinationController {
 
     @Operation(
         summary = "Guarda una novedad de tipo cambio de modalidad y horas catedrático",
-        description = "Persiste el cambio en NOVEDADCARGADOCENTE y DETALLENOVEDADCARGADOCENTE sin modificar CARGADOCENTE"
+        description = """
+            Si el docente tiene novedad vigente es la fuente de verdad.
+            Si no, se construye desde CARGADOCENTE.
+            No modifica CARGADOCENTE.
+            """
     )
     @PostMapping("/save-contract-modality-professor")
     public ResponseEntity<Void> saveContractModalityProfessor(@RequestBody CambioModalidadHoraCatedraticoDTO dto) {
@@ -693,17 +697,9 @@ public class CoordinationController {
         description = "Genera una novedad en revisión asignando una persona a una carga NN"
     )
     @PostMapping("/novelties/assign-name-nn")
-    public ResponseEntity<Void> assignNameToNn(
-            @RequestBody AsignarNombreNnDTO dto
-    ) {
-
-        novedadCargaDocenteService.assignNameToNn(
-                dto
-        );
-
-        return ResponseEntity
-                .ok()
-                .build();
+    public ResponseEntity<Void> assignNameToNn(@RequestBody AsignarNombreNnDTO dto) {
+        novedadCargaDocenteService.assignNameToNn(dto);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/novelties/change-professor")
