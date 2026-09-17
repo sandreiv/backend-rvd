@@ -13,6 +13,8 @@
  * 04/09/2026 - Exclusion de once meses heredados en segundo periodo
  * 10/09/2026 - Sebastian Jaimes - Precarga activas solo preasignación
  * 10/09/2026 - Sebastian Jaimes - parseNullableLong a ParseUtils
+ * 16/09/2026 - Listado de modalidades de contratación
+ * 16/09/2026 - Novedad cambio de modalidad y horas
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -49,7 +51,9 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -66,8 +70,11 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ModalidadContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PreasignacionReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import co.edu.unipamplona.ciadti.rvd.util.ParseUtils;
@@ -82,8 +89,10 @@ public class CoordinationController {
 
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
+    private final ModalidadContratacionService modalidadContratacionService;
     private final PreasignacionReporteService preasignacionReporteService;
     private final PeriodoUniversidadService periodoUniversidadService;
+    private final NovedadCargaDocenteService novedadCargaDocenteService;
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
@@ -123,6 +132,8 @@ public class CoordinationController {
             Coordinador: sus coordinaciones en PERSONACOORDINACION.
             Decano: coordinaciones hijas de sus facultades, carga INSCRITO.
             Sin idConvocatoria: requiere idPeriodoUniversidad.
+            La carga incluye valor (CARG_VALOR) y valorAutorizado
+            (CARG_VALORAUTORIZADO).
             """
     )
     @GetMapping("/list")
@@ -155,6 +166,29 @@ public class CoordinationController {
         @RequestParam(required = true) Long idModalidadContratacion) {
         List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
+
+    @Operation(
+    summary = "Busca docentes libres para novedades",
+    description = "Busca por documento o nombre y modalidad, excluyendo docentes con carga vigente"
+    )
+    @GetMapping("/search-free-professor")
+    public ResponseEntity<List<DocentePreasignacionDTO>> searchFreeProfessor(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String documento,
+            @RequestParam(required = true) Long idModalidadContratacion) {
+
+        List<DocentePreasignacionDTO> docentes =
+                coordinacionService.searchFreeProfessor(
+                        nombre,
+                        documento,
+                        idModalidadContratacion
+                );
+
+        return new ResponseEntity<>(
+                docentes,
+                HttpStatus.OK
+        );
     }
 
     @Operation(
@@ -631,5 +665,43 @@ public class CoordinationController {
     public ResponseEntity<List<NovedadListadoDTO>> listNovelties() {
         List<NovedadListadoDTO> novedades = coordinacionService.listNovelties();
         return new ResponseEntity<>(novedades, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene la lista de modalidades de contratación",
+        description = "Lista los tipos de modalidad de contratación desde CONTRATOS.MODALIDADCONTRATACION"
+    )
+    @GetMapping("/list-modality")
+    public ResponseEntity<List<ModalidadContratacionDTO>> listModality() {
+        List<ModalidadContratacionDTO> modalities = modalidadContratacionService.findModalityList();
+        return new ResponseEntity<>(modalities, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Guarda una novedad de tipo cambio de modalidad y horas catedrático",
+        description = "Persiste el cambio en NOVEDADCARGADOCENTE y DETALLENOVEDADCARGADOCENTE sin modificar CARGADOCENTE"
+    )
+    @PostMapping("/save-contract-modality-professor")
+    public ResponseEntity<Void> saveContractModalityProfessor(@RequestBody CambioModalidadHoraCatedraticoDTO dto) {
+        novedadCargaDocenteService.saveContractModalityProfessor(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Asigna nombre a una carga NN",
+        description = "Genera una novedad en revisión asignando una persona a una carga NN"
+    )
+    @PostMapping("/novelties/assign-name-nn")
+    public ResponseEntity<Void> assignNameToNn(
+            @RequestBody AsignarNombreNnDTO dto
+    ) {
+
+        novedadCargaDocenteService.assignNameToNn(
+                dto
+        );
+
+        return ResponseEntity
+                .ok()
+                .build();
     }
 }

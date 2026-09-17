@@ -177,6 +177,8 @@ public interface CoordinacionMapper {
         }
         return new CargaListadoDTO(
                 projection.getIdCarga(),
+                projection.getValor(),
+                projection.getValorAutorizado(),
                 toEstadoCarga(projection));
     }
 

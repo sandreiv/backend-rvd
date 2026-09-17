@@ -1,17 +1,9 @@
-/**
- * Aplicación: rvd
- * Archivo: DetalleCargaDocenteEntity.java
- * Paquete: co.edu.unipamplona.ciadti.rvd.model.entity
- * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
- * Fecha de creación: 10/06/2026
- * Modificaciones:
- * 10/06/2026 - Sebastian Jaimes - Creación inicial
- */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
@@ -31,27 +23,27 @@ import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureParameter;
 
 @NamedStoredProcedureQuery(
-    name = "DetalleCargaDocenteEntity.deleteByProcedure",
-    procedureName = "RVD.PR_RVD_D_DETALLECARGADOCENTE",
+    name = "DetalleNovedadCargaDocenteEntity.deleteByProcedure",
+    procedureName = "RVD.PR_RVD_D_DETALLENOVEDADCARGADOCENTE",
     parameters = {
-        @StoredProcedureParameter(name = "P_DECD_ID", mode = ParameterMode.IN, type = Long.class),
-        @StoredProcedureParameter(name = "P_DECD_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
+        @StoredProcedureParameter(name = "P_DNCD_ID", mode = ParameterMode.IN, type = Long.class),
+        @StoredProcedureParameter(name = "P_DNCD_REGISTRADOPOR", mode = ParameterMode.IN, type = String.class),
         @StoredProcedureParameter(name = "P_EXITO", mode = ParameterMode.OUT, type = BigDecimal.class)
     }
 )
 @Getter
 @Setter
 @Entity
-@Table(name = "DETALLECARGADOCENTE", schema = "RVD")
-public class DetalleCargaDocenteEntity implements Serializable, Cloneable {
-
+@Table(name = "DETALLENOVEDADCARGADOCENTE", schema = "RVD")
+public class DetalleNovedadCargaDocenteEntity implements Serializable, Cloneable {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "DECD_ID", nullable = false)
+    @Column(name = "DNCD_ID", nullable = false)
     private Long id;
 
     @Column(name = "CADO_ID")
-    private Long idCargaDocente;
+    private Long idNovedadCargaDocente;
 
     @Column(name = "PROG_ID")
     private Long idPrograma;
@@ -65,18 +57,18 @@ public class DetalleCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "CECO_ID")
     private Long idCentroCosto;
 
-    @Column(name = "DECD_HORAS")
+    @Column(name = "DNCD_HORAS")
     private String horas;
 
-    @Column(name = "DECD_REGISTRADOPOR")
+    @Column(name = "DNCD_REGISTRADOPOR")
     private String registradoPor;
 
-    @Column(name = "DECD_FECHACAMBIO")
+    @Column(name = "DNCD_FECHACAMBIO")
     private Date fechaCambio;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CADO_ID", insertable = false, updatable = false)
-    private CargaDocenteEntity cargaDocente;
+    private NovedadCargaDocenteEntity novedadCargaDocente;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PROG_ID", insertable = false, updatable = false)
@@ -103,7 +95,7 @@ public class DetalleCargaDocenteEntity implements Serializable, Cloneable {
     public String toString() {
         return "DetalleCargaDocenteEntity{" +
                 "id=" + id +
-                ", idCargaDocente=" + idCargaDocente +
+                ", idNovedadCargaDocente=" + idNovedadCargaDocente +
                 ", idPrograma=" + idPrograma +
                 ", idGrupo=" + idGrupo +
                 ", idTipoActividad=" + idTipoActividad +

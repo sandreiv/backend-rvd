@@ -85,6 +85,8 @@ public interface CoordinacionService {
 
     List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion);
 
+    List<DocentePreasignacionDTO> searchFreeProfessor(String nombre, String documento, Long idModalidadContratacion);
+
     List<FechaModalidadFormularioDTO> getWorkDate(Long idCarga, Long idModalidadContratacion);
 
     ValorPuntosPrecargaDTO getValuePointsPreload(
