@@ -499,5 +499,205 @@ public interface NovedadCargaDocenteRepository
             @Param("idNovedad") Long idNovedad,
             @Param("registradoPor") String registradoPor
     );
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO RVD.NOVEDADCARGADOCENTE
+            (
+                CADO_ID,
+                CARG_ID,
+                PEGE_ID,
+                MOCO_ID,
+                CACA_ID,
+                FECO_ID,
+                NOVE_ID,
+                NOCD_FECHANOVEDAD,
+                NOCD_OBSERVACIONNOVEDAD,
+                NOCD_FECHAINICIO,
+                NOCD_FECHAFIN,
+                NOCD_VALORCONTRATO,
+                NOCD_VALORPRESTACIONES,
+                NOCD_SALARIO,
+                NOCD_ESTADO,
+                NOCD_VIGENTE,
+                NOCD_HORAS,
+                NOCD_HORASDEEXCEPCION,
+                NOCD_VALORHORA,
+                NOCD_PUNTOS,
+                NOCD_VALORPUNTO,
+                NOCD_TOTALCONTRATO,
+                NOCD_SEMANAS,
+                NOCD_NIVELFORMACION,
+                NOCD_MOMENTO,
+                NOCD_ONCEMESES,
+                NOCD_ESTADONOVEDAD,
+                NOCD_REGISTRADOPOR,
+                NOCD_FECHACAMBIO
+            )
+            SELECT
+                SRC.CADO_ID,
+                SRC.CARG_ID,
+                :idPersonaGeneral,
+                SRC.MOCO_ID,
+                SRC.CACA_ID,
+                SRC.FECO_ID,
+                :idNovedad,
+                SYSDATE,
+                NULL,
+                SRC.NOCD_FECHAINICIO,
+                SRC.NOCD_FECHAFIN,
+                SRC.NOCD_VALORCONTRATO,
+                SRC.NOCD_VALORPRESTACIONES,
+                SRC.NOCD_SALARIO,
+                SRC.NOCD_ESTADO,
+                SRC.NOCD_VIGENTE,
+                SRC.NOCD_HORAS,
+                SRC.NOCD_HORASDEEXCEPCION,
+                SRC.NOCD_VALORHORA,
+                SRC.NOCD_PUNTOS,
+                SRC.NOCD_VALORPUNTO,
+                SRC.NOCD_TOTALCONTRATO,
+                SRC.NOCD_SEMANAS,
+                SRC.NOCD_NIVELFORMACION,
+                SRC.NOCD_MOMENTO,
+                SRC.NOCD_ONCEMESES,
+                '0',
+                :registradoPor,
+                SYSDATE
+            FROM
+            (
+                SELECT NOCD.*
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.CADO_ID = :idCargaDocente
+                AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+                ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+            ) SRC
+            WHERE ROWNUM = 1
+            """, nativeQuery = true)
+    int insertChangeProfessorFromNovelty(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idNovedad") Long idNovedad,
+            @Param("registradoPor") String registradoPor
+    );
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO RVD.NOVEDADCARGADOCENTE
+            (
+                CADO_ID,
+                CARG_ID,
+                PEGE_ID,
+                MOCO_ID,
+                CACA_ID,
+                FECO_ID,
+                NOVE_ID,
+                NOCD_FECHANOVEDAD,
+                NOCD_OBSERVACIONNOVEDAD,
+                NOCD_FECHAINICIO,
+                NOCD_FECHAFIN,
+                NOCD_VALORCONTRATO,
+                NOCD_VALORPRESTACIONES,
+                NOCD_SALARIO,
+                NOCD_ESTADO,
+                NOCD_VIGENTE,
+                NOCD_HORAS,
+                NOCD_HORASDEEXCEPCION,
+                NOCD_VALORHORA,
+                NOCD_PUNTOS,
+                NOCD_VALORPUNTO,
+                NOCD_TOTALCONTRATO,
+                NOCD_SEMANAS,
+                NOCD_NIVELFORMACION,
+                NOCD_MOMENTO,
+                NOCD_ONCEMESES,
+                NOCD_ESTADONOVEDAD,
+                NOCD_REGISTRADOPOR,
+                NOCD_FECHACAMBIO
+            )
+            SELECT
+                CADO.CADO_ID,
+                CADO.CARG_ID,
+                :idPersonaGeneral,
+                CADO.MOCO_ID,
+                CADO.CACA_ID,
+                CADO.FECO_ID,
+                :idNovedad,
+                SYSDATE,
+                NULL,
+                CADO.CADO_FECHAINICIO,
+                CADO.CADO_FECHAFIN,
+                CADO.CADO_VALORCONTRATO,
+                CADO.CADO_VALORPRESTACIONES,
+                CADO.CADO_SALARIO,
+                CADO.CADO_ESTADO,
+                CADO.CADO_VIGENTE,
+                CADO.CADO_HORAS,
+                CADO.CADO_HORASDEEXCEPCION,
+                CADO.CADO_VALORHORA,
+                CADO.CADO_PUNTOS,
+                CADO.CADO_VALORPUNTO,
+                CADO.CADO_TOTALCONTRATO,
+                CADO.CADO_SEMANAS,
+                CADO.CADO_NIVELFORMACION,
+                CADO.CADO_MOMENTO,
+                CADO.CADO_ONCEMESES,
+                '0',
+                :registradoPor,
+                SYSDATE
+            FROM RVD.CARGADOCENTE CADO
+            WHERE CADO.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    int insertChangeProfessorFromCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idNovedad") Long idNovedad,
+            @Param("registradoPor") String registradoPor
+    );
+
+
+    @Query(value = """
+            SELECT COUNT(1)
+            FROM RVD.CARGADOCENTE CADO
+
+            LEFT JOIN (
+                SELECT
+                    NOCD.CADO_ID,
+                    NOCD.PEGE_ID,
+                    NOCD.MOCO_ID,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+            ) NOCD
+                ON NOCD.CADO_ID = CADO.CADO_ID
+                AND NOCD.RN = 1
+
+            WHERE CADO.CARG_ID = :idCarga
+            AND CADO.CADO_ID <> :idCargaDocente
+            AND (
+                    CASE
+                        WHEN NOCD.CADO_ID IS NOT NULL
+                            THEN NOCD.MOCO_ID
+                        ELSE CADO.MOCO_ID
+                    END
+                ) = :idModalidadContratacion
+            AND (
+                    CASE
+                        WHEN NOCD.CADO_ID IS NOT NULL
+                            THEN NOCD.PEGE_ID
+                        ELSE CADO.PEGE_ID
+                    END
+                ) = :idPersonaGeneral
+            """, nativeQuery = true)
+    long countProfessorAssignedToAnotherLoad(
+            @Param("idCarga") Long idCarga,
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idModalidadContratacion") Long idModalidadContratacion,
+            @Param("idPersonaGeneral") Long idPersonaGeneral
+    );
+
     
 }

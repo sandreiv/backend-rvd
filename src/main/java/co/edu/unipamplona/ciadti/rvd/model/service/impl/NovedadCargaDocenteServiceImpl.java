@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
@@ -23,6 +25,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
@@ -51,6 +54,8 @@ public class NovedadCargaDocenteServiceImpl
     private final DetalleNovedadCargaDocenteRepository detalleNovedadCargaDocenteRepository;
 
     private final NovedadRepository novedadRepository;
+
+    private final PersonaGeneralRepository personaGeneralRepository;
 
     private final EntityManager entityManager;
 
@@ -188,6 +193,145 @@ public class NovedadCargaDocenteServiceImpl
                 dto.idCargaDocente()
         );
     }
+
+    @Override
+    @Transactional
+    public void changeProfessor(CambioDocenteDTO dto) {
+
+        if (dto == null
+                || dto.idCargaDocente() == null
+                || dto.idNovedad() == null
+                || dto.idPersonaGeneral() == null) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente, la novedad y el nuevo docente son obligatorios"
+            );
+        }
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+                .findById(dto.idCargaDocente())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id "
+                                + dto.idCargaDocente()
+                ));
+
+        var novedad = novedadRepository
+                .findById(dto.idNovedad())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la novedad seleccionada"
+                ));
+
+        if (!"change-professor".equalsIgnoreCase(novedad.getComponente())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La novedad seleccionada no corresponde a Cambio de docente"
+            );
+        }
+
+        if (!personaGeneralRepository.existsById(dto.idPersonaGeneral())) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe el docente seleccionado"
+            );
+        }
+
+        if (novedadCargaDocenteRepository
+                .countNoveltyInReview(dto.idCargaDocente()) > 0) {
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "La carga docente ya tiene una novedad en revisión"
+            );
+        }
+
+        Optional<NovedadCargaDocenteEntity> novedadOrigen =
+                novedadCargaDocenteRepository
+                        .findProfessorRecordToDuplicateNovelty(
+                                dto.idCargaDocente()
+                        );
+
+        Long idDocenteActual;
+
+        if (novedadOrigen.isPresent()) {
+            idDocenteActual =
+                    novedadOrigen.get().getIdPersonaGeneral();
+        } else {
+            idDocenteActual =
+                    cargaDocente.getIdPersonaGeneral();
+        }
+
+        if (idDocenteActual == null) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "La carga seleccionada no tiene un docente asignado. Debe utilizar la novedad Asignar nombre a NN"
+            );
+        }
+
+        if (Objects.equals(
+                idDocenteActual,
+                dto.idPersonaGeneral())) {
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente seleccionado ya es el docente actual de la carga"
+            );
+        }
+
+        long asignaciones =
+                novedadCargaDocenteRepository
+                        .countProfessorAssignedToAnotherLoad(
+                                cargaDocente.getIdCarga(),
+                                dto.idCargaDocente(),
+                                cargaDocente.getIdModalidadContratacion(),
+                                dto.idPersonaGeneral()
+                        );
+
+        if (asignaciones > 0) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente seleccionado ya se encuentra asignado en esta carga y modalidad"
+            );
+        }
+
+        String registradoPor =
+                RegistradoPorUtils.value(Accion.INSERT);
+
+        int inserted;
+
+        if (novedadOrigen.isPresent()) {
+
+            inserted =
+                    novedadCargaDocenteRepository
+                            .insertChangeProfessorFromNovelty(
+                                    dto.idCargaDocente(),
+                                    dto.idPersonaGeneral(),
+                                    dto.idNovedad(),
+                                    registradoPor
+                            );
+
+        } else {
+
+            inserted =
+                    novedadCargaDocenteRepository
+                            .insertChangeProfessorFromCargaDocente(
+                                    dto.idCargaDocente(),
+                                    dto.idPersonaGeneral(),
+                                    dto.idNovedad(),
+                                    registradoPor
+                            );
+        }
+
+        if (inserted != 1) {
+            throw new ApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "No fue posible registrar la novedad de cambio de docente"
+            );
+        }
+    }
+
 
     private void validateRequest(
             AsignarNombreNnDTO dto

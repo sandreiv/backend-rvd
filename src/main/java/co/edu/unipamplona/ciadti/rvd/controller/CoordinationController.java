@@ -71,6 +71,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -703,5 +704,13 @@ public class CoordinationController {
         return ResponseEntity
                 .ok()
                 .build();
+    }
+
+    @PostMapping("/novelties/change-professor")
+    public ResponseEntity<Void> changeProfessor(
+            @RequestBody CambioDocenteDTO dto) {
+
+        novedadCargaDocenteService.changeProfessor(dto);
+        return ResponseEntity.ok().build();
     }
 }
