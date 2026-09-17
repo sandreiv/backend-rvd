@@ -33,6 +33,9 @@ public class RelacionCargaProyectoEntity implements Serializable, Cloneable{
     @Column(name = "DECD_ID")
     private Long idDetalleCargaDocente;
 
+    @Column(name = "DNCD_ID")
+    private Long idDetalleNovedadCargaDocente;
+
     @Column(name = "RECP_REGISTRADOPOR")
     private String registradoPor;
 
@@ -46,6 +49,10 @@ public class RelacionCargaProyectoEntity implements Serializable, Cloneable{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DECD_ID", insertable = false, updatable = false)
     private DetalleCargaDocenteEntity detalleCargaDocente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DECD_ID", insertable = false, updatable = false)
+    private DetalleNovedadCargaDocenteEntity detalleNovedadCargaDocente;
     
 }
 /* 02/06/2026 @:Sebastian Jaimes */
