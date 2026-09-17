@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 20/07/2026 - Sebastian Jaimes - Campos monetarios a BigDecimal
+ * 16/09/2026 - CADO_ID como PK y FK a CARGADOCENTE
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
@@ -15,15 +16,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Date;
 
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,6 +37,8 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Id
     @Column(name = "CADO_ID", nullable = false)
     private Long idCargaDocente;
+
+    
 
     @Column(name = "CARG_ID")
     private Long idCarga;
@@ -142,6 +143,10 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "FECO_ID", insertable = false, updatable = false)
     private FechasConvocatoriaEntity fechaConvocatoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CADO_ID",insertable = false,updatable = false)
+    private CargaDocenteEntity cargaDocente;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(

@@ -9,10 +9,17 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
 
 public interface NovedadCargaDocenteRepository
-        extends JpaRepository<NovedadCargaDocenteEntity, Long> {
+        extends JpaRepository<
+                NovedadCargaDocenteEntity,
+                NovedadCargaDocenteEntityId> {
+
+    Optional<NovedadCargaDocenteEntity> findByIdCargaDocente(
+            Long idCargaDocente
+    );
 
     boolean existsByIdNovedadCatalogo(
             Long idNovedadCatalogo

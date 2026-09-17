@@ -14,6 +14,7 @@
  * 10/09/2026 - Sebastian Jaimes - Precarga activas solo preasignación
  * 10/09/2026 - Sebastian Jaimes - parseNullableLong a ParseUtils
  * 16/09/2026 - Listado de modalidades de contratación
+ * 16/09/2026 - Novedad cambio de modalidad y horas
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -52,6 +53,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -675,15 +677,15 @@ public class CoordinationController {
         return new ResponseEntity<>(modalities, HttpStatus.OK);
     }
 
-    /*@Operation(
-        summary = "Guarda una novedad de tipo cambio de modalidad y horas catedratico de carga docente",
-        description = "Guarda una novedad de tipo cambio de modalidad y horas catedratico de carga docente"
+    @Operation(
+        summary = "Guarda una novedad de tipo cambio de modalidad y horas catedrático",
+        description = "Persiste el cambio en NOVEDADCARGADOCENTE y DETALLENOVEDADCARGADOCENTE sin modificar CARGADOCENTE"
     )
     @PostMapping("/save-contract-modality-professor")
-    public ResponseEntity<Void> saveContractModalityProfessor(@RequestBody NovedadCargaDocenteFormularioDTO dto) {
-        coordinacionService.saveContractModalityProfessor(dto);
+    public ResponseEntity<Void> saveContractModalityProfessor(@RequestBody CambioModalidadHoraCatedraticoDTO dto) {
+        novedadCargaDocenteService.saveContractModalityProfessor(dto);
         return ResponseEntity.ok().build();
-    }*/
+    }
 
     @Operation(
         summary = "Asigna nombre a una carga NN",
