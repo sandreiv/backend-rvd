@@ -460,6 +460,16 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Elimina un detalle novedad carga docente (actividad) de un docente",
+        description = "Elimina un detalle novedad carga docente (actividad) de un docente"
+    )
+    @DeleteMapping("/delete-professor-activity-novelty/{idDetalleCargaDocente}")
+    public ResponseEntity<Void> deleteProfessorActivityNovelty(@PathVariable Long idDetalleCargaDocente) {
+        coordinacionService.deleteProfessorActivityNovelty(idDetalleCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Aprueba la preasignación de varios docentes",
         description = "Actualiza el estado de la carga docente de Verificado a Aprobada segun la carga"
     )

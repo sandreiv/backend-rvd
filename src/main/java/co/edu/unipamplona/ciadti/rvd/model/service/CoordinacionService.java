@@ -151,6 +151,8 @@ public interface CoordinacionService {
 
     void deleteProfessorActivity(Long idDetalleCargaDocente);
 
+    void deleteProfessorActivityNovelty(Long idDetalleCargaDocente);
+
     void approveProfessorsPreassignment(Long idCarga);
 
     void disapproveProfessorActivityDistribution(Long idCargaDocente);

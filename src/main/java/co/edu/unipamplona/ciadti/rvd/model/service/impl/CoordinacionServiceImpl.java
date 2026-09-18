@@ -676,6 +676,17 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         validatePreassignmentWriteAllowedByCarga(cargaDocente.getIdCarga());
     }
 
+    private void validatePreassignmentWriteAllowedByNovedadCargaDocente(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la novedad carga docente es obligatorio");
+        }
+
+        NovedadCargaDocenteEntity novedadCargaDocente = novedadCargaDocenteRepository.findByIdCargaDocente(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad carga docente con id " + idCargaDocente));
+
+        validatePreassignmentWriteAllowedByCarga(novedadCargaDocente.getIdCarga());
+    }
+
     private void validatePreassignmentWriteAllowedByDetalle(Long idDetalleCargaDocente) {
         if (idDetalleCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
@@ -685,6 +696,17 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + idDetalleCargaDocente));
 
         validatePreassignmentWriteAllowedByCargaDocente(detalle.getIdCargaDocente());
+    }
+
+    private void validatePreassignmentWriteAllowedByNovedadDetalle(Long idDetalleCargaDocente) {
+        if (idDetalleCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle novedad de novedad carga docente es obligatorio");
+        }
+
+        DetalleNovedadCargaDocenteEntity detallNovedad = detalleNovedadCargaDocenteRepository.findById(idDetalleCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle novedad de novedad carga docente con id " + idDetalleCargaDocente));
+
+        validatePreassignmentWriteAllowedByNovedadCargaDocente(detallNovedad.getIdNovedadCargaDocente());
     }
 
     private void validatePreassignmentWriteAllowed(CargaEntity carga) {
@@ -1964,7 +1986,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.info("saveNoveltyProjectActivities ===> Guardando novedad detalle precarga docente. idCargaDocente={}", dto.idCargaDocente());
 
         Long idCoordinacion = resolveIdCoordinacionByCargaDocente(dto.idCargaDocente());
-        validatePreassignmentWriteAllowedByCargaDocente(dto.idCargaDocente());
+        validatePreassignmentWriteAllowedByNovedadCargaDocente(dto.idCargaDocente());
 
         if (dto.detallesNuevos() != null && !dto.detallesNuevos().isEmpty()) {
             agregarDetalleNovedad(dto.idCargaDocente(), dto.detallesNuevos(), idCoordinacion);
@@ -2389,6 +2411,21 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 RegistradoPorUtils.value(Accion.DELETE));
 
         log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProfessorActivityNovelty(Long idDetalleCargaDocente) {
+        log.info("deleteProfessorActivityNovelty ===> Eliminando actividad docente. idDetalle={}",
+                idDetalleCargaDocente);
+
+        validatePreassignmentWriteAllowedByNovedadDetalle(idDetalleCargaDocente);
+
+        detalleNovedadCargaDocenteRepository.deleteByProcedure(
+                idDetalleCargaDocente,
+                RegistradoPorUtils.value(Accion.DELETE));
+
+        log.info("deleteProfessorActivityNovelty ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
     }
 
     @Override
