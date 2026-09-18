@@ -95,7 +95,8 @@ public interface NovedadCargaDocenteRepository
                     AND NOCD.RN = 1
 
                 WHERE CADO.CARG_ID = :idCarga
-                AND CADO.MOCO_ID = :idModalidadContratacion
+                AND COALESCE(NOCD.MOCO_ID, CADO.MOCO_ID)
+                    = :idModalidadContratacion
             )
             SELECT
                 PEGE.PEGE_ID AS idPersonaGeneral,
@@ -136,6 +137,11 @@ public interface NovedadCargaDocenteRepository
 
                 CASE
                     WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                        WHERE DNCD.CADO_ID = CR.CADO_ID
+                    )
+                    OR EXISTS (
                         SELECT 1
                         FROM RVD.DETALLECARGADOCENTE DECD
                         WHERE DECD.CADO_ID = CR.CADO_ID
@@ -282,12 +288,16 @@ public interface NovedadCargaDocenteRepository
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
-                    WHEN CR.CADO_ID IS NOT NULL
-                        AND EXISTS (
-                            SELECT 1
-                            FROM RVD.DETALLECARGADOCENTE DECD
-                            WHERE DECD.CADO_ID = CR.CADO_ID
-                        )
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                        WHERE DNCD.CADO_ID = CR.CADO_ID
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLECARGADOCENTE DECD
+                        WHERE DECD.CADO_ID = CR.CADO_ID
+                    )
                     THEN 1
                     ELSE 0
                 END AS tieneActividades

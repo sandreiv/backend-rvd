@@ -17,6 +17,8 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 public interface RelacionCargaProyectoRepository extends JpaRepository<RelacionCargaProyectoEntity, Long> {
 
     void deleteByIdDetalleCargaDocente(Long idDetalleCargaDocente);
+
+    void deleteByIdDetalleNovedadCargaDocente(Long idDetalleCargaDocente);
 }
 
 /* 17/07/2026 @:Daniel Arias */

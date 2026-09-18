@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 
 public interface DetalleNovedadCargaDocenteRepository
         extends JpaRepository<DetalleNovedadCargaDocenteEntity, Long> {
@@ -209,4 +210,26 @@ public interface DetalleNovedadCargaDocenteRepository
             """, nativeQuery = true)
     List<DetalleCargaDocenteListadoProjection> findByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
+    
+    @Query(value = """
+            SELECT
+                DNCD.PROG_ID AS idPrograma,
+                SUM(
+                    NVL(
+                        TO_NUMBER(
+                            REPLACE(TRIM(DNCD.DNCD_HORAS), ',', '.')
+                            DEFAULT NULL ON CONVERSION ERROR
+                        ),
+                        0
+                    )
+                ) AS totalHoras
+            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+            WHERE DNCD.CADO_ID = :idCargaDocente
+            AND DNCD.PROG_ID IS NOT NULL
+            AND (:idDetalleExcluido IS NULL OR DNCD.DNCD_ID <> :idDetalleExcluido)
+            GROUP BY DNCD.PROG_ID
+            """, nativeQuery = true)
+    List<HorasProgramaProjection> findHorasByProgramaAndCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idDetalleExcluido") Long idDetalleExcluido);
 }

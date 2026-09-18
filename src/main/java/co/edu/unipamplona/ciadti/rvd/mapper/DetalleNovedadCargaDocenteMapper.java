@@ -31,14 +31,14 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
-import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 
 @Mapper(componentModel = "spring")
-public interface DetalleCargaDocenteMapper {
+public interface DetalleNovedadCargaDocenteMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "idCargaDocente", source = "idCargaDocente")
+    @Mapping(target = "idNovedadCargaDocente", source = "idCargaDocente")
     @Mapping(target = "idTipoActividad", expression = "java(resolveTipoActividad(detalle))")
     @Mapping(target = "idPrograma", source = "detalle.idPrograma")
     @Mapping(target = "idGrupo", source = "detalle.idGrupo")
@@ -46,12 +46,12 @@ public interface DetalleCargaDocenteMapper {
     @Mapping(target = "horas", expression = "java(toHoras(detalle.horas()))")
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
-    @Mapping(target = "cargaDocente", ignore = true)
+    @Mapping(target = "novedadCargaDocente", ignore = true)
     @Mapping(target = "programa", ignore = true)
     @Mapping(target = "grupo", ignore = true)
     @Mapping(target = "tipoActividad", ignore = true)
     @Mapping(target = "centroCosto", ignore = true)
-    DetalleCargaDocenteEntity toEntity(
+    DetalleNovedadCargaDocenteEntity toEntity(
             Long idCargaDocente,
             DetalleCargaDocenteItemDTO detalle,
             Long idCentroCosto);
@@ -263,11 +263,11 @@ public interface DetalleCargaDocenteMapper {
         return new ArrayList<>(relaciones.values());
     }
 
-    default DetalleCargaDocenteEntity toEntityFromDto(DetalleCargaDocenteDTO dto, Long idCentroCosto) {
+    default DetalleNovedadCargaDocenteEntity toEntityFromDto(DetalleCargaDocenteDTO dto, Long idCentroCosto) {
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
-        DetalleCargaDocenteEntity entity = new DetalleCargaDocenteEntity();
+        DetalleNovedadCargaDocenteEntity entity = new DetalleNovedadCargaDocenteEntity();
         entity.setId(dto.idDetalleCargaDocente());
-        entity.setIdCargaDocente(dto.idCargaDocente());
+        entity.setIdNovedadCargaDocente(dto.idCargaDocente());
         entity.setIdTipoActividad(resolveTipoActividadFromActividad(actividad));
         entity.setIdPrograma(resolveIdPrograma(actividad));
         entity.setIdGrupo(resolveIdGrupo(actividad));

@@ -49,6 +49,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
@@ -381,6 +382,17 @@ public class CoordinationController {
     @PostMapping("/save-detail-professor-preload")
     public ResponseEntity<Void> saveDetailProfessorPreload(@RequestBody DetalleCargaDocenteFormularioDTO dto) {
         coordinacionService.saveDetailProfessorPreload(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Guarda o actualiza las novedades en detalles de actividades",
+        description = "Guarda o actualiza las novedades en detalles de actividades. Si es la primera novedad, crea los registros en detalles novedades" +
+        "Si no es la primera novedad, comprueba si hubieron cambios para crear los nuevos registros y actualizar los que sufrieron cambios"
+    )
+    @PostMapping("/save-novelty-detail-professor-preload")
+    public ResponseEntity<Void> saveNoveltyProjectActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
+        coordinacionService.saveNoveltyProjectActivities(dto);
         return ResponseEntity.ok().build();
     }
 

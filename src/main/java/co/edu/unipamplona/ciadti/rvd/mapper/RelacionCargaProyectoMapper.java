@@ -25,6 +25,13 @@ public interface RelacionCargaProyectoMapper {
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
     RelacionCargaProyectoEntity toEntity(Long idDetalleCargaDocente, RelacionCargaProyectoDTO dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "idDetalleNovedadCargaDocente", source = "idDetalleNovedadCargaDocente")
+    @Mapping(target = "idPersonaProyecto", source = "dto.idPersonaProyecto")
+    @Mapping(target = "registradoPor", ignore = true)
+    @Mapping(target = "fechaCambio", ignore = true)
+    RelacionCargaProyectoEntity toEntityFromDetalleNovedad(Long idDetalleNovedadCargaDocente, RelacionCargaProyectoDTO dto);
 }
 
 /* 17/07/2026 @:Daniel Arias */
