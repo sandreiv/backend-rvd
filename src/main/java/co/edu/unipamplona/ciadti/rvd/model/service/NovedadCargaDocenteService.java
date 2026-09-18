@@ -2,6 +2,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 
 public interface NovedadCargaDocenteService {
 
@@ -11,5 +12,13 @@ public interface NovedadCargaDocenteService {
 
     void saveContractModalityProfessor(
             CambioModalidadHoraCatedraticoDTO dto
+    );
+
+    void saveNoveltyProjectActivities(
+        GuardarNovedadesDetallesProyectosDTO dto
+    );
+
+    void deleteProfessorActivityNovelty(
+        Long idDetalleNovedadCargaDocente
     );
 }

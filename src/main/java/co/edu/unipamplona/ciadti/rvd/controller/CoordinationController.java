@@ -386,17 +386,6 @@ public class CoordinationController {
     }
 
     @Operation(
-        summary = "Guarda o actualiza las novedades en detalles de actividades",
-        description = "Guarda o actualiza las novedades en detalles de actividades. Si es la primera novedad, crea los registros en detalles novedades" +
-        "Si no es la primera novedad, comprueba si hubieron cambios para crear los nuevos registros y actualizar los que sufrieron cambios"
-    )
-    @PostMapping("/save-novelty-detail-professor-preload")
-    public ResponseEntity<Void> saveNoveltyProjectActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
-        coordinacionService.saveNoveltyProjectActivities(dto);
-        return ResponseEntity.ok().build();
-    }
-
-    @Operation(
         summary = "Lista el detalle de carga de un docente",
         description = "Lista el detalle de carga por idCargaDocente"
     )
@@ -456,16 +445,6 @@ public class CoordinationController {
     @DeleteMapping("/delete-professor-activity/{idDetalleCargaDocente}")
     public ResponseEntity<Void> deleteProfessorActivity(@PathVariable Long idDetalleCargaDocente) {
         coordinacionService.deleteProfessorActivity(idDetalleCargaDocente);
-        return ResponseEntity.ok().build();
-    }
-
-    @Operation(
-        summary = "Elimina un detalle novedad carga docente (actividad) de un docente",
-        description = "Elimina un detalle novedad carga docente (actividad) de un docente"
-    )
-    @DeleteMapping("/delete-professor-activity-novelty/{idDetalleCargaDocente}")
-    public ResponseEntity<Void> deleteProfessorActivityNovelty(@PathVariable Long idDetalleCargaDocente) {
-        coordinacionService.deleteProfessorActivityNovelty(idDetalleCargaDocente);
         return ResponseEntity.ok().build();
     }
 
@@ -735,5 +714,26 @@ public class CoordinationController {
         return ResponseEntity
                 .ok()
                 .build();
+    }
+
+    @Operation(
+        summary = "Guarda o actualiza las novedades en detalles de actividades",
+        description = "Guarda o actualiza las novedades en detalles de actividades. Si es la primera novedad, crea los registros en detalles novedades" +
+        "Si no es la primera novedad, comprueba si hubieron cambios para crear los nuevos registros y actualizar los que sufrieron cambios"
+    )
+    @PostMapping("/save-novelty-detail-professor-preload")
+    public ResponseEntity<Void> saveNoveltyProjectActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
+        novedadCargaDocenteService.saveNoveltyProjectActivities(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Elimina un detalle novedad carga docente (actividad) de un docente",
+        description = "Elimina un detalle novedad carga docente (actividad) de un docente"
+    )
+    @DeleteMapping("/delete-professor-activity-novelty/{idDetalleNovedadCargaDocente}")
+    public ResponseEntity<Void> deleteProfessorActivityNovelty(@PathVariable Long idDetalleNovedadCargaDocente) {
+        novedadCargaDocenteService.deleteProfessorActivityNovelty(idDetalleNovedadCargaDocente);
+        return ResponseEntity.ok().build();
     }
 }

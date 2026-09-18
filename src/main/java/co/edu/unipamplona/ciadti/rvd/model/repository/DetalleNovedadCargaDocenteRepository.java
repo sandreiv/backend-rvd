@@ -224,12 +224,12 @@ public interface DetalleNovedadCargaDocenteRepository
                     )
                 ) AS totalHoras
             FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-            WHERE DNCD.CADO_ID = :idCargaDocente
+            WHERE DNCD.CADO_ID = :idNovedadCargaDocente
             AND DNCD.PROG_ID IS NOT NULL
             AND (:idDetalleExcluido IS NULL OR DNCD.DNCD_ID <> :idDetalleExcluido)
             GROUP BY DNCD.PROG_ID
             """, nativeQuery = true)
     List<HorasProgramaProjection> findHorasByProgramaAndCargaDocente(
-            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
             @Param("idDetalleExcluido") Long idDetalleExcluido);
 }
