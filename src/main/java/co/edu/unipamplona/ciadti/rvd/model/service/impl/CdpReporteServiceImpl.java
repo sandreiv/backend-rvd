@@ -7,13 +7,13 @@
  * Modificaciones:
  * 01/09/2026 - Sebastian Jaimes - Creación inicial
  * 04/09/2026 - Exclusion de once meses heredados solo en segundo periodo
+ * 17/09/2026 - Sebastian Jaimes - Valor de contrato con rango de fechas inclusivo
+ * 18/09/2026 - Sebastian Jaimes - Contrato cátedra según forma de pago
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.report.CdpExcelExporter;
 import co.edu.unipamplona.ciadti.rvd.report.CdpPdfExporter;
 import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
+import co.edu.unipamplona.ciadti.rvd.util.ValorContratacionCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,10 +61,6 @@ import lombok.extern.slf4j.Slf4j;
 public class CdpReporteServiceImpl implements CdpReporteService {
     
     private static final int ESCALA_MONETARIA = 2;
-    private static final BigDecimal DIAS_MES = new BigDecimal("30");
-    private static final BigDecimal DIAS_ANIO = new BigDecimal("360");
-    private static final BigDecimal DIAS_VACACIONES = new BigDecimal("720");
-    private static final BigDecimal TASA_INTERES = new BigDecimal("0.12");
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
 
     private final CargaRepository cargaRepository;
@@ -313,16 +310,20 @@ public class CdpReporteServiceImpl implements CdpReporteService {
         BigDecimal asignacion = null;
         ValorContratacionDTO valor = null;
         String error = null;
+        BigDecimal horas = resolveHoras(projection.getHoras(), horasPorCodigo);
         try {
-            asignacion = resolveAsignacionSalarial(projection);
-            valor = calculateContractValue(projection, asignacion);
+            if (ValorContratacionCalculator.isCatedra(projection.getFormaPago())) {
+                valor = calculateCatedraContractValue(projection, horas);
+            } else {
+                asignacion = resolveAsignacionSalarial(projection);
+                valor = calculateContractValue(projection, asignacion);
+            }
         } catch (ApiException ex) {
             error = ex.getMessage();
         }
         BigDecimal valorPunto = valorHoraVigencia != null
                 ? valorHoraVigencia
                 : projection.getValorPunto();
-        BigDecimal horas = resolveHoras(projection.getHoras(), horasPorCodigo);
         Integer grupos = grupoCupos != null ? grupoCupos.cantidad() : 0;
         BigDecimal cupos = grupoCupos != null ? grupoCupos.cupos() : null;
         return new DocentePreasignacionReporteDTO(
@@ -411,48 +412,30 @@ public class CdpReporteServiceImpl implements CdpReporteService {
     private ValorContratacionDTO calculateContractValue(
             DocentePreasignacionReporteProjection projection,
             BigDecimal asignacionSalarial) {
-        long cantidadDias = resolveCantidadDias(
-                projection.getFechaInicio(), projection.getFechaFin());
-        BigDecimal dias = BigDecimal.valueOf(cantidadDias);
+        return ValorContratacionCalculator.calculate(
+                asignacionSalarial,
+                projection.getFechaInicio(),
+                projection.getFechaFin());
+    }
 
-        BigDecimal valorContrato = asignacionSalarial
-                .divide(DIAS_MES, 8, RoundingMode.HALF_UP)
-                .multiply(dias)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal valorCesantias = asignacionSalarial
-                .multiply(dias)
-                .divide(DIAS_ANIO, ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal valorIntereses = valorCesantias
-                .multiply(dias)
-                .divide(DIAS_ANIO, 8, RoundingMode.HALF_UP)
-                .multiply(TASA_INTERES)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal valorPrimaLegal = valorCesantias;
-        BigDecimal valorVacaciones = asignacionSalarial
-                .multiply(dias)
-                .divide(DIAS_VACACIONES, ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal totalPrestaciones = valorCesantias
-                .add(valorIntereses)
-                .add(valorPrimaLegal)
-                .add(valorVacaciones)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal totalContrato = valorContrato
-                .add(totalPrestaciones)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        return new ValorContratacionDTO(
-                valorVacaciones,
-                valorCesantias,
-                valorIntereses,
-                valorPrimaLegal,
-                totalPrestaciones,
-                valorContrato,
-                totalContrato);
+    private ValorContratacionDTO calculateCatedraContractValue(
+            DocentePreasignacionReporteProjection projection,
+            BigDecimal horas) {
+        BigDecimal semanas = parseDecimal(projection.getSemanas());
+        if (horas == null
+                || horas.compareTo(BigDecimal.ZERO) <= 0
+                || semanas == null
+                || projection.getValorHora() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente no tiene horas, semanas o valor hora");
+        }
+        return ValorContratacionCalculator.calculateCatedra(
+                horas,
+                semanas,
+                projection.getValorHora(),
+                projection.getFechaInicio(),
+                projection.getFechaFin());
     }
 
     private BigDecimal resolveAsignacionSalarial(DocentePreasignacionReporteProjection projection) {
@@ -488,20 +471,6 @@ public class CdpReporteServiceImpl implements CdpReporteService {
 
     private BigDecimal nvl(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
-    }
-
-    private long resolveCantidadDias(LocalDate fechaInicio, LocalDate fechaFin) {
-        if (fechaInicio == null || fechaFin == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente no tiene fechas de inicio y fin");
-        }
-        if (fechaFin.isBefore(fechaInicio)) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La fecha fin no puede ser anterior a la fecha inicio");
-        }
-        return ChronoUnit.DAYS.between(fechaInicio, fechaFin) + 1;
     }
 
     private List<Long> resolveCargaIds(List<CoordinacionDTO> solicitudes) {

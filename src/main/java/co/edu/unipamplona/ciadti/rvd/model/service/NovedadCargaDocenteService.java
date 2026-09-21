@@ -12,4 +12,6 @@ public interface NovedadCargaDocenteService {
     void saveContractModalityProfessor(
             CambioModalidadHoraCatedraticoDTO dto
     );
+
+    void approveProfessorNovelty(Long idCargaDocente);
 }

@@ -285,6 +285,9 @@ public interface DetalleCargaDocenteRepository
     int countCteiOrIsuProjectAssociationsByCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
 
+    List<DetalleCargaDocenteEntity> findAllByIdCargaDocente(
+            Long idCargaDocente);
+
 }
 
 /* 17/07/2026 @:Daniel Arias */
