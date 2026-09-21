@@ -12,6 +12,8 @@
  * 07/09/2026 - Sebastian Jaimes - Filtro CADO_ESTADO = 1 en verificación
  * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados (CADO_ESTADO = 4) para contratación
+ * 17/09/2026 - Sebastian Jaimes - Listado de docentes por carga para totales
+ * 18/09/2026 - Sebastian Jaimes - Forma de pago en reporte de preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -326,6 +328,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
 
     List<CargaDocenteEntity> findByIdCargaAndOnceMeses(Long idCarga, String onceMeses);
 
+    List<CargaDocenteEntity> findByIdCarga(Long idCarga);
+
     @Query(value = """
             SELECT
                 COUNT(DISTINCT CADO.PEGE_ID)
@@ -421,7 +425,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CADO.CADO_FECHAFIN AS fechaFin,
                 CADO.CADO_SEMANAS AS semanas,
                 CADO.CADO_HORAS AS horas,
-                CADO.CADO_ONCEMESES AS onceMeses
+                CADO.CADO_ONCEMESES AS onceMeses,
+                RECA.RECA_FORMAPAGO AS formaPago
             FROM RVD.CARGADOCENTE CADO
             LEFT JOIN GENERAL.PERSONAGENERAL PEGE
                 ON PEGE.PEGE_ID = CADO.PEGE_ID
@@ -431,6 +436,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 ON MOCO.MOCO_ID = CADO.MOCO_ID
             LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
                 ON CACA.CACA_ID = CADO.CACA_ID
+            LEFT JOIN RVD.RESTRICCIONCARGA RECA
+                ON RECA.MOCO_ID = CADO.MOCO_ID
             WHERE CADO.CARG_ID = :idCarga
             ORDER BY
                 UPPER(NVL(MOCO.MOCO_NOMBRE, ' ')),

@@ -9,6 +9,7 @@
  * 04/08/2026 - Sebastian Jaimes - Campos de contrato y fechas para reporte batch
  * 31/08/2026 - Sebastian Jaimes - Horas de la carga docente para reporte PDF
  * 04/09/2026 - Exclusion de docentes con once meses en reporte Excel
+ * 18/09/2026 - Sebastian Jaimes - Forma de pago para cálculo de cátedra
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
@@ -52,4 +53,6 @@ public interface DocentePreasignacionReporteProjection {
     String getHoras();
 
     String getOnceMeses();
+
+    String getFormaPago();
 }

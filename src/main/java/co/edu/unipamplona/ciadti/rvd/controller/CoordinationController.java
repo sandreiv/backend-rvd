@@ -15,6 +15,9 @@
  * 10/09/2026 - Sebastian Jaimes - parseNullableLong a ParseUtils
  * 16/09/2026 - Listado de modalidades de contratación
  * 16/09/2026 - Novedad cambio de modalidad y horas
+ * 18/09/2026 - Presupuesto efectivo de carga en novedades
+ * 18/09/2026 - save-contract-modality-professor inserta fotografía
+ * 18/09/2026 - CARG_VALOR al aprobar novedad; autorizado en preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -36,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
@@ -72,6 +76,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -94,6 +99,7 @@ public class CoordinationController {
     private final PreasignacionReporteService preasignacionReporteService;
     private final PeriodoUniversidadService periodoUniversidadService;
     private final NovedadCargaDocenteService novedadCargaDocenteService;
+    private final CargaBudgetService cargaBudgetService;
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
@@ -471,6 +477,20 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Obtiene el presupuesto efectivo de una carga",
+        description = """
+            Suma totalContrato de cada docente con el registro efectivo:
+            NOVEDADCARGADOCENTE (estado distinto de 2) o CARGADOCENTE.
+            No modifica total-preload ni value-points-preload.
+            """
+    )
+    @GetMapping("/carga-budget/{idCarga}")
+    public ResponseEntity<CargaBudgetDTO> getCargaBudget(
+            @PathVariable Long idCarga) {
+        return ResponseEntity.ok(cargaBudgetService.getBudget(idCarga));
+    }
+
+    @Operation(
         summary = "Lista los tipos de actividad según la modalidad de contratación",
         description = "Consulta RESTRICCIONCARGA y, según la modalidad (MOCO), obtiene los tipos de actividad desde TIPOACTIVIDADMODALIDAD"
     )
@@ -689,6 +709,20 @@ public class CoordinationController {
     @PostMapping("/save-contract-modality-professor")
     public ResponseEntity<Void> saveContractModalityProfessor(@RequestBody CambioModalidadHoraCatedraticoDTO dto) {
         novedadCargaDocenteService.saveContractModalityProfessor(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Aprueba una novedad en revisión de un docente",
+        description = """
+            Pasa NOCD_ESTADONOVEDAD de 0 a 1 y actualiza CARG_VALOR.
+            No modifica CARG_VALORAUTORIZADO.
+            """
+    )
+    @PutMapping("/approve-professor-novelty/{idCargaDocente}")
+    public ResponseEntity<Void> approveProfessorNovelty(
+            @PathVariable Long idCargaDocente) {
+        novedadCargaDocenteService.approveProfessorNovelty(idCargaDocente);
         return ResponseEntity.ok().build();
     }
 

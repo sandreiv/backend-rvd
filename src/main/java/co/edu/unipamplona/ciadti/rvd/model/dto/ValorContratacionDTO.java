@@ -6,6 +6,7 @@
  * Fecha de creación: 03/08/2026
  * Modificaciones:
  * 03/08/2026 - Sebastian Jaimes - Creación inicial
+ * 18/09/2026 - Sebastian Jaimes - Salario mensual (PSM en cátedra)
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
@@ -18,5 +19,6 @@ public record ValorContratacionDTO(
     BigDecimal valorPrimaLegal,
     BigDecimal totalPrestaciones,
     BigDecimal valorContrato,
-    BigDecimal totalContrato
+    BigDecimal totalContrato,
+    BigDecimal salario
 ) {}

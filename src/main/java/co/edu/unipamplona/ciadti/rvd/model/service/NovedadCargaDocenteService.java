@@ -18,4 +18,6 @@ public interface NovedadCargaDocenteService {
             CambioDocenteDTO dto
     );
 
+
+    void approveProfessorNovelty(Long idCargaDocente);
 }

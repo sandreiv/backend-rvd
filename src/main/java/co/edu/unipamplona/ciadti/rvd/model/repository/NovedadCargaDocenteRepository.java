@@ -1,5 +1,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -358,6 +360,27 @@ public interface NovedadCargaDocenteRepository
     long countNoveltyInReview(
             @Param("idCargaDocente") Long idCargaDocente
     );
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.NOVEDADCARGADOCENTE NOCD
+            SET NOCD.NOCD_ESTADONOVEDAD = '1',
+                NOCD.NOCD_REGISTRADOPOR = :registradoPor,
+                NOCD.NOCD_FECHACAMBIO = SYSDATE
+            WHERE NOCD.CADO_ID = :idCargaDocente
+            AND NOCD.NOCD_ESTADONOVEDAD = '0'
+            AND NOCD.NOCD_FECHACAMBIO = (
+                SELECT MAX(SRC.NOCD_FECHACAMBIO)
+                FROM RVD.NOVEDADCARGADOCENTE SRC
+                WHERE SRC.CADO_ID = :idCargaDocente
+                AND SRC.NOCD_ESTADONOVEDAD = '0'
+            )
+            """, nativeQuery = true)
+    int updateEstadoNovedadInReview(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("registradoPor") String registradoPor
+    );
+
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
@@ -711,5 +734,192 @@ public interface NovedadCargaDocenteRepository
             @Param("idPersonaGeneral") Long idPersonaGeneral
     );
 
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO RVD.NOVEDADCARGADOCENTE
+            (
+                CADO_ID,
+                CARG_ID,
+                PEGE_ID,
+                MOCO_ID,
+                CACA_ID,
+                FECO_ID,
+                NOVE_ID,
+                NOCD_FECHANOVEDAD,
+                NOCD_OBSERVACIONNOVEDAD,
+                NOCD_FECHAINICIO,
+                NOCD_FECHAFIN,
+                NOCD_VALORCONTRATO,
+                NOCD_VALORPRESTACIONES,
+                NOCD_SALARIO,
+                NOCD_ESTADO,
+                NOCD_VIGENTE,
+                NOCD_HORAS,
+                NOCD_HORASDEEXCEPCION,
+                NOCD_VALORHORA,
+                NOCD_PUNTOS,
+                NOCD_VALORPUNTO,
+                NOCD_TOTALCONTRATO,
+                NOCD_SEMANAS,
+                NOCD_NIVELFORMACION,
+                NOCD_MOMENTO,
+                NOCD_ONCEMESES,
+                NOCD_ESTADONOVEDAD,
+                NOCD_REGISTRADOPOR,
+                NOCD_FECHACAMBIO
+            )
+            SELECT
+                SRC.CADO_ID,
+                SRC.CARG_ID,
+                NVL(:idPersonaGeneral, SRC.PEGE_ID),
+                :idModalidadContratacion,
+                :idCategoriaCatedratico,
+                :idFechasConvocatoria,
+                :idNovedad,
+                SYSDATE,
+                NULL,
+                :fechaInicio,
+                :fechaFin,
+                :valorContrato,
+                :valorPrestaciones,
+                :salario,
+                SRC.NOCD_ESTADO,
+                SRC.NOCD_VIGENTE,
+                :horas,
+                :horasDeExcepcion,
+                :valorHora,
+                :puntos,
+                :valorPunto,
+                :totalContrato,
+                :semanas,
+                SRC.NOCD_NIVELFORMACION,
+                SRC.NOCD_MOMENTO,
+                :onceMeses,
+                '0',
+                :registradoPor,
+                SYSDATE
+            FROM
+            (
+                SELECT NOCD.*
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.CADO_ID = :idCargaDocente
+                AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+                ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+            ) SRC
+            WHERE ROWNUM = 1
+            """, nativeQuery = true)
+    int insertContractModalityFromNovelty(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idModalidadContratacion") Long idModalidadContratacion,
+            @Param("idCategoriaCatedratico") Long idCategoriaCatedratico,
+            @Param("idFechasConvocatoria") Long idFechasConvocatoria,
+            @Param("idNovedad") Long idNovedad,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
+            @Param("valorContrato") BigDecimal valorContrato,
+            @Param("valorPrestaciones") BigDecimal valorPrestaciones,
+            @Param("salario") BigDecimal salario,
+            @Param("totalContrato") BigDecimal totalContrato,
+            @Param("valorHora") BigDecimal valorHora,
+            @Param("puntos") String puntos,
+            @Param("valorPunto") BigDecimal valorPunto,
+            @Param("semanas") String semanas,
+            @Param("horas") String horas,
+            @Param("horasDeExcepcion") String horasDeExcepcion,
+            @Param("onceMeses") String onceMeses,
+            @Param("registradoPor") String registradoPor
+    );
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO RVD.NOVEDADCARGADOCENTE
+            (
+                CADO_ID,
+                CARG_ID,
+                PEGE_ID,
+                MOCO_ID,
+                CACA_ID,
+                FECO_ID,
+                NOVE_ID,
+                NOCD_FECHANOVEDAD,
+                NOCD_OBSERVACIONNOVEDAD,
+                NOCD_FECHAINICIO,
+                NOCD_FECHAFIN,
+                NOCD_VALORCONTRATO,
+                NOCD_VALORPRESTACIONES,
+                NOCD_SALARIO,
+                NOCD_ESTADO,
+                NOCD_VIGENTE,
+                NOCD_HORAS,
+                NOCD_HORASDEEXCEPCION,
+                NOCD_VALORHORA,
+                NOCD_PUNTOS,
+                NOCD_VALORPUNTO,
+                NOCD_TOTALCONTRATO,
+                NOCD_SEMANAS,
+                NOCD_NIVELFORMACION,
+                NOCD_MOMENTO,
+                NOCD_ONCEMESES,
+                NOCD_ESTADONOVEDAD,
+                NOCD_REGISTRADOPOR,
+                NOCD_FECHACAMBIO
+            )
+            SELECT
+                CADO.CADO_ID,
+                CADO.CARG_ID,
+                NVL(:idPersonaGeneral, CADO.PEGE_ID),
+                :idModalidadContratacion,
+                :idCategoriaCatedratico,
+                :idFechasConvocatoria,
+                :idNovedad,
+                SYSDATE,
+                NULL,
+                :fechaInicio,
+                :fechaFin,
+                :valorContrato,
+                :valorPrestaciones,
+                :salario,
+                CADO.CADO_ESTADO,
+                CADO.CADO_VIGENTE,
+                :horas,
+                :horasDeExcepcion,
+                :valorHora,
+                :puntos,
+                :valorPunto,
+                :totalContrato,
+                :semanas,
+                CADO.CADO_NIVELFORMACION,
+                CADO.CADO_MOMENTO,
+                :onceMeses,
+                '0',
+                :registradoPor,
+                SYSDATE
+            FROM RVD.CARGADOCENTE CADO
+            WHERE CADO.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    int insertContractModalityFromCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idPersonaGeneral") Long idPersonaGeneral,
+            @Param("idModalidadContratacion") Long idModalidadContratacion,
+            @Param("idCategoriaCatedratico") Long idCategoriaCatedratico,
+            @Param("idFechasConvocatoria") Long idFechasConvocatoria,
+            @Param("idNovedad") Long idNovedad,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
+            @Param("valorContrato") BigDecimal valorContrato,
+            @Param("valorPrestaciones") BigDecimal valorPrestaciones,
+            @Param("salario") BigDecimal salario,
+            @Param("totalContrato") BigDecimal totalContrato,
+            @Param("valorHora") BigDecimal valorHora,
+            @Param("puntos") String puntos,
+            @Param("valorPunto") BigDecimal valorPunto,
+            @Param("semanas") String semanas,
+            @Param("horas") String horas,
+            @Param("horasDeExcepcion") String horasDeExcepcion,
+            @Param("onceMeses") String onceMeses,
+            @Param("registradoPor") String registradoPor
+    );
     
 }
