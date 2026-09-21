@@ -23,4 +23,6 @@ public interface NovedadCargaDocenteService {
             EliminarDocenteDTO dto
     );
 
+
+    void approveProfessorNovelty(Long idCargaDocente);
 }

@@ -6,6 +6,7 @@
  * Fecha de creación: 01/07/2026
  * Modificaciones:
  * 01/07/2026 - Sebastian Jaimes - Creación inicial
+ * 17/09/2026 - Sebastian Jaimes - Ignora valores de contrato enviados por el cliente
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
@@ -25,6 +26,9 @@ public interface CargaDocenteMapper {
     @Mapping(target = "fechaInicio", source = "fechasConvocatoria.fechaInicio")
     @Mapping(target = "fechaFin", source = "fechasConvocatoria.fechaFin")
     @Mapping(target = "salario", source = "asignacionSalarial")
+    @Mapping(target = "valorContrato", ignore = true)
+    @Mapping(target = "valorPrestaciones", ignore = true)
+    @Mapping(target = "totalContrato", ignore = true)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "fechaNovedad", ignore = true)
     @Mapping(target = "observacionNovedad", ignore = true)

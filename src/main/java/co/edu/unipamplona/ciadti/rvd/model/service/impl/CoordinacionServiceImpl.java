@@ -16,13 +16,16 @@
  * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
  * 10/09/2026 - Sebastian Jaimes - Coordinaciones contratación (preasignación + Aval Desarrollo)
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados para contratación
+ * 17/09/2026 - Sebastian Jaimes - Valor de contrato con rango de fechas inclusivo
+ * 18/09/2026 - Sebastian Jaimes - Contrato cátedra con horas de actividades
+ * 18/09/2026 - Sebastian Jaimes - Salario cátedra como PSM mensual
+ * 18/09/2026 - Sebastian Jaimes - CARG_VALOR y autorizado en preasignación
+ * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -37,6 +40,7 @@ import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaEstadoService;
+import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -177,6 +181,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
+import co.edu.unipamplona.ciadti.rvd.util.ValorContratacionCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -196,11 +201,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     private static final int ESCALA_MONETARIA = 2;
     private static final int ESCALA_PORCENTAJE = 2;
-    
-    private static final BigDecimal DIAS_MES = new BigDecimal("30");
-    private static final BigDecimal DIAS_ANIO = new BigDecimal("360");
-    private static final BigDecimal DIAS_VACACIONES = new BigDecimal("720");
-    private static final BigDecimal TASA_INTERES = new BigDecimal("0.12");
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
     private static final BigDecimal CIEN = new BigDecimal("100");
     
@@ -265,6 +265,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final HorasActividadesCargaMapper horasActividadesCargaMapper;
     private final ObservacionesCargaMapper observacionesCargaMapper;
     private final ConvocatoriaEstadoService convocatoriaEstadoService;
+    private final CargaBudgetService cargaBudgetService;
 
     @Override
     @Transactional(readOnly = true)
@@ -431,7 +432,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         if (idConvocatoria != null) {
             log.debug(
-                    "listForDesarrollo ===> Listando cargas APROBADO DECANO. idConvocatoria={}",
+                    "listForDesarrollo ===> Listando cargas APROBADO DECANO o AVAL DESARROLLO con novedad. idConvocatoria={}",
                     idConvocatoria
             );
 
@@ -440,7 +441,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         log.debug(
-                "listForDesarrollo ===> Listando cargas APROBADO DECANO por periodo. idPeriodoUniversidad={}",
+                "listForDesarrollo ===> Listando cargas APROBADO DECANO o AVAL DESARROLLO con novedad por periodo. idPeriodoUniversidad={}",
                 idPeriodoUniversidad
         );
 
@@ -943,8 +944,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                     idPersonaGeneral, idCategoriaCatedratico);
             throw new ApiException(
                     HttpStatus.NOT_FOUND,
-                    "No existe escalafon para la persona " + idPersonaGeneral
-                            + " y la categoria " + idCategoriaCatedratico);
+                    "No existe escalafon para la persona.");
         }
 
         BigDecimal puntosDocente = parseValor(escalafon.getPuntos(), "puntos del docente (escalafon)");
@@ -1013,10 +1013,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setVigente("1");
         entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
+        applyInclusiveContractValues(entity);
         Long idNewCargaDocente = cargaDocenteRepository.save(entity).getId();
 
         // Registrar el estado dentro del historial
         registerProfessorPreloadHistory(idNewCargaDocente);
+        cargaBudgetService.refreshPreassignmentTotals(dto.idCarga());
 
         log.info("addProfessor ===> Docente agregado. idCargaDocente={}", entity.getId());
     }
@@ -1470,7 +1472,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setOnceMeses(
                 FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
+        applyInclusiveContractValues(entity);
         cargaDocenteRepository.save(entity);
+        cargaBudgetService.refreshPreassignmentTotals(entity.getIdCarga());
         log.info("updateProfessor ===> Docente actualizado. idCargaDocente={}", idCargaDocente);
     }
 
@@ -1497,6 +1501,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             historialCargaDocenteRepository.deleteByProcedure(
                     registro.getId(), registradoPor);
         }
+        cargaBudgetService.refreshPreassignmentTotals(entity.getIdCarga());
 
         log.info("deleteProfessor ===> Docente eliminado. idCargaDocente={}", idCargaDocente);
     }
@@ -1842,6 +1847,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             DetalleCargaDocenteEntity saved = detalleCargaDocenteRepository.save(entity);
             saveRelacionesCargaProyecto(saved.getId(), detalle.relacionCargaProyecto());
         }
+        detalleCargaDocenteRepository.flush();
+        refreshCatedraContractValues(dto.idCargaDocente());
+        syncPreassignmentTotals(dto.idCargaDocente());
         log.info("saveDetailProfessorPreload ===> Detalle precarga docente guardado. idCargaDocente={}", dto.idCargaDocente());
     }
 
@@ -1885,6 +1893,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
         entity.setFechaCambio(new Date());
         detalleCargaDocenteRepository.save(entity);
+        detalleCargaDocenteRepository.flush();
 
         relacionCargaProyectoRepository.deleteByIdDetalleCargaDocente(
                 idDetalleCargaDocente);
@@ -1892,6 +1901,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 idDetalleCargaDocente,
                 detalleCargaDocenteMapper.toRelacionesCargaProyecto(
                         actividad.relacionCargaProyecto()));
+        refreshCatedraContractValues(dto.idCargaDocente());
+        syncPreassignmentTotals(dto.idCargaDocente());
         log.info("updateDetailProfessorPreload ===> Detalle precarga actualizado. idDetalle={}", idDetalleCargaDocente);
     }
 
@@ -2160,6 +2171,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         // Registrar el estado dentro del historial
         registerProfessorPreloadHistory(idNewCargaDocente);
+        cargaBudgetService.refreshPreassignmentTotals(dto.idCarga());
         
         log.info("saveCareerProfessorPreload ===> Docente planta guardado en precarga. idCargaDocente={}", entity.getId());
     }
@@ -2191,9 +2203,22 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         validatePreassignmentWriteAllowedByDetalle(idDetalleCargaDocente);
 
+        DetalleCargaDocenteEntity detalle =
+                detalleCargaDocenteRepository
+                        .findById(idDetalleCargaDocente)
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "No existe el detalle de carga docente con id "
+                                        + idDetalleCargaDocente));
+        Long idCargaDocente = detalle.getIdCargaDocente();
+
         detalleCargaDocenteRepository.deleteByProcedure(
                 idDetalleCargaDocente,
                 RegistradoPorUtils.value(Accion.DELETE));
+        if (idCargaDocente != null) {
+            refreshCatedraContractValues(idCargaDocente);
+            syncPreassignmentTotals(idCargaDocente);
+        }
 
         log.info("deleteProfessorActivity ===> Actividad docente eliminada. idDetalle={}", idDetalleCargaDocente);
     }
@@ -2620,11 +2645,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 .map(item -> item.horas() != null ? item.horas() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        TotalesContratoCarga totalesContrato = sumInclusiveContractValues(idCarga);
+
         TotalPreasignacionDTO result = new TotalPreasignacionDTO(
                 toLongValue(totales, 0),
-                toBigDecimalValue(totales, 1),
-                toBigDecimalValue(totales, 2),
-                toBigDecimalValue(totales, 3),
+                totalesContrato.totalPrestaciones(),
+                totalesContrato.totalContratos(),
+                totalesContrato.totalPreasignacion(),
                 horasPorTipo,
                 sumaHoras);
 
@@ -3063,52 +3090,21 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional(readOnly = true)
     public ValorContratacionDTO getContractValue(Long idCargaDocente) {
         log.debug("getContractValue ===> idCargaDocente={}", idCargaDocente);
-        
+
         CargaDocenteEntity cargaDocente = findCargaDocenteOrThrow(idCargaDocente);
-        BigDecimal asignacionSalarial = resolveAsignacionSalarialContrato(cargaDocente);
-        long cantidadDias = resolveCantidadDiasContrato(cargaDocente);
-        BigDecimal dias = BigDecimal.valueOf(cantidadDias);
-
-        BigDecimal valorContrato = asignacionSalarial
-                .divide(DIAS_MES, 8, RoundingMode.HALF_UP)
-                .multiply(dias)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal valorCesantias = asignacionSalarial
-                .multiply(dias)
-                .divide(DIAS_ANIO, ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal valorIntereses = valorCesantias
-                .multiply(dias)
-                .divide(DIAS_ANIO, 8, RoundingMode.HALF_UP)
-                .multiply(TASA_INTERES)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal valorPrimaLegal = valorCesantias;
-        BigDecimal valorVacaciones = asignacionSalarial
-                .multiply(dias)
-                .divide(DIAS_VACACIONES, ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal totalPrestaciones = valorCesantias
-                .add(valorIntereses)
-                .add(valorPrimaLegal)
-                .add(valorVacaciones)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-
-        BigDecimal totalContrato = valorContrato
-                .add(totalPrestaciones)
-                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+        ValorContratacionDTO valor = calculateInclusiveContractValue(cargaDocente);
+        if (valor == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No hay datos suficientes para calcular el valor del contrato");
+        }
+        long cantidadDias = ValorContratacionCalculator.countInclusiveDays(
+                cargaDocente.getFechaInicio(),
+                cargaDocente.getFechaFin());
 
         log.info("getContractValue ===> id={}, dias={}, totalContrato={}",
-                idCargaDocente, cantidadDias, totalContrato);
-        return new ValorContratacionDTO(
-                valorVacaciones,
-                valorCesantias,
-                valorIntereses,
-                valorPrimaLegal,
-                totalPrestaciones,
-                valorContrato,
-                totalContrato);
+                idCargaDocente, cantidadDias, valor.totalContrato());
+        return valor;
     }
 
     @Override
@@ -3153,8 +3149,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Transactional(readOnly = true)
     public List<CentroCostoResumenDTO> listCostCenters(Long idCargaDocente) {
         log.debug("listCostCenters ===> idCargaDocente={}", idCargaDocente);
-        ValorContratacionDTO valor = getContractValue(idCargaDocente);
-        return buildCostCenters(idCargaDocente, valor.totalContrato());
+        CargaDocenteEntity cargaDocente = findCargaDocenteOrThrow(idCargaDocente);
+        ValorContratacionDTO valor = calculateInclusiveContractValue(cargaDocente);
+        BigDecimal totalContrato = valor != null
+                ? valor.totalContrato()
+                : BigDecimal.ZERO;
+        return buildCostCenters(idCargaDocente, totalContrato);
     }
 
     @Override
@@ -3193,7 +3193,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         ValorContratacionDTO valorContratacion =
                 docentePlanta
                         ? null
-                        : getContractValue(idCargaDocente);
+                        : calculateInclusiveContractValue(cargaDocente);
 
         List<ActividadHorasResumenDTO> horasActividades =
                 listActivityHours(idCargaDocente);
@@ -3673,17 +3673,149 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
     }
 
-    private long resolveCantidadDiasContrato(CargaDocenteEntity cargaDocente) {
-        LocalDate fechaInicio = cargaDocente.getFechaInicio();
-        LocalDate fechaFin = cargaDocente.getFechaFin();
-        if (fechaInicio == null || fechaFin == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente no tiene fechas de inicio y fin");
+    private void applyInclusiveContractValues(CargaDocenteEntity entity) {
+        ValorContratacionDTO valor = calculateInclusiveContractValue(entity);
+        if (valor == null) {
+            if (entity != null
+                    && isFormaPagoCatedra(entity.getIdModalidadContratacion())) {
+                entity.setValorContrato(null);
+                entity.setValorPrestaciones(null);
+                entity.setTotalContrato(null);
+                entity.setSalario(null);
+            }
+            return;
         }
+        entity.setValorContrato(valor.valorContrato());
+        entity.setValorPrestaciones(valor.totalPrestaciones());
+        entity.setTotalContrato(valor.totalContrato());
+        if (isFormaPagoCatedra(entity.getIdModalidadContratacion())) {
+            entity.setSalario(valor.salario());
+        }
+    }
 
-        if (fechaFin.isBefore(fechaInicio)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La fecha fin no puede ser anterior a la fecha inicio");
+    private TotalesContratoCarga sumInclusiveContractValues(Long idCarga) {
+        BigDecimal totalPrestaciones = BigDecimal.ZERO;
+        BigDecimal totalContratos = BigDecimal.ZERO;
+        List<CargaDocenteEntity> docentes =
+                cargaDocenteRepository.findByIdCarga(idCarga);
+        for (CargaDocenteEntity docente : docentes) {
+            ValorContratacionDTO valor =
+                    calculateInclusiveContractValue(docente);
+            if (valor == null) {
+                continue;
+            }
+            totalPrestaciones = totalPrestaciones.add(
+                    valor.totalPrestaciones());
+            totalContratos = totalContratos.add(valor.valorContrato());
         }
-        return ChronoUnit.DAYS.between(fechaInicio, fechaFin) + 1;
+        BigDecimal totalPreasignacion = totalPrestaciones
+                .add(totalContratos)
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+        return new TotalesContratoCarga(
+                totalPrestaciones.setScale(
+                        ESCALA_MONETARIA, RoundingMode.HALF_UP),
+                totalContratos.setScale(
+                        ESCALA_MONETARIA, RoundingMode.HALF_UP),
+                totalPreasignacion);
+    }
+
+    private ValorContratacionDTO calculateInclusiveContractValue(
+            CargaDocenteEntity entity) {
+        if (!canCalculateContractValue(entity)) {
+            return null;
+        }
+        if (isFormaPagoCatedra(entity.getIdModalidadContratacion())) {
+            return ValorContratacionCalculator.calculateCatedra(
+                    resolveHorasSemanalesCatedra(entity),
+                    parseHorasDetalle(entity.getSemanas()),
+                    entity.getValorHora(),
+                    entity.getFechaInicio(),
+                    entity.getFechaFin());
+        }
+        BigDecimal asignacion = resolveAsignacionSalarialContrato(entity);
+        return ValorContratacionCalculator.calculate(
+                asignacion,
+                entity.getFechaInicio(),
+                entity.getFechaFin());
+    }
+
+    private boolean canCalculateContractValue(CargaDocenteEntity entity) {
+        if (entity == null || isDocentePlanta(entity)) {
+            return false;
+        }
+        if (entity.getFechaInicio() == null
+                || entity.getFechaFin() == null) {
+            return false;
+        }
+        if (isFormaPagoCatedra(entity.getIdModalidadContratacion())) {
+            return entity.getValorHora() != null
+                    && parseHorasDetalle(entity.getSemanas())
+                            .compareTo(BigDecimal.ZERO) > 0
+                    && resolveHorasSemanalesCatedra(entity)
+                            .compareTo(BigDecimal.ZERO) > 0;
+        }
+        if (entity.getSalario() != null) {
+            return true;
+        }
+        return entity.getValorPunto() != null
+                && StringUtils.hasText(entity.getPuntos());
+    }
+
+    private boolean isFormaPagoCatedra(Long idModalidadContratacion) {
+        String formaPago = resolveFormaPago(idModalidadContratacion);
+        return ValorContratacionCalculator.isCatedra(formaPago);
+    }
+
+    private void refreshCatedraContractValues(Long idCargaDocente) {
+        CargaDocenteEntity entity = findCargaDocenteOrThrow(idCargaDocente);
+        if (!isFormaPagoCatedra(entity.getIdModalidadContratacion())) {
+            return;
+        }
+        BigDecimal horas = sumHorasActividades(idCargaDocente);
+        entity.setHoras(toHorasString(horas));
+        applyInclusiveContractValues(entity);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+        entity.setFechaCambio(new Date());
+        cargaDocenteRepository.save(entity);
+    }
+
+    private void syncPreassignmentTotals(Long idCargaDocente) {
+        CargaDocenteEntity entity = findCargaDocenteOrThrow(idCargaDocente);
+        cargaBudgetService.refreshPreassignmentTotals(entity.getIdCarga());
+    }
+
+    private BigDecimal resolveHorasSemanalesCatedra(CargaDocenteEntity entity) {
+        BigDecimal stored = parseHorasDetalle(entity.getHoras());
+        if (stored.compareTo(BigDecimal.ZERO) > 0) {
+            return stored;
+        }
+        if (entity.getId() == null) {
+            return BigDecimal.ZERO;
+        }
+        return sumHorasActividades(entity.getId());
+    }
+
+    private BigDecimal sumHorasActividades(Long idCargaDocente) {
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos =
+                loadDetallesUnicosByCargaDocente(idCargaDocente);
+        BigDecimal total = BigDecimal.ZERO;
+        for (DetalleCargaDocenteListadoProjection detalle : unicos.values()) {
+            total = total.add(parseHorasDetalle(detalle.getHoras()));
+        }
+        return total;
+    }
+
+    private String toHorasString(BigDecimal horas) {
+        if (horas == null) {
+            return null;
+        }
+        return horas.stripTrailingZeros().toPlainString();
+    }
+
+    private record TotalesContratoCarga(
+            BigDecimal totalPrestaciones,
+            BigDecimal totalContratos,
+            BigDecimal totalPreasignacion) {
     }
 
     private String resolveCodigoActividad(DetalleCargaDocenteListadoProjection detalle) {
