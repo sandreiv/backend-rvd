@@ -3521,10 +3521,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<NovedadListadoDTO> listNovelties() {
-        List<NovedadListadoDTO> novedades = novedadMapper.toNovedadListadoDTOList(novedadRepository.findAllNovedadesDeActualizacion());
-        return novedades;
-    }
+        public List<NovedadListadoDTO> listNovelties(String accion) {
+
+        String accionNormalizada = StringUtils.hasText(accion)
+                ? accion.trim().toUpperCase()
+                : "ACTUALIZAR";
+
+        return novedadMapper.toNovedadListadoDTOList(
+                novedadRepository.findAllNovedadesPorAccion(
+                        accionNormalizada
+                )
+        );
+     }
 
     @Override
     @Transactional(readOnly = true)

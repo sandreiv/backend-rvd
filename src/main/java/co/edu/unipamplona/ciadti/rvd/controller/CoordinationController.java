@@ -47,6 +47,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
@@ -659,13 +660,20 @@ public class CoordinationController {
 
 
     @Operation(
-        summary = "Obtiene todas las novedades con acción ACTUALIZAR",
-        description = "Retorna las novedades acción ACTUALIZAR, incluyendo el componente de formulario asociado"
+        summary = "Obtiene las novedades por acción",
+        description = "Retorna las novedades de la acción solicitada. Si no se envía acción, consulta ACTUALIZAR"
     )
     @GetMapping("/list-novelties")
-    public ResponseEntity<List<NovedadListadoDTO>> listNovelties() {
-        List<NovedadListadoDTO> novedades = coordinacionService.listNovelties();
-        return new ResponseEntity<>(novedades, HttpStatus.OK);
+    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(
+            @RequestParam(defaultValue = "ACTUALIZAR") String accion) {
+
+        List<NovedadListadoDTO> novedades =
+                coordinacionService.listNovelties(accion);
+
+        return new ResponseEntity<>(
+                novedades,
+                HttpStatus.OK
+        );
     }
 
     @Operation(
@@ -709,4 +717,14 @@ public class CoordinationController {
         novedadCargaDocenteService.changeProfessor(dto);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/novelties/delete-professor")
+    public ResponseEntity<Void> requestDeleteProfessor(
+            @RequestBody EliminarDocenteDTO dto) {
+
+        novedadCargaDocenteService.requestDeleteProfessor(dto);
+
+        return ResponseEntity.ok().build();
+    }
+
 }

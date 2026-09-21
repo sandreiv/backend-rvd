@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
@@ -44,6 +45,8 @@ public class NovedadCargaDocenteServiceImpl
     private static final String COMPONENT_ASSIGN_NAME_NN = "asign-name-nn";
 
     private static final String COMPONENT_CONTRACT_MODALITY = "change-contract-modality";
+
+    private static final String COMPONENT_DELETE_PROFESSOR = "delete-professor";
 
     private static final String ESTADO_NOVEDAD_REVISION = "0";
 
@@ -324,6 +327,103 @@ public class NovedadCargaDocenteServiceImpl
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "No fue posible registrar la novedad de cambio de docente"
             );
+        }
+    }
+
+    @Override
+    @Transactional
+        public void requestDeleteProfessor(EliminarDocenteDTO dto) {
+
+        if (dto == null
+                || dto.idCargaDocente() == null
+                || dto.idNovedad() == null) {
+
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "La carga docente y la novedad son obligatorias"
+                );
+        }
+
+        cargaDocenteRepository
+                .findById(dto.idCargaDocente())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id "
+                                + dto.idCargaDocente()
+                ));
+
+        NovedadEntity novedad =
+                novedadRepository
+                        .findById(dto.idNovedad())
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "No existe la novedad seleccionada"
+                        ));
+
+        validateDeleteProfessorType(novedad);
+
+        if (novedadCargaDocenteRepository
+                .countNoveltyInReview(dto.idCargaDocente()) > 0) {
+
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        "La carga docente ya tiene una novedad en revisión"
+                );
+        }
+
+        Optional<NovedadCargaDocenteEntity> novedadOrigen =
+                novedadCargaDocenteRepository
+                        .findProfessorRecordToDuplicateNovelty(
+                                dto.idCargaDocente()
+                        );
+
+        String registradoPor =
+                RegistradoPorUtils.value(Accion.INSERT);
+
+        int inserted;
+
+        if (novedadOrigen.isPresent()) {
+
+                inserted = novedadCargaDocenteRepository
+                        .insertDeleteProfessorFromNovelty(
+                                dto.idCargaDocente(),
+                                dto.idNovedad(),
+                                registradoPor
+                        );
+
+        } else {
+
+                inserted = novedadCargaDocenteRepository
+                        .insertDeleteProfessorFromCargaDocente(
+                                dto.idCargaDocente(),
+                                dto.idNovedad(),
+                                registradoPor
+                        );
+        }
+
+        if (inserted != 1) {
+                throw new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No fue posible registrar la novedad de eliminación del docente"
+                );
+        }
+    }
+
+    private void validateDeleteProfessorType(
+                NovedadEntity novedad
+        ) {
+
+        String component = novedad.getComponente();
+
+        if (component == null
+                || !COMPONENT_DELETE_PROFESSOR.equalsIgnoreCase(
+                        component.trim()
+                )) {
+
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "La novedad seleccionada no corresponde a Eliminar docente"
+                );
         }
     }
 

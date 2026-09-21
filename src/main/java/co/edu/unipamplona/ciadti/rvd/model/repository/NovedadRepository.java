@@ -27,12 +27,15 @@ public interface NovedadRepository
             SELECT
                 NOVE.*
             FROM RVD.NOVEDADES NOVE
-            WHERE NOVE.NOVE_ACCION = 'ACTUALIZAR'
+            WHERE UPPER(TRIM(NOVE.NOVE_ACCION)) =
+                UPPER(TRIM(:accion))
             ORDER BY
                 NOVE.NOVE_ACCION,
                 NOVE.NOVE_TIPO
             """, nativeQuery = true)
-    List<NovedadEntity> findAllNovedadesDeActualizacion();
+    List<NovedadEntity> findAllNovedadesPorAccion(
+            @Param("accion") String accion
+    );
 
     @Procedure(name = "NovedadEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(
@@ -42,4 +45,5 @@ public interface NovedadRepository
             @Param("P_NOVE_REGISTRADOPOR")
             String registradoPor
     );
+
 }

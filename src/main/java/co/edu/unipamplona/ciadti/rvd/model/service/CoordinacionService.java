@@ -202,5 +202,5 @@ public interface CoordinacionService {
 
     void approvePreloadDevelopment(Long idCarga);
     
-    List<NovedadListadoDTO> listNovelties();
+    List<NovedadListadoDTO> listNovelties(String accion);
 }
