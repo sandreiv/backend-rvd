@@ -802,7 +802,18 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON CECO.CECO_ID = ASCC.CECO_ID
             WHERE CONV.CONV_ID = :convId
             AND CONV.CONV_ESTADO = '1'
-            AND UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'APROBADO DECANO'
+            AND (
+                UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'APROBADO DECANO'
+                OR (
+                    UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'AVAL DESARROLLO'
+                    AND EXISTS (
+                        SELECT 1
+                        FROM RVD.NOVEDADCARGADOCENTE NOCD
+                        WHERE NOCD.CARG_ID = CARG.CARG_ID
+                          AND NOCD.NOCD_ESTADONOVEDAD = '0'
+                    )
+                )
+            )
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,
@@ -878,7 +889,18 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON CECO.CECO_ID = ASCC.CECO_ID
             WHERE CONV.PEUN_ID = :idPeriodoUniversidad
             AND CONV.CONV_ESTADO = '1'
-            AND UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'APROBADO DECANO'
+            AND (
+                UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'APROBADO DECANO'
+                OR (
+                    UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'AVAL DESARROLLO'
+                    AND EXISTS (
+                        SELECT 1
+                        FROM RVD.NOVEDADCARGADOCENTE NOCD
+                        WHERE NOCD.CARG_ID = CARG.CARG_ID
+                          AND NOCD.NOCD_ESTADONOVEDAD = '0'
+                    )
+                )
+            )
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
                 UNID_AREA.UNID_NOMBRE,

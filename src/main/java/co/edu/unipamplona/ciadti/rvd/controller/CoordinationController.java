@@ -18,6 +18,7 @@
  * 18/09/2026 - Presupuesto efectivo de carga en novedades
  * 18/09/2026 - save-contract-modality-professor inserta fotografía
  * 18/09/2026 - CARG_VALOR al aprobar novedad; autorizado en preasignación
+ * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -137,6 +138,9 @@ public class CoordinationController {
             Identidad y roles salen del JWT (idPersona + roles del bootstrap).
             Coordinador: sus coordinaciones en PERSONACOORDINACION.
             Decano: coordinaciones hijas de sus facultades, carga INSCRITO.
+            Desarrollo academico: APROBADO DECANO, o AVAL DESARROLLO
+            con al menos un docente en NOVEDADCARGADOCENTE
+            (NOCD_ESTADONOVEDAD = 0).
             Sin idConvocatoria: requiere idPeriodoUniversidad.
             La carga incluye valor (CARG_VALOR) y valorAutorizado
             (CARG_VALORAUTORIZADO).
@@ -535,7 +539,6 @@ public class CoordinationController {
         return new ResponseEntity<>(coordinacionService.listCostCenters(idCargaDocente), HttpStatus.OK);
     }
 
-    /* CAMBIAR A VISTA SEGÚN LANZADOR */
     @Operation(
         summary = "Genera el reporte Excel de preasignación de una carga",
         description = """
@@ -676,6 +679,9 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+    //------------------------------------------------------------
+    // --------------------NOVEDADES------------------------------
+    // -----------------------------------------------------------
 
     @Operation(
         summary = "Obtiene todas las novedades con acción ACTUALIZAR",
