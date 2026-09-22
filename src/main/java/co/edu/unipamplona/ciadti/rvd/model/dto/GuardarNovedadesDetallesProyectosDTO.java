@@ -6,6 +6,7 @@ public record GuardarNovedadesDetallesProyectosDTO(
         Long idNovedad,
         Long idCargaDocente,
         List<DetalleCargaDocenteDTO> detallesActualizados,
-        List<DetalleCargaDocenteItemDTO> detallesNuevos
+        List<DetalleCargaDocenteItemDTO> detallesNuevos,
+        List<Long> detallesEliminados
 ) {
 }

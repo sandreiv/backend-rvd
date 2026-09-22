@@ -19,10 +19,6 @@ public interface NovedadCargaDocenteService {
         GuardarNovedadesDetallesProyectosDTO dto
     );
 
-    void deleteProfessorActivityNovelty(
-        Long idDetalleNovedadCargaDocente
-    );
-
     void changeProfessor(
             CambioDocenteDTO dto
     );
