@@ -9,6 +9,7 @@
  * 18/09/2026 - Sebastian Jaimes - persiste montos de contratación en
  * la fotografía nueva
  * 18/09/2026 - Sebastian Jaimes - CARG_VALOR solo al aprobar novedad
+ * 22/09/2026 - Reasignación de actividades FAD y proyectos
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -38,6 +39,7 @@ import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
@@ -309,6 +311,52 @@ class NovedadCargaDocenteServiceImplTest {
     }
 
     @Test
+    void acceptsDirectActivitiesNoveltyBeforeReviewCheck() {
+        stubActivityNovelty(11L, "change-direct-activities");
+        when(novedadCargaDocenteRepository.countNoveltyInReview(CADO_ID))
+                .thenReturn(1L);
+
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> service.saveNoveltyProjectActivities(
+                        activityNoveltyDto(11L)));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(novedadCargaDocenteRepository)
+                .countNoveltyInReview(CADO_ID);
+    }
+
+    @Test
+    void acceptsProjectActivitiesNoveltyBeforeReviewCheck() {
+        stubActivityNovelty(7L, "change-project-activities");
+        when(novedadCargaDocenteRepository.countNoveltyInReview(CADO_ID))
+                .thenReturn(1L);
+
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> service.saveNoveltyProjectActivities(
+                        activityNoveltyDto(7L)));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(novedadCargaDocenteRepository)
+                .countNoveltyInReview(CADO_ID);
+    }
+
+    @Test
+    void rejectsActivityNoveltyWhenComponentDoesNotMatch() {
+        stubActivityNovelty(3L, "asign-name-nn");
+
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> service.saveNoveltyProjectActivities(
+                        activityNoveltyDto(3L)));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(novedadCargaDocenteRepository, never())
+                .countNoveltyInReview(any());
+    }
+
+    @Test
     void approveInReviewNoveltyRefreshesCargValorOnly() {
         stubCargaDocente();
         when(novedadCargaDocenteRepository.countNoveltyInReview(CADO_ID))
@@ -339,6 +387,24 @@ class NovedadCargaDocenteServiceImplTest {
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
         verify(cargaBudgetService, never()).refreshCargValor(any());
+    }
+
+    private void stubActivityNovelty(Long idNovedad, String componente) {
+        NovedadEntity novedad = new NovedadEntity();
+        novedad.setId(idNovedad);
+        novedad.setComponente(componente);
+        when(novedadRepository.findById(idNovedad))
+                .thenReturn(Optional.of(novedad));
+    }
+
+    private GuardarNovedadesDetallesProyectosDTO activityNoveltyDto(
+            Long idNovedad) {
+        return new GuardarNovedadesDetallesProyectosDTO(
+                idNovedad,
+                CADO_ID,
+                List.of(),
+                List.of(detalle()),
+                List.of());
     }
 
     private void stubHappyPath() {

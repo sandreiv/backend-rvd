@@ -19,6 +19,7 @@
  * 18/09/2026 - save-contract-modality-professor inserta fotografía
  * 18/09/2026 - CARG_VALOR al aprobar novedad; autorizado en preasignación
  * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
+ * 22/09/2026 - Novedad de actividades: FAD, CTEI e ISU
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -618,9 +619,7 @@ public class CoordinationController {
         description = "Actualiza el estado de la carga a APROBADO DECANO"
     )
     @PutMapping("/approve-preload-dean/{idCarga}")
-    public ResponseEntity<Void> approvePreloadDean(
-            @PathVariable Long idCarga
-    ) {
+    public ResponseEntity<Void> approvePreloadDean(@PathVariable Long idCarga) {
         coordinacionService.approvePreloadDean(idCarga);
         return ResponseEntity.ok().build();
     }
@@ -632,8 +631,7 @@ public class CoordinationController {
     @PutMapping("/decline-preload-development/{idCarga}")
     public ResponseEntity<Void> declinePreloadDevelopment(
             @PathVariable Long idCarga,
-            @RequestBody ObservacionDecanoDTO dto
-    ) {
+            @RequestBody ObservacionDecanoDTO dto) {
         coordinacionService.declinePreload(idCarga, dto);
         return ResponseEntity.ok().build();
     }
@@ -643,9 +641,7 @@ public class CoordinationController {
         description = "Actualiza el estado de la carga a AVAL DESARROLLO"
     )
     @PutMapping("/approve-preload-development/{idCarga}")
-    public ResponseEntity<Void> approvePreloadDevelopment(
-            @PathVariable Long idCarga
-    ) {
+    public ResponseEntity<Void> approvePreloadDevelopment(@PathVariable Long idCarga) {
         coordinacionService.approvePreloadDevelopment(idCarga);
         return ResponseEntity.ok().build();
     }
@@ -684,8 +680,7 @@ public class CoordinationController {
                 + "el estado del docente de En registro a Para verificar"
     )
     @PostMapping("/to-verify-professor")
-    public ResponseEntity<Void> sendProfessorToVerification(
-            @RequestBody EnvioVerificacionDetalleCargaDocenteDTO dto) {
+    public ResponseEntity<Void> sendProfessorToVerification(@RequestBody EnvioVerificacionDetalleCargaDocenteDTO dto) {
 
         coordinacionService.sendProfessorToVerification(dto);
 
@@ -701,15 +696,9 @@ public class CoordinationController {
         description = "Retorna las novedades de la acción solicitada. Si no se envía acción, consulta ACTUALIZAR"
     )
     @GetMapping("/list-novelties")
-    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(
-            @RequestParam(defaultValue = "ACTUALIZAR") String accion) {
-
-        List<NovedadListadoDTO> novedades =
-                coordinacionService.listNovelties(accion);
-
-        return new ResponseEntity<>(
-                novedades,
-                HttpStatus.OK
+    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(@RequestParam(defaultValue = "ACTUALIZAR") String accion) {
+        List<NovedadListadoDTO> novedades =coordinacionService.listNovelties(accion);
+        return new ResponseEntity<>(novedades, HttpStatus.OK
         );
     }
 
@@ -745,8 +734,7 @@ public class CoordinationController {
             """
     )
     @PutMapping("/approve-professor-novelty/{idCargaDocente}")
-    public ResponseEntity<Void> approveProfessorNovelty(
-            @PathVariable Long idCargaDocente) {
+    public ResponseEntity<Void> approveProfessorNovelty(@PathVariable Long idCargaDocente) {
         novedadCargaDocenteService.approveProfessorNovelty(idCargaDocente);
         return ResponseEntity.ok().build();
     }
@@ -762,30 +750,31 @@ public class CoordinationController {
     }
 
     @PostMapping("/novelties/change-professor")
-    public ResponseEntity<Void> changeProfessor(
-            @RequestBody CambioDocenteDTO dto) {
-
+    public ResponseEntity<Void> changeProfessor(@RequestBody CambioDocenteDTO dto) {
         novedadCargaDocenteService.changeProfessor(dto);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/novelties/delete-professor")
-    public ResponseEntity<Void> requestDeleteProfessor(
-            @RequestBody EliminarDocenteDTO dto) {
-
+    public ResponseEntity<Void> requestDeleteProfessor(@RequestBody EliminarDocenteDTO dto) {
         novedadCargaDocenteService.requestDeleteProfessor(dto);
-
         return ResponseEntity.ok().build();
     }
 
 
     @Operation(
         summary = "Guarda, actualiza o elimina las novedades en detalles de actividades",
-        description = "Guarda, actualiza o elimina las novedades en detalles de actividades. Si es la primera novedad, crea los registros en detalles novedades" +
-        "Si no es la primera novedad, comprueba si hubieron cambios para crear los nuevos registros, actualizar los que sufrieron cambios o eliminar los que ya no estan"
+        description = """
+            Guarda, actualiza o elimina novedades de cualquier tipo de
+            actividad (FAD, CTEI, ISU u otras). Acepta las novedades
+            change-project-activities y change-direct-activities.
+            Si es la primera novedad, crea los registros en
+            DETALLENOVEDADCARGADOCENTE. Si no, crea, actualiza o elimina
+            según los cambios enviados.
+            """
     )
     @PostMapping("/save-novelty-detail-professor-preload")
-    public ResponseEntity<Void> saveNoveltyProjectActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
+    public ResponseEntity<Void> saveNoveltyActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
         novedadCargaDocenteService.saveNoveltyProjectActivities(dto);
         return ResponseEntity.ok().build();
     }

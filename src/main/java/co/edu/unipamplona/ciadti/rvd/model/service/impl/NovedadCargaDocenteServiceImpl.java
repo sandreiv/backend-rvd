@@ -12,6 +12,7 @@
  * de contratación, no con el tope de presupuesto
  * 18/09/2026 - Sebastian Jaimes - no actualiza CARG_VALOR al crear;
  * sí al aprobar
+ * 22/09/2026 - Reasignación de actividades: FAD, CTEI e ISU
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -95,6 +96,8 @@ public class NovedadCargaDocenteServiceImpl
     private static final String COMPONENT_DELETE_PROFESSOR = "delete-professor";
 
     private static final String COMPONENT_CHANGE_PROJECT_ACTIVITIES = "change-project-activities";
+
+    private static final String COMPONENT_CHANGE_DIRECT_ACTIVITIES = "change-direct-activities";
 
     private static final String ESTADO_NOVEDAD_REVISION = "0";
 
@@ -752,22 +755,22 @@ public class NovedadCargaDocenteServiceImpl
     private void validateChangeProjectActivitiesType(
             NovedadEntity novedad
     ) {
-
-        String component =novedad.getComponente();
-
-        if (
-            component == null ||
-            !COMPONENT_CHANGE_PROJECT_ACTIVITIES
-                    .equalsIgnoreCase(
-                            component.trim()
-                    )
-        ) {
-
+        String component = novedad.getComponente();
+        if (!isChangeActivitiesComponent(component)) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "La novedad seleccionada no corresponde a Reasignación de proyectos docente"
+                    "La novedad seleccionada no corresponde a reasignación de actividades docente"
             );
         }
+    }
+
+    private boolean isChangeActivitiesComponent(String component) {
+        if (component == null) {
+            return false;
+        }
+        String value = component.trim();
+        return COMPONENT_CHANGE_PROJECT_ACTIVITIES.equalsIgnoreCase(value)
+                || COMPONENT_CHANGE_DIRECT_ACTIVITIES.equalsIgnoreCase(value);
     }
 
     private void validateDetalleItem(DetalleCargaDocenteItemDTO detalle) {
