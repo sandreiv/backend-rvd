@@ -18,6 +18,7 @@
  * 18/09/2026 - Presupuesto efectivo de carga en novedades
  * 18/09/2026 - save-contract-modality-professor inserta fotografía
  * 18/09/2026 - CARG_VALOR al aprobar novedad; autorizado en preasignación
+ * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -51,6 +52,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
@@ -139,6 +141,9 @@ public class CoordinationController {
             Identidad y roles salen del JWT (idPersona + roles del bootstrap).
             Coordinador: sus coordinaciones en PERSONACOORDINACION.
             Decano: coordinaciones hijas de sus facultades, carga INSCRITO.
+            Desarrollo academico: APROBADO DECANO, o AVAL DESARROLLO
+            con al menos un docente en NOVEDADCARGADOCENTE
+            (NOCD_ESTADONOVEDAD = 0).
             Sin idConvocatoria: requiere idPeriodoUniversidad.
             La carga incluye valor (CARG_VALOR) y valorAutorizado
             (CARG_VALORAUTORIZADO).
@@ -547,7 +552,6 @@ public class CoordinationController {
         return new ResponseEntity<>(coordinacionService.listCostCenters(idCargaDocente), HttpStatus.OK);
     }
 
-    /* CAMBIAR A VISTA SEGÚN LANZADOR */
     @Operation(
         summary = "Genera el reporte Excel de preasignación de una carga",
         description = """
@@ -688,15 +692,25 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+    //------------------------------------------------------------
+    // --------------------NOVEDADES------------------------------
+    // -----------------------------------------------------------
 
     @Operation(
-        summary = "Obtiene todas las novedades con acción ACTUALIZAR",
-        description = "Retorna las novedades acción ACTUALIZAR, incluyendo el componente de formulario asociado"
+        summary = "Obtiene las novedades por acción",
+        description = "Retorna las novedades de la acción solicitada. Si no se envía acción, consulta ACTUALIZAR"
     )
     @GetMapping("/list-novelties")
-    public ResponseEntity<List<NovedadListadoDTO>> listNovelties() {
-        List<NovedadListadoDTO> novedades = coordinacionService.listNovelties();
-        return new ResponseEntity<>(novedades, HttpStatus.OK);
+    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(
+            @RequestParam(defaultValue = "ACTUALIZAR") String accion) {
+
+        List<NovedadListadoDTO> novedades =
+                coordinacionService.listNovelties(accion);
+
+        return new ResponseEntity<>(
+                novedades,
+                HttpStatus.OK
+        );
     }
 
     @Operation(
@@ -754,6 +768,16 @@ public class CoordinationController {
         novedadCargaDocenteService.changeProfessor(dto);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/novelties/delete-professor")
+    public ResponseEntity<Void> requestDeleteProfessor(
+            @RequestBody EliminarDocenteDTO dto) {
+
+        novedadCargaDocenteService.requestDeleteProfessor(dto);
+
+        return ResponseEntity.ok().build();
+    }
+
 
     @Operation(
         summary = "Guarda, actualiza o elimina las novedades en detalles de actividades",

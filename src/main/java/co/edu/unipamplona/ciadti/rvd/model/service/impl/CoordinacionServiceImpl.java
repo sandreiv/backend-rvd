@@ -20,6 +20,7 @@
  * 18/09/2026 - Sebastian Jaimes - Contrato cátedra con horas de actividades
  * 18/09/2026 - Sebastian Jaimes - Salario cátedra como PSM mensual
  * 18/09/2026 - Sebastian Jaimes - CARG_VALOR y autorizado en preasignación
+ * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -433,7 +434,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         if (idConvocatoria != null) {
             log.debug(
-                    "listForDesarrollo ===> Listando cargas APROBADO DECANO. idConvocatoria={}",
+                    "listForDesarrollo ===> Listando cargas APROBADO DECANO o AVAL DESARROLLO con novedad. idConvocatoria={}",
                     idConvocatoria
             );
 
@@ -442,7 +443,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         log.debug(
-                "listForDesarrollo ===> Listando cargas APROBADO DECANO por periodo. idPeriodoUniversidad={}",
+                "listForDesarrollo ===> Listando cargas APROBADO DECANO o AVAL DESARROLLO con novedad por periodo. idPeriodoUniversidad={}",
                 idPeriodoUniversidad
         );
 
@@ -3539,10 +3540,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<NovedadListadoDTO> listNovelties() {
-        List<NovedadListadoDTO> novedades = novedadMapper.toNovedadListadoDTOList(novedadRepository.findAllNovedadesDeActualizacion());
-        return novedades;
-    }
+        public List<NovedadListadoDTO> listNovelties(String accion) {
+
+        String accionNormalizada = StringUtils.hasText(accion)
+                ? accion.trim().toUpperCase()
+                : "ACTUALIZAR";
+
+        return novedadMapper.toNovedadListadoDTOList(
+                novedadRepository.findAllNovedadesPorAccion(
+                        accionNormalizada
+                )
+        );
+     }
 
     @Override
     @Transactional(readOnly = true)
