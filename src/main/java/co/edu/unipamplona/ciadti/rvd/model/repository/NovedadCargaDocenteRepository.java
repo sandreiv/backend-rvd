@@ -1253,4 +1253,167 @@ public interface NovedadCargaDocenteRepository
             @Param("onceMeses") String onceMeses,
             @Param("registradoPor") String registradoPor
     );
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO RVD.NOVEDADCARGADOCENTE
+            (
+                CADO_ID,
+                CARG_ID,
+                PEGE_ID,
+                MOCO_ID,
+                CACA_ID,
+                FECO_ID,
+                NOVE_ID,
+                NOCD_FECHANOVEDAD,
+                NOCD_OBSERVACIONNOVEDAD,
+                NOCD_FECHAINICIO,
+                NOCD_FECHAFIN,
+                NOCD_VALORCONTRATO,
+                NOCD_VALORPRESTACIONES,
+                NOCD_SALARIO,
+                NOCD_ESTADO,
+                NOCD_VIGENTE,
+                NOCD_HORAS,
+                NOCD_HORASDEEXCEPCION,
+                NOCD_VALORHORA,
+                NOCD_PUNTOS,
+                NOCD_VALORPUNTO,
+                NOCD_TOTALCONTRATO,
+                NOCD_SEMANAS,
+                NOCD_NIVELFORMACION,
+                NOCD_MOMENTO,
+                NOCD_ONCEMESES,
+                NOCD_ESTADONOVEDAD,
+                NOCD_REGISTRADOPOR,
+                NOCD_FECHACAMBIO
+            )
+            SELECT
+                SRC.CADO_ID,
+                SRC.CARG_ID,
+                SRC.PEGE_ID,
+                SRC.MOCO_ID,
+                SRC.CACA_ID,
+                SRC.FECO_ID,
+                :idNovedad,
+                SYSDATE,
+                NULL,
+                SRC.NOCD_FECHAINICIO,
+                SRC.NOCD_FECHAFIN,
+                :valorContrato,
+                :valorPrestaciones,
+                :salario,
+                SRC.NOCD_ESTADO,
+                SRC.NOCD_VIGENTE,
+                SRC.NOCD_HORAS,
+                SRC.NOCD_HORASDEEXCEPCION,
+                SRC.NOCD_VALORHORA,
+                :puntos,
+                SRC.NOCD_VALORPUNTO,
+                :totalContrato,
+                SRC.NOCD_SEMANAS,
+                SRC.NOCD_NIVELFORMACION,
+                SRC.NOCD_MOMENTO,
+                SRC.NOCD_ONCEMESES,
+                '0',
+                :registradoPor,
+                SYSDATE
+            FROM
+            (
+                SELECT NOCD.*
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.CADO_ID = :idCargaDocente
+                AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+                ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+                FETCH FIRST 1 ROW ONLY
+            ) SRC
+            """, nativeQuery = true)
+    int insertUpdateContractValueFromNovelty(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idNovedad") Long idNovedad,
+            @Param("valorContrato") BigDecimal valorContrato,
+            @Param("valorPrestaciones") BigDecimal valorPrestaciones,
+            @Param("salario") BigDecimal salario,
+            @Param("puntos") String puntos,
+            @Param("totalContrato") BigDecimal totalContrato,
+            @Param("registradoPor") String registradoPor
+    );
+
+    @Modifying
+    @Query(value = """
+            INSERT INTO RVD.NOVEDADCARGADOCENTE
+            (
+                CADO_ID,
+                CARG_ID,
+                PEGE_ID,
+                MOCO_ID,
+                CACA_ID,
+                FECO_ID,
+                NOVE_ID,
+                NOCD_FECHANOVEDAD,
+                NOCD_OBSERVACIONNOVEDAD,
+                NOCD_FECHAINICIO,
+                NOCD_FECHAFIN,
+                NOCD_VALORCONTRATO,
+                NOCD_VALORPRESTACIONES,
+                NOCD_SALARIO,
+                NOCD_ESTADO,
+                NOCD_VIGENTE,
+                NOCD_HORAS,
+                NOCD_HORASDEEXCEPCION,
+                NOCD_VALORHORA,
+                NOCD_PUNTOS,
+                NOCD_VALORPUNTO,
+                NOCD_TOTALCONTRATO,
+                NOCD_SEMANAS,
+                NOCD_NIVELFORMACION,
+                NOCD_MOMENTO,
+                NOCD_ONCEMESES,
+                NOCD_ESTADONOVEDAD,
+                NOCD_REGISTRADOPOR,
+                NOCD_FECHACAMBIO
+            )
+            SELECT
+                CADO.CADO_ID,
+                CADO.CARG_ID,
+                CADO.PEGE_ID,
+                CADO.MOCO_ID,
+                CADO.CACA_ID,
+                CADO.FECO_ID,
+                :idNovedad,
+                SYSDATE,
+                NULL,
+                CADO.CADO_FECHAINICIO,
+                CADO.CADO_FECHAFIN,
+                :valorContrato,
+                :valorPrestaciones,
+                :salario,
+                CADO.CADO_ESTADO,
+                CADO.CADO_VIGENTE,
+                CADO.CADO_HORAS,
+                CADO.CADO_HORASDEEXCEPCION,
+                CADO.CADO_VALORHORA,
+                :puntos,
+                CADO.CADO_VALORPUNTO,
+                :totalContrato,
+                CADO.CADO_SEMANAS,
+                CADO.CADO_NIVELFORMACION,
+                CADO.CADO_MOMENTO,
+                CADO.CADO_ONCEMESES,
+                '0',
+                :registradoPor,
+                SYSDATE
+            FROM RVD.CARGADOCENTE CADO
+            WHERE CADO.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    int insertUpdateContractValueFromCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente,
+            @Param("idNovedad") Long idNovedad,
+            @Param("valorContrato") BigDecimal valorContrato,
+            @Param("valorPrestaciones") BigDecimal valorPrestaciones,
+            @Param("salario") BigDecimal salario,
+            @Param("puntos") String puntos,
+            @Param("totalContrato") BigDecimal totalContrato,
+            @Param("registradoPor") String registradoPor
+    );
 }

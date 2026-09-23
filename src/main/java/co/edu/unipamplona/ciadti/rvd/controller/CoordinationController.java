@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
@@ -748,6 +749,16 @@ public class CoordinationController {
     public ResponseEntity<Void> approveProfessorNovelty(
             @PathVariable Long idCargaDocente) {
         novedadCargaDocenteService.approveProfessorNovelty(idCargaDocente);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Actualiza el valor de puntos",
+        description = "Actualiza el valor de los puntos segun los que se almacenan en la tabla ESCALAFON siempre y cuando no supere el presupuesto y la modalidad sea TCO"
+    )
+    @PutMapping("/novelties/update-contract-value")
+    public ResponseEntity<Void> actualizarValorContratoDTO(@RequestBody ActualizarValorContratoDTO dto) {
+        novedadCargaDocenteService.updateContractValue(dto);
         return ResponseEntity.ok().build();
     }
 
