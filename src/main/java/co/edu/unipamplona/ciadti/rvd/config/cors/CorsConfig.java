@@ -6,6 +6,7 @@
  * Fecha de creación: 26/03/2026
  * Modificaciones:
  * 26/03/2026 - Sebastian Jaimes - Creación inicial
+ * 23/09/2026 - Sebastian Jaimes - Header X-XSRF-TOKEN (BFF cookie opaca)
  */
 package co.edu.unipamplona.ciadti.rvd.config.cors;
 
@@ -42,6 +43,7 @@ public class CorsConfig {
                         "Access-Control-Request-Method",
                         "Access-Control-Request-Headers",
                         "Authorization",
+                        "X-XSRF-TOKEN",  // CSRF double submit del BFF (cookie opaca)
                         "sentry-trace", // Genera un identificador único para cada solicitud que se haga. Permite que Sentry pueda rastrear la solicitud por diferentes servicios.
                         "baggage"       // Permite agregar información adicional a la solicitud, por ejemplo, información del usuario o información de contexto, por defecto se accede a la configuración definida arriba.
                 ));

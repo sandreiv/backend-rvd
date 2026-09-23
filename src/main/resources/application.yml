@@ -61,6 +61,20 @@ rvd:
         a8WtLakyNgLl3TZfZQJHYfimo0k/xEC3Bw87IJSgGxIdC6xW3FZuu9lSmg9mZ0zH
         LQIDAQAB
         -----END PUBLIC KEY-----
+    # BFF: el JWT nunca llega al navegador; viaja una cookie opaca HttpOnly.
+    # - cookie-name: nombre de la cookie de sesión.
+    # - secure: true en producción (HTTPS). false solo en local http://.
+    # - same-site: Lax (front y API en el mismo sitio). None si son dominios
+    #   registrables distintos (requiere secure: true).
+    # - allow-bearer: acepta Authorization: Bearer como fallback (Swagger,
+    #   Postman). Apagar en producción.
+    # - default-ttl: vida de la sesión si el JWT no trae exp.
+    session:
+      cookie-name: RVD_SESSION
+      secure: false
+      same-site: Lax
+      allow-bearer: true
+      default-ttl: 8h
 
 server:
   servlet:
