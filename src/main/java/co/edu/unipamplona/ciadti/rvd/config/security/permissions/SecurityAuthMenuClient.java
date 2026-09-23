@@ -6,6 +6,7 @@
  * Fecha de creación: 23/09/2026
  * Modificaciones:
  * 23/09/2026 - Sebastian Jaimes - Creación inicial (BFF: proxy arbol-roles)
+ * 23/09/2026 - Sebastian Jaimes - roles como query params repetidos
  */
 package co.edu.unipamplona.ciadti.rvd.config.security.permissions;
 
@@ -57,13 +58,21 @@ public class SecurityAuthMenuClient {
             List<String> roles,
             Long idAplicacion,
             String accessToken) {
+        if (!StringUtils.hasText(accessToken)) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Sesión sin token de SecurityAuth");
+        }
+        List<String> safeRoles = roles == null ? List.of() : roles;
         try {
             return restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/funcionalidad/arbol-roles")
-                            .queryParam("roles", String.join(",", roles))
-                            .queryParam("idAplicacion", idAplicacion)
-                            .build())
+                    .uri(uriBuilder -> {
+                        var builder = uriBuilder
+                                .path("/funcionalidad/arbol-roles")
+                                .queryParam("idAplicacion", idAplicacion);
+                        safeRoles.forEach(rol -> builder.queryParam("roles", rol));
+                        return builder.build();
+                    })
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()

@@ -7,13 +7,13 @@
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Bootstrap SSO Vortal → SecurityAuth → RVD
  * 23/09/2026 - Sebastian Jaimes - BFF: cookie opaca, logout, me, menu, csrf
+ * 23/09/2026 - Sebastian Jaimes - /menu lee JWT del store, no de credentials
  */
 package co.edu.unipamplona.ciadti.rvd.auth;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +28,10 @@ import co.edu.unipamplona.ciadti.rvd.config.security.AuthUserDetails;
 import co.edu.unipamplona.ciadti.rvd.config.security.SecurityAuthProperties;
 import co.edu.unipamplona.ciadti.rvd.config.security.SecurityUtils;
 import co.edu.unipamplona.ciadti.rvd.config.security.permissions.SecurityAuthMenuClient;
+import co.edu.unipamplona.ciadti.rvd.config.security.session.OpaqueSessionAccessTokenResolver;
 import co.edu.unipamplona.ciadti.rvd.config.security.session.OpaqueSessionStore;
 import co.edu.unipamplona.ciadti.rvd.config.security.session.SessionCookieService;
+import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CsrfTokenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.JwtAuthResponseDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.SecurityAuthBootstrapRequestDTO;
@@ -50,6 +52,7 @@ public class AuthenticationController {
     private final SessionCookieService sessionCookieService;
     private final SecurityAuthMenuClient securityAuthMenuClient;
     private final SecurityAuthProperties securityAuthProperties;
+    private final OpaqueSessionAccessTokenResolver accessTokenResolver;
 
     @Operation(
             summary = "Bootstrap SSO desde Vortal/SecurityAuth (BFF)",
@@ -94,8 +97,10 @@ public class AuthenticationController {
     @GetMapping("/me")
     public ResponseEntity<JwtAuthResponseDTO> me(HttpServletRequest request) {
         AuthUserDetails user = SecurityUtils.requireUser();
-        return ResponseEntity.ok(withCsrf(
-                securityAuthBootstrapService.buildResponse(user), request));
+        JwtAuthResponseDTO dto = securityAuthBootstrapService.buildResponse(user);
+        accessTokenResolver.findSession(request)
+                .ifPresent(session -> dto.setExpiresAt(sessionStore.expiresAt(session)));
+        return ResponseEntity.ok(withCsrf(dto, request));
     }
 
     @Operation(
@@ -111,11 +116,12 @@ public class AuthenticationController {
             description = "Consulta /funcionalidad/arbol-roles en SecurityAuth "
                     + "con el JWT guardado en la sesión opaca.")
     @GetMapping("/menu")
-    public ResponseEntity<JsonNode> menu(Authentication authentication) {
+    public ResponseEntity<JsonNode> menu(HttpServletRequest request) {
         AuthUserDetails user = SecurityUtils.requireUser();
-        String accessToken = authentication.getCredentials() instanceof Jwt jwt
-                ? jwt.getTokenValue()
-                : null;
+        String accessToken = accessTokenResolver.resolveAccessToken(request)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Sesión sin token de SecurityAuth"));
         return ResponseEntity.ok(securityAuthMenuClient.arbolRoles(
                 user.getRoles(),
                 securityAuthProperties.applicationId(),
