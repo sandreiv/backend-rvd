@@ -117,6 +117,7 @@ public interface NovedadCargaDocenteRepository
 
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
+                NOVE.NOVE_TIPO AS tipoNovedad,
 
                 CR.CADO_FECHAINICIO AS cargaFechaInicio,
                 CR.CADO_FECHAFIN AS cargaFechaFin,
@@ -162,6 +163,9 @@ public interface NovedadCargaDocenteRepository
 
             LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CR.FECO_ID
+            
+            LEFT JOIN RVD.NOVEDADES NOVE
+                ON NOVE.NOVE_ID = CR.NOVE_ID    
 
             ORDER BY
                 CASE
@@ -268,6 +272,7 @@ public interface NovedadCargaDocenteRepository
 
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
+                NOVE.NOVE_TIPO AS tipoNovedad,
 
                 CR.CADO_FECHAINICIO AS cargaFechaInicio,
                 CR.CADO_FECHAFIN AS cargaFechaFin,
@@ -324,6 +329,9 @@ public interface NovedadCargaDocenteRepository
 
             LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CR.FECO_ID
+            
+            LEFT JOIN RVD.NOVEDADES NOVE
+                ON NOVE.NOVE_ID = CR.NOVE_ID    
 
             WHERE CARG.CARG_ID = :idCarga
 

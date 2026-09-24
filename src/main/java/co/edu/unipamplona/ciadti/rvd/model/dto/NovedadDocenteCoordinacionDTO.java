@@ -13,6 +13,7 @@ public record NovedadDocenteCoordinacionDTO(
     Long idCarga,
     Long idNovedadCatalogo,
     String estadoNovedad,
+    String tipoNovedad,
     Long idFechasConvocatoria,
     String fechaConvocatoriaCodigo,
     Date fechaInicio,
