@@ -31,6 +31,11 @@ public interface CargaBudgetService {
             Long idCarga,
             CargaBudgetOverlay overlay);
 
+    void assertNotExceedsAuthorized(
+        Long idCarga,
+        CargaBudgetOverlay overlay,
+        String errorMessage);        
+
     void refreshCargValor(Long idCarga);
 
     void refreshPreassignmentTotals(Long idCarga);

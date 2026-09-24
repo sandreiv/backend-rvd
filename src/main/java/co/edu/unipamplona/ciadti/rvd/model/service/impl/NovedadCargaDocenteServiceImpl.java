@@ -52,6 +52,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
@@ -60,6 +62,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsignarCentroCostoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
@@ -76,6 +79,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaPr
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
+import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
@@ -131,6 +135,9 @@ public class NovedadCargaDocenteServiceImpl
 
     private final PersonaGeneralRepository personaGeneralRepository;
 
+    private final EscalafonRepository escalafonRepository;
+
+    private final CoordinacionService coordinacionService;
 
     private final CargaBudgetService cargaBudgetService;
 
@@ -285,11 +292,12 @@ public class NovedadCargaDocenteServiceImpl
         if (dto == null
                 || dto.idCargaDocente() == null
                 || dto.idNovedad() == null
-                || dto.idPersonaGeneral() == null) {
+                || dto.idPersonaGeneral() == null
+                || dto.idEscalafon() == null) {
 
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "La carga docente, la novedad y el nuevo docente son obligatorios"
+                    "La carga docente, la novedad, el nuevo docente y el escalafón son obligatorios"
             );
         }
 
@@ -336,6 +344,12 @@ public class NovedadCargaDocenteServiceImpl
                         .findProfessorRecordToDuplicateNovelty(
                                 dto.idCargaDocente()
                         );
+        
+        Long idModalidadContratacion =
+        novedadOrigen
+                .map(NovedadCargaDocenteEntity::getIdModalidadContratacion)
+                .orElse(cargaDocente.getIdModalidadContratacion());                
+                        
 
         Long idDocenteActual;
 
@@ -365,13 +379,13 @@ public class NovedadCargaDocenteServiceImpl
         }
 
         long asignaciones =
-                novedadCargaDocenteRepository
-                        .countProfessorAssignedToAnotherLoad(
-                                cargaDocente.getIdCarga(),
-                                dto.idCargaDocente(),
-                                cargaDocente.getIdModalidadContratacion(),
-                                dto.idPersonaGeneral()
-                        );
+            novedadCargaDocenteRepository
+                    .countProfessorAssignedToAnotherLoad(
+                            cargaDocente.getIdCarga(),
+                            dto.idCargaDocente(),
+                            idModalidadContratacion,
+                            dto.idPersonaGeneral()
+                    );
 
         if (asignaciones > 0) {
             throw new ApiException(
@@ -379,6 +393,69 @@ public class NovedadCargaDocenteServiceImpl
                     "El docente seleccionado ya se encuentra asignado en esta carga y modalidad"
             );
         }
+
+        EscalafonEntity escalafon =
+        escalafonRepository
+                .findById(dto.idEscalafon())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe el escalafón seleccionado"
+                )); 
+        
+        if (!Objects.equals(
+                escalafon.getIdPersonaGeneral(),
+                dto.idPersonaGeneral())) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El escalafón seleccionado no corresponde al docente seleccionado"
+            );
+        }
+
+        if (!Objects.equals(
+                escalafon.getIdModalidadContratacion(),
+                idModalidadContratacion)) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El escalafón seleccionado no corresponde a la modalidad de contratación actual"
+            );
+        }
+
+        if (escalafon.getIdCategoriaCatedratico() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El escalafón seleccionado no tiene una categoría asociada"
+            );
+        }
+
+        Long anio = resolveCargaYear(cargaDocente);
+
+        ValorPuntosPrecargaDTO valoresPuntos =
+                coordinacionService.getValuePointsPreload(
+                        anio,
+                        escalafon.getIdCategoriaCatedratico(),
+                        dto.idPersonaGeneral(),
+                        idModalidadContratacion
+                );
+
+        CargaBudgetOverlay overlay =
+                buildChangeProfessorOverlay(
+                        cargaDocente,
+                        novedadOrigen,
+                        valoresPuntos
+                );
+
+        ValorContratacionDTO valoresContrato =
+                cargaBudgetService.computeInclusive(
+                        overlay
+                );
+
+        cargaBudgetService.assertNotExceedsAuthorized(
+                cargaDocente.getIdCarga(),
+                overlay,
+                "No se puede realizar el cambio de docente porque el valor proyectado supera el valor autorizado de la carga"
+        );
 
         String registradoPor =
                 RegistradoPorUtils.value(Accion.INSERT);
@@ -392,7 +469,15 @@ public class NovedadCargaDocenteServiceImpl
                             .insertChangeProfessorFromNovelty(
                                     dto.idCargaDocente(),
                                     dto.idPersonaGeneral(),
+                                    escalafon.getIdCategoriaCatedratico(),
                                     dto.idNovedad(),
+                                    valoresContrato.valorContrato(),
+                                    valoresContrato.totalPrestaciones(),
+                                    valoresContrato.salario(),
+                                    overlay.valorHora(),
+                                    overlay.puntos(),
+                                    overlay.valorPunto(),
+                                    valoresContrato.totalContrato(),
                                     registradoPor
                             );
 
@@ -403,7 +488,15 @@ public class NovedadCargaDocenteServiceImpl
                             .insertChangeProfessorFromCargaDocente(
                                     dto.idCargaDocente(),
                                     dto.idPersonaGeneral(),
+                                    escalafon.getIdCategoriaCatedratico(),
                                     dto.idNovedad(),
+                                    valoresContrato.valorContrato(),
+                                    valoresContrato.totalPrestaciones(),
+                                    valoresContrato.salario(),
+                                    overlay.valorHora(),
+                                    overlay.puntos(),
+                                    overlay.valorPunto(),
+                                    valoresContrato.totalContrato(),
                                     registradoPor
                             );
         }
@@ -1539,4 +1632,85 @@ public class NovedadCargaDocenteServiceImpl
             }
         }
     }
+
+    private Long resolveCargaYear(
+            CargaDocenteEntity cargaDocente) {
+
+        CargaEntity carga = cargaRepository
+                .findById(cargaDocente.getIdCarga())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga asociada al docente"
+                ));
+
+        if (carga.getConvocatoria() == null
+                || carga.getConvocatoria().getPeriodoUniversidad() == null
+                || carga.getConvocatoria()
+                        .getPeriodoUniversidad()
+                        .getAno() == null) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No fue posible determinar la vigencia de la carga"
+            );
+        }
+
+        return carga.getConvocatoria()
+                .getPeriodoUniversidad()
+                .getAno();
+    }
+
+    private CargaBudgetOverlay buildChangeProfessorOverlay(
+            CargaDocenteEntity cargaDocente,
+            Optional<NovedadCargaDocenteEntity> novedadOrigen,
+            ValorPuntosPrecargaDTO valoresPuntos) {
+
+        if (novedadOrigen.isPresent()) {
+
+            NovedadCargaDocenteEntity origen =
+                    novedadOrigen.get();
+
+            return new CargaBudgetOverlay(
+                    cargaDocente.getId(),
+                    origen.getIdModalidadContratacion(),
+                    origen.getFechaInicio(),
+                    origen.getFechaFin(),
+                    valoresPuntos.asignacionSalarial(),
+                    valoresPuntos.valorHora(),
+                    parseDecimal(origen.getSemanas()),
+                    parseDecimal(origen.getHoras()),
+                    decimalToString(
+                            valoresPuntos.puntosDocente()),
+                    valoresPuntos.valorPunto()
+            );
+        }
+
+        return new CargaBudgetOverlay(
+                cargaDocente.getId(),
+                cargaDocente.getIdModalidadContratacion(),
+                cargaDocente.getFechaInicio(),
+                cargaDocente.getFechaFin(),
+                valoresPuntos.asignacionSalarial(),
+                valoresPuntos.valorHora(),
+                parseDecimal(cargaDocente.getSemanas()),
+                parseDecimal(cargaDocente.getHoras()),
+                decimalToString(
+                        valoresPuntos.puntosDocente()),
+                valoresPuntos.valorPunto()
+        );
+    }
+
+    private String decimalToString(BigDecimal value) {
+        if (value == null) {
+            return null;
+        }
+
+        return value
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+
+
+
 }

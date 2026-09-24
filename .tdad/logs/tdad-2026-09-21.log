@@ -1,0 +1,23 @@
+
+================================================================================
+TDAD Session Started: 2026-09-21T21:22:25.701Z
+================================================================================
+[2026-09-21T21:22:26.424Z] [EXTENSION] 🚀 TDAD extension is now ACTIVATED! Version with comprehensive logging
+[2026-09-21T21:22:26.424Z] [EXTENSION] 📁 Log file location: c:\Users\USER\Documents\GitHub\backend-rvd\.tdad\logs\tdad-2026-09-21.log
+[2026-09-21T21:22:26.424Z] [EXTENSION] 📊 Workspace folders: c:\Users\USER\Documents\GitHub\backend-rvd
+[2026-09-21T21:22:26.424Z] [EXTENSION] Creating WorkflowController...
+[2026-09-21T21:22:26.425Z] [EXTENSION] MVP: Using simple JSON storage (.tdad/workflows/workflow.json)
+[2026-09-21T21:22:26.425Z] [EXTENSION] TDAD Extension activated successfully
+[2026-09-21T21:22:26.425Z] [EXTENSION] Registering commands...
+[2026-09-21T21:22:26.463Z] [EXTENSION] TDAD structure already initialized
+[2026-09-21T21:22:26.463Z] [EXTENSION] Auto-opening TDAD Canvas...
+[2026-09-21T21:22:26.465Z] [CANVAS] Created directory: c:\Users\USER\Documents\GitHub\backend-rvd\.tdad\workflows
+[2026-09-21T21:22:26.466Z] [CANVAS] Sprint 13: Agent Orchestrator initialized
+[2026-09-21T21:22:26.468Z] [CANVAS] [FileStatusSync] File watchers initialized
+[2026-09-21T21:22:26.472Z] [CANVAS] [FileStatusSync] Synced 0 nodes
+[2026-09-21T21:22:26.473Z] [EXTENSION] FeedbackManager: Session 1
+[2026-09-21T21:22:26.625Z] [CANVAS] WEBVIEW
+Data: Using stylesheets: index-WTAp2nbL.css
+[2026-09-21T21:22:26.627Z] [CANVAS] MVP: Canvas initialized with simple JSON storage
+[2026-09-21T21:22:26.703Z] [CANVAS] [FitView] isLoading=true, nodes.length=0, folderId=null
+[2026-09-21T21:22:26.898Z] [CANVAS] [FitView] isLoading=false, nodes.length=0, folderId=null

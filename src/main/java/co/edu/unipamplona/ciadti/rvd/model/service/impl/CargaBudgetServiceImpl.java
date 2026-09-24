@@ -141,16 +141,37 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
     public void assertNotExceedsAuthorized(
             Long idCarga,
             CargaBudgetOverlay overlay) {
+
+        assertNotExceedsAuthorized(
+                idCarga,
+                overlay,
+                "El valor proyectado de la carga supera el valor autorizado"
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void assertNotExceedsAuthorized(
+            Long idCarga,
+            CargaBudgetOverlay overlay,
+            String errorMessage) {
+
         CargaEntity carga = findCarga(idCarga);
         BigDecimal autorizado = carga.getValorAutorizado();
+
         if (autorizado == null) {
             return;
         }
+
         BigDecimal proyectado = preview(idCarga, overlay);
+
         if (proyectado.compareTo(autorizado) > 0) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "El valor proyectado de la carga supera el valor autorizado");
+                    StringUtils.hasText(errorMessage)
+                            ? errorMessage
+                            : "El valor proyectado de la carga supera el valor autorizado"
+            );
         }
     }
 

@@ -1,0 +1,28 @@
+
+================================================================================
+TDAD Session Started: 2026-09-23T13:16:25.243Z
+================================================================================
+[2026-09-23T13:16:26.152Z] [EXTENSION] 🚀 TDAD extension is now ACTIVATED! Version with comprehensive logging
+[2026-09-23T13:16:26.155Z] [EXTENSION] 📁 Log file location: c:\Users\USER\Documents\GitHub\backend-rvd\.tdad\logs\tdad-2026-09-23.log
+[2026-09-23T13:16:26.155Z] [EXTENSION] 📊 Workspace folders: c:\Users\USER\Documents\GitHub\backend-rvd
+[2026-09-23T13:16:26.156Z] [EXTENSION] Creating WorkflowController...
+[2026-09-23T13:16:26.158Z] [EXTENSION] MVP: Using simple JSON storage (.tdad/workflows/workflow.json)
+[2026-09-23T13:16:26.159Z] [EXTENSION] TDAD Extension activated successfully
+[2026-09-23T13:16:26.163Z] [EXTENSION] Registering commands...
+[2026-09-23T13:16:27.077Z] [EXTENSION] Deserializing webview panel state
+[2026-09-23T13:16:27.086Z] [CANVAS] Sprint 13: Agent Orchestrator initialized
+[2026-09-23T13:16:27.089Z] [CANVAS] [FileStatusSync] File watchers initialized
+[2026-09-23T13:16:27.105Z] [CANVAS] [FileStatusSync] Synced 0 nodes
+[2026-09-23T13:16:27.112Z] [EXTENSION] FeedbackManager: Session 2
+[2026-09-23T13:16:27.191Z] [EXTENSION] TDAD structure already initialized
+[2026-09-23T13:16:27.192Z] [EXTENSION] Auto-opening TDAD Canvas...
+[2026-09-23T13:16:27.827Z] [CANVAS] WEBVIEW
+Data: Using stylesheets: index-WTAp2nbL.css
+[2026-09-23T13:16:27.828Z] [CANVAS] MVP: Canvas initialized with simple JSON storage
+[2026-09-23T13:16:28.135Z] [CANVAS] [FitView] isLoading=true, nodes.length=0, folderId=null
+[2026-09-23T13:16:28.392Z] [CANVAS] [FileStatusSync] Synced 0 nodes
+[2026-09-23T13:16:29.060Z] [CANVAS] [FitView] isLoading=false, nodes.length=0, folderId=null
+[2026-09-23T13:17:22.457Z] [CANVAS] saveNow: Saving 0 nodes to folder root - statuses: []
+[2026-09-23T13:17:22.459Z] [CANVAS] [FileStatusSync] File watchers disposed
+[2026-09-23T13:17:22.611Z] [EXTENSION] Blueprint workflow created: c:\Users\USER\Documents\GitHub\backend-rvd\.tdad\workflows\root.workflow.json
+[2026-09-23T13:17:22.615Z] [EXTENSION] Scaffolded 1 files from blueprint
