@@ -40,6 +40,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
@@ -98,6 +99,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private static final String COMPONENT_DELETE_PROFESSOR = "delete-professor";
 
+    private static final String COMPONENT_ADD_NOVELTY_PROFESSOR = "add-professor";
+
     private static final String COMPONENT_CHANGE_PROJECT_ACTIVITIES = "change-project-activities";
 
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
@@ -142,6 +145,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
 
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
+
+
+    private final CoordinacionServiceImpl coordinacionServiceImpl;
 
     @Override
     @Transactional
@@ -620,6 +626,31 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                         "La novedad seleccionada no corresponde a Eliminar docente"
                 );
         }
+    }
+
+    @Override
+    @Transactional
+    public void addNoveltyProfessor(CargaDocenteFormularioDTO dto, Long idNovedad) {
+        log.info("addNoveltyProfessor ===> Agregando docente mediante novedad. idCarga={}, idNovedad={}", dto.idCarga(), idNovedad);
+        
+        Long idNewCargaDocente = coordinacionServiceImpl.auxAddProfessorForNovelty(dto);
+
+        NovedadEntity novedad = novedadRepository.findById(idNovedad)
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad seleccionada"));
+        validateAddNoveltyProfessorType(novedad);
+
+        String registradoPor = RegistradoPorUtils.value(Accion.INSERT);
+        int inserted = novedadCargaDocenteRepository.insertAddNoveltyProfessor(
+            idNewCargaDocente,
+            idNovedad,
+            registradoPor
+        );
+
+        if (inserted != 1) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No fue posible registrar la novedad");
+        }
+
+        log.info("addNoveltyProfessor ===> Docente agregado mediante novedad. idCargaDocente={}, idNovedad={}", idNewCargaDocente, idNovedad);
     }
 
     @Override
@@ -1666,6 +1697,27 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "La novedad seleccionada no corresponde a Actualizar valor de contrato"
+            );
+        }
+    }
+
+    private void validateAddNoveltyProfessorType(
+            NovedadEntity novedad
+    ) {
+
+        String component =novedad.getComponente();
+
+        if (
+            component == null ||
+            !COMPONENT_ADD_NOVELTY_PROFESSOR
+                    .equalsIgnoreCase(
+                            component.trim()
+                    )
+        ) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La novedad seleccionada no corresponde a Agregar docente"
             );
         }
     }

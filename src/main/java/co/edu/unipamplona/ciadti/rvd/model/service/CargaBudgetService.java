@@ -30,6 +30,10 @@ public interface CargaBudgetService {
     void assertNotExceedsAuthorized(
             Long idCarga,
             CargaBudgetOverlay overlay);
+    
+    void assertAdditionNotExceedsAuthorized(
+            Long idCarga,
+            CargaBudgetOverlay overlay);
 
     void refreshCargValor(Long idCarga);
 

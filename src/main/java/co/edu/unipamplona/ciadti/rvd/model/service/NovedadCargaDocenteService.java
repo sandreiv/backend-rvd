@@ -3,6 +3,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
@@ -31,6 +32,11 @@ public interface NovedadCargaDocenteService {
 
     void requestDeleteProfessor(
             EliminarDocenteDTO dto
+    );
+
+    void addNoveltyProfessor(
+        CargaDocenteFormularioDTO dto,
+        Long idNovedad
     );
 
 

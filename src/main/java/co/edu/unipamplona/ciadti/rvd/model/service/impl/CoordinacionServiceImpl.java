@@ -78,6 +78,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadDirectaDetalleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
@@ -1023,6 +1024,55 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         cargaBudgetService.refreshPreassignmentTotals(dto.idCarga());
 
         log.info("addProfessor ===> Docente agregado. idCargaDocente={}", entity.getId());
+    }
+
+    // Metodo auxiliar que agrega el profesor a la carga si hay presupuesto, devolviendo su ID
+    // Solo debe ser usado para la novedad de agregar docente
+    @Override
+    @Transactional
+    public Long auxAddProfessorForNovelty(CargaDocenteFormularioDTO dto) {
+        log.info("auxAddProfessorForNovelty ===> Agregando docente para novedad. idCarga={}, idModalidad={}", dto.idCarga(), dto.idModalidadContratacion());
+        
+        validatePreassignmentWriteAllowedByCarga(dto.idCarga());
+
+        if (dto.idPersonaGeneral() != null
+                && cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionAndIdFechasConvocatoria(
+                        dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion(), dto.fechasConvocatoria().id())) {
+            log.warn("auxAddProfessorForNovelty ===> Docente duplicado en modalidad. idPersona={}, idCarga={}", dto.idPersonaGeneral(), dto.idCarga());
+            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta modalidad de contratacion");
+        }
+
+        CargaDocenteEntity entity = cargaDocenteMapper.toEntity(dto);
+        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
+        entity.setFechaCambio(new Date());
+        entity.setEstado("0");      // Que estado se le pone?
+        entity.setVigente("1");
+        entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
+        applyHorasDeExcepcion(entity);
+        applyInclusiveContractValues(entity);
+
+        // Revisar si la comparación es valida
+        CargaBudgetOverlay overlay = new CargaBudgetOverlay(
+            null,
+            entity.getIdModalidadContratacion(),
+            entity.getFechaInicio(),
+            entity.getFechaFin(),
+            entity.getSalario(),
+            entity.getValorHora(),
+            parseDecimal(entity.getSemanas()),
+            parseDecimal(entity.getHoras()),
+            entity.getPuntos(),
+            entity.getValorPunto()
+        );
+        cargaBudgetService.assertAdditionNotExceedsAuthorized(dto.idCarga(), overlay);
+
+
+        // Si el presupuesto lo permite, agregar en la carga docente
+        Long idNewCargaDocente = cargaDocenteRepository.save(entity).getId();
+        registerProfessorPreloadHistory(idNewCargaDocente);     // Se debe registrar el historial?
+
+        log.info("auxAddProfessorForNovelty ===> Docente agregado para novedad. idCargaDocente={}", idNewCargaDocente);
+        return idNewCargaDocente;
     }
 
     @Override
@@ -3980,6 +4030,17 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                     HttpStatus.FORBIDDEN,
                     "La facultad seleccionada no está asociada al Decano autenticado"
             );
+        }
+    }
+
+    private BigDecimal parseDecimal(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(value.trim().replace(',', '.'));
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 

@@ -99,6 +99,8 @@ public interface CoordinacionService {
 
     void addProfessor(CargaDocenteFormularioDTO dto);
 
+    Long auxAddProfessorForNovelty(CargaDocenteFormularioDTO dto);
+
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
 
     List<NovedadDocenteCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion);
