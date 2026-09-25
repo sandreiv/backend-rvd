@@ -187,24 +187,138 @@ public class NovedadCargaDocenteServiceImpl
             throw new ApiException(HttpStatus.BAD_REQUEST, "La carga seleccionada ya tiene un docente asignado");
         }
 
+        if (!personaGeneralRepository.existsById(dto.idPersonaGeneral())) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe el docente seleccionado"
+            );
+        }
+
+        Long idModalidadContratacion =
+        previous
+                .map(NovedadCargaDocenteEntity::getIdModalidadContratacion)
+                .orElse(cargaDocente.getIdModalidadContratacion());
+
+        long asignaciones =
+                novedadCargaDocenteRepository
+                        .countProfessorAssignedToAnotherLoad(
+                                cargaDocente.getIdCarga(),
+                                dto.idCargaDocente(),
+                                idModalidadContratacion,
+                                dto.idPersonaGeneral()
+                        );
+
+        if (asignaciones > 0) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente seleccionado ya se encuentra asignado en esta carga y modalidad"
+            );
+        }     
+        
+        EscalafonEntity escalafon =
+        escalafonRepository
+                .findById(dto.idEscalafon())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe el escalafón seleccionado"
+                ));
+
+        if (!Objects.equals(
+                escalafon.getIdPersonaGeneral(),
+                dto.idPersonaGeneral())) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El escalafón seleccionado no corresponde al docente seleccionado"
+            );
+        }
+
+        if (!Objects.equals(
+                escalafon.getIdModalidadContratacion(),
+                idModalidadContratacion)) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El escalafón seleccionado no corresponde a la modalidad de contratación actual"
+            );
+        }
+
+        if (escalafon.getIdCategoriaCatedratico() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El escalafón seleccionado no tiene una categoría asociada"
+            );
+        }
+
+        Long anio = resolveCargaYear(cargaDocente);
+
+        ValorPuntosPrecargaDTO valoresPuntos =
+                coordinacionService.getValuePointsPreload(
+                        anio,
+                        escalafon.getIdCategoriaCatedratico(),
+                        dto.idPersonaGeneral(),
+                        idModalidadContratacion
+                );
+
+        CargaBudgetOverlay overlay =
+        buildChangeProfessorOverlay(
+                cargaDocente,
+                previous,
+                valoresPuntos
+        );     
+        
+        ValorContratacionDTO valoresContrato =
+        cargaBudgetService.computeInclusive(
+                overlay
+        );
+
+        cargaBudgetService.assertNotExceedsAuthorized(
+                cargaDocente.getIdCarga(),
+                overlay,
+                "No se puede realizar el cambio de docente porque el valor proyectado supera el valor autorizado de la carga"
+        );
+
         String registradoPor =RegistradoPorUtils.value(Accion.INSERT);
 
         int inserted;
 
         if (previous.isPresent()) {
 
-            inserted = novedadCargaDocenteRepository.insertAssignNameNnFromNovelty(
+            inserted =
+                    novedadCargaDocenteRepository
+                            .insertAssignNameNnFromNovelty(
                                     dto.idCargaDocente(),
                                     dto.idPersonaGeneral(),
+                                    escalafon.getIdCategoriaCatedratico(),
                                     dto.idNovedad(),
-                                    registradoPor);
+                                    valoresContrato.valorContrato(),
+                                    valoresContrato.totalPrestaciones(),
+                                    valoresContrato.salario(),
+                                    overlay.valorHora(),
+                                    overlay.puntos(),
+                                    overlay.valorPunto(),
+                                    valoresContrato.totalContrato(),
+                                    registradoPor
+                            );
 
         } else {
-            inserted = novedadCargaDocenteRepository.insertAssignNameNnFromCargaDocente(
+
+            inserted =
+                    novedadCargaDocenteRepository
+                            .insertAssignNameNnFromCargaDocente(
                                     dto.idCargaDocente(),
                                     dto.idPersonaGeneral(),
+                                    escalafon.getIdCategoriaCatedratico(),
                                     dto.idNovedad(),
-                                    registradoPor);
+                                    valoresContrato.valorContrato(),
+                                    valoresContrato.totalPrestaciones(),
+                                    valoresContrato.salario(),
+                                    overlay.valorHora(),
+                                    overlay.puntos(),
+                                    overlay.valorPunto(),
+                                    valoresContrato.totalContrato(),
+                                    registradoPor
+                            );
         }
 
         if (inserted != 1) {
@@ -769,15 +883,16 @@ public class NovedadCargaDocenteServiceImpl
     ) {
 
         if (
-            dto == null ||
-            dto.idCargaDocente() == null ||
-            dto.idNovedad() == null ||
-            dto.idPersonaGeneral() == null
+            dto == null
+            || dto.idCargaDocente() == null
+            || dto.idNovedad() == null
+            || dto.idPersonaGeneral() == null
+            || dto.idEscalafon() == null
         ) {
 
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "La carga docente, la novedad y el docente son obligatorios"
+                    "La carga docente, la novedad, el nuevo docente y el escalafón son obligatorios"
             );
         }
     }

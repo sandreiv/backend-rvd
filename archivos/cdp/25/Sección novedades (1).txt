@@ -1,0 +1,67 @@
+Novedades (no son todas):
+
+Cada novedad debe modificar CARG_VALOR(Suma de valores totales de contratos por docentes) y verificar que no exceda CARG_VALORAUTORIZADO (Valor total autorizado en el CDP)
+Se debe determinar si en la sección de novedades se muestra la información de CARGADOCENTE o NOVEDADCARGADOCENTE (DE MOMENTO LA SECCION DE PRECARGA MUESTRA LA INFORMACION QUE ESTA MOSTRANDO ACTUALMENTE)
+
+CASOS:
+	1. Cuando una CARGADOCENTE no tiene NOVEDADCARGADOCENTE, se muestra la información de CARGADOCENTE
+	2. Cuando una CARGADOCENTE tiene NOVEDADCARGADOCENTE y no hay una OBSERVACION (No esta rechazado) para esa ultima NOVEDADCARGADOCENTE, se muestra el ultimo registro de NOVEDADCARGADOCENTE
+	3. Cuando una CARGADOCENTE tiene NOVEDADCARGADOCENTE y hay OBSERVACION (Si esta rechazado) para esa ultima NOVEDADCARGADOCENTE, se muestra el ultimo registro de NOVEDADCARGADOCENTE sin OBSERVACIONES (Aprobado). En caso de no haber, se muestra la información de CARGADOCENTE
+
+Debe haber un campo en NOVEDADCARGADOCENTE para manejar los estados (En revision, Aprobado, Rechazado) mostrando el registro en color rojo o habilitándolo para registrar otra novedad?
+Deben haber métodos para validar esos 3 casos y dependiendo del que cumpla, llamar al repositorio adecuado
+
+
+(SACADO DEL WORD)
+- Asignar nombre a NN
+	* Buscador de nombre utilizado en la precarga y filtrando de las opciones los docentes que ya están en la carga docente (Se mantiene el modal de bloqueo cuando un docente ya esta registrado en otra carga docente)
+	* Crear registro en la tabla NOVEDADCARGADOCENTE (Duplicando el registro correspondiente según los 3 casos)
+	* Al cambiar el docente, el nuevo debe actualizar el valor de sus puntos al del antiguo (Luego si es necesario se ajustan los puntos del contrato)
+	* Docentes especiales con aval de vicerrectoría académica?
+
+(SACADO DEL WORD)
+- Cambio de docente
+	* Buscador de nombre utilizado en la precarga y filtrando de las opciones los docentes que ya están en la carga docente (Se mantiene el modal de bloqueo cuando un docente ya esta registrado en otra carga docente)
+	* Crear registro en la tabla NOVEDADCARGADOCENTE (Duplicando el registro correspondiente según los 3 casos)
+	* Al cambiar el docente, el nuevo debe actualizar el valor de sus puntos al del antiguo (Luego si es necesario se ajustan los puntos del contrato)
+	* Docentes especiales con aval de vicerrectoría académica?
+
+
+(NO HAY INFO)
+- CAMBIO DE HORAS o REASIGNACIÓN DE DEDICACION DOCENTE
+	* Permitir eliminar y relacionar actividades como normalmente
+	* Para los proyectos CTeI-ISU de los docentes TCO y Planta se deben desde la coordinación de proyectos relacionar la persona a los dos proyectos, de manera que desrelacione uno y relacione la otra opción. (Al final, en la coordinación de proyectos mantiene solo el definitivo)
+	* Actualiza DETALLESCARGADOCENTE con las nuevas actividades (No tendríamos forma de mostrar las actividades antiguas)
+	* El valor de contrato puede o no cambiar dependiendo de las horas, pero eso se calcula automáticamente y debe evitar exceder CARG_VALORAUTORIZADO
+
+
+(NO HAY INFO)
+- CAMBIO DE MODALIDAD (entre CATEDRATICOS y TCO)
+	* Permitir cambiar la modalidad de contratación entre catedráticos y TCO
+	* Permitir cambiar la reasignación docente para cumplir las horas
+	* Actualiza DETALLESCARGADOCENTE con las nuevas actividades (No tendríamos forma de mostrar las actividades antiguas)
+	* Como se comporta con la tabla escalafón y su modalidad contratación?
+	* Que proceso implica promoverlo? Borrar su carga docente antigua y crear una nueva de cero?
+	* El valor de contrato puede o no cambiar dependiendo de las horas, pero eso se calcula automáticamente y debe evitar exceder CARG_VALORAUTORIZADO
+
+56209147,26
+(NO HAY INFO)
+- ELIMINAR DOCENTE
+	* Permitir eliminar docente
+	* Que pasa después de eliminar un docente?
+
+
+(NO HAY INFO)
+- AGREGAR DOCENTE.  Nuevo docente para nueva carga si tienen saldo en el CDP, con base en el valor autorizado, se controla que no excede este valor.
+	* Buscador de nombre utilizado en la precarga y filtrando de las opciones los docentes que ya están en la carga docente (Se mantiene el modal de bloqueo cuando un docente ya esta registrado en otra carga docente)
+	* Se limita el valor de puntos y contratación según CARG_VALORAUTORIZADO
+	* Se agrega el docente en CARGADOCENTE y luego en NOVEDADCARGADOCENTE tal cual
+
+
+(NO HAY INFO)
+- REASIGNACIÓN DE DEDICACION DOCENTE. Habilita cambios en ISU, CTI y Administración Académica.
+
+
+
+(NO HAY INFO)
+- ACTUALIZAR VALOR A CONTRATO: Informa del cambio de puntos y actualización de valores del contrato. (SE DEBE ACTUALIZAR CARG_VALOR)
