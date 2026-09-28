@@ -41,3 +41,5 @@ docs/
 ## Properties
 application.properties
 
+# TDAD - archivos locales de la extensión
+.tdad/
