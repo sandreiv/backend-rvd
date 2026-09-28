@@ -38,8 +38,10 @@ import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.DetalleCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DetalleNovedadCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
@@ -57,6 +59,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
@@ -69,6 +72,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
@@ -90,20 +94,21 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NovedadCargaDocenteServiceImpl
-        implements NovedadCargaDocenteService {
+public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteService {
 
+    private static final String COMPONENT_UPDATE_CONTRACT_VALUE = "update-contract-value";
+    
     private static final String COMPONENT_ASSIGN_NAME_NN = "asign-name-nn";
 
     private static final String COMPONENT_CONTRACT_MODALITY = "change-contract-modality";
 
     private static final String COMPONENT_DELETE_PROFESSOR = "delete-professor";
 
+    private static final String COMPONENT_ADD_NOVELTY_PROFESSOR = "add-professor";
+
     private static final String COMPONENT_CHANGE_PROJECT_ACTIVITIES = "change-project-activities";
 
     private static final String COMPONENT_CHANGE_DIRECT_ACTIVITIES = "change-direct-activities";
-
-    private static final String ESTADO_NOVEDAD_REVISION = "0";
 
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
 
@@ -121,7 +126,7 @@ public class NovedadCargaDocenteServiceImpl
 
     private final AsignarCentroCostoRepository asignarCentroCostoRepository;
 
-    private final  AsociacionCoordinacionRepository asociacionCoordinacionRepository;
+    private final AsociacionCoordinacionRepository asociacionCoordinacionRepository;
 
     private final PersonaProyectoRepository personaProyectoRepository;
 
@@ -149,6 +154,117 @@ public class NovedadCargaDocenteServiceImpl
 
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
 
+
+    private final CoordinacionServiceImpl coordinacionServiceImpl;
+
+    @Override
+    @Transactional
+    public void updateContractValue(ActualizarValorContratoDTO dto) {
+        log.info("updateContractValue ===> Actualizando novedad carga docente. idCargaDocente={}", dto.idCargaDocente());
+
+        NovedadEntity novedad = novedadRepository.findById(dto.idNovedad())
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad seleccionada"));
+        validateUpdateContractValueType(novedad);
+
+        if (novedadCargaDocenteRepository.countNoveltyInReview(dto.idCargaDocente()) > 0) {
+            throw new ApiException(HttpStatus.CONFLICT,"El docente tiene una novedad en revisión");
+        }
+
+        Optional<NovedadCargaDocenteEntity> previous = novedadCargaDocenteRepository.findProfessorRecordToDuplicateNovelty(dto.idCargaDocente());
+        CargaDocenteEntity cargaOriginal = cargaDocenteRepository.findById(dto.idCargaDocente())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente seleccionada"));
+
+        CargaBudgetOverlay overlay;
+        ValorContratacionDTO valores;
+        if (previous.isPresent()) {
+            NovedadCargaDocenteEntity previousEntity = previous.get();
+            FechasConvocatoriaEntity fechas = previousEntity.getFechaConvocatoria();
+            EscalafonEntity escalafon = escalafonRepository.findByIdCategoriaCatedratico(previousEntity.getIdCategoriaCatedratico(), previousEntity.getIdPersonaGeneral());
+            if (escalafon == null) {
+                throw new ApiException(HttpStatus.NOT_FOUND, "No existe escalafon para la persona.");
+            }
+            if (Objects.equals(escalafon.getPuntos(), previousEntity.getPuntos())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "La cantidad de puntos para este docente no ha sido cambiada en el escalafón.");
+            }
+
+            overlay = new CargaBudgetOverlay(
+                previousEntity.getIdCargaDocente(),
+                previousEntity.getIdModalidadContratacion(),
+                fechas != null ? fechas.getFechaInicio() : null,
+                fechas != null ? fechas.getFechaFin() : null,
+                null,       // Su salario se va a calcular
+                previousEntity.getValorHora(),
+                parseDecimal(previousEntity.getSemanas()),
+                parseDecimal(previousEntity.getHoras()),
+                escalafon.getPuntos(),
+                previousEntity.getValorPunto()
+            );
+
+            valores = cargaBudgetService.computeInclusive(overlay);
+            cargaBudgetService.assertNotExceedsAuthorized(
+                previousEntity.getIdCarga(),
+                overlay);
+        } else {
+            FechasConvocatoriaEntity fechas = cargaOriginal.getFechaConvocatoria();
+            EscalafonEntity escalafon = escalafonRepository.findByIdCategoriaCatedratico(cargaOriginal.getIdCategoriaCatedratico(), cargaOriginal.getIdPersonaGeneral());
+            if (escalafon == null) {
+                throw new ApiException(HttpStatus.NOT_FOUND, "No existe escalafon para la persona.");
+            }
+            if (Objects.equals(escalafon.getPuntos(), cargaOriginal.getPuntos())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "La cantidad de puntos para este docente no ha sido cambiada en el escalafón.");
+            }
+
+            overlay = new CargaBudgetOverlay(
+                cargaOriginal.getId(),
+                cargaOriginal.getIdModalidadContratacion(),
+                fechas != null ? fechas.getFechaInicio() : null,
+                fechas != null ? fechas.getFechaFin() : null,
+                null,       // Su salario se va a calcular
+                cargaOriginal.getValorHora(),
+                parseDecimal(cargaOriginal.getSemanas()),
+                parseDecimal(cargaOriginal.getHoras()),
+                escalafon.getPuntos(),
+                cargaOriginal.getValorPunto()
+            );
+
+            valores = cargaBudgetService.computeInclusive(overlay);
+            cargaBudgetService.assertNotExceedsAuthorized(
+                cargaOriginal.getIdCarga(),
+                overlay);
+        }
+
+
+        String registradoPor = RegistradoPorUtils.value(Accion.INSERT);
+        int inserted;
+
+        if (previous.isPresent()) {
+            inserted = novedadCargaDocenteRepository.insertUpdateContractValueFromNovelty(
+                dto.idCargaDocente(),
+                dto.idNovedad(),
+                valores.valorContrato(),
+                valores.totalPrestaciones(),
+                valores.salario(),
+                overlay.puntos(),
+                valores.totalContrato(),
+                registradoPor);
+        } else {
+            inserted = novedadCargaDocenteRepository.insertUpdateContractValueFromCargaDocente(
+                dto.idCargaDocente(),
+                dto.idNovedad(),
+                valores.valorContrato(),
+                valores.totalPrestaciones(),
+                valores.salario(),
+                overlay.puntos(),
+                valores.totalContrato(),
+                registradoPor);
+        }
+        if (inserted != 1) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No fue posible registrar la novedad");
+        }
+
+        log.info("updateContractValue ===> Novedad carga docente actualizada. idCargaDocente={}", dto.idCargaDocente());
+    }
+    
     @Override
     @Transactional
     public void assignNameToNn(AsignarNombreNnDTO dto) {
@@ -718,6 +834,31 @@ public class NovedadCargaDocenteServiceImpl
                         "La novedad seleccionada no corresponde a Eliminar docente"
                 );
         }
+    }
+
+    @Override
+    @Transactional
+    public void addNoveltyProfessor(CargaDocenteFormularioDTO dto, Long idNovedad) {
+        log.info("addNoveltyProfessor ===> Agregando docente mediante novedad. idCarga={}, idNovedad={}", dto.idCarga(), idNovedad);
+        
+        Long idNewCargaDocente = coordinacionServiceImpl.auxAddProfessorForNovelty(dto);
+
+        NovedadEntity novedad = novedadRepository.findById(idNovedad)
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad seleccionada"));
+        validateAddNoveltyProfessorType(novedad);
+
+        String registradoPor = RegistradoPorUtils.value(Accion.INSERT);
+        int inserted = novedadCargaDocenteRepository.insertAddNoveltyProfessor(
+            idNewCargaDocente,
+            idNovedad,
+            registradoPor
+        );
+
+        if (inserted != 1) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No fue posible registrar la novedad");
+        }
+
+        log.info("addNoveltyProfessor ===> Docente agregado mediante novedad. idCargaDocente={}, idNovedad={}", idNewCargaDocente, idNovedad);
     }
 
     @Override
@@ -1828,4 +1969,46 @@ public class NovedadCargaDocenteServiceImpl
 
 
 
+
+    private void validateUpdateContractValueType(
+            NovedadEntity novedad
+    ) {
+
+        String component =novedad.getComponente();
+
+        if (
+            component == null ||
+            !COMPONENT_UPDATE_CONTRACT_VALUE
+                    .equalsIgnoreCase(
+                            component.trim()
+                    )
+        ) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La novedad seleccionada no corresponde a Actualizar valor de contrato"
+            );
+        }
+    }
+
+    private void validateAddNoveltyProfessorType(
+            NovedadEntity novedad
+    ) {
+
+        String component =novedad.getComponente();
+
+        if (
+            component == null ||
+            !COMPONENT_ADD_NOVELTY_PROFESSOR
+                    .equalsIgnoreCase(
+                            component.trim()
+                    )
+        ) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La novedad seleccionada no corresponde a Agregar docente"
+            );
+        }
+    }
 }
