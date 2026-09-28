@@ -1045,7 +1045,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         CargaDocenteEntity entity = cargaDocenteMapper.toEntity(dto);
         entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         entity.setFechaCambio(new Date());
-        entity.setEstado("0");      // Que estado se le pone?
+        entity.setEstado("4");
         entity.setVigente("1");
         entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
@@ -1069,7 +1069,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         // Si el presupuesto lo permite, agregar en la carga docente
         Long idNewCargaDocente = cargaDocenteRepository.save(entity).getId();
-        registerProfessorPreloadHistory(idNewCargaDocente);     // Se debe registrar el historial?
+        registerProfessorPreloadHistory(idNewCargaDocente);
 
         log.info("auxAddProfessorForNovelty ===> Docente agregado para novedad. idCargaDocente={}", idNewCargaDocente);
         return idNewCargaDocente;

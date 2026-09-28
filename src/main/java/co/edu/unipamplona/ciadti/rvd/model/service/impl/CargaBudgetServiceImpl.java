@@ -167,7 +167,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         // Representa lo que pasaria si rechazan todas las novedades menos la actual (el peor caso)
         BigDecimal proyectado = presupuestoConsolidado.add(diferenciaCambioEnPresupuesto);
 
-        // Si al rechazar todas las novedades menos la actual supear el autorizado, no es valido
+        // Si al rechazar todas las novedades menos la actual supera el autorizado, no es valido
         if (proyectado.compareTo(autorizado) > 0) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
@@ -190,7 +190,6 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         // Escenario donde se rechazan todas las novedades
         BigDecimal presupuestoConsolidado = Optional.ofNullable(carga.getValor()).orElse(BigDecimal.ZERO);
         // Escenario donde se aprueban todas las novedades
-        // BigDecimal presupuestoConNovedadesAprobadas = scale(sumEffective(idCarga, null));
         BigDecimal presupuestoActualEfectivo = preview(idCarga, null);
         // Se toma el que consuma mas presupuesto para determinar si agrega o no
         BigDecimal presupuestoReferencia = presupuestoConsolidado.max(presupuestoActualEfectivo);
