@@ -13,6 +13,7 @@
  * 18/09/2026 - Sebastian Jaimes - no actualiza CARG_VALOR al crear;
  * sí al aprobar
  * 22/09/2026 - Reasignación de actividades: FAD, CTEI e ISU
+ * 28/09/2026 - La vigencia pasa a la novedad aprobada
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -94,59 +95,32 @@ public class NovedadCargaDocenteServiceImpl
         implements NovedadCargaDocenteService {
 
     private static final String COMPONENT_ASSIGN_NAME_NN = "asign-name-nn";
-
     private static final String COMPONENT_CONTRACT_MODALITY = "change-contract-modality";
-
     private static final String COMPONENT_DELETE_PROFESSOR = "delete-professor";
-
     private static final String COMPONENT_CHANGE_PROJECT_ACTIVITIES = "change-project-activities";
-
     private static final String COMPONENT_CHANGE_DIRECT_ACTIVITIES = "change-direct-activities";
-
     private static final String ESTADO_NOVEDAD_REVISION = "0";
-
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
-
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
-
     private final CargaDocenteRepository cargaDocenteRepository;
-
     private final CargaRepository cargaRepository;
-
     private final ConvocatoriaRepository convocatoriaRepository;
-
     private final RestriccionPorCoordinacionRepository restriccionPorCoordinacionRepository;
-
     private final RestriccionCargaRepository restriccionCargaRepository;
-
     private final AsignarCentroCostoRepository asignarCentroCostoRepository;
-
     private final  AsociacionCoordinacionRepository asociacionCoordinacionRepository;
-
     private final PersonaProyectoRepository personaProyectoRepository;
-
     private final RelacionCargaProyectoRepository relacionCargaProyectoRepository;
-
     private final NovedadCargaDocenteRepository novedadCargaDocenteRepository;
-
     private final DetalleNovedadCargaDocenteRepository detalleNovedadCargaDocenteRepository;
-
     private final NovedadRepository novedadRepository;
-
     private final PersonaGeneralRepository personaGeneralRepository;
-
     private final EscalafonRepository escalafonRepository;
-
     private final CoordinacionService coordinacionService;
-
     private final CargaBudgetService cargaBudgetService;
-
     private final ObjectMapper objectMapper;
-
     private final DetalleNovedadCargaDocenteMapper detalleNovedadCargaDocenteMapper;
-
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
-
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
 
     @Override
@@ -861,6 +835,10 @@ public class NovedadCargaDocenteServiceImpl
                     HttpStatus.CONFLICT,
                     "El docente no tiene una novedad en revisión");
         }
+        
+        // Elimina la vigencia de las novedades anteriores
+        novedadCargaDocenteRepository.clearVigenteByIdCargaDocente(idCargaDocente);
+        
         int updated = novedadCargaDocenteRepository
                 .updateEstadoNovedadInReview(
                         idCargaDocente,
@@ -939,21 +917,14 @@ public class NovedadCargaDocenteServiceImpl
             CambioModalidadHoraCatedraticoDTO dto
     ) {
 
-        if (
-            cargaDocente.getIdCarga() == null ||
-            !cargaDocente.getIdCarga().equals(dto.idCarga())
-        ) {
-
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga enviada no corresponde a la carga docente"
-            );
+        if (cargaDocente.getIdCarga() == null || !cargaDocente.getIdCarga().equals(dto.idCarga())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,"La carga enviada no corresponde a la carga docente");
         }
     }
 
     private void validateContractModalityType(NovedadEntity novedad) {
 
-        String component =novedad.getComponente();
+        String component = novedad.getComponente();
 
         if (component == null || !COMPONENT_CONTRACT_MODALITY.equalsIgnoreCase(component.trim())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La novedad seleccionada no corresponde a cambio de modalidad");
@@ -976,34 +947,25 @@ public class NovedadCargaDocenteServiceImpl
         if (component == null) {
             return false;
         }
+        
         String value = component.trim();
-        return COMPONENT_CHANGE_PROJECT_ACTIVITIES.equalsIgnoreCase(value)
-                || COMPONENT_CHANGE_DIRECT_ACTIVITIES.equalsIgnoreCase(value);
+        return COMPONENT_CHANGE_PROJECT_ACTIVITIES.equalsIgnoreCase(value) || COMPONENT_CHANGE_DIRECT_ACTIVITIES.equalsIgnoreCase(value);
     }
 
     private void validateDetalleItem(DetalleCargaDocenteItemDTO detalle) {
 
         if (detalle == null || detalle.horas() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "Las horas del detalle son obligatorias"
-            );
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Las horas del detalle son obligatorias");
         }
 
         if (detalle.idCentroCosto() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El centro de costo del detalle es obligatorio"
-            );
+            throw new ApiException(HttpStatus.BAD_REQUEST,"El centro de costo del detalle es obligatorio");
         }
 
         Long tipoActividad = detalle.idTipoActividadHija() != null ? detalle.idTipoActividadHija() : detalle.idTipoActividad();
 
         if (tipoActividad == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El tipo de actividad del detalle es obligatorio"
-            );
+            throw new ApiException(HttpStatus.BAD_REQUEST,"El tipo de actividad del detalle es obligatorio");
         }
     }
 
@@ -1114,6 +1076,7 @@ public class NovedadCargaDocenteServiceImpl
                 total = total.add(BigDecimal.valueOf(detalle.horas()));
             }
         }
+
         // Se entra cuando ya hay detalles en novedades
         for (DetalleCargaDocenteDTO detalle : dto.detallesActualizados()) {
             DetalleCargaDocenteActividadDTO actividad = detalle.detalles().get(0);
@@ -1131,6 +1094,7 @@ public class NovedadCargaDocenteServiceImpl
                 }
             }
         }
+
         // Se entra cuando ya hay detalles en novedades
         for (Long idDetalle : dto.detallesEliminados()) {
             String horasPersistidasRaw = detalleNovedadCargaDocenteRepository.findById(idDetalle).orElseThrow().getHoras();
@@ -1167,14 +1131,11 @@ public class NovedadCargaDocenteServiceImpl
                 .calcularOnceMesesPorSemanas(dto.semanas());
     }
 
-    private void insertDetails(
-            Long idCargaDocente,
-            List<DetalleCargaDocenteItemDTO> detalles
-    ) {
+    private void insertDetails(Long idCargaDocente, List<DetalleCargaDocenteItemDTO> detalles) {
 
         for (DetalleCargaDocenteItemDTO detalle : detalles) {
-            DetalleNovedadCargaDocenteEntity entity =
-                    new DetalleNovedadCargaDocenteEntity();
+            DetalleNovedadCargaDocenteEntity entity = new DetalleNovedadCargaDocenteEntity();
+
             fillDetalle(
                     entity,
                     idCargaDocente,
@@ -1824,8 +1785,5 @@ public class NovedadCargaDocenteServiceImpl
                 .stripTrailingZeros()
                 .toPlainString();
     }
-
-
-
 
 }

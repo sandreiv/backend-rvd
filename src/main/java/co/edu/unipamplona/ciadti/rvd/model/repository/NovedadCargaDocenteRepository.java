@@ -372,7 +372,19 @@ public interface NovedadCargaDocenteRepository
     @Modifying
     @Query(value = """
             UPDATE RVD.NOVEDADCARGADOCENTE NOCD
+            SET NOCD.NOCD_VIGENTE = '0'
+            WHERE NOCD.CADO_ID = :idCargaDocente
+            AND NOCD.NOCD_VIGENTE = '1'
+            """, nativeQuery = true)
+    int clearVigenteByIdCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente
+    );
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.NOVEDADCARGADOCENTE NOCD
             SET NOCD.NOCD_ESTADONOVEDAD = '1',
+                NOCD.NOCD_VIGENTE = '1',
                 NOCD.NOCD_REGISTRADOPOR = :registradoPor,
                 NOCD.NOCD_FECHACAMBIO = SYSDATE
             WHERE NOCD.CADO_ID = :idCargaDocente
@@ -439,7 +451,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 SRC.NOCD_ESTADO,
-                SRC.NOCD_VIGENTE,
+                '0',
                 SRC.NOCD_HORAS,
                 SRC.NOCD_HORASDEEXCEPCION,
                 :valorHora,
@@ -528,7 +540,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 CADO.CADO_ESTADO,
-                CADO.CADO_VIGENTE,
+                '0',
                 CADO.CADO_HORAS,
                 CADO.CADO_HORASDEEXCEPCION,
                 :valorHora,
@@ -610,7 +622,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 SRC.NOCD_ESTADO,
-                SRC.NOCD_VIGENTE,
+                '0',
                 SRC.NOCD_HORAS,
                 SRC.NOCD_HORASDEEXCEPCION,
                 :valorHora,
@@ -699,7 +711,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 CADO.CADO_ESTADO,
-                CADO.CADO_VIGENTE,
+                '0',
                 CADO.CADO_HORAS,
                 CADO.CADO_HORASDEEXCEPCION,
                 :valorHora,
@@ -829,7 +841,7 @@ public interface NovedadCargaDocenteRepository
             SRC.NOCD_VALORPRESTACIONES,
             SRC.NOCD_SALARIO,
             SRC.NOCD_ESTADO,
-            SRC.NOCD_VIGENTE,
+            '0',
             SRC.NOCD_HORAS,
             SRC.NOCD_HORASDEEXCEPCION,
             SRC.NOCD_VALORHORA,
@@ -909,7 +921,7 @@ public interface NovedadCargaDocenteRepository
             CADO.CADO_VALORPRESTACIONES,
             CADO.CADO_SALARIO,
             CADO.CADO_ESTADO,
-            CADO.CADO_VIGENTE,
+            '0',
             CADO.CADO_HORAS,
             CADO.CADO_HORASDEEXCEPCION,
             CADO.CADO_VALORHORA,
@@ -983,7 +995,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 SRC.NOCD_ESTADO,
-                SRC.NOCD_VIGENTE,
+                '0',
                 :horas,
                 :horasDeExcepcion,
                 :valorHora,
@@ -1080,7 +1092,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 CADO.CADO_ESTADO,
-                CADO.CADO_VIGENTE,
+                '0',
                 :horas,
                 :horasDeExcepcion,
                 :valorHora,
@@ -1171,7 +1183,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 SRC.NOCD_ESTADO,
-                SRC.NOCD_VIGENTE,
+                '0',
                 :horas,
                 :horasDeExcepcion,
                 :valorHora,
@@ -1261,7 +1273,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 CADO.CADO_ESTADO,
-                CADO.CADO_VIGENTE,
+                '0',
                 :horas,
                 :horasDeExcepcion,
                 :valorHora,

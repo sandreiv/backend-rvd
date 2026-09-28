@@ -729,8 +729,9 @@ public class CoordinationController {
     @Operation(
         summary = "Aprueba una novedad en revisión de un docente",
         description = """
-            Pasa NOCD_ESTADONOVEDAD de 0 a 1 y actualiza CARG_VALOR.
-            No modifica CARG_VALORAUTORIZADO.
+            Pasa NOCD_ESTADONOVEDAD de 0 a 1 y NOCD_VIGENTE a 1.
+            Las novedades anteriores del mismo CADO_ID quedan en 0.
+            Actualiza CARG_VALOR. No modifica CARG_VALORAUTORIZADO.
             """
     )
     @PutMapping("/approve-professor-novelty/{idCargaDocente}")

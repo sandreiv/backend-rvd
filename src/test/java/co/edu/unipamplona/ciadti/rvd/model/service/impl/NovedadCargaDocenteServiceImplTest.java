@@ -6,10 +6,10 @@
  * Fecha de creación: 18/09/2026
  * Modificaciones:
  * 18/09/2026 - Sebastian Jaimes - Creación inicial
- * 18/09/2026 - Sebastian Jaimes - persiste montos de contratación en
- * la fotografía nueva
+ * 18/09/2026 - Sebastian Jaimes - persiste montos de contratación
  * 18/09/2026 - Sebastian Jaimes - CARG_VALOR solo al aprobar novedad
  * 22/09/2026 - Reasignación de actividades FAD y proyectos
+ * 28/09/2026 - Al aprobar, la vigencia queda solo en la novedad nueva
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,6 +31,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -368,7 +370,10 @@ class NovedadCargaDocenteServiceImplTest {
 
         service.approveProfessorNovelty(CADO_ID);
 
-        verify(novedadCargaDocenteRepository)
+        InOrder order = inOrder(novedadCargaDocenteRepository);
+        order.verify(novedadCargaDocenteRepository)
+                .clearVigenteByIdCargaDocente(CADO_ID);
+        order.verify(novedadCargaDocenteRepository)
                 .updateEstadoNovedadInReview(eq(CADO_ID), anyString());
         verify(cargaBudgetService).refreshCargValor(CARG_ID);
         verify(cargaBudgetService, never())
@@ -386,6 +391,8 @@ class NovedadCargaDocenteServiceImplTest {
                 () -> service.approveProfessorNovelty(CADO_ID));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(novedadCargaDocenteRepository, never())
+                .clearVigenteByIdCargaDocente(any());
         verify(cargaBudgetService, never()).refreshCargValor(any());
     }
 
