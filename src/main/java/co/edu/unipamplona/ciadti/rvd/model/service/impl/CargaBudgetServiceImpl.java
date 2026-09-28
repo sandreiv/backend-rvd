@@ -163,8 +163,30 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
             return;
         }
 
-        BigDecimal proyectado = preview(idCarga, overlay);
+        // Escenario donde se rechazan todas las novedades
+        BigDecimal presupuestoConsolidado = Optional.ofNullable(carga.getValor()).orElse(BigDecimal.ZERO);
+        // Escenario donde se aprueban todas las novedades menos la actual del overlay
+        BigDecimal presupuestoActualEfectivo = preview(idCarga, null);
+        // Escenario donde se aprueban todas las novedades inclusive la del overlay
+        BigDecimal presupuestoConNuevaNovedad = preview(idCarga, overlay);
 
+        // Si al aprobar todas las novedades supera el autorizado, no es valido
+        if (presupuestoConNuevaNovedad.compareTo(autorizado) > 0) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    StringUtils.hasText(errorMessage)
+                            ? errorMessage
+                            : "El valor proyectado de la carga supera el valor autorizado"
+            );
+        }
+
+        // Diferencia de presupuesto que genera la nueva novedad
+        BigDecimal diferenciaCambioEnPresupuesto = presupuestoConNuevaNovedad.subtract(presupuestoActualEfectivo);
+
+        // Representa lo que pasaria si rechazan todas las novedades menos la actual (el peor caso)
+        BigDecimal proyectado = presupuestoConsolidado.add(diferenciaCambioEnPresupuesto);
+
+        // Si al rechazar todas las novedades menos la actual supera el autorizado, no es valido
         if (proyectado.compareTo(autorizado) > 0) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
@@ -177,9 +199,38 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
 
     @Override
     @Transactional
+    public void assertAdditionNotExceedsAuthorized(
+        Long idCarga,
+        CargaBudgetOverlay overlay
+    ) {
+        CargaEntity carga = findCarga(idCarga);
+        BigDecimal autorizado = carga.getValorAutorizado();
+        if (autorizado == null) {
+            return;
+        }
+
+        // Escenario donde se rechazan todas las novedades
+        BigDecimal presupuestoConsolidado = Optional.ofNullable(carga.getValor()).orElse(BigDecimal.ZERO);
+        // Escenario donde se aprueban todas las novedades
+        BigDecimal presupuestoActualEfectivo = preview(idCarga, null);
+        // Se toma el que consuma mas presupuesto para determinar si agrega o no
+        BigDecimal presupuestoReferencia = presupuestoConsolidado.max(presupuestoActualEfectivo);
+
+        BigDecimal valorNuevoDocente = computeInclusive(overlay).totalContrato();
+        BigDecimal proyectado = presupuestoReferencia.add(valorNuevoDocente);
+        
+        if (proyectado.compareTo(autorizado) > 0) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El valor proyectado de la carga supera el valor autorizado");
+        }
+    }
+
+    @Override
+    @Transactional
     public void refreshCargValor(Long idCarga) {
         CargaEntity carga = findCarga(idCarga);
-        carga.setValor(scale(sumEffective(idCarga, null)));
+        carga.setValor(scale(sumApproved(idCarga)));
         carga.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
         carga.setFechaCambio(new Date());
         cargaRepository.save(carga);
@@ -219,6 +270,19 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         return total;
     }
 
+    private BigDecimal sumApproved(
+            Long idCarga) {
+        BigDecimal total = BigDecimal.ZERO;
+        List<CargaDocenteEntity> rows =
+                cargaDocenteRepository.findByIdCarga(idCarga);
+        int index = 0;
+        while (index < rows.size()) {
+            total = total.add(totalApprovedOf(rows.get(index)));
+            index++;
+        }
+        return total;
+    }
+
     private BigDecimal sumPreassignment(Long idCarga) {
         BigDecimal total = BigDecimal.ZERO;
         List<CargaDocenteEntity> rows =
@@ -241,6 +305,21 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
             return computeInclusive(overlay).totalContrato();
         }
         return calculateInclusive(effectiveSnapshot(docente)).totalContrato();
+    }
+
+    private BigDecimal totalApprovedOf(
+            CargaDocenteEntity docente) {
+
+        Optional<NovedadCargaDocenteEntity> novelty =
+                novedadCargaDocenteRepository
+                        .findLastApprovedNovelty(
+                                docente.getId());
+        
+        if (novelty.isPresent()) {
+            return calculateInclusive(fromNovelty(novelty.get())).totalContrato();
+        }
+
+        return calculateInclusive(fromCargaDocente(docente)).totalContrato();
     }
 
     private boolean isOverlayFor(

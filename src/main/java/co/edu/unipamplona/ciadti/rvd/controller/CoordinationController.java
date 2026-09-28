@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
@@ -60,6 +61,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectos
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadAgregarProfesorDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
@@ -741,6 +743,16 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Actualiza el valor de puntos",
+        description = "Actualiza el valor de los puntos segun los que se almacenan en la tabla ESCALAFON siempre y cuando no supere el presupuesto y la modalidad sea TCO"
+    )
+    @PutMapping("/novelties/update-contract-value")
+    public ResponseEntity<Void> actualizarValorContratoDTO(@RequestBody ActualizarValorContratoDTO dto) {
+        novedadCargaDocenteService.updateContractValue(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Asigna nombre a una carga NN",
         description = "Genera una novedad en revisión asignando una persona a una carga NN"
     )
@@ -762,6 +774,15 @@ public class CoordinationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+        summary = "Agrega un docente a la carga como novedad",
+        description = "Agrega un docente a la modalidad de contratacion de una coordinacion y crea su respectiva novedad"
+    )
+    @PostMapping("/novelties/add-professor")
+    public ResponseEntity<Void> addNoveltyProfessor(@RequestBody NovedadAgregarProfesorDTO dto) {
+        novedadCargaDocenteService.addNoveltyProfessor(dto.cargaDocente(), dto.idNovedad());
+        return ResponseEntity.ok().build();
+    }
 
     @Operation(
         summary = "Guarda, actualiza o elimina las novedades en detalles de actividades",
