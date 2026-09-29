@@ -7,6 +7,7 @@
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
  * 12/08/2026 - Sebastian Jaimes - Rechaza anónimo; exige JWT AuthUserDetails
+ * 29/09/2026 - Silencia check() deprecado; sigue siendo el contrato
  */
 package co.edu.unipamplona.ciadti.rvd.config.security;
 
@@ -39,7 +40,12 @@ public class FuncionalidadAuthorizationManager
     private final SecurityAuthProperties properties;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    /**
+     * Spring Security 6 marca check como deprecado, pero sigue siendo
+     * abstracto: authorize() delega en este método.
+     */
     @Override
+    @SuppressWarnings("deprecation")
     public AuthorizationDecision check(
             Supplier<Authentication> authentication,
             RequestAuthorizationContext context) {

@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 29/09/2026 - Ignora relaciones de solo lectura al crear
  */
 
 package co.edu.unipamplona.ciadti.rvd.mapper;
@@ -21,17 +22,31 @@ public interface RelacionCargaProyectoMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "idDetalleCargaDocente", source = "idDetalleCargaDocente")
+    @Mapping(target = "idDetalleNovedadCargaDocente", ignore = true)
     @Mapping(target = "idPersonaProyecto", source = "dto.idPersonaProyecto")
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
-    RelacionCargaProyectoEntity toEntity(Long idDetalleCargaDocente, RelacionCargaProyectoDTO dto);
+    @Mapping(target = "personaProyecto", ignore = true)
+    @Mapping(target = "detalleCargaDocente", ignore = true)
+    @Mapping(target = "detalleNovedadCargaDocente", ignore = true)
+    RelacionCargaProyectoEntity toEntity(
+            Long idDetalleCargaDocente,
+            RelacionCargaProyectoDTO dto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "idDetalleNovedadCargaDocente", source = "idDetalleNovedadCargaDocente")
+    @Mapping(target = "idDetalleCargaDocente", ignore = true)
+    @Mapping(
+            target = "idDetalleNovedadCargaDocente",
+            source = "idDetalleNovedadCargaDocente")
     @Mapping(target = "idPersonaProyecto", source = "dto.idPersonaProyecto")
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
-    RelacionCargaProyectoEntity toEntityFromDetalleNovedad(Long idDetalleNovedadCargaDocente, RelacionCargaProyectoDTO dto);
+    @Mapping(target = "personaProyecto", ignore = true)
+    @Mapping(target = "detalleCargaDocente", ignore = true)
+    @Mapping(target = "detalleNovedadCargaDocente", ignore = true)
+    RelacionCargaProyectoEntity toEntityFromDetalleNovedad(
+            Long idDetalleNovedadCargaDocente,
+            RelacionCargaProyectoDTO dto);
 }
 
 /* 17/07/2026 @:Daniel Arias */
