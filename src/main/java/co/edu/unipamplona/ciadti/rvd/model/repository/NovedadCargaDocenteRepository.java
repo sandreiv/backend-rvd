@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntityId;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
 
 public interface NovedadCargaDocenteRepository
@@ -356,6 +357,40 @@ public interface NovedadCargaDocenteRepository
             FETCH FIRST 1 ROW ONLY
             """, nativeQuery = true)
     Optional<NovedadCargaDocenteEntity> findProfessorRecordToDuplicateNovelty(
+            @Param("idCargaDocente") Long idCargaDocente
+    );
+
+    @Query(value = """
+            SELECT NOCD.*
+            FROM RVD.NOVEDADCARGADOCENTE NOCD
+            WHERE NOCD.CADO_ID = :idCargaDocente
+            AND NOCD.NOCD_VIGENTE = '1'
+            ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+            FETCH FIRST 1 ROW ONLY
+            """, nativeQuery = true)
+    Optional<NovedadCargaDocenteEntity> findVigenteByIdCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente
+    );
+
+    @Query(value = """
+            SELECT
+                NOCD.NOVE_ID AS idNovedad,
+                NOVE.NOVE_TIPO AS tipo,
+                NOVE.NOVE_DESCRIPCION AS descripcion,
+                NOVE.NOVE_ACCION AS accion,
+                NOVE.NOVE_COMPONENTE AS componente,
+                NOCD.NOCD_FECHANOVEDAD AS fecha,
+                NOCD.NOCD_ESTADONOVEDAD AS estadoNovedad,
+                NOCD.NOCD_VIGENTE AS vigente
+            FROM RVD.NOVEDADCARGADOCENTE NOCD
+            LEFT JOIN RVD.NOVEDADES NOVE
+                ON NOVE.NOVE_ID = NOCD.NOVE_ID
+            WHERE NOCD.CADO_ID = :idCargaDocente
+            ORDER BY
+                NOCD.NOCD_FECHANOVEDAD ASC,
+                NOCD.NOCD_FECHACAMBIO ASC
+            """, nativeQuery = true)
+    List<HistorialNovedadResumenProjection> findHistorialByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente
     );
 

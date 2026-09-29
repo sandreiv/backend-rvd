@@ -14,10 +14,14 @@
  * sí al aprobar
  * 22/09/2026 - Reasignación de actividades: FAD, CTEI e ISU
  * 28/09/2026 - La vigencia pasa a la novedad aprobada
+ * 29/09/2026 - Resumen de carga con novedad vigente
+ * 29/09/2026 - Resumen de horas y centros con ResumenCargaAssembler
+ * 29/09/2026 - Historial de novedades y fuente no rechazada
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,16 +44,22 @@ import co.edu.unipamplona.ciadti.rvd.mapper.DetalleCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DetalleNovedadCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialNovedadResumenDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionResumenNovedadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenNovedadCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
@@ -62,6 +72,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ModalidadContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
@@ -72,15 +83,21 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepo
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RelacionCargaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionPorCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialNovedadResumenProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ObservacionResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
@@ -88,6 +105,9 @@ import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
+import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler;
+import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler.DetalleResumen;
+import co.edu.unipamplona.ciadti.rvd.util.ValorContratacionCalculator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -109,6 +129,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
+    private static final int ESCALA_MONETARIA = 2;
+    private static final BigDecimal PUNTOS_DEFAULT = new BigDecimal("100");
     private final CargaDocenteRepository cargaDocenteRepository;
     private final CargaRepository cargaRepository;
     private final ConvocatoriaRepository convocatoriaRepository;
@@ -120,6 +142,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     private final RelacionCargaProyectoRepository relacionCargaProyectoRepository;
     private final NovedadCargaDocenteRepository novedadCargaDocenteRepository;
     private final DetalleNovedadCargaDocenteRepository detalleNovedadCargaDocenteRepository;
+    private final DetalleCargaDocenteRepository detalleCargaDocenteRepository;
     private final NovedadRepository novedadRepository;
     private final PersonaGeneralRepository personaGeneralRepository;
     private final EscalafonRepository escalafonRepository;
@@ -129,6 +152,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     private final DetalleNovedadCargaDocenteMapper detalleNovedadCargaDocenteMapper;
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
+    private final ObservacionesRepository observacionesRepository;
+    private final ModalidadContratacionRepository modalidadContratacionRepository;
 
 
     private final CoordinacionServiceImpl coordinacionServiceImpl;
@@ -1658,14 +1683,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     }
 
     private BigDecimal parseHorasDetalle(String horas) {
-        if (!StringUtils.hasText(horas)) {
-            return BigDecimal.ZERO;
-        }
-        try {
-            return new BigDecimal(horas.trim().replace(',', '.'));
-        } catch (NumberFormatException ex) {
-            return BigDecimal.ZERO;
-        }
+        return ResumenCargaAssembler.parseHoras(horas);
     }
 
     private void validateDetalleItem(
@@ -1969,6 +1987,251 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                     HttpStatus.BAD_REQUEST,
                     "La novedad seleccionada no corresponde a Agregar docente"
             );
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResumenNovedadCargaDocenteDTO getProfessorNoveltySummary(
+            Long idCargaDocente) {
+        log.debug(
+                "getProfessorNoveltySummary ===> idCargaDocente={}",
+                idCargaDocente);
+        validateCargaDocenteForSummary(idCargaDocente);
+        
+        List<ObservacionResumenNovedadDTO> observaciones =
+                listObservacionesResumen(idCargaDocente);
+        List<HistorialNovedadResumenDTO> novedades =
+                listHistorialNovedades(idCargaDocente);
+        Optional<NovedadCargaDocenteEntity> actual =
+                novedadCargaDocenteRepository
+                        .findProfessorRecordToDuplicateNovelty(
+                                idCargaDocente);
+
+        if (actual.isEmpty()) {
+            return fromCargaDocenteSummary(
+                    idCargaDocente, observaciones, novedades);
+        }
+
+        return fromNovedadSummary(
+                actual.get(), observaciones, novedades);
+    }
+
+    private List<DetalleNovedadResumenProjection> loadActivityDetails(Long idCargaDocente) {
+        
+        List<DetalleNovedadResumenProjection> novedad = detalleNovedadCargaDocenteRepository.findResumenByIdCargaDocente(idCargaDocente);
+        if (!novedad.isEmpty()) {
+            return novedad;
+        }
+        return detalleCargaDocenteRepository.findResumenByIdCargaDocente(idCargaDocente);
+    }
+
+    private ResumenNovedadCargaDocenteDTO fromCargaDocenteSummary(
+            Long idCargaDocente,
+            List<ObservacionResumenNovedadDTO> observaciones,
+            List<HistorialNovedadResumenDTO> novedades) {
+        
+        ResumenCargaDocenteDTO base = coordinacionService.getProfessorLoadSummary(idCargaDocente);
+
+        log.info(
+                "getProfessorNoveltySummary ===> sin novedad no rechazada. id={}",
+                idCargaDocente);
+
+        return new ResumenNovedadCargaDocenteDTO(
+                base.idCargaDocente(),
+                base.valorContratacion(),
+                base.horasActividades(),
+                base.centrosCosto(),
+                observaciones,
+                novedades);
+    }
+
+    private ResumenNovedadCargaDocenteDTO fromNovedadSummary(
+            NovedadCargaDocenteEntity novedad,
+            List<ObservacionResumenNovedadDTO> observaciones,
+            List<HistorialNovedadResumenDTO> novedades) {
+        
+        List<DetalleResumen> detalles = ResumenCargaAssembler.fromNovedadList(
+                loadActivityDetails(novedad.getIdCargaDocente()));
+        boolean planta = isPlantaModalidad(novedad.getIdModalidadContratacion());
+        
+        ValorContratacionDTO valor = planta
+                ? null
+                : calculateNoveltyContract(novedad, detalles);
+        BigDecimal totalContrato = valor != null
+                ? valor.totalContrato()
+                : BigDecimal.ZERO;
+        
+        List<ActividadHorasResumenDTO> horas =
+                ResumenCargaAssembler.buildActivityHours(detalles);
+        List<CentroCostoResumenDTO> centros =
+                ResumenCargaAssembler.buildCostCenters(
+                        detalles, totalContrato);
+        
+        log.info(
+                "getProfessorNoveltySummary ===> novedad no rechazada. "
+                        + "id={}, planta={}, actividades={}, centros={}",
+                novedad.getIdCargaDocente(),
+                planta,
+                horas.size(),
+                centros.size());
+        
+        return new ResumenNovedadCargaDocenteDTO(
+                novedad.getIdCargaDocente(),
+                valor,
+                horas,
+                centros,
+                observaciones,
+                novedades);
+    }
+
+    private ValorContratacionDTO calculateNoveltyContract(NovedadCargaDocenteEntity novedad, List<DetalleResumen> detalles) {
+        if (isCatedraModalidad(novedad.getIdModalidadContratacion())) {
+            return calculateNoveltyCatedra(novedad, detalles);
+        }
+
+        return calculateNoveltyTco(novedad);
+    }
+
+    private ValorContratacionDTO calculateNoveltyCatedra(NovedadCargaDocenteEntity novedad, List<DetalleResumen> detalles) {
+        
+        BigDecimal horas = resolveHorasSemanalesNovedad(novedad, detalles);
+        
+        BigDecimal semanas = ResumenCargaAssembler.parseHoras(
+                novedad.getSemanas());
+        
+        if (!canCalculateNoveltyCatedra(novedad, horas, semanas)) {
+            return null;
+        }
+        return ValorContratacionCalculator.calculateCatedra(
+                horas,
+                semanas,
+                novedad.getValorHora(),
+                novedad.getFechaInicio(),
+                novedad.getFechaFin());
+    }
+
+    private boolean canCalculateNoveltyCatedra(NovedadCargaDocenteEntity novedad, BigDecimal horas, BigDecimal semanas) {
+        return novedad.getValorHora() != null
+                && novedad.getFechaInicio() != null
+                && novedad.getFechaFin() != null
+                && semanas.compareTo(BigDecimal.ZERO) > 0
+                && horas.compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    private ValorContratacionDTO calculateNoveltyTco(NovedadCargaDocenteEntity novedad) {
+        
+        BigDecimal asignacion = resolveAsignacionNovedad(novedad);
+        
+        if (asignacion == null || novedad.getFechaInicio() == null || novedad.getFechaFin() == null) {
+            return null;
+        }
+        return ValorContratacionCalculator.calculate(
+                asignacion,
+                novedad.getFechaInicio(),
+                novedad.getFechaFin());
+    }
+
+    private BigDecimal resolveAsignacionNovedad(NovedadCargaDocenteEntity novedad) {
+        if (novedad.getSalario() != null) {
+            return novedad.getSalario();
+        }
+
+        if (novedad.getValorPunto() == null
+                || !StringUtils.hasText(novedad.getPuntos())) {
+            return null;
+        }
+
+        return novedad.getValorPunto()
+                .multiply(parsePuntosNovedad(novedad.getPuntos()))
+                .setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal resolveHorasSemanalesNovedad(NovedadCargaDocenteEntity novedad, List<DetalleResumen> detalles) {
+        BigDecimal stored = ResumenCargaAssembler.parseHoras(novedad.getHoras());
+        
+        if (stored.compareTo(BigDecimal.ZERO) > 0) {
+            return stored;
+        }
+        return ResumenCargaAssembler.sumHoras(detalles);
+    }
+
+    private List<ObservacionResumenNovedadDTO> listObservacionesResumen(Long idCargaDocente) {
+        return observacionesRepository
+                .findByIdCargaDocente(idCargaDocente)
+                .stream()
+                .map(this::toObservacionResumen)
+                .toList();
+    }
+
+    private ObservacionResumenNovedadDTO toObservacionResumen(ObservacionResumenProjection projection) {
+        return new ObservacionResumenNovedadDTO(
+                projection.getIdObservacion(),
+                projection.getIdPersonaGeneral(),
+                projection.getNombrePersonaGeneral(),
+                projection.getObservacion(),
+                projection.getFecha());
+    }
+
+    private List<HistorialNovedadResumenDTO> listHistorialNovedades(
+            Long idCargaDocente) {
+        return novedadCargaDocenteRepository
+                .findHistorialByIdCargaDocente(idCargaDocente)
+                .stream()
+                .map(this::toHistorialNovedad)
+                .toList();
+    }
+
+    private HistorialNovedadResumenDTO toHistorialNovedad(
+            HistorialNovedadResumenProjection projection) {
+        return new HistorialNovedadResumenDTO(
+                projection.getIdNovedad(),
+                projection.getTipo(),
+                projection.getDescripcion(),
+                projection.getAccion(),
+                projection.getComponente(),
+                projection.getFecha(),
+                projection.getEstadoNovedad(),
+                projection.getVigente());
+    }
+
+    private void validateCargaDocenteForSummary(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de carga docente es obligatorio");
+        }
+        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
+        }
+    }
+
+    private boolean isPlantaModalidad(Long idModalidad) {
+        if (idModalidad == null) {
+            return false;
+        }
+        return modalidadContratacionRepository.findById(idModalidad).map(this::isPlantaNombre).orElse(false);
+    }
+
+    private boolean isPlantaNombre(ModalidadContratacionEntity modalidad) {
+        return ValorContratacionCalculator.isPlanta(
+                modalidad.getNombre(),
+                modalidad.getSigla());
+    }
+
+    private boolean isCatedraModalidad(Long idModalidad) {
+        if (idModalidad == null) {
+            return false;
+        }
+        String formaPago = restriccionCargaRepository.findById(idModalidad)
+                .map(RestriccionCargaEntity::getFormaPago)
+                .orElse(null);
+        return ValorContratacionCalculator.isCatedra(formaPago);
+    }
+
+    private BigDecimal parsePuntosNovedad(String puntos) {
+        try {
+            return new BigDecimal(puntos.trim());
+        } catch (NumberFormatException ex) {
+            return PUNTOS_DEFAULT;
         }
     }
 }

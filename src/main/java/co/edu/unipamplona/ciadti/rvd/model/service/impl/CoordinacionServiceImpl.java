@@ -21,6 +21,7 @@
  * 18/09/2026 - Sebastian Jaimes - Salario cátedra como PSM mensual
  * 18/09/2026 - Sebastian Jaimes - CARG_VALOR y autorizado en preasignación
  * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
+ * 29/09/2026 - Resumen de horas y centros con ResumenCargaAssembler
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -75,7 +76,6 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadDirectaDetalleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
@@ -183,6 +183,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
+import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler;
 import co.edu.unipamplona.ciadti.rvd.util.ValorContratacionCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -202,11 +203,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String ROL_VICERRECTORIA = "Vicerrectoria academica";
 
     private static final int ESCALA_MONETARIA = 2;
-    private static final int ESCALA_PORCENTAJE = 2;
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
-    private static final BigDecimal CIEN = new BigDecimal("100");
-    
-    private static final String CODIGO_ACTIVIDAD_DIRECTA = "FAD";
     private static final String PREASIGNACION_SOLO_LECTURA = "La convocatoria tiene restricción activa y esta coordinación no está habilitada para edición en las fechas permitidas.";
     private static final Set<String> CODIGOS_CENTRO_COSTO_ESPECIAL = Set.of("CTEI", "ISU");
     private static final String MENSAJE_PLANTA_SIN_PROYECTO_CTEI_ISU = "Debe tener un proyecto CTEI o ISU asociado para aprobar";
@@ -3184,32 +3181,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         Map<Long, DetalleCargaDocenteListadoProjection> unicos =
                 loadDetallesUnicosByCargaDocente(idCargaDocente);
-
-        Map<String, ActividadHorasAcumulado> acumulados = new LinkedHashMap<>();
-        for (DetalleCargaDocenteListadoProjection detalle : unicos.values()) {
-            String codigo = resolveCodigoActividad(detalle);
-            String nombre = resolveNombreActividad(detalle);
-            String tipo = resolveTipoActividad(detalle);
-            String clave = codigo + "|" + nombre;
-            ActividadHorasAcumulado actual = acumulados.computeIfAbsent(
-                    clave,
-                    k -> new ActividadHorasAcumulado(tipo, codigo, nombre));
-            BigDecimal horas = parseHorasDetalle(detalle.getHoras());
-            actual.totalHoras = actual.totalHoras.add(horas);
-            if (isActividadDirecta(detalle)) {
-                actual.detalles.add(toActividadDirectaDetalle(detalle, horas));
-            }
-        }
-
-        List<ActividadHorasResumenDTO> resultado = new ArrayList<>();
-        for (ActividadHorasAcumulado item : acumulados.values()) {
-            resultado.add(new ActividadHorasResumenDTO(
-                    item.tipo,
-                    item.codigo,
-                    item.nombre,
-                    item.totalHoras,
-                    item.detalles.isEmpty() ? null : List.copyOf(item.detalles)));
-        }
+        List<ActividadHorasResumenDTO> resultado =
+                ResumenCargaAssembler.buildActivityHours(
+                        ResumenCargaAssembler.fromCargaList(
+                                unicos.values()));
         log.info("listActivityHours ===> id={}, totalTipos={}", idCargaDocente, resultado.size());
         return resultado;
     }
@@ -3655,41 +3630,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
 
     private List<CentroCostoResumenDTO> buildCostCenters(Long idCargaDocente, BigDecimal totalContrato) {
-        Map<Long, DetalleCargaDocenteListadoProjection> unicos = loadDetallesUnicosByCargaDocente(idCargaDocente);
-
-        Map<Long, CentroCostoAcumulado> acumulados = new LinkedHashMap<>();
-        BigDecimal totalHoras = BigDecimal.ZERO;
-        for (DetalleCargaDocenteListadoProjection detalle : unicos.values()) {
-            BigDecimal horas = parseHorasDetalle(detalle.getHoras());
-            totalHoras = totalHoras.add(horas);
-            Long idCentro = detalle.getIdCentroCosto();
-            if (idCentro == null) {
-                continue;
-            }
-            CentroCostoAcumulado actual = acumulados.computeIfAbsent(
-                    idCentro,
-                    k -> new CentroCostoAcumulado(
-                            idCentro, resolveNombreCentroCosto(detalle)));
-            actual.numeroActividades++;
-            actual.totalHoras = actual.totalHoras.add(horas);
-        }
-
-        BigDecimal contrato = totalContrato != null ? totalContrato : BigDecimal.ZERO;
-        List<CentroCostoResumenDTO> resultado = new ArrayList<>();
-        for (CentroCostoAcumulado item : acumulados.values()) {
-            BigDecimal porcentaje = calcularPorcentajeHoras(item.totalHoras, totalHoras);
-            BigDecimal valorAsignado = contrato
-                    .multiply(porcentaje)
-                    .divide(CIEN, ESCALA_MONETARIA, RoundingMode.HALF_UP);
-            resultado.add(new CentroCostoResumenDTO(
-                    item.idCentroCosto,
-                    item.nombre,
-                    item.numeroActividades,
-                    item.totalHoras,
-                    porcentaje,
-                    valorAsignado));
-        }
-        return resultado;
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos =
+                loadDetallesUnicosByCargaDocente(idCargaDocente);
+        return ResumenCargaAssembler.buildCostCenters(
+                ResumenCargaAssembler.fromCargaList(unicos.values()),
+                totalContrato);
     }
 
     private Map<Long, DetalleCargaDocenteListadoProjection>loadDetallesUnicosByCargaDocente(Long idCargaDocente) {
@@ -3888,109 +3833,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             BigDecimal totalPreasignacion) {
     }
 
-    private String resolveCodigoActividad(DetalleCargaDocenteListadoProjection detalle) {
-        if (StringUtils.hasText(detalle.getCodigoTipoActividad())) {
-            return detalle.getCodigoTipoActividad();
-        }
-        return detalle.getCodigoTipoActividadPadre();
-    }
-
-    private boolean isActividadDirecta(DetalleCargaDocenteListadoProjection detalle) {
-        if (CODIGO_ACTIVIDAD_DIRECTA.equalsIgnoreCase(detalle.getCodigoTipoActividad())
-                || CODIGO_ACTIVIDAD_DIRECTA.equalsIgnoreCase(
-                        detalle.getCodigoTipoActividadPadre())) {
-            return true;
-        }
-        String tipo = resolveTipoActividad(detalle);
-        String nombre = resolveNombreActividad(detalle);
-        return containsDirecta(tipo) || containsDirecta(nombre);
-    }
-
-    private boolean containsDirecta(String valor) {
-        return StringUtils.hasText(valor)
-                && valor.toLowerCase().contains("directa");
-    }
-
-    private ActividadDirectaDetalleDTO toActividadDirectaDetalle(
-            DetalleCargaDocenteListadoProjection detalle,
-            BigDecimal horas) {
-        return new ActividadDirectaDetalleDTO(
-                detalle.getNombreUnidadRegional(),
-                detalle.getNombrePrograma(),
-                detalle.getNombreMateria(),
-                detalle.getNombreGrupo(),
-                horas);
-    }
-
-    private String resolveNombreActividad(DetalleCargaDocenteListadoProjection detalle) {
-        if (StringUtils.hasText(detalle.getNombreTipoActividad())) {
-            return detalle.getNombreTipoActividad();
-        }
-        return detalle.getNombreTipoActividadPadre();
-    }
-
-    private String resolveTipoActividad(DetalleCargaDocenteListadoProjection detalle) {
-        if (StringUtils.hasText(detalle.getNombreTipoActividadPadre())) {
-            return detalle.getNombreTipoActividadPadre();
-        }
-        return detalle.getNombreTipoActividad();
-    }
-
-    private String resolveNombreCentroCosto(DetalleCargaDocenteListadoProjection detalle) {
-        if (StringUtils.hasText(detalle.getDescripcionCentroCosto())) {
-            return detalle.getDescripcionCentroCosto();
-        }
-        return "Sin nombre";
-    }
-
-    private BigDecimal calcularPorcentajeHoras(
-            BigDecimal horasCentro,
-            BigDecimal totalHoras) {
-        if (totalHoras.compareTo(BigDecimal.ZERO) <= 0) {
-            return BigDecimal.ZERO.setScale(ESCALA_PORCENTAJE);
-        }
-        return horasCentro
-                .multiply(CIEN)
-                .divide(totalHoras, ESCALA_PORCENTAJE, RoundingMode.HALF_UP);
-    }
-
     private BigDecimal parseHorasDetalle(String horas) {
-        if (!StringUtils.hasText(horas)) {
-            return BigDecimal.ZERO;
-        }
-        try {
-            return new BigDecimal(horas.trim().replace(',', '.'));
-        } catch (NumberFormatException ex) {
-            return BigDecimal.ZERO;
-        }
-    }
-
-    private static final class ActividadHorasAcumulado {
-        private final String tipo;
-        private final String codigo;
-        private final String nombre;
-        private BigDecimal totalHoras = BigDecimal.ZERO;
-        private final List<ActividadDirectaDetalleDTO> detalles =
-                new ArrayList<>();
-
-        private ActividadHorasAcumulado(
-                String tipo, String codigo, String nombre) {
-            this.tipo = tipo;
-            this.codigo = codigo;
-            this.nombre = nombre;
-        }
-    }
-
-    private static final class CentroCostoAcumulado {
-        private final Long idCentroCosto;
-        private final String nombre;
-        private long numeroActividades;
-        private BigDecimal totalHoras = BigDecimal.ZERO;
-
-        private CentroCostoAcumulado(Long idCentroCosto, String nombre) {
-            this.idCentroCosto = idCentroCosto;
-            this.nombre = nombre;
-        }
+        return ResumenCargaAssembler.parseHoras(horas);
     }
 
     private HistorialCargaDocenteObservacionDTO toHistorialCargaDocenteObservacionDTO(
