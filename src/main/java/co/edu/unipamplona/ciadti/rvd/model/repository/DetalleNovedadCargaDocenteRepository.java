@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 
 public interface DetalleNovedadCargaDocenteRepository
@@ -232,4 +233,39 @@ public interface DetalleNovedadCargaDocenteRepository
     List<HorasProgramaProjection> findHorasByProgramaAndCargaDocente(
             @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
             @Param("idDetalleExcluido") Long idDetalleExcluido);
+
+    @Query(value = """
+            SELECT
+                dncd.DNCD_ID AS idDetalleNovedadCargaDocente,
+                dncd.DNCD_HORAS AS horas,
+                tiac.TIAC_NOMBRE AS nombreTipoActividad,
+                tiac.TIAC_CODIGO AS codigoTipoActividad,
+                tiac_padre.TIAC_NOMBRE AS nombreTipoActividadPadre,
+                tiac_padre.TIAC_CODIGO AS codigoTipoActividadPadre,
+                unid.UNID_NOMBRE AS nombreUnidadRegional,
+                prog.PROG_NOMBRE AS nombrePrograma,
+                grup.GRUP_NOMBRE AS nombreGrupo,
+                mate.MATE_NOMBRE AS nombreMateria,
+                ceco.CECO_ID AS idCentroCosto,
+                ceco.CECO_DESCRIPCION AS descripcionCentroCosto
+            FROM RVD.DETALLENOVEDADCARGADOCENTE dncd
+            LEFT JOIN RVD.TIPOACTIVIDADES tiac
+                ON tiac.TIAC_ID = dncd.TIAC_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES tiac_padre
+                ON tiac_padre.TIAC_ID = tiac.TIAC_IDPADRE
+            LEFT JOIN ACADEMICO.GRUPO grup
+                ON grup.GRUP_ID = dncd.GRUP_ID
+            LEFT JOIN ACADEMICO.MATERIA mate
+                ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
+            LEFT JOIN ACADEMICO.UNIDAD unid
+                ON unid.UNID_ID = grup.UNID_IDREGIONAL
+            LEFT JOIN ACADEMICO.PROGRAMA prog
+                ON prog.PROG_ID = dncd.PROG_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
+                ON ceco.CECO_ID = dncd.CECO_ID
+            WHERE dncd.CADO_ID = :idCargaDocente
+            ORDER BY dncd.DNCD_ID
+            """, nativeQuery = true)
+    List<DetalleNovedadResumenProjection> findResumenByIdCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente);
 }

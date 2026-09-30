@@ -8,6 +8,7 @@
  * 17/07/2026 - Daniel Arias - Creación inicial
  * 27/08/2026 - Horas agrupadas por actividad padre
  * 31/08/2026 - Sebastian Jaimes - Grupos y cupos para reporte PDF
+ * 29/09/2026 - Resumen de horas para novedad con fallback
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -26,6 +27,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.GrupoCuposRepor
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasActividadPadreProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TotalHorasPreasignacionProjection;
 
 public interface DetalleCargaDocenteRepository
@@ -287,6 +289,41 @@ public interface DetalleCargaDocenteRepository
 
     List<DetalleCargaDocenteEntity> findAllByIdCargaDocente(
             Long idCargaDocente);
+
+    @Query(value = """
+            SELECT
+                decd.DECD_ID AS idDetalleNovedadCargaDocente,
+                decd.DECD_HORAS AS horas,
+                tiac.TIAC_NOMBRE AS nombreTipoActividad,
+                tiac.TIAC_CODIGO AS codigoTipoActividad,
+                tiac_padre.TIAC_NOMBRE AS nombreTipoActividadPadre,
+                tiac_padre.TIAC_CODIGO AS codigoTipoActividadPadre,
+                unid.UNID_NOMBRE AS nombreUnidadRegional,
+                prog.PROG_NOMBRE AS nombrePrograma,
+                grup.GRUP_NOMBRE AS nombreGrupo,
+                mate.MATE_NOMBRE AS nombreMateria,
+                ceco.CECO_ID AS idCentroCosto,
+                ceco.CECO_DESCRIPCION AS descripcionCentroCosto
+            FROM RVD.DETALLECARGADOCENTE decd
+            LEFT JOIN RVD.TIPOACTIVIDADES tiac
+                ON tiac.TIAC_ID = decd.TIAC_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES tiac_padre
+                ON tiac_padre.TIAC_ID = tiac.TIAC_IDPADRE
+            LEFT JOIN ACADEMICO.GRUPO grup
+                ON grup.GRUP_ID = decd.GRUP_ID
+            LEFT JOIN ACADEMICO.MATERIA mate
+                ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
+            LEFT JOIN ACADEMICO.UNIDAD unid
+                ON unid.UNID_ID = grup.UNID_IDREGIONAL
+            LEFT JOIN ACADEMICO.PROGRAMA prog
+                ON prog.PROG_ID = decd.PROG_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
+                ON ceco.CECO_ID = decd.CECO_ID
+            WHERE decd.CADO_ID = :idCargaDocente
+            ORDER BY decd.DECD_ID
+            """, nativeQuery = true)
+    List<DetalleNovedadResumenProjection> findResumenByIdCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente);
 
 }
 

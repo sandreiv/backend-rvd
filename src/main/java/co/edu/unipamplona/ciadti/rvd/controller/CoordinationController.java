@@ -20,6 +20,8 @@
  * 18/09/2026 - CARG_VALOR al aprobar novedad; autorizado en preasignación
  * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
  * 22/09/2026 - Novedad de actividades: FAD, CTEI e ISU
+ * 29/09/2026 - Resumen de carga con novedad vigente
+ * 29/09/2026 - Historial de novedades en el resumen
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -72,6 +74,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ProgramaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionConvocatoriaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenNovedadCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RestriccionProgramaHorasDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadCriterioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
@@ -799,5 +802,23 @@ public class CoordinationController {
     public ResponseEntity<Void> saveNoveltyActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
         novedadCargaDocenteService.saveNoveltyProjectActivities(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Obtiene el resumen de carga docente con novedad",
+        description = """
+            Usa la última novedad no rechazada (ESTADONOVEDAD <> 2).
+            El valor de contratación sale de NOVEDADCARGADOCENTE.
+            Las horas salen de DETALLENOVEDADCARGADOCENTE si hay
+            filas; si no, de DETALLECARGADOCENTE. Los centros de
+            costo se calculan con esas horas. Si no hay novedad no
+            rechazada, usa la carga docente. Las observaciones salen
+            de RVD.OBSERVACIONES. novedades lista el historial por
+            NOVE_ID, de la más vieja a la más nueva.
+            """
+    )
+    @GetMapping("/professor-novelty-summary/{idCargaDocente}")
+    public ResponseEntity<ResumenNovedadCargaDocenteDTO>getProfessorNoveltySummary(@PathVariable Long idCargaDocente) {
+        return new ResponseEntity<>(novedadCargaDocenteService.getProfessorNoveltySummary(idCargaDocente), HttpStatus.OK);
     }
 }
