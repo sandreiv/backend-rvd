@@ -84,7 +84,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CADO.FECO_ID
                 WHERE CADO.CARG_ID = :idCarga
-                AND CADO.MOCO_ID = :idModalidadContratacion
+                    AND CADO.MOCO_ID = :idModalidadContratacion
+                    AND CADO.CADO_CREADOENNOVEDAD IS NULL
                 ORDER BY
                 CASE
                     WHEN PEGE.PEGE_ID IS NULL THEN 1
@@ -160,6 +161,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CADO.FECO_ID
                 WHERE CARG.CARG_ID = :idCarga
+                    AND CADO.CADO_CREADOENNOVEDAD IS NULL
                 ORDER BY
                 UPPER(TRIM(
                     TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
@@ -331,6 +333,14 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
     List<CargaDocenteEntity> findByIdCarga(Long idCarga);
 
     @Query(value = """
+            SELECT CADO.*
+            FROM RVD.CARGADOCENTE CADO
+            WHERE CADO.CARG_ID = :idCarga
+                AND CADO.CADO_CREADOENNOVEDAD IS NULL
+            """, nativeQuery = true)
+    List<CargaDocenteEntity> findByIdCargaWithoutNoveltyProfessors(@Param("idCarga") Long idCarga);
+
+    @Query(value = """
             SELECT
                 COUNT(DISTINCT CADO.PEGE_ID)
                 + SUM(
@@ -349,6 +359,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             INNER JOIN RVD.CARGADOCENTE CADO
                 ON CADO.CARG_ID = CARG.CARG_ID
             WHERE CARG.CARG_ID = :cargId
+                AND CADO.CADO_CREADOENNOVEDAD IS NULL
             """, nativeQuery = true)
     List<Object[]> findTotalPreasignacionByCargaId(@Param("cargId") Long cargId);
 
@@ -439,6 +450,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             LEFT JOIN RVD.RESTRICCIONCARGA RECA
                 ON RECA.MOCO_ID = CADO.MOCO_ID
             WHERE CADO.CARG_ID = :idCarga
+                AND CADO.CADO_CREADOENNOVEDAD IS NULL
             ORDER BY
                 UPPER(NVL(MOCO.MOCO_NOMBRE, ' ')),
                 UPPER(TRIM(
