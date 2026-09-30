@@ -26,16 +26,7 @@ public interface DetalleNovedadCargaDocenteRepository
     );
 
     @Query(value = """
-            WITH NOVEDAD_VALIDA AS (
-
-                SELECT 1
-                FROM RVD.NOVEDADCARGADOCENTE NOCD
-                WHERE NOCD.CADO_ID = :idCargaDocente
-                AND NOCD.NOCD_ESTADONOVEDAD <> '2'
-                FETCH FIRST 1 ROW ONLY
-            ),
-
-            DETALLES_NOVEDAD AS (
+            WITH DETALLES_NOVEDAD AS (
 
                 SELECT
                     DNCD.DNCD_ID,
@@ -49,11 +40,6 @@ public interface DetalleNovedadCargaDocenteRepository
                 FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
 
                 WHERE DNCD.CADO_ID = :idCargaDocente
-
-                AND EXISTS (
-                    SELECT 1
-                    FROM NOVEDAD_VALIDA
-                )
             ),
 
             DETALLES_CARGA AS (

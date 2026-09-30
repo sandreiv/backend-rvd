@@ -27,7 +27,6 @@ public interface NovedadCargaDocenteRepository
             Long idNovedadCatalogo
     );
 
-    // Falta determinar si tieneActividades se toma con la tabla detalles o novedad detalles. Siguiendo una logica parecida
     @Query(value = """
             WITH NOVEDADES_VALIDAS AS (
                 SELECT
