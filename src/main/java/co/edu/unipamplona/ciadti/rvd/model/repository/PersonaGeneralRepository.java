@@ -155,9 +155,24 @@ public interface PersonaGeneralRepository
     List<CatalogoAdministracionProjection> findCareerProfessorsOptions();
 
     @Query(value = """
+            WITH NOVEDAD_ACTUAL AS (
+                SELECT
+                    NOCD.CADO_ID,
+                    NOCD.PEGE_ID,
+                    NOCD.NOCD_ESTADONOVEDAD,
+                    NOCD.NOCD_ESTADOELIMINADO,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+            )
+
             SELECT DISTINCT
                 PEGE.PEGE_ID AS idPersonaGeneral,
                 PEGE.PEGE_DOCUMENTOIDENTIDAD AS documentoIdentidad,
+
                 PENG.PENG_PRIMERNOMBRE AS primerNombre,
                 PENG.PENG_SEGUNDONOMBRE AS segundoNombre,
                 PENG.PENG_PRIMERAPELLIDO AS primerApellido,
@@ -211,16 +226,47 @@ public interface PersonaGeneralRepository
             AND NOT EXISTS (
                 SELECT 1
                 FROM RVD.CARGADOCENTE CADO
-                WHERE CADO.PEGE_ID = PEGE.PEGE_ID
-                AND NVL(CADO.CADO_VIGENTE, '1') = '1'
-            )
 
-            AND NOT EXISTS (
-                SELECT 1
-                FROM RVD.NOVEDADCARGADOCENTE NOCD
-                WHERE NOCD.PEGE_ID = PEGE.PEGE_ID
-                AND NVL(NOCD.NOCD_VIGENTE, '1') = '1'
-                AND NVL(NOCD.NOCD_ESTADONOVEDAD, '0') <> '2'
+                LEFT JOIN NOVEDAD_ACTUAL NOCD
+                    ON NOCD.CADO_ID = CADO.CADO_ID
+                    AND NOCD.RN = 1
+
+                WHERE
+                    (
+                        /*
+                        * Si existe una fotografía de novedad,
+                        * esa fotografía manda.
+                        */
+                        (
+                            NOCD.CADO_ID IS NOT NULL
+                            AND NVL(
+                                NOCD.NOCD_ESTADOELIMINADO,
+                                '0'
+                            ) = '0'
+                        )
+
+                        OR
+
+                        /*
+                        * Si nunca ha tenido una novedad válida,
+                        * usamos directamente CARGADOCENTE.
+                        */
+                        (
+                            NOCD.CADO_ID IS NULL
+                            AND NVL(
+                                CADO.CADO_VIGENTE,
+                                '1'
+                            ) = '1'
+                        )
+                    )
+
+                    AND (
+                        CASE
+                            WHEN NOCD.CADO_ID IS NOT NULL
+                                THEN NOCD.PEGE_ID
+                            ELSE CADO.PEGE_ID
+                        END
+                    ) = PEGE.PEGE_ID
             )
 
             ORDER BY

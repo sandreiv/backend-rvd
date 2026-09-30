@@ -360,22 +360,38 @@ class NovedadCargaDocenteServiceImplTest {
 
     @Test
     void approveInReviewNoveltyRefreshesCargValorOnly() {
-        stubCargaDocente();
-        when(novedadCargaDocenteRepository.countNoveltyInReview(CADO_ID))
-                .thenReturn(1L);
+        stubCargaAndCatalog();
+
+        NovedadCargaDocenteEntity novedadEnRevision =
+                new NovedadCargaDocenteEntity();
+
+        novedadEnRevision.setIdNovedadCatalogo(NOVE_ID);
+
+        when(novedadCargaDocenteRepository
+                .findNoveltyInReview(CADO_ID))
+                .thenReturn(Optional.of(novedadEnRevision));
+
         when(novedadCargaDocenteRepository.updateEstadoNovedadInReview(
                 eq(CADO_ID),
+                eq("0"),
                 anyString()))
                 .thenReturn(1);
 
         service.approveProfessorNovelty(CADO_ID);
 
         InOrder order = inOrder(novedadCargaDocenteRepository);
+
         order.verify(novedadCargaDocenteRepository)
                 .clearVigenteByIdCargaDocente(CADO_ID);
+
         order.verify(novedadCargaDocenteRepository)
-                .updateEstadoNovedadInReview(eq(CADO_ID), anyString());
+                .updateEstadoNovedadInReview(
+                        eq(CADO_ID),
+                        eq("0"),
+                        anyString());
+
         verify(cargaBudgetService).refreshCargValor(CARG_ID);
+
         verify(cargaBudgetService, never())
                 .refreshPreassignmentTotals(any());
     }
@@ -383,17 +399,22 @@ class NovedadCargaDocenteServiceImplTest {
     @Test
     void approveWithoutNoveltyInReviewThrowsConflict() {
         stubCargaDocente();
-        when(novedadCargaDocenteRepository.countNoveltyInReview(CADO_ID))
-                .thenReturn(0L);
+
+        when(novedadCargaDocenteRepository
+                .findNoveltyInReview(CADO_ID))
+                .thenReturn(Optional.empty());
 
         ApiException ex = assertThrows(
                 ApiException.class,
                 () -> service.approveProfessorNovelty(CADO_ID));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+
         verify(novedadCargaDocenteRepository, never())
                 .clearVigenteByIdCargaDocente(any());
-        verify(cargaBudgetService, never()).refreshCargValor(any());
+
+        verify(cargaBudgetService, never())
+                .refreshCargValor(any());
     }
 
     private void stubActivityNovelty(Long idNovedad, String componente) {

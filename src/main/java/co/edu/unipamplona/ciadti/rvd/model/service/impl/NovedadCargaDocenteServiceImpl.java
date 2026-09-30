@@ -147,6 +147,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         }
 
         Optional<NovedadCargaDocenteEntity> previous = novedadCargaDocenteRepository.findProfessorRecordToDuplicateNovelty(dto.idCargaDocente());
+        
+        validateProfessorNotDeleted(previous);
+
         CargaDocenteEntity cargaOriginal = cargaDocenteRepository.findById(dto.idCargaDocente())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente seleccionada"));
 
@@ -268,6 +271,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
          * si existe una fotografía válida anterior.
          */
         Optional<NovedadCargaDocenteEntity> previous = novedadCargaDocenteRepository.findProfessorRecordToDuplicateNovelty(dto.idCargaDocente());
+
+        validateProfessorNotDeleted(previous);
 
         /*
          * Asignar nombre a NN solamente se puede ejecutar
@@ -468,6 +473,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                         .findProfessorRecordToDuplicateNovelty(
                                 dto.idCargaDocente());
 
+        validateProfessorNotDeleted(previous);     
+
         CargaBudgetOverlay overlay = overlayFrom(dto);
         ValorContratacionDTO valor = cargaBudgetService.computeInclusive(overlay);
         cargaBudgetService.assertNotExceedsAuthorized(
@@ -551,6 +558,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                                 dto.idCargaDocente()
                         );
         
+        validateProfessorNotDeleted(novedadOrigen);                
+
         Long idModalidadContratacion =
         novedadOrigen
                 .map(NovedadCargaDocenteEntity::getIdModalidadContratacion)
@@ -762,6 +771,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                                 dto.idCargaDocente()
                         );
 
+        validateProfessorNotDeleted(novedadOrigen);                
+
         String registradoPor =
                 RegistradoPorUtils.value(Accion.INSERT);
 
@@ -852,6 +863,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         }
 
         Optional<NovedadCargaDocenteEntity> previous = novedadCargaDocenteRepository.findProfessorRecordToDuplicateNovelty(dto.idCargaDocente());
+        
+        validateProfessorNotDeleted(previous);
+        
         CargaDocenteEntity cargaOriginal = cargaDocenteRepository.findById(dto.idCargaDocente())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente seleccionada"));
 
@@ -965,37 +979,70 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     @Override
     @Transactional
     public void approveProfessorNovelty(Long idCargaDocente) {
+
         CargaDocenteEntity cargaDocente =
                 cargaDocenteRepository
                         .findById(idCargaDocente)
                         .orElseThrow(() -> new ApiException(
                                 HttpStatus.NOT_FOUND,
                                 "No existe la carga docente con id "
-                                        + idCargaDocente));
-        if (novedadCargaDocenteRepository
-                .countNoveltyInReview(idCargaDocente) <= 0) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "El docente no tiene una novedad en revisión");
-        }
-        
-        // Elimina la vigencia de las novedades anteriores
-        novedadCargaDocenteRepository.clearVigenteByIdCargaDocente(idCargaDocente);
-        
-        int updated = novedadCargaDocenteRepository
-                .updateEstadoNovedadInReview(
-                        idCargaDocente,
-                        RegistradoPorUtils.value(Accion.UPDATE));
+                                        + idCargaDocente
+                        ));
+
+        NovedadCargaDocenteEntity novedadEnRevision =
+                novedadCargaDocenteRepository
+                        .findNoveltyInReview(idCargaDocente)
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.CONFLICT,
+                                "El docente no tiene una novedad en revisión"
+                        ));
+
+        NovedadEntity novedad =
+                novedadRepository
+                        .findById(novedadEnRevision.getIdNovedadCatalogo())
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "No existe la novedad seleccionada"
+                        ));
+
+        String estadoEliminado =
+                COMPONENT_DELETE_PROFESSOR.equalsIgnoreCase(
+                        novedad.getComponente() != null
+                                ? novedad.getComponente().trim()
+                                : ""
+                )
+                        ? "1"
+                        : "0";
+
+        novedadCargaDocenteRepository
+                .clearVigenteByIdCargaDocente(idCargaDocente);
+
+        int updated =
+                novedadCargaDocenteRepository
+                        .updateEstadoNovedadInReview(
+                                idCargaDocente,
+                                estadoEliminado,
+                                RegistradoPorUtils.value(Accion.UPDATE)
+                        );
+
         if (updated < 1) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "No fue posible aprobar la novedad");
+                    "No fue posible aprobar la novedad"
+            );
         }
-        cargaBudgetService.refreshCargValor(cargaDocente.getIdCarga());
+
+        cargaBudgetService.refreshCargValor(
+                cargaDocente.getIdCarga()
+        );
+
         log.info(
-                "approveProfessorNovelty ===> Novedad aprobada. idCargaDocente={}, idCarga={}",
+                "approveProfessorNovelty ===> Novedad aprobada. "
+                        + "idCargaDocente={}, idCarga={}, estadoEliminado={}",
                 idCargaDocente,
-                cargaDocente.getIdCarga());
+                cargaDocente.getIdCarga(),
+                estadoEliminado
+        );
     }
 
 
@@ -1971,4 +2018,38 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             );
         }
     }
+
+    private void validateProfessorNotDeleted(
+            Optional<NovedadCargaDocenteEntity> previous
+    ) {
+
+        if (
+            previous.isPresent()
+            && "1".equals(previous.get().getEstadoEliminado())
+        ) {
+
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "El docente ya fue eliminado de la carga y no admite nuevas novedades"
+            );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

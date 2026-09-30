@@ -118,6 +118,9 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "NOCD_ESTADONOVEDAD")
     private String estadoNovedad;
 
+    @Column(name = "NOCD_ESTADOELIMINADO")
+    private String estadoEliminado;
+
     @Column(name = "NOCD_REGISTRADOPOR")
     private String registradoPor;
 
@@ -190,6 +193,7 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
                 ", momento=" + momento +
                 ", onceMeses=" + onceMeses +
                 ", estadoNovedad=" + estadoNovedad +
+                ", estadoEliminado=" + estadoEliminado +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 ", idNovedadCatalogo=" + idNovedadCatalogo +

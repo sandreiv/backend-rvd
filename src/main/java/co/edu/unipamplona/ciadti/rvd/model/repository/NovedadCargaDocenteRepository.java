@@ -49,41 +49,65 @@ public interface NovedadCargaDocenteRepository
                     COALESCE(NOCD.CACA_ID, CADO.CACA_ID) AS CACA_ID,
                     COALESCE(NOCD.FECO_ID, CADO.FECO_ID) AS FECO_ID,
 
-                    COALESCE(NOCD.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO)
-                        AS CADO_FECHAINICIO,
+                    COALESCE(
+                        NOCD.NOCD_FECHAINICIO,
+                        CADO.CADO_FECHAINICIO
+                    ) AS CADO_FECHAINICIO,
 
-                    COALESCE(NOCD.NOCD_FECHAFIN, CADO.CADO_FECHAFIN)
-                        AS CADO_FECHAFIN,
+                    COALESCE(
+                        NOCD.NOCD_FECHAFIN,
+                        CADO.CADO_FECHAFIN
+                    ) AS CADO_FECHAFIN,
 
-                    COALESCE(NOCD.NOCD_VALORCONTRATO, CADO.CADO_VALORCONTRATO)
-                        AS CADO_VALORCONTRATO,
+                    COALESCE(
+                        NOCD.NOCD_VALORCONTRATO,
+                        CADO.CADO_VALORCONTRATO
+                    ) AS CADO_VALORCONTRATO,
 
-                    COALESCE(NOCD.NOCD_VALORPRESTACIONES, CADO.CADO_VALORPRESTACIONES)
-                        AS CADO_VALORPRESTACIONES,
+                    COALESCE(
+                        NOCD.NOCD_VALORPRESTACIONES,
+                        CADO.CADO_VALORPRESTACIONES
+                    ) AS CADO_VALORPRESTACIONES,
 
-                    COALESCE(NOCD.NOCD_SALARIO, CADO.CADO_SALARIO)
-                        AS CADO_SALARIO,
+                    COALESCE(
+                        NOCD.NOCD_SALARIO,
+                        CADO.CADO_SALARIO
+                    ) AS CADO_SALARIO,
 
-                    COALESCE(NOCD.NOCD_VALORHORA, CADO.CADO_VALORHORA)
-                        AS CADO_VALORHORA,
+                    COALESCE(
+                        NOCD.NOCD_VALORHORA,
+                        CADO.CADO_VALORHORA
+                    ) AS CADO_VALORHORA,
 
-                    COALESCE(NOCD.NOCD_PUNTOS, CADO.CADO_PUNTOS)
-                        AS CADO_PUNTOS,
+                    COALESCE(
+                        NOCD.NOCD_PUNTOS,
+                        CADO.CADO_PUNTOS
+                    ) AS CADO_PUNTOS,
 
-                    COALESCE(NOCD.NOCD_VALORPUNTO, CADO.CADO_VALORPUNTO)
-                        AS CADO_VALORPUNTO,
+                    COALESCE(
+                        NOCD.NOCD_VALORPUNTO,
+                        CADO.CADO_VALORPUNTO
+                    ) AS CADO_VALORPUNTO,
 
-                    COALESCE(NOCD.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO)
-                        AS CADO_TOTALCONTRATO,
+                    COALESCE(
+                        NOCD.NOCD_TOTALCONTRATO,
+                        CADO.CADO_TOTALCONTRATO
+                    ) AS CADO_TOTALCONTRATO,
 
-                    COALESCE(NOCD.NOCD_SEMANAS, CADO.CADO_SEMANAS)
-                        AS CADO_SEMANAS,
+                    COALESCE(
+                        NOCD.NOCD_SEMANAS,
+                        CADO.CADO_SEMANAS
+                    ) AS CADO_SEMANAS,
 
-                    COALESCE(NOCD.NOCD_ONCEMESES, CADO.CADO_ONCEMESES)
-                        AS CADO_ONCEMESES,
+                    COALESCE(
+                        NOCD.NOCD_ONCEMESES,
+                        CADO.CADO_ONCEMESES
+                    ) AS CADO_ONCEMESES,
 
-                    COALESCE(NOCD.NOCD_HORASDEEXCEPCION, CADO.CADO_HORASDEEXCEPCION)
-                        AS CADO_HORASDEEXCEPCION,
+                    COALESCE(
+                        NOCD.NOCD_HORASDEEXCEPCION,
+                        CADO.CADO_HORASDEEXCEPCION
+                    ) AS CADO_HORASDEEXCEPCION,
 
                     CADO.CADO_ESTADO,
 
@@ -97,16 +121,33 @@ public interface NovedadCargaDocenteRepository
                     AND NOCD.RN = 1
 
                 WHERE CADO.CARG_ID = :idCarga
-                AND COALESCE(NOCD.MOCO_ID, CADO.MOCO_ID)
-                    = :idModalidadContratacion
+
+                AND COALESCE(
+                    NOCD.MOCO_ID,
+                    CADO.MOCO_ID
+                ) = :idModalidadContratacion
+
+                AND NVL(
+                    NOCD.NOCD_ESTADOELIMINADO,
+                    '0'
+                ) = '0'
             )
+
             SELECT
                 PEGE.PEGE_ID AS idPersonaGeneral,
 
                 TRIM(
-                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    TRIM(
+                        PENG.PENG_PRIMERNOMBRE
+                        || ' '
+                        || PENG.PENG_SEGUNDONOMBRE
+                    )
                     || ' ' ||
-                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                    TRIM(
+                        PENG.PENG_PRIMERAPELLIDO
+                        || ' '
+                        || PENG.PENG_SEGUNDOAPELLIDO
+                    )
                 ) AS nombreCompleto,
 
                 CR.CADO_ID AS idCargaDocente,
@@ -163,29 +204,52 @@ public interface NovedadCargaDocenteRepository
 
             LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CR.FECO_ID
-            
+
             LEFT JOIN RVD.NOVEDADES NOVE
-                ON NOVE.NOVE_ID = CR.NOVE_ID    
+                ON NOVE.NOVE_ID = CR.NOVE_ID
 
             ORDER BY
                 CASE
                     WHEN PEGE.PEGE_ID IS NULL THEN 1
                     WHEN TRIM(
-                        TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                        TRIM(
+                            PENG.PENG_PRIMERNOMBRE
+                            || ' '
+                            || PENG.PENG_SEGUNDONOMBRE
+                        )
                         || ' ' ||
-                        TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                    ) IS NULL THEN 1
+                        TRIM(
+                            PENG.PENG_PRIMERAPELLIDO
+                            || ' '
+                            || PENG.PENG_SEGUNDOAPELLIDO
+                        )
+                    ) IS NULL
+                    THEN 1
                     ELSE 0
                 END,
-                UPPER(TRIM(
-                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                    || ' ' ||
-                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                )) NULLS LAST
+
+                UPPER(
+                    TRIM(
+                        TRIM(
+                            PENG.PENG_PRIMERNOMBRE
+                            || ' '
+                            || PENG.PENG_SEGUNDONOMBRE
+                        )
+                        || ' ' ||
+                        TRIM(
+                            PENG.PENG_PRIMERAPELLIDO
+                            || ' '
+                            || PENG.PENG_SEGUNDOAPELLIDO
+                        )
+                    )
+                ) NULLS LAST
             """, nativeQuery = true)
-    List<NovedadDocenteCargaCoordinacionProjection> findProfessorsByCargaAndModalityInNovelties(
+    List<NovedadDocenteCargaCoordinacionProjection>
+    findProfessorsByCargaAndModalityInNovelties(
             @Param("idCarga") Long idCarga,
-            @Param("idModalidadContratacion") Long idModalidadContratacion);
+            @Param("idModalidadContratacion")
+            Long idModalidadContratacion
+    );
 
     @Query(value = """
             WITH NOVEDADES_VALIDAS AS (
@@ -208,41 +272,65 @@ public interface NovedadCargaDocenteRepository
                     COALESCE(NOCD.CACA_ID, CADO.CACA_ID) AS CACA_ID,
                     COALESCE(NOCD.FECO_ID, CADO.FECO_ID) AS FECO_ID,
 
-                    COALESCE(NOCD.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO)
-                        AS CADO_FECHAINICIO,
+                    COALESCE(
+                        NOCD.NOCD_FECHAINICIO,
+                        CADO.CADO_FECHAINICIO
+                    ) AS CADO_FECHAINICIO,
 
-                    COALESCE(NOCD.NOCD_FECHAFIN, CADO.CADO_FECHAFIN)
-                        AS CADO_FECHAFIN,
+                    COALESCE(
+                        NOCD.NOCD_FECHAFIN,
+                        CADO.CADO_FECHAFIN
+                    ) AS CADO_FECHAFIN,
 
-                    COALESCE(NOCD.NOCD_VALORCONTRATO, CADO.CADO_VALORCONTRATO)
-                        AS CADO_VALORCONTRATO,
+                    COALESCE(
+                        NOCD.NOCD_VALORCONTRATO,
+                        CADO.CADO_VALORCONTRATO
+                    ) AS CADO_VALORCONTRATO,
 
-                    COALESCE(NOCD.NOCD_VALORPRESTACIONES, CADO.CADO_VALORPRESTACIONES)
-                        AS CADO_VALORPRESTACIONES,
+                    COALESCE(
+                        NOCD.NOCD_VALORPRESTACIONES,
+                        CADO.CADO_VALORPRESTACIONES
+                    ) AS CADO_VALORPRESTACIONES,
 
-                    COALESCE(NOCD.NOCD_SALARIO, CADO.CADO_SALARIO)
-                        AS CADO_SALARIO,
+                    COALESCE(
+                        NOCD.NOCD_SALARIO,
+                        CADO.CADO_SALARIO
+                    ) AS CADO_SALARIO,
 
-                    COALESCE(NOCD.NOCD_VALORHORA, CADO.CADO_VALORHORA)
-                        AS CADO_VALORHORA,
+                    COALESCE(
+                        NOCD.NOCD_VALORHORA,
+                        CADO.CADO_VALORHORA
+                    ) AS CADO_VALORHORA,
 
-                    COALESCE(NOCD.NOCD_PUNTOS, CADO.CADO_PUNTOS)
-                        AS CADO_PUNTOS,
+                    COALESCE(
+                        NOCD.NOCD_PUNTOS,
+                        CADO.CADO_PUNTOS
+                    ) AS CADO_PUNTOS,
 
-                    COALESCE(NOCD.NOCD_VALORPUNTO, CADO.CADO_VALORPUNTO)
-                        AS CADO_VALORPUNTO,
+                    COALESCE(
+                        NOCD.NOCD_VALORPUNTO,
+                        CADO.CADO_VALORPUNTO
+                    ) AS CADO_VALORPUNTO,
 
-                    COALESCE(NOCD.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO)
-                        AS CADO_TOTALCONTRATO,
+                    COALESCE(
+                        NOCD.NOCD_TOTALCONTRATO,
+                        CADO.CADO_TOTALCONTRATO
+                    ) AS CADO_TOTALCONTRATO,
 
-                    COALESCE(NOCD.NOCD_SEMANAS, CADO.CADO_SEMANAS)
-                        AS CADO_SEMANAS,
+                    COALESCE(
+                        NOCD.NOCD_SEMANAS,
+                        CADO.CADO_SEMANAS
+                    ) AS CADO_SEMANAS,
 
-                    COALESCE(NOCD.NOCD_ONCEMESES, CADO.CADO_ONCEMESES)
-                        AS CADO_ONCEMESES,
+                    COALESCE(
+                        NOCD.NOCD_ONCEMESES,
+                        CADO.CADO_ONCEMESES
+                    ) AS CADO_ONCEMESES,
 
-                    COALESCE(NOCD.NOCD_HORASDEEXCEPCION, CADO.CADO_HORASDEEXCEPCION)
-                        AS CADO_HORASDEEXCEPCION,
+                    COALESCE(
+                        NOCD.NOCD_HORASDEEXCEPCION,
+                        CADO.CADO_HORASDEEXCEPCION
+                    ) AS CADO_HORASDEEXCEPCION,
 
                     CADO.CADO_ESTADO,
 
@@ -254,14 +342,28 @@ public interface NovedadCargaDocenteRepository
                 LEFT JOIN NOVEDADES_VALIDAS NOCD
                     ON NOCD.CADO_ID = CADO.CADO_ID
                     AND NOCD.RN = 1
+
+                WHERE NVL(
+                    NOCD.NOCD_ESTADOELIMINADO,
+                    '0'
+                ) = '0'
             )
+
             SELECT
                 PEGE.PEGE_ID AS idPersonaGeneral,
 
                 TRIM(
-                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    TRIM(
+                        PENG.PENG_PRIMERNOMBRE
+                        || ' '
+                        || PENG.PENG_SEGUNDONOMBRE
+                    )
                     || ' ' ||
-                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                    TRIM(
+                        PENG.PENG_PRIMERAPELLIDO
+                        || ' '
+                        || PENG.PENG_SEGUNDOAPELLIDO
+                    )
                 ) AS nombreCompleto,
 
                 CR.CADO_ID AS idCargaDocente,
@@ -329,22 +431,35 @@ public interface NovedadCargaDocenteRepository
 
             LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CR.FECO_ID
-            
+
             LEFT JOIN RVD.NOVEDADES NOVE
-                ON NOVE.NOVE_ID = CR.NOVE_ID    
+                ON NOVE.NOVE_ID = CR.NOVE_ID
 
             WHERE CARG.CARG_ID = :idCarga
 
             ORDER BY
-                UPPER(TRIM(
-                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                    || ' ' ||
-                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                )) NULLS LAST
+                UPPER(
+                    TRIM(
+                        TRIM(
+                            PENG.PENG_PRIMERNOMBRE
+                            || ' '
+                            || PENG.PENG_SEGUNDONOMBRE
+                        )
+                        || ' ' ||
+                        TRIM(
+                            PENG.PENG_PRIMERAPELLIDO
+                            || ' '
+                            || PENG.PENG_SEGUNDOAPELLIDO
+                        )
+                    )
+                ) NULLS LAST
             """, nativeQuery = true)
-    List<NovedadDocenteCargaCoordinacionProjection> findPlantProfessorsByCargaAndModalityInNovelties(
+    List<NovedadDocenteCargaCoordinacionProjection>
+    findPlantProfessorsByCargaAndModalityInNovelties(
             @Param("idCarga") Long idCarga,
-            @Param("idModalidadContratacion") Long idModalidadContratacion);
+            @Param("idModalidadContratacion")
+            Long idModalidadContratacion
+    );
 
     // Busca si el registro para duplicar esta en la tabla novedad. Si no lo retorna, se debe consultar el repositorio de carga docente y construir el nuevo
     @Query(value = """
@@ -381,6 +496,18 @@ public interface NovedadCargaDocenteRepository
             @Param("idCargaDocente") Long idCargaDocente
     );
 
+    @Query(value = """
+        SELECT NOCD.*
+        FROM RVD.NOVEDADCARGADOCENTE NOCD
+        WHERE NOCD.CADO_ID = :idCargaDocente
+        AND NOCD.NOCD_ESTADONOVEDAD = '0'
+        ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+        FETCH FIRST 1 ROW ONLY
+        """, nativeQuery = true)
+    Optional<NovedadCargaDocenteEntity> findNoveltyInReview(
+            @Param("idCargaDocente") Long idCargaDocente
+    );
+
     @Modifying
     @Query(value = """
             UPDATE RVD.NOVEDADCARGADOCENTE NOCD
@@ -392,24 +519,26 @@ public interface NovedadCargaDocenteRepository
             @Param("idCargaDocente") Long idCargaDocente
     );
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query(value = """
-            UPDATE RVD.NOVEDADCARGADOCENTE NOCD
-            SET NOCD.NOCD_ESTADONOVEDAD = '1',
-                NOCD.NOCD_VIGENTE = '1',
-                NOCD.NOCD_REGISTRADOPOR = :registradoPor,
-                NOCD.NOCD_FECHACAMBIO = SYSDATE
-            WHERE NOCD.CADO_ID = :idCargaDocente
-            AND NOCD.NOCD_ESTADONOVEDAD = '0'
-            AND NOCD.NOCD_FECHACAMBIO = (
-                SELECT MAX(SRC.NOCD_FECHACAMBIO)
-                FROM RVD.NOVEDADCARGADOCENTE SRC
-                WHERE SRC.CADO_ID = :idCargaDocente
-                AND SRC.NOCD_ESTADONOVEDAD = '0'
-            )
-            """, nativeQuery = true)
+        UPDATE RVD.NOVEDADCARGADOCENTE NOCD
+        SET NOCD.NOCD_ESTADONOVEDAD = '1',
+            NOCD.NOCD_ESTADOELIMINADO = :estadoEliminado,
+            NOCD.NOCD_VIGENTE = '1',
+            NOCD.NOCD_REGISTRADOPOR = :registradoPor,
+            NOCD.NOCD_FECHACAMBIO = SYSDATE
+        WHERE NOCD.CADO_ID = :idCargaDocente
+        AND NOCD.NOCD_ESTADONOVEDAD = '0'
+        AND NOCD.NOCD_FECHACAMBIO = (
+            SELECT MAX(SRC.NOCD_FECHACAMBIO)
+            FROM RVD.NOVEDADCARGADOCENTE SRC
+            WHERE SRC.CADO_ID = :idCargaDocente
+            AND SRC.NOCD_ESTADONOVEDAD = '0'
+        )
+        """, nativeQuery = true)
     int updateEstadoNovedadInReview(
             @Param("idCargaDocente") Long idCargaDocente,
+            @Param("estadoEliminado") String estadoEliminado,
             @Param("registradoPor") String registradoPor
     );
 
@@ -765,6 +894,7 @@ public interface NovedadCargaDocenteRepository
                     NOCD.CADO_ID,
                     NOCD.PEGE_ID,
                     NOCD.MOCO_ID,
+                    NOCD.NOCD_ESTADOELIMINADO,
                     ROW_NUMBER() OVER (
                         PARTITION BY NOCD.CADO_ID
                         ORDER BY NOCD.NOCD_FECHACAMBIO DESC
@@ -777,20 +907,31 @@ public interface NovedadCargaDocenteRepository
 
             WHERE CADO.CARG_ID = :idCarga
             AND CADO.CADO_ID <> :idCargaDocente
+
+            /*
+            * Si nunca tuvo novedad:
+            *     NOCD es NULL → se considera activo.
+            *
+            * Si la última fotografía tiene eliminado = '1':
+            *     ese CADO ya no cuenta como asignación.
+            */
+            AND NVL(NOCD.NOCD_ESTADOELIMINADO, '0') = '0'
+
             AND (
-                    CASE
-                        WHEN NOCD.CADO_ID IS NOT NULL
-                            THEN NOCD.MOCO_ID
-                        ELSE CADO.MOCO_ID
-                    END
-                ) = :idModalidadContratacion
+                CASE
+                    WHEN NOCD.CADO_ID IS NOT NULL
+                        THEN NOCD.MOCO_ID
+                    ELSE CADO.MOCO_ID
+                END
+            ) = :idModalidadContratacion
+
             AND (
-                    CASE
-                        WHEN NOCD.CADO_ID IS NOT NULL
-                            THEN NOCD.PEGE_ID
-                        ELSE CADO.PEGE_ID
-                    END
-                ) = :idPersonaGeneral
+                CASE
+                    WHEN NOCD.CADO_ID IS NOT NULL
+                        THEN NOCD.PEGE_ID
+                    ELSE CADO.PEGE_ID
+                END
+            ) = :idPersonaGeneral
             """, nativeQuery = true)
     long countProfessorAssignedToAnotherLoad(
             @Param("idCarga") Long idCarga,
@@ -798,10 +939,6 @@ public interface NovedadCargaDocenteRepository
             @Param("idModalidadContratacion") Long idModalidadContratacion,
             @Param("idPersonaGeneral") Long idPersonaGeneral
     );
-
-
-
-
 
     @Modifying
     @Query(value = """
@@ -834,6 +971,7 @@ public interface NovedadCargaDocenteRepository
             NOCD_MOMENTO,
             NOCD_ONCEMESES,
             NOCD_ESTADONOVEDAD,
+            NOCD_ESTADOELIMINADO,
             NOCD_REGISTRADOPOR,
             NOCD_FECHACAMBIO
         )
@@ -864,6 +1002,7 @@ public interface NovedadCargaDocenteRepository
             SRC.NOCD_NIVELFORMACION,
             SRC.NOCD_MOMENTO,
             SRC.NOCD_ONCEMESES,
+            '0',
             '0',
             :registradoPor,
             SYSDATE
@@ -914,6 +1053,7 @@ public interface NovedadCargaDocenteRepository
             NOCD_MOMENTO,
             NOCD_ONCEMESES,
             NOCD_ESTADONOVEDAD,
+            NOCD_ESTADOELIMINADO,
             NOCD_REGISTRADOPOR,
             NOCD_FECHACAMBIO
         )
@@ -944,6 +1084,7 @@ public interface NovedadCargaDocenteRepository
             CADO.CADO_NIVELFORMACION,
             CADO.CADO_MOMENTO,
             CADO.CADO_ONCEMESES,
+            '0',
             '0',
             :registradoPor,
             SYSDATE

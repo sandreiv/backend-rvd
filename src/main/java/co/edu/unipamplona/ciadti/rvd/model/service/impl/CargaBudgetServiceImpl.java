@@ -301,10 +301,49 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
     private BigDecimal totalContratoOf(
             CargaDocenteEntity docente,
             CargaBudgetOverlay overlay) {
-        if (isOverlayFor(docente, overlay)) {
-            return computeInclusive(overlay).totalContrato();
+
+        Optional<NovedadCargaDocenteEntity> novelty =
+                novedadCargaDocenteRepository
+                        .findProfessorRecordToDuplicateNovelty(
+                                docente.getId()
+                        );
+
+        if (novelty.isPresent()) {
+
+            NovedadCargaDocenteEntity novedadActual =
+                    novelty.get();
+
+            boolean eliminada =
+                    isDeletedNovelty(novedadActual);
+
+            boolean eliminacionEnRevision =
+                    "0".equals(novedadActual.getEstadoNovedad())
+                    && novedadActual.getNovedad() != null
+                    && "delete-professor".equalsIgnoreCase(
+                            novedadActual
+                                    .getNovedad()
+                                    .getComponente()
+                    );
+
+            if (eliminada || eliminacionEnRevision) {
+                return BigDecimal.ZERO;
+            }
         }
-        return calculateInclusive(effectiveSnapshot(docente)).totalContrato();
+
+        if (isOverlayFor(docente, overlay)) {
+            return computeInclusive(overlay)
+                    .totalContrato();
+        }
+
+        if (novelty.isPresent()) {
+            return calculateInclusive(
+                    fromNovelty(novelty.get())
+            ).totalContrato();
+        }
+
+        return calculateInclusive(
+                fromCargaDocente(docente)
+        ).totalContrato();
     }
 
     private BigDecimal totalApprovedOf(
@@ -313,13 +352,33 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         Optional<NovedadCargaDocenteEntity> novelty =
                 novedadCargaDocenteRepository
                         .findLastApprovedNovelty(
-                                docente.getId());
-        
-        if (novelty.isPresent()) {
-            return calculateInclusive(fromNovelty(novelty.get())).totalContrato();
+                                docente.getId()
+                        );
+
+        if (novelty.isPresent()
+                && isDeletedNovelty(novelty.get())) {
+
+            return BigDecimal.ZERO;
         }
 
-        return calculateInclusive(fromCargaDocente(docente)).totalContrato();
+        if (novelty.isPresent()) {
+            return calculateInclusive(
+                    fromNovelty(novelty.get())
+            ).totalContrato();
+        }
+
+        return calculateInclusive(
+                fromCargaDocente(docente)
+        ).totalContrato();
+    }
+
+    private boolean isDeletedNovelty(
+            NovedadCargaDocenteEntity novelty) {
+
+        return novelty != null
+                && "1".equals(
+                        novelty.getEstadoEliminado()
+                );
     }
 
     private boolean isOverlayFor(
