@@ -583,6 +583,23 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 4: rechazo logico. La novedad queda en '2' y sin vigencia; no se tocan los
+    // detalles (su foto queda en DNCD_VIGENTE='0') ni CARG_VALOR.
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE RVD.NOVEDADCARGADOCENTE NOCD
+        SET NOCD.NOCD_ESTADONOVEDAD = '2',
+            NOCD.NOCD_VIGENTE = '0',
+            NOCD.NOCD_REGISTRADOPOR = :registradoPor,
+            NOCD.NOCD_FECHACAMBIO = SYSDATE
+        WHERE NOCD.NOCD_ID = :idNovedadCargaDocente
+        AND NOCD.NOCD_ESTADONOVEDAD = '0'
+        """, nativeQuery = true)
+    int rejectNoveltyById(
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
+            @Param("registradoPor") String registradoPor
+    );
+
     // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """

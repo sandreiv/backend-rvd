@@ -7,6 +7,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenNovedadCargaDocenteDTO;
 
 public interface NovedadCargaDocenteService {
@@ -42,6 +43,10 @@ public interface NovedadCargaDocenteService {
 
 
     void approveProfessorNovelty(Long idCargaDocente);
+
+    void rejectProfessorNovelty(
+            Long idCargaDocente,
+            ObservacionDecanoDTO dto);
 
     ResumenNovedadCargaDocenteDTO getProfessorNoveltySummary(
             Long idCargaDocente);

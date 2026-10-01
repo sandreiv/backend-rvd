@@ -58,6 +58,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialNovedadResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionResumenNovedadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
@@ -72,11 +73,13 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ModalidadContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
@@ -1080,6 +1083,105 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 cargaDocente.getIdCarga(),
                 estadoEliminado
         );
+    }
+
+    @Override
+    @Transactional
+    public void rejectProfessorNovelty(Long idCargaDocente, ObservacionDecanoDTO dto) {
+        log.info("rejectProfessorNovelty ===> Rechazando novedad. idCargaDocente={}", idCargaDocente);
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+                .findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        NovedadCargaDocenteEntity novedadEnRevision = novedadCargaDocenteRepository
+                .findNoveltyInReview(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.CONFLICT,
+                        "El docente no tiene una novedad en revisión"));
+
+        NovedadEntity novedad = novedadRepository
+                .findById(novedadEnRevision.getIdNovedadCatalogo())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la novedad seleccionada"));
+
+        Long idNovedadCargaDocente = novedadEnRevision.getIdNovedadCargaDocente();
+
+        // Fase 4: rechazo logico; la novedad queda en '2' y sin vigencia.
+        int updated = novedadCargaDocenteRepository.rejectNoveltyById(
+                idNovedadCargaDocente,
+                RegistradoPorUtils.value(Accion.UPDATE));
+        if (updated < 1) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No fue posible rechazar la novedad");
+        }
+
+        // Fase 4: el motivo del rechazo queda en RVD.OBSERVACIONES (fuente del resumen).
+        saveObservacionRechazoNovedad(idCargaDocente, dto);
+
+        // Fase 4: si la novedad agrego un docente, se elimina la carga creada y sus detalles.
+        if (COMPONENT_ADD_NOVELTY_PROFESSOR.equalsIgnoreCase(
+                novedad.getComponente() != null ? novedad.getComponente().trim() : "")) {
+            eliminarDocenteCreadoPorNovedad(cargaDocente, idNovedadCargaDocente);
+        }
+
+        log.info(
+                "rejectProfessorNovelty ===> Novedad rechazada. "
+                        + "idCargaDocente={}, idNovedadCargaDocente={}",
+                idCargaDocente,
+                idNovedadCargaDocente);
+    }
+
+    // Fase 4: guarda el motivo del rechazo en RVD.OBSERVACIONES.
+    private void saveObservacionRechazoNovedad(Long idCargaDocente, ObservacionDecanoDTO dto) {
+        if (dto == null || !StringUtils.hasText(dto.observacion())) {
+            return;
+        }
+        ObservacionesEntity observacion = new ObservacionesEntity();
+        observacion.setIdCargaDocente(idCargaDocente);
+        observacion.setIdPersonaGeneralRegistra(dto.idPersonaGeneral());
+        observacion.setTexto(dto.observacion());
+        observacion.setFecha(new Date());
+        observacion.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
+        observacion.setFechaCambio(new Date());
+        observacionesRepository.save(observacion);
+    }
+
+    // Fase 4: al rechazar add-professor se elimina la carga creada y sus detalles.
+    private void eliminarDocenteCreadoPorNovedad(
+            CargaDocenteEntity cargaDocente,
+            Long idNovedadCargaDocente) {
+
+        String registradoPor = RegistradoPorUtils.value(Accion.DELETE);
+
+        // Detalles de la novedad rechazada (si tiene).
+        for (DetalleNovedadCargaDocenteEntity detalle :
+                detalleNovedadCargaDocenteRepository.findByIdNovedadCargaDocente(idNovedadCargaDocente)) {
+            relacionCargaProyectoRepository.deleteByIdDetalleNovedadCargaDocente(detalle.getId());
+            detalleNovedadCargaDocenteRepository.deleteByProcedure(detalle.getId(), registradoPor);
+        }
+
+        // Detalles originales de la carga (si tiene).
+        for (DetalleCargaDocenteEntity detalle :
+                detalleCargaDocenteRepository.findAllByIdCargaDocente(cargaDocente.getId())) {
+            relacionCargaProyectoRepository.deleteByIdDetalleCargaDocente(detalle.getId());
+            detalleCargaDocenteRepository.deleteByProcedure(detalle.getId(), registradoPor);
+        }
+
+        Long idCarga = cargaDocente.getIdCarga();
+        cargaDocenteRepository.deleteByProcedure(cargaDocente.getId(), registradoPor);
+
+        if (idCarga != null) {
+            cargaBudgetService.refreshPreassignmentTotals(idCarga);
+        }
+
+        log.info(
+                "rejectProfessorNovelty ===> Docente creado por novedad eliminado. idCargaDocente={}",
+                cargaDocente.getId());
     }
 
 

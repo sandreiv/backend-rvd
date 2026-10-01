@@ -30,7 +30,8 @@ refresca `CARG_VALOR`. No existe el **rechazo**, y el detalle de novedad
 - Fase 1 (mapper y repositorios): HECHO.
 - Fase 2 (creacion con foto por `NOCD_ID`): HECHO.
 - Fase 3 (aprobacion): HECHO.
-- Fases 4 a 6: PENDIENTE.
+- Fase 4 (rechazo): HECHO.
+- Fases 5 y 6: PENDIENTE.
 
 ---
 
@@ -154,17 +155,29 @@ Nota: las lecturas aun resuelven por "ultima novedad no rechazada con detalle"; 
 uso explicito de `DNCD_VIGENTE='1'` para el detalle efectivo (y la novedad en estado
 `'0'` para el detalle en revision) se completa en Fase 5.
 
-## Fase 4 — Rechazo (nuevo)
+## Fase 4 — Rechazo — HECHO
 
-1. Endpoint `PUT /reject-professor-novelty/{idCargaDocente}` con observacion.
-2. `rejectProfessorNovelty`:
-   - Validar novedad en `'0'`; si no, `409`.
-   - `NOCD_ESTADONOVEDAD='2'`, `NOCD_VIGENTE='0'`, observacion, `REGISTRADOPOR`,
-     `FECHACAMBIO`.
-   - No tocar `DNCD`, ni `CARG_VALOR`, ni `refreshCargValor`.
-   - `add-professor`: eliminar/desactivar la carga creada.
-   - Idempotencia: doble rechazo no recalcula; aprobar una rechazada falla.
-3. Tras rechazar, se puede crear una nueva novedad.
+Realizado:
+
+- Endpoint `PUT /reject-professor-novelty/{idCargaDocente}` con `ObservacionDecanoDTO`
+  (idPersonaGeneral + observacion).
+- `NovedadCargaDocenteRepository.rejectNoveltyById(...)`: pasa
+  `NOCD_ESTADONOVEDAD` a `'2'` y `NOCD_VIGENTE` a `'0'` por el `NOCD_ID` exacto.
+- `rejectProfessorNovelty`:
+  - Valida que exista novedad en revision; si no, `409`.
+  - No toca `DNCD`, ni `CARG_VALOR`, ni `refreshCargValor`. La foto de la novedad
+    rechazada queda en `DNCD_VIGENTE='0'` y la vigente anterior permanece.
+  - Guarda el motivo en `RVD.OBSERVACIONES` (misma fuente que usa el resumen).
+  - Si la novedad es `add-professor`, elimina la carga creada y sus detalles
+    (`RELACIONCARGAPROYECTO`, `DETALLECARGADOCENTE`, `DETALLENOVEDADCARGADOCENTE` y
+    `CARGADOCENTE`) y refresca los totales de la preasignacion.
+- Idempotencia: sin novedad en `'0'` responde `409`; aprobar una rechazada falla.
+- Tras rechazar, se puede crear una nueva novedad.
+
+Correccion de BD asociada: `PR_RVD_D_DETALLENOVEDADCARGADOCENTE` habia quedado
+`INVALID` porque aun referenciaba la columna `CADO_ID` retirada de
+`DETALLENOVEDADCARGADOCENTE`. Se recreo para usar `NOCD_ID` (la tabla
+`AUD_DETALLENOVEDADCARGADOCENTE` ya tenia la columna `NOCD_ID`).
 
 ## Fase 5 — Lectura y visualización
 
