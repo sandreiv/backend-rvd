@@ -271,7 +271,7 @@ class CargaBudgetServiceImplTest {
         when(cargaDocenteRepository.findByIdCarga(ID_CARGA))
                 .thenReturn(List.of(tcoDocente()));
         when(novedadCargaDocenteRepository
-                .findProfessorRecordToDuplicateNovelty(CADO_TCO))
+                .findLastApprovedNovelty(CADO_TCO))
                 .thenReturn(Optional.empty());
 
         service.refreshCargValor(ID_CARGA);
@@ -283,7 +283,7 @@ class CargaBudgetServiceImplTest {
     @Test
     void refreshPreassignmentWritesValorAndAutorizado() {
         CargaEntity carga = stubCarga(new BigDecimal("100"));
-        when(cargaDocenteRepository.findByIdCarga(ID_CARGA))
+        when(cargaDocenteRepository.findByIdCargaWithoutNoveltyProfessors(ID_CARGA))
                 .thenReturn(List.of(tcoDocente()));
 
         service.refreshPreassignmentTotals(ID_CARGA);

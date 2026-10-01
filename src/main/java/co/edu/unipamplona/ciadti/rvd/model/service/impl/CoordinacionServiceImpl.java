@@ -1044,6 +1044,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         entity.setFechaCambio(new Date());
         entity.setEstado("4");
         entity.setVigente("1");
+        entity.setCreadoEnNovedad("1");
         entity.setOnceMeses(FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas()));
         applyHorasDeExcepcion(entity);
         applyInclusiveContractValues(entity);
@@ -1066,7 +1067,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         // Si el presupuesto lo permite, agregar en la carga docente
         Long idNewCargaDocente = cargaDocenteRepository.save(entity).getId();
-        registerProfessorPreloadHistory(idNewCargaDocente);
 
         log.info("auxAddProfessorForNovelty ===> Docente agregado para novedad. idCargaDocente={}", idNewCargaDocente);
         return idNewCargaDocente;
@@ -3712,7 +3712,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         BigDecimal totalPrestaciones = BigDecimal.ZERO;
         BigDecimal totalContratos = BigDecimal.ZERO;
         List<CargaDocenteEntity> docentes =
-                cargaDocenteRepository.findByIdCarga(idCarga);
+                cargaDocenteRepository.findByIdCargaWithoutNoveltyProfessors(idCarga);
         for (CargaDocenteEntity docente : docentes) {
             ValorContratacionDTO valor =
                     calculateInclusiveContractValue(docente);

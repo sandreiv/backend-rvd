@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.DetalleCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DetalleNovedadCargaDocenteMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.ProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.RelacionCargaProyectoMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActualizarValorContratoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
@@ -70,7 +71,6 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ModalidadContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
@@ -85,7 +85,6 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
@@ -152,6 +151,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     private final DetalleNovedadCargaDocenteMapper detalleNovedadCargaDocenteMapper;
     private final DetalleCargaDocenteMapper detalleCargaDocenteMapper;
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
+    private final ProyectoMapper proyectoMapper;
     private final ObservacionesRepository observacionesRepository;
     private final ModalidadContratacionRepository modalidadContratacionRepository;
 
@@ -894,6 +894,11 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         CargaDocenteEntity cargaOriginal = cargaDocenteRepository.findById(dto.idCargaDocente())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente seleccionada"));
 
+        List<DetalleCargaDocenteDTO> detallesBase = detalleCargaDocenteMapper.toDtoList(
+                detalleNovedadCargaDocenteRepository.findByIdCargaDocente(dto.idCargaDocente()),
+                proyectoMapper);
+        BigDecimal horasActividades = resolveDetallesHorasFromNoveltyActivityChanges(dto, detallesBase);
+
         CargaBudgetOverlay overlay;
         ValorContratacionDTO valores;
         if (previous.isPresent()) {
@@ -907,7 +912,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 previousEntity.getSalario(),
                 previousEntity.getValorHora(),
                 parseDecimal(previousEntity.getSemanas()),
-                resolveDetallesHorasFromNoveltyActivityChanges(dto, previousEntity.getHoras()),    // Envia las horas de la copia para determinar las totales despues del cambio
+                horasActividades,
                 previousEntity.getPuntos(),
                 previousEntity.getValorPunto()
             );
@@ -926,7 +931,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 cargaOriginal.getSalario(),
                 cargaOriginal.getValorHora(),
                 parseDecimal(cargaOriginal.getSemanas()),
-                resolveDetallesHorasFromNoveltyActivityChanges(dto, null),         // Calcula las horas del dto porque inicialmente se pasan todas las actividades originales
+                horasActividades,
                 cargaOriginal.getPuntos(),
                 cargaOriginal.getValorPunto()
             );
@@ -1280,10 +1285,20 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         return total.compareTo(BigDecimal.ZERO) > 0 ? total : null;
     }
 
-    private BigDecimal resolveDetallesHorasFromNoveltyActivityChanges(GuardarNovedadesDetallesProyectosDTO dto, String horasOriginales) {
+    private BigDecimal resolveDetallesHorasFromNoveltyActivityChanges(GuardarNovedadesDetallesProyectosDTO dto, List<DetalleCargaDocenteDTO> detallesBase) {
         BigDecimal total = BigDecimal.ZERO;
-        if (horasOriginales != null) {
-            total = parseDecimal(horasOriginales);
+        Optional<Integer> esDeNovedad = detallesBase.get(0).esDeNovedad();
+        Boolean fromNovelty = esDeNovedad != null && esDeNovedad.orElse(0) == 1;
+
+        // Si los detalles no vienen de novedades, su total es cero porque la primera vez el dto tiene todas las actividades
+        // Si los detalles vienen de novedades, su total es la suma de actividades que se trae de la base de datos (que es la misma que se mostró en el front)
+        if (fromNovelty) {
+            for (DetalleCargaDocenteDTO detalle : detallesBase) {
+                DetalleCargaDocenteActividadDTO actividad = detalle.detalles().get(0);
+                if (actividad != null && actividad.horas() != null) {
+                    total = total.add(parseDecimal(actividad.horas()));
+                }
+            }
         }
 
         for (DetalleCargaDocenteItemDTO detalle : dto.detallesNuevos()) {
@@ -1297,7 +1312,15 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             DetalleCargaDocenteActividadDTO actividad = detalle.detalles().get(0);
             if (actividad != null && actividad.horas() != null) {
 
-                String horasPersistidasRaw = detalleNovedadCargaDocenteRepository.findById(detalle.idDetalleCargaDocente()).orElseThrow().getHoras();
+                DetalleCargaDocenteDTO detallePersistido = detallesBase.stream()
+                    .filter(base -> 
+                        base != null &&
+                        Objects.equals(base.idDetalleCargaDocente(), detalle.idDetalleCargaDocente())
+                    )
+                    .findFirst()
+                    .orElse(null);
+
+                String horasPersistidasRaw = detallePersistido.detalles().get(0).horas();
                 BigDecimal horasPersistidas = parseDecimal(horasPersistidasRaw);
                 BigDecimal horasNuevas = parseDecimal(actividad.horas());
 
@@ -1312,7 +1335,15 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
         // Se entra cuando ya hay detalles en novedades
         for (Long idDetalle : dto.detallesEliminados()) {
-            String horasPersistidasRaw = detalleNovedadCargaDocenteRepository.findById(idDetalle).orElseThrow().getHoras();
+            DetalleCargaDocenteDTO detallePersistido = detallesBase.stream()
+                    .filter(base -> 
+                        base != null &&
+                        Objects.equals(base.idDetalleCargaDocente(), idDetalle)
+                    )
+                    .findFirst()
+                    .orElse(null);
+            
+            String horasPersistidasRaw = detallePersistido.detalles().get(0).horas();
             BigDecimal horasPersistidas = parseDecimal(horasPersistidasRaw);
 
             if (horasPersistidas != null) {
@@ -1320,7 +1351,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             }
         }
 
-        return total.compareTo(BigDecimal.ZERO) > 0 ? total : null;
+        return total.compareTo(BigDecimal.ZERO) > 0 ? total : BigDecimal.ZERO;
     }
 
     private BigDecimal parseDecimal(String value) {

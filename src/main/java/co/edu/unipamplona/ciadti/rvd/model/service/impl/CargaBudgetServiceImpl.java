@@ -285,8 +285,9 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
 
     private BigDecimal sumPreassignment(Long idCarga) {
         BigDecimal total = BigDecimal.ZERO;
+        // Aca no se necesitan a los profesores de la cargaDocente que vienen creados de novedad
         List<CargaDocenteEntity> rows =
-                cargaDocenteRepository.findByIdCarga(idCarga);
+                cargaDocenteRepository.findByIdCargaWithoutNoveltyProfessors(idCarga);
         int index = 0;
         while (index < rows.size()) {
             total = total.add(
