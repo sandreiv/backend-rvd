@@ -20,7 +20,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -30,11 +29,13 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@IdClass(NovedadCargaDocenteEntityId.class)
 @Table(name = "NOVEDADCARGADOCENTE", schema = "RVD")
 public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
 
     @Id
+    @Column(name = "NOCD_ID", nullable = false)
+    private Long idNovedadCargaDocente;
+
     @Column(name = "CADO_ID", nullable = false)
     private Long idCargaDocente;
 
@@ -167,7 +168,8 @@ public class NovedadCargaDocenteEntity implements Serializable, Cloneable {
     @Override
     public String toString() {
         return "NovedadCargaDocenteEntity{" +
-                "idCargaDocente=" + idCargaDocente +
+                "idNovedadCargaDocente=" + idNovedadCargaDocente +
+                ", idCargaDocente=" + idCargaDocente +
                 ", idCarga=" + idCarga +
                 ", idPersonaGeneral=" + idPersonaGeneral +
                 ", idModalidadContratacion=" + idModalidadContratacion +

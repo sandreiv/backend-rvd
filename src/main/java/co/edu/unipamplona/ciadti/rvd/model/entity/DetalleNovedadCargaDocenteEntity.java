@@ -42,7 +42,7 @@ public class DetalleNovedadCargaDocenteEntity implements Serializable, Cloneable
     @Column(name = "DNCD_ID", nullable = false)
     private Long id;
 
-    @Column(name = "CADO_ID")
+    @Column(name = "NOCD_ID")
     private Long idNovedadCargaDocente;
 
     @Column(name = "PROG_ID")
@@ -66,8 +66,11 @@ public class DetalleNovedadCargaDocenteEntity implements Serializable, Cloneable
     @Column(name = "DNCD_FECHACAMBIO")
     private Date fechaCambio;
 
+    @Column(name = "DNCD_VIGENTE")
+    private String vigente;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CADO_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "NOCD_ID", insertable = false, updatable = false)
     private NovedadCargaDocenteEntity novedadCargaDocente;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -96,6 +99,7 @@ public class DetalleNovedadCargaDocenteEntity implements Serializable, Cloneable
         return "DetalleCargaDocenteEntity{" +
                 "id=" + id +
                 ", idNovedadCargaDocente=" + idNovedadCargaDocente +
+                ", vigente=" + vigente +
                 ", idPrograma=" + idPrograma +
                 ", idGrupo=" + idGrupo +
                 ", idTipoActividad=" + idTipoActividad +

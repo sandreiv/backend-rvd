@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
@@ -20,6 +21,56 @@ public interface DetalleNovedadCargaDocenteRepository
             Long idNovedadCargaDocente
     );
 
+    // Fase 2: detalle de la novedad efectiva de una carga: la ultima no rechazada que
+    // tenga detalle. Se usa como base al construir la foto de una nueva novedad.
+    @Query(value = """
+            SELECT DNCD.*
+            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+            WHERE DNCD.NOCD_ID = (
+                SELECT NOCD_ID
+                FROM (
+                    SELECT N.NOCD_ID
+                    FROM RVD.NOVEDADCARGADOCENTE N
+                    WHERE N.CADO_ID = :idCargaDocente
+                    AND N.NOCD_ESTADONOVEDAD <> '2'
+                    AND EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLENOVEDADCARGADOCENTE D
+                        WHERE D.NOCD_ID = N.NOCD_ID
+                    )
+                    ORDER BY N.NOCD_FECHACAMBIO DESC
+                )
+                WHERE ROWNUM = 1
+            )
+            ORDER BY DNCD.DNCD_ID
+            """, nativeQuery = true)
+    List<DetalleNovedadCargaDocenteEntity> findEffectiveByIdCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente);
+
+    long countByIdNovedadCargaDocente(Long idNovedadCargaDocente);
+
+    // Fase 3: al aprobar, se activa la foto de detalle de esa novedad y se desactiva
+    // la de las demas novedades de la carga.
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.DETALLENOVEDADCARGADOCENTE DNCD
+            SET DNCD.DNCD_VIGENTE = '0'
+            WHERE DNCD.NOCD_ID IN (
+                SELECT NOCD_ID
+                FROM RVD.NOVEDADCARGADOCENTE
+                WHERE CADO_ID = :idCargaDocente
+            )
+            """, nativeQuery = true)
+    int clearDetalleVigenteByCargaDocente(@Param("idCargaDocente") Long idCargaDocente);
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.DETALLENOVEDADCARGADOCENTE DNCD
+            SET DNCD.DNCD_VIGENTE = '1'
+            WHERE DNCD.NOCD_ID = :idNovedadCargaDocente
+            """, nativeQuery = true)
+    int setDetalleVigenteByNovedad(@Param("idNovedadCargaDocente") Long idNovedadCargaDocente);
+
     @Procedure(name = "DetalleNovedadCargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(
             @Param("P_DNCD_ID") Long id,
@@ -31,7 +82,7 @@ public interface DetalleNovedadCargaDocenteRepository
 
                 SELECT
                     DNCD.DNCD_ID,
-                    DNCD.CADO_ID,
+                    NOCD.CADO_ID,
                     DNCD.PROG_ID,
                     DNCD.GRUP_ID,
                     DNCD.TIAC_ID,
@@ -39,8 +90,28 @@ public interface DetalleNovedadCargaDocenteRepository
                     DNCD.DNCD_HORAS
 
                 FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                    ON NOCD.NOCD_ID = DNCD.NOCD_ID
 
-                WHERE DNCD.CADO_ID = :idCargaDocente
+                WHERE NOCD.CADO_ID = :idCargaDocente
+                -- Fase 2: solo la novedad efectiva (ultima no rechazada con detalle);
+                -- las demas novedades son historial y no deben mezclarse.
+                AND NOCD.NOCD_ID = (
+                    SELECT NOCD_ID
+                    FROM (
+                        SELECT N.NOCD_ID
+                        FROM RVD.NOVEDADCARGADOCENTE N
+                        WHERE N.CADO_ID = :idCargaDocente
+                        AND N.NOCD_ESTADONOVEDAD <> '2'
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE D
+                            WHERE D.NOCD_ID = N.NOCD_ID
+                        )
+                        ORDER BY N.NOCD_FECHACAMBIO DESC
+                    )
+                    WHERE ROWNUM = 1
+                )
             ),
 
             DETALLES_CARGA AS (
@@ -211,7 +282,9 @@ public interface DetalleNovedadCargaDocenteRepository
                     )
                 ) AS totalHoras
             FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-            WHERE DNCD.CADO_ID = :idNovedadCargaDocente
+            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                ON NOCD.NOCD_ID = DNCD.NOCD_ID
+            WHERE NOCD.CADO_ID = :idNovedadCargaDocente
             AND DNCD.PROG_ID IS NOT NULL
             AND (:idDetalleExcluido IS NULL OR DNCD.DNCD_ID <> :idDetalleExcluido)
             GROUP BY DNCD.PROG_ID
@@ -235,6 +308,8 @@ public interface DetalleNovedadCargaDocenteRepository
                 ceco.CECO_ID AS idCentroCosto,
                 ceco.CECO_DESCRIPCION AS descripcionCentroCosto
             FROM RVD.DETALLENOVEDADCARGADOCENTE dncd
+            INNER JOIN RVD.NOVEDADCARGADOCENTE nocd
+                ON nocd.NOCD_ID = dncd.NOCD_ID
             LEFT JOIN RVD.TIPOACTIVIDADES tiac
                 ON tiac.TIAC_ID = dncd.TIAC_ID
             LEFT JOIN RVD.TIPOACTIVIDADES tiac_padre
@@ -249,7 +324,7 @@ public interface DetalleNovedadCargaDocenteRepository
                 ON prog.PROG_ID = dncd.PROG_ID
             LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
                 ON ceco.CECO_ID = dncd.CECO_ID
-            WHERE dncd.CADO_ID = :idCargaDocente
+            WHERE nocd.CADO_ID = :idCargaDocente
             ORDER BY dncd.DNCD_ID
             """, nativeQuery = true)
     List<DetalleNovedadResumenProjection> findResumenByIdCargaDocente(
