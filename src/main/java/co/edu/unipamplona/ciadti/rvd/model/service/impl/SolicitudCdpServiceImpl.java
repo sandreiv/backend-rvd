@@ -67,9 +67,18 @@ public class SolicitudCdpServiceImpl
     @Override
     @Transactional(readOnly = true)
         public CdpRequestDTO getCurrentRequest(
-                Long idCoordinacionFacultad) {
+                Long idCoordinacionFacultad,
+                Long idPeriodoUniversitario) {
 
-        AuthUserDetails user = requireRol(ROL_DECANO);
+        AuthUserDetails user =
+                requireRol(ROL_DECANO);
+
+        if (idPeriodoUniversitario == null) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El periodo universitario es obligatorio"
+                );
+        }
 
         Long idPersonaGeneral =
                 user.getIdPersonaGeneral();
@@ -80,20 +89,22 @@ public class SolicitudCdpServiceImpl
         );
 
         return solicitudCdpRepository
-                .findFirstByIdCoordinacionOrderByIdDesc(
-                        idCoordinacionFacultad
+                .findByIdCoordinacionAndIdPeriodoUniversitario(
+                        idCoordinacionFacultad,
+                        idPeriodoUniversitario
                 )
                 .map(this::toDto)
                 .orElse(null);
-     }
+    }
 
     @Override
     @Transactional
-    public void create(
-        String observacion,
-        List<MultipartFile> archivos,
-        String idPeriodo,
-        String idCoordinacionFacultad) {
+        public void create(
+                String observacion,
+                List<MultipartFile> archivos,
+                String idPeriodo,
+                String idCoordinacionFacultad,
+                String idConvocatoria) {
 
         AuthUserDetails user = requireRol(ROL_DECANO);
 
@@ -111,20 +122,55 @@ public class SolicitudCdpServiceImpl
                         idCoordinacionFacultad,
                         "La facultad es obligatoria"
                 );
+        
+        Long convocatoriaId =
+                parseRequiredId(
+                        idConvocatoria,
+                        "La convocatoria es obligatoria"
+                );        
 
         validateCdpFacultyAccess(
                 idPersonaGeneral,
                 idCoordinacion
-        );        
+        );   
+        
+        var coordinaciones =
+                coordinacionRepository
+                        .findByConvocatoriaForCdpDean(
+                                convocatoriaId,
+                                idCoordinacion
+                        );
+
+        if (coordinaciones.isEmpty()) {
+        throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "No es posible solicitar el CDP porque no hay coordinaciones "
+                        + "con carga en Aval Desarrollo para el periodo "
+                        + "y la convocatoria seleccionados"
+        );
+        }
+
+        Long periodoConvocatoria =
+                coordinaciones.get(0)
+                        .getIdPeriodoUniversidad();
+
+        if (!idPeriodoUniversitario.equals(periodoConvocatoria)) {
+        throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "La convocatoria seleccionada no corresponde al periodo universitario indicado"
+        );
+        }
 
         if (
-        solicitudCdpRepository.existsByIdCoordinacion(
-                idCoordinacion
-        )
+        solicitudCdpRepository
+                .existsByIdCoordinacionAndIdPeriodoUniversitario(
+                        idCoordinacion,
+                        idPeriodoUniversitario
+                )
         ) {
         throw new ApiException(
                 HttpStatus.CONFLICT,
-                "Ya existe una solicitud CDP para la facultad seleccionada"
+                "Ya existe una solicitud CDP para la facultad y el periodo seleccionados"
         );
         }
 

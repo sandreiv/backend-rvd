@@ -9,14 +9,16 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
 public interface SolicitudCdpService {
 
     void create(
-            String observacion,
-            List<MultipartFile> archivos,
-            String idPeriodo,
-            String idCoordinacionFacultad
+        String observacion,
+        List<MultipartFile> archivos,
+        String idPeriodo,
+        String idCoordinacionFacultad,
+        String idConvocatoria
     );
 
     CdpRequestDTO getCurrentRequest(
-            Long idCoordinacionFacultad
+        Long idCoordinacionFacultad,
+        Long idPeriodoUniversitario
     );
 
     void sendRequestToVice(Long idSolicitud);

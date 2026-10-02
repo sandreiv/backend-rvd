@@ -9,12 +9,14 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.SolicitudCdpEntity;
 public interface SolicitudCdpRepository
         extends JpaRepository<SolicitudCdpEntity, Long> {
 
-    boolean existsByIdCoordinacion(
-            Long idCoordinacion
+    boolean existsByIdCoordinacionAndIdPeriodoUniversitario(
+            Long idCoordinacion,
+            Long idPeriodoUniversitario
     );
 
     Optional<SolicitudCdpEntity>
-            findFirstByIdCoordinacionOrderByIdDesc(
-                    Long idCoordinacion
+            findByIdCoordinacionAndIdPeriodoUniversitario(
+                    Long idCoordinacion,
+                    Long idPeriodoUniversitario
             );
 }

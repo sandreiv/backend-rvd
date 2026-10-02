@@ -146,8 +146,10 @@ public class CdpReporteServiceImpl implements CdpReporteService {
 
         if (idsCarga.isEmpty()) {
             throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No hay coordinaciones con carga en Aval Desarrollo para generar el reporte"
+                    HttpStatus.BAD_REQUEST,
+                    "No es posible generar el reporte porque no hay coordinaciones "
+                            + "con carga en Aval Desarrollo para el periodo "
+                            + "y la convocatoria seleccionados"
             );
         }
 
