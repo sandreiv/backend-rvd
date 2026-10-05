@@ -197,6 +197,12 @@ Correccion de BD asociada: `PR_RVD_D_DETALLENOVEDADCARGADOCENTE` habia quedado
   `/cost-centers`, `/activities-hours` y `/total-preload` deben pasar a resolver con
   `DNCD_VIGENTE='1' -> DECD` (hoy leen solo `DECD`).
 
+Nota: - `DetalleNovedadCargaDocenteRepository.findEffectiveByIdCargaDocente` no se utiliza
+para hallar los detalles efectivos, eso se realiza mediante `findResumenByIdNovedadCargaDocente`
+dentro del mismo repositorio.
+
+
+
 ## Fase 6 — Pruebas
 
 - Crear novedad y ver "en revision" sin afectar el efectivo.

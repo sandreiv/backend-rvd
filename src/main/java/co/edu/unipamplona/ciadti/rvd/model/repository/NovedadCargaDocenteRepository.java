@@ -118,6 +118,7 @@ public interface NovedadCargaDocenteRepository
 
                     CADO.CADO_ESTADO,
 
+                    NOCD.NOCD_ID,
                     NOCD.NOVE_ID,
                     NOCD.NOCD_ESTADONOVEDAD
 
@@ -163,6 +164,7 @@ public interface NovedadCargaDocenteRepository
                 CR.MOCO_ID AS idModalidadContratacion,
                 CR.CACA_ID AS idCategoriaCatedratico,
 
+                CR.NOCD_ID AS idNovedadCargaDocente,
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
                 NOVE.NOVE_TIPO AS tipoNovedad,
@@ -187,14 +189,30 @@ public interface NovedadCargaDocenteRepository
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
+                    -- Hay novedad valida y tiene detalles esa novedad
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            WHERE DNCD.NOCD_ID = CR.NOCD_ID
+                        )
+                    THEN 1
+
+                    -- Hay novedad valida, no tiene detalles esa novedad, pero tiene vigentes de otra novedad de la misma carga
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                                ON NOCD.NOCD_ID = DNCD.NOCD_ID
+                            WHERE NOCD.CADO_ID = CR.CADO_ID
+                                AND NOCD.NOCD_ID <> CR.NOCD_ID
+                                AND DNCD.DNCD_VIGENTE = '1'
+                        )
+                    THEN 1
+
+                    -- Finalmente comprueba si hay detalles en la carga docente original
                     WHEN EXISTS (
-                        SELECT 1
-                        FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-                        INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
-                            ON NOCD.NOCD_ID = DNCD.NOCD_ID
-                        WHERE NOCD.CADO_ID = CR.CADO_ID
-                    )
-                    OR EXISTS (
                         SELECT 1
                         FROM RVD.DETALLECARGADOCENTE DECD
                         WHERE DECD.CADO_ID = CR.CADO_ID
@@ -343,6 +361,7 @@ public interface NovedadCargaDocenteRepository
 
                     CADO.CADO_ESTADO,
 
+                    NOCD.NOCD_ID,
                     NOCD.NOVE_ID,
                     NOCD.NOCD_ESTADONOVEDAD
 
@@ -381,6 +400,7 @@ public interface NovedadCargaDocenteRepository
                 CR.MOCO_ID AS idModalidadContratacion,
                 CR.CACA_ID AS idCategoriaCatedratico,
 
+                CR.NOCD_ID AS idNovedadCargaDocente,
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
                 NOVE.NOVE_TIPO AS tipoNovedad,
@@ -405,21 +425,34 @@ public interface NovedadCargaDocenteRepository
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
-                    WHEN CR.CADO_ID IS NOT NULL
-                        AND (
-                            EXISTS (
-                                SELECT 1
-                                FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-                                INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
-                                    ON NOCD.NOCD_ID = DNCD.NOCD_ID
-                                WHERE NOCD.CADO_ID = CR.CADO_ID
-                            )
-                            OR EXISTS (
-                                SELECT 1
-                                FROM RVD.DETALLECARGADOCENTE DECD
-                                WHERE DECD.CADO_ID = CR.CADO_ID
-                            )
+                    -- Hay novedad valida y tiene detalles esa novedad
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            WHERE DNCD.NOCD_ID = CR.NOCD_ID
                         )
+                    THEN 1
+
+                    -- Hay novedad valida, no tiene detalles esa novedad, pero tiene vigentes de otra novedad de la misma carga
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                                ON NOCD.NOCD_ID = DNCD.NOCD_ID
+                            WHERE NOCD.CADO_ID = CR.CADO_ID
+                                AND NOCD.NOCD_ID <> CR.NOCD_ID
+                                AND DNCD.DNCD_VIGENTE = '1'
+                        )
+                    THEN 1
+
+                    -- Finalmente comprueba si hay detalles en la carga docente original
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLECARGADOCENTE DECD
+                        WHERE DECD.CADO_ID = CR.CADO_ID
+                    )
                     THEN 1
                     ELSE 0
                 END AS tieneActividades

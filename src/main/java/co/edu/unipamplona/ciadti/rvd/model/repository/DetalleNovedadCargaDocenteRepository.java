@@ -12,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 
 public interface DetalleNovedadCargaDocenteRepository
         extends JpaRepository<DetalleNovedadCargaDocenteEntity, Long> {
@@ -20,32 +19,6 @@ public interface DetalleNovedadCargaDocenteRepository
     List<DetalleNovedadCargaDocenteEntity> findByIdNovedadCargaDocente(
             Long idNovedadCargaDocente
     );
-
-    // Fase 2: detalle de la novedad efectiva de una carga: la ultima no rechazada que
-    // tenga detalle. Se usa como base al construir la foto de una nueva novedad.
-    @Query(value = """
-            SELECT DNCD.*
-            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-            WHERE DNCD.NOCD_ID = (
-                SELECT NOCD_ID
-                FROM (
-                    SELECT N.NOCD_ID
-                    FROM RVD.NOVEDADCARGADOCENTE N
-                    WHERE N.CADO_ID = :idCargaDocente
-                    AND N.NOCD_ESTADONOVEDAD <> '2'
-                    AND EXISTS (
-                        SELECT 1
-                        FROM RVD.DETALLENOVEDADCARGADOCENTE D
-                        WHERE D.NOCD_ID = N.NOCD_ID
-                    )
-                    ORDER BY N.NOCD_FECHACAMBIO DESC
-                )
-                WHERE ROWNUM = 1
-            )
-            ORDER BY DNCD.DNCD_ID
-            """, nativeQuery = true)
-    List<DetalleNovedadCargaDocenteEntity> findEffectiveByIdCargaDocente(
-            @Param("idCargaDocente") Long idCargaDocente);
 
     long countByIdNovedadCargaDocente(Long idNovedadCargaDocente);
 
@@ -268,65 +241,163 @@ public interface DetalleNovedadCargaDocenteRepository
             """, nativeQuery = true)
     List<DetalleCargaDocenteListadoProjection> findByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
-    
-    @Query(value = """
-            SELECT
-                DNCD.PROG_ID AS idPrograma,
-                SUM(
-                    NVL(
-                        TO_NUMBER(
-                            REPLACE(TRIM(DNCD.DNCD_HORAS), ',', '.')
-                            DEFAULT NULL ON CONVERSION ERROR
-                        ),
-                        0
-                    )
-                ) AS totalHoras
-            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
-                ON NOCD.NOCD_ID = DNCD.NOCD_ID
-            WHERE NOCD.CADO_ID = :idNovedadCargaDocente
-            AND DNCD.PROG_ID IS NOT NULL
-            AND (:idDetalleExcluido IS NULL OR DNCD.DNCD_ID <> :idDetalleExcluido)
-            GROUP BY DNCD.PROG_ID
-            """, nativeQuery = true)
-    List<HorasProgramaProjection> findHorasByProgramaAndCargaDocente(
-            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
-            @Param("idDetalleExcluido") Long idDetalleExcluido);
 
     @Query(value = """
-            SELECT
-                dncd.DNCD_ID AS idDetalleNovedadCargaDocente,
-                dncd.DNCD_HORAS AS horas,
-                tiac.TIAC_NOMBRE AS nombreTipoActividad,
-                tiac.TIAC_CODIGO AS codigoTipoActividad,
-                tiac_padre.TIAC_NOMBRE AS nombreTipoActividadPadre,
-                tiac_padre.TIAC_CODIGO AS codigoTipoActividadPadre,
-                unid.UNID_NOMBRE AS nombreUnidadRegional,
-                prog.PROG_NOMBRE AS nombrePrograma,
-                grup.GRUP_NOMBRE AS nombreGrupo,
-                mate.MATE_NOMBRE AS nombreMateria,
-                ceco.CECO_ID AS idCentroCosto,
-                ceco.CECO_DESCRIPCION AS descripcionCentroCosto
-            FROM RVD.DETALLENOVEDADCARGADOCENTE dncd
-            INNER JOIN RVD.NOVEDADCARGADOCENTE nocd
-                ON nocd.NOCD_ID = dncd.NOCD_ID
-            LEFT JOIN RVD.TIPOACTIVIDADES tiac
-                ON tiac.TIAC_ID = dncd.TIAC_ID
-            LEFT JOIN RVD.TIPOACTIVIDADES tiac_padre
-                ON tiac_padre.TIAC_ID = tiac.TIAC_IDPADRE
-            LEFT JOIN ACADEMICO.GRUPO grup
-                ON grup.GRUP_ID = dncd.GRUP_ID
-            LEFT JOIN ACADEMICO.MATERIA mate
-                ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
-            LEFT JOIN ACADEMICO.UNIDAD unid
-                ON unid.UNID_ID = grup.UNID_IDREGIONAL
-            LEFT JOIN ACADEMICO.PROGRAMA prog
-                ON prog.PROG_ID = dncd.PROG_ID
-            LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
-                ON ceco.CECO_ID = dncd.CECO_ID
-            WHERE nocd.CADO_ID = :idCargaDocente
-            ORDER BY dncd.DNCD_ID
+            WITH detalles_novedad AS (
+                SELECT
+                    dncd.DNCD_ID AS idDetalleNovedadCargaDocente,
+                    dncd.DNCD_HORAS AS horas,
+                    tiac.TIAC_NOMBRE AS nombreTipoActividad,
+                    tiac.TIAC_CODIGO AS codigoTipoActividad,
+                    tiac.TIAC_COMPONENTE AS componenteTipoActividad,
+                    tiac_padre.TIAC_NOMBRE AS nombreTipoActividadPadre,
+                    tiac_padre.TIAC_CODIGO AS codigoTipoActividadPadre,
+                    unid.UNID_NOMBRE AS nombreUnidadRegional,
+                    prog.PROG_NOMBRE AS nombrePrograma,
+                    grup.GRUP_NOMBRE AS nombreGrupo,
+                    mate.MATE_NOMBRE AS nombreMateria,
+                    ceco.CECO_ID AS idCentroCosto,
+                    ceco.CECO_DESCRIPCION AS descripcionCentroCosto,
+
+                    -- Info proyectos
+                    pepr.PEPR_ID AS idPersonaProyecto,
+                    pepr.PROY_ID AS idProyecto,
+                    proy.PROY_IDPROYECTO AS idProyectoPadre,
+                    proy.PROY_NOMBRE AS nombreProyecto,
+                    proy.PROY_DESCRIPCION AS descripcionProyecto,
+                    tipr.TIPR_ID AS idTipoProyecto,
+                    tipr.TIPR_NOMBRE AS nombreTipoProyecto,
+                    tipr.TIPR_DESCRIPCION AS descripcionTipoProyecto,
+                    tipr.TIPR_TIPO AS tipoTipoProyecto,
+                    proy_padre.PROY_ID AS idProyectoPadreEntidad,
+                    proy_padre.PROY_NOMBRE AS nombreProyectoPadre,
+                    proy_padre.PROY_DESCRIPCION AS descripcionProyectoPadre,
+                    tipr_padre.TIPR_ID AS idTipoProyectoPadre,
+                    tipr_padre.TIPR_NOMBRE AS nombreTipoProyectoPadre,
+                    tipr_padre.TIPR_DESCRIPCION AS descripcionTipoProyectoPadre,
+                    tipr_padre.TIPR_TIPO AS tipoTipoProyectoPadre
+                FROM RVD.DETALLENOVEDADCARGADOCENTE dncd
+                LEFT JOIN RVD.TIPOACTIVIDADES tiac
+                    ON tiac.TIAC_ID = dncd.TIAC_ID
+                LEFT JOIN RVD.TIPOACTIVIDADES tiac_padre
+                    ON tiac_padre.TIAC_ID = tiac.TIAC_IDPADRE
+                LEFT JOIN ACADEMICO.GRUPO grup
+                    ON grup.GRUP_ID = dncd.GRUP_ID
+                LEFT JOIN ACADEMICO.MATERIA mate
+                    ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
+                LEFT JOIN ACADEMICO.UNIDAD unid
+                    ON unid.UNID_ID = grup.UNID_IDREGIONAL
+                LEFT JOIN ACADEMICO.PROGRAMA prog
+                    ON prog.PROG_ID = dncd.PROG_ID
+                LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
+                    ON ceco.CECO_ID = dncd.CECO_ID
+                
+                LEFT JOIN RVD.RELACIONCARGAPROYECTO recp
+                    ON recp.DNCD_ID = dncd.DNCD_ID
+                LEFT JOIN RVD.PERSONAPROYECTO pepr
+                    ON pepr.PEPR_ID = recp.PEPR_ID
+                LEFT JOIN RVD.PROYECTOS proy
+                    ON proy.PROY_ID = pepr.PROY_ID
+                LEFT JOIN RVD.TIPOPROYECTO tipr
+                    ON proy.TIPR_ID = tipr.TIPR_ID
+                LEFT JOIN RVD.PROYECTOS proy_padre
+                    ON proy.PROY_IDPROYECTO = proy_padre.PROY_ID
+                LEFT JOIN RVD.TIPOPROYECTO tipr_padre
+                    ON proy_padre.TIPR_ID = tipr_padre.TIPR_ID
+                WHERE dncd.NOCD_ID = :idNovedadCargaDocente
+            ),
+
+            detalles_efectivos AS (
+                SELECT
+                    dncd.DNCD_ID AS idDetalleNovedadCargaDocente,
+                    dncd.DNCD_HORAS AS horas,
+                    tiac.TIAC_NOMBRE AS nombreTipoActividad,
+                    tiac.TIAC_CODIGO AS codigoTipoActividad,
+                    tiac.TIAC_COMPONENTE AS componenteTipoActividad,
+                    tiac_padre.TIAC_NOMBRE AS nombreTipoActividadPadre,
+                    tiac_padre.TIAC_CODIGO AS codigoTipoActividadPadre,
+                    unid.UNID_NOMBRE AS nombreUnidadRegional,
+                    prog.PROG_NOMBRE AS nombrePrograma,
+                    grup.GRUP_NOMBRE AS nombreGrupo,
+                    mate.MATE_NOMBRE AS nombreMateria,
+                    ceco.CECO_ID AS idCentroCosto,
+                    ceco.CECO_DESCRIPCION AS descripcionCentroCosto,
+
+                    -- Info proyectos
+                    pepr.PEPR_ID AS idPersonaProyecto,
+                    pepr.PROY_ID AS idProyecto,
+                    proy.PROY_IDPROYECTO AS idProyectoPadre,
+                    proy.PROY_NOMBRE AS nombreProyecto,
+                    proy.PROY_DESCRIPCION AS descripcionProyecto,
+                    tipr.TIPR_ID AS idTipoProyecto,
+                    tipr.TIPR_NOMBRE AS nombreTipoProyecto,
+                    tipr.TIPR_DESCRIPCION AS descripcionTipoProyecto,
+                    tipr.TIPR_TIPO AS tipoTipoProyecto,
+                    proy_padre.PROY_ID AS idProyectoPadreEntidad,
+                    proy_padre.PROY_NOMBRE AS nombreProyectoPadre,
+                    proy_padre.PROY_DESCRIPCION AS descripcionProyectoPadre,
+                    tipr_padre.TIPR_ID AS idTipoProyectoPadre,
+                    tipr_padre.TIPR_NOMBRE AS nombreTipoProyectoPadre,
+                    tipr_padre.TIPR_DESCRIPCION AS descripcionTipoProyectoPadre,
+                    tipr_padre.TIPR_TIPO AS tipoTipoProyectoPadre
+                FROM RVD.DETALLENOVEDADCARGADOCENTE dncd
+                INNER JOIN RVD.NOVEDADCARGADOCENTE nocd
+                    ON nocd.NOCD_ID = dncd.NOCD_ID
+                LEFT JOIN RVD.TIPOACTIVIDADES tiac
+                    ON tiac.TIAC_ID = dncd.TIAC_ID
+                LEFT JOIN RVD.TIPOACTIVIDADES tiac_padre
+                    ON tiac_padre.TIAC_ID = tiac.TIAC_IDPADRE
+                LEFT JOIN ACADEMICO.GRUPO grup
+                    ON grup.GRUP_ID = dncd.GRUP_ID
+                LEFT JOIN ACADEMICO.MATERIA mate
+                    ON mate.MATE_CODIGOMATERIA = grup.MATE_CODIGOMATERIA
+                LEFT JOIN ACADEMICO.UNIDAD unid
+                    ON unid.UNID_ID = grup.UNID_IDREGIONAL
+                LEFT JOIN ACADEMICO.PROGRAMA prog
+                    ON prog.PROG_ID = dncd.PROG_ID
+                LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
+                    ON ceco.CECO_ID = dncd.CECO_ID
+
+                LEFT JOIN RVD.RELACIONCARGAPROYECTO recp
+                    ON recp.DNCD_ID = dncd.DNCD_ID
+
+                LEFT JOIN RVD.PERSONAPROYECTO pepr
+                    ON pepr.PEPR_ID = recp.PEPR_ID
+
+                LEFT JOIN RVD.PROYECTOS proy
+                    ON proy.PROY_ID = pepr.PROY_ID
+
+                LEFT JOIN RVD.TIPOPROYECTO tipr
+                    ON proy.TIPR_ID = tipr.TIPR_ID
+
+                LEFT JOIN RVD.PROYECTOS proy_padre
+                    ON proy.PROY_IDPROYECTO = proy_padre.PROY_ID
+
+                LEFT JOIN RVD.TIPOPROYECTO tipr_padre
+                    ON proy_padre.TIPR_ID = tipr_padre.TIPR_ID
+                WHERE nocd.CADO_ID = :idCargaDocente
+                    AND dncd.DNCD_VIGENTE = '1'
+            ),
+
+            resultado AS (
+                SELECT *
+                FROM detalles_novedad
+
+                UNION ALL
+
+                SELECT *
+                FROM detalles_efectivos
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM detalles_novedad
+                )
+            )
+            
+            SELECT *
+            FROM resultado
+            ORDER BY idDetalleNovedadCargaDocente
             """, nativeQuery = true)
-    List<DetalleNovedadResumenProjection> findResumenByIdCargaDocente(
+    List<DetalleNovedadResumenProjection> findResumenByIdNovedadCargaDocente(
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
             @Param("idCargaDocente") Long idCargaDocente);
 }

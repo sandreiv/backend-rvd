@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 public record NovedadDocenteCoordinacionDTO(
+    Long idNovedadCargaDocente,
     Long idCargaDocente,
     Long idPersonaGeneral,
     String nombreCompleto,

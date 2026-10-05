@@ -29,6 +29,8 @@ public final class ResumenCargaAssembler {
     private static final int ESCALA_PORCENTAJE = 2;
     private static final BigDecimal CIEN = new BigDecimal("100");
     private static final String CODIGO_FAD = "FAD";
+    private static final String CODIGO_CTEI = "CTEI";
+    private static final String CODIGO_ISU = "ISU";
     private static final String CENTRO_SIN_NOMBRE = "Sin nombre";
 
     private ResumenCargaAssembler() {
@@ -41,6 +43,7 @@ public final class ResumenCargaAssembler {
             String codigoTipoActividadPadre,
             String nombreTipoActividad,
             String nombreTipoActividadPadre,
+            String nombreProyecto,
             String nombreUnidad,
             String nombrePrograma,
             String nombreMateria,
@@ -58,6 +61,7 @@ public final class ResumenCargaAssembler {
                 detalle.getCodigoTipoActividadPadre(),
                 detalle.getNombreTipoActividad(),
                 detalle.getNombreTipoActividadPadre(),
+                detalle.getNombreProyecto(),
                 detalle.getNombreUnidadRegional(),
                 detalle.getNombrePrograma(),
                 detalle.getNombreMateria(),
@@ -75,6 +79,7 @@ public final class ResumenCargaAssembler {
                 detalle.getCodigoTipoActividadPadre(),
                 detalle.getNombreTipoActividad(),
                 detalle.getNombreTipoActividadPadre(),
+                detalle.getNombreProyecto(),
                 detalle.getNombreUnidadRegional(),
                 detalle.getNombrePrograma(),
                 detalle.getNombreMateria(),
@@ -262,6 +267,11 @@ public final class ResumenCargaAssembler {
     }
 
     private static String resolveNombre(DetalleResumen detalle) {
+        boolean esProyecto = CODIGO_CTEI.equalsIgnoreCase(detalle.codigoTipoActividad()) || CODIGO_ISU.equalsIgnoreCase(detalle.codigoTipoActividad());
+        if(esProyecto && hasText(detalle.nombreProyecto())) {
+            return detalle.nombreProyecto();
+        }
+
         return firstNonBlank(
                 detalle.nombreTipoActividad(),
                 detalle.nombreTipoActividadPadre());
