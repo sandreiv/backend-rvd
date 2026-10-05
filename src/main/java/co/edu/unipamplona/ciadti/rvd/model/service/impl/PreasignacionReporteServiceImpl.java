@@ -9,6 +9,7 @@
  * 31/08/2026 - Sebastian Jaimes - Valor hora desde puntos vigencia
  * 31/08/2026 - Sebastian Jaimes - Reporte PDF con totales, grupo y cupos
  * 31/08/2026 - Sebastian Jaimes - Grupo como conteo numérico
+ * 01/09/2026 - Andrés Hernández - Corrección formato Excel de la preasignación
  * 04/09/2026 - Exclusion de once meses heredados solo en segundo periodo
  * 17/09/2026 - Sebastian Jaimes - Valor de contrato con rango de fechas inclusivo
  * 18/09/2026 - Sebastian Jaimes - Contrato cátedra según forma de pago

@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 20/07/2026 - Sebastian Jaimes - Campos monetarios a BigDecimal
+ * 27/08/2026 - Andrés Hernández - Manejo de fechas locales
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 

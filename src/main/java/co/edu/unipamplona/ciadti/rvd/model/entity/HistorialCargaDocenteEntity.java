@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: HistorialCargaDocenteEntity.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.entity
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 18/08/2026
+ * Modificaciones:
+ * 18/08/2026 - Andrés Hernández - Creación inicial
+ * 07/09/2026 - Daniel Arias - Adición de campos
+ */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;

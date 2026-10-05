@@ -1,13 +1,14 @@
 /**
  * Aplicación: rvd
- * Archivo: DetalleCargaDocenteRepository.java
+ * Archivo: DetalleNovedadCargaDocenteRepository.java
  * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
- * Fecha de creación: 17/07/2026
+ * Fecha de creación: 17/09/2026
  * Modificaciones:
- * 17/07/2026 - Daniel Arias - Creación inicial
+ * 17/09/2026 - Daniel Arias - Creación inicial
+ * 17/09/2026 - Andrés Hernández - Consulta de los detalles de actividades como novedad
+ * 05/10/2026 - Andrés Hernández - Consulta de los detalles de actividades que ve desarrollo académico
  */
-
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.math.BigDecimal;

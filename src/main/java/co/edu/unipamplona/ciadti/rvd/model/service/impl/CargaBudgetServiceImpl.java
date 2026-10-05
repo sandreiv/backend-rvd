@@ -12,6 +12,8 @@
  * contratación; compute queda para el tope
  * 18/09/2026 - Sebastian Jaimes - GET y CARG_VALOR usan contratación;
  * autorizado solo en preasignación
+ * 25/09/2026 - Andrés Hernández - Correción en los calculos de presupuesto
+ * 30/09/2026 - Andrés Hernández - Correción para no contar en el presupuesto docentes agregados como novedad
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 

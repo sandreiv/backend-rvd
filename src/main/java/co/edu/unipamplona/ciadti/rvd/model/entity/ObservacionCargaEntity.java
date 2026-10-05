@@ -4,6 +4,9 @@
  * Paquete: co.edu.unipamplona.ciadti.rvd.model.entity
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
  * Fecha de creación: 25/08/2026
+ * Modificaciones:
+ * 25/08/2026 - Daniel Arias - Creación inicial
+ * 27/08/2026 - Andrés Hernández - Campo con el rol de la persona que registra la observación
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 

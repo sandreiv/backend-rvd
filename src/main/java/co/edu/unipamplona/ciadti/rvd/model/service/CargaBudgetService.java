@@ -8,6 +8,7 @@
  * 18/09/2026 - Sebastian Jaimes - Creación inicial
  * 18/09/2026 - Sebastian Jaimes - computeInclusive para contratación
  * 18/09/2026 - Sebastian Jaimes - preasignación iguala valor y autorizado
+ * 25/09/2026 - Andrés Hernández - assertNotExceedsAuthorized para la novedad de agregar docente
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 

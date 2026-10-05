@@ -6,6 +6,7 @@
  * Fecha de creación: 27/07/2026
  * Modificaciones:
  * 27/07/2026 - Sebastian Jaimes - Creación inicial
+ * 16/09/2026 - Andrés Hernández - Manejo relacion de actividad entre persona y proyecto
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 

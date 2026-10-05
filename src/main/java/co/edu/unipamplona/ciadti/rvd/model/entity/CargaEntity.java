@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 15/09/2026 - Andrés Hernández - Correción en tipos de datos
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 

@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 21/08/2026 - Andrés Hernández - Comprobación de actividades en la carga docente
  * 31/08/2026 - Sebastian Jaimes - Horas en consulta de reporte de preasignación
  * 04/09/2026 - Once meses en consulta de reporte de preasignación
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
@@ -14,6 +15,7 @@
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados (CADO_ESTADO = 4) para contratación
  * 17/09/2026 - Sebastian Jaimes - Listado de docentes por carga para totales
  * 18/09/2026 - Sebastian Jaimes - Forma de pago en reporte de preasignación
+ * 30/09/2026 - Andrés Hernández - Ajuste para no traer docentes agregados como novedad
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
