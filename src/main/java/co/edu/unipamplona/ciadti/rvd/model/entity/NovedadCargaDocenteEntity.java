@@ -7,6 +7,7 @@
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 20/07/2026 - Sebastian Jaimes - Campos monetarios a BigDecimal
+ * 15/09/2026 - Andrés Hernández - Adición de campos
  * 16/09/2026 - CADO_ID como PK y FK a CARGADOCENTE
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;

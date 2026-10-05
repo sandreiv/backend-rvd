@@ -1,3 +1,14 @@
+/**
+ * Aplicación: rvd
+ * Archivo: ObservacionCargaRepository.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 25/08/2026
+ * Modificaciones:
+ * 25/08/2026 - Andrés Hernández - Creación inicial
+ * 27/08/2026 - Andrés Hernández - Consulta de observaciones por precarga
+ * 28/08/2026 - Andrés Hernández - Manejo de la visibilidad de observaciones
+ */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.util.List;

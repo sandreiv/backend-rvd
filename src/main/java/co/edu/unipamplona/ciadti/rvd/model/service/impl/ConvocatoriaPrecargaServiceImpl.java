@@ -6,6 +6,7 @@
  * Fecha de creación: 04/06/2026
  * Modificaciones:
  * 04/06/2026 - Sebastian Jaimes - Creación inicial
+ * 27/08/2026 - Andrés Hernández - Manejo de las fechas locales
  * 09/09/2026 - Sebastian Jaimes - Campo contratacion en insert y update
  * 09/09/2026 - Sebastian Jaimes - Relación contratación-preasignación
  */

@@ -8,12 +8,15 @@
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  * 27/08/2026 - Horas de actividades por carga
+ * 27/08/2026 - Andrés Hernández - listPreloadObservations
  * 07/09/2026 - Sebastian Jaimes - Listado coordinaciones académicas hijas
  * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
+ * 09/09/2026 - Andrés Hernández - findCdpRequestsForAcademics
  * 10/09/2026 - Sebastian Jaimes - Coordinaciones contratación (preasignación + Aval Desarrollo)
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados para contratación
+ * 16/09/2026 - Andrés Hernández - listAlterationProfessors
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 

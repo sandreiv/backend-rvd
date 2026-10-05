@@ -7,7 +7,9 @@
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
  * 04/08/2026 - Sebastian Jaimes - Campos de contrato y fechas para reporte batch
+ * 27708/2026 - Andrés Hernández - Manejo de fechas locales
  * 31/08/2026 - Sebastian Jaimes - Horas de la carga docente para reporte PDF
+ * 01/09/2026 - Andrés Hernández - Corrección tipo de datos
  * 04/09/2026 - Exclusion de docentes con once meses en reporte Excel
  * 18/09/2026 - Sebastian Jaimes - Forma de pago para cálculo de cátedra
  */

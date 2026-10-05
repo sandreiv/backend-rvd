@@ -1,3 +1,14 @@
+/**
+ * Aplicación: rvd
+ * Archivo: NovedadDocenteCargaCoordinacionProjection.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository.projection
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 16/09/2026
+ * Modificaciones:
+ * 16/09/2026 - Andrés Hernández - Creación inicial
+ * 24/09/2026 - Daniel Arias - Agregado el tipo de novedad
+ * 05/10/2026 - Andrés Hernández - Agregado el ID novedad de la carga docente
+ */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
 import java.math.BigDecimal;

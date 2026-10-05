@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: HistorialCargaDocenteRepository.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 18/08/2026
+ * Modificaciones:
+ * 18/08/2026 - Andrés Hernández - Creación inicial
+ * 09/09/2026 - Daniel Arias - Corrección de estado devuelto
+ */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.math.BigDecimal;

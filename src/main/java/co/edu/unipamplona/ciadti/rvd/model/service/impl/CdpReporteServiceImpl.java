@@ -6,6 +6,7 @@
  * Fecha de creación: 01/09/2026
  * Modificaciones:
  * 01/09/2026 - Sebastian Jaimes - Creación inicial
+ * 01/09/2026 - Andrés Hernández - Corrección en el Excel de la preasignación
  * 04/09/2026 - Exclusion de once meses heredados solo en segundo periodo
  * 17/09/2026 - Sebastian Jaimes - Valor de contrato con rango de fechas inclusivo
  * 18/09/2026 - Sebastian Jaimes - Contrato cátedra según forma de pago

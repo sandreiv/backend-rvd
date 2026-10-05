@@ -6,22 +6,38 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 18/08/2026 - Andrés Hernández - Implementación de historial de estados en la carga docente
+ * 25/08/2026 - Andrés Hernández - Avalar inscripción de la precarga
+ * 25/08/2026 - Andrés Hernández - Rechazo de carga por parte de decano
  * 25/08/2026 - Sebastian Jaimes - Listado coordinaciones por JWT (Coordinador/Decano)
  * 25/08/2026 - Sebastian Jaimes - registradoPor con idPersona, acción e IP
+ * 27/08/2026 - Andrés Hernández - Consulta de observaciones en la precarga
+ * 27/08/2026 - Andrés Hernández - Unificación en el rechazo de carga
  * 27/08/2026 - Horas de actividades por carga
+ * 28/08/2026 - Andrés Hernández - Marcar observaciones como vistas
+ * 03/09/2026 - Andrés Hernández - Consulta de solicitudes CDP (Desarrollo académico)
  * 04/09/2026 - Docentes once meses heredados con estado pendiente
  * 07/09/2026 - Sebastian Jaimes - Listado coordinaciones académicas hijas
  * 07/09/2026 - Sebastian Jaimes - Coordinaciones con carga y docentes a verificar
  * 07/09/2026 - Sebastian Jaimes - Listado docentes por periodo, convocatoria y coordinación
  * 07/09/2026 - Sebastian Jaimes - Pendientes de verificación para header
+ * 08/09/2026 - Andrés Hernández - Desaprobación de docentes en el preregistro
+ * 08/09/2026 - Andrés Hernández - Aprobación de docentes verificados
+ * 09/09/2026 - Andrés Hernández - Consulta de CDP para roles académicos
  * 10/09/2026 - Sebastian Jaimes - Coordinaciones contratación (preasignación + Aval Desarrollo)
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados para contratación
+ * 11/09/2026 - Andrés Hernández - Consulta de novedades de actualización
+ * 16/09/2026 - Andrés Hernández - Método que devuelve la lista de profesores para la sección de novedades
+ * 16/09/2026 - Andrés Hernández - Consulta de los docentes para la sección de novedades
  * 17/09/2026 - Sebastian Jaimes - Valor de contrato con rango de fechas inclusivo
+ * 17/09/2026 - Andrés Hernández - Consulta de detalles de actividades para novedades
  * 18/09/2026 - Sebastian Jaimes - Contrato cátedra con horas de actividades
  * 18/09/2026 - Sebastian Jaimes - Salario cátedra como PSM mensual
  * 18/09/2026 - Sebastian Jaimes - CARG_VALOR y autorizado en preasignación
  * 21/09/2026 - Listado desarrollo: Aprobado Decano o Aval con novedad
+ * 28/09/2026 - Andrés Hernández - Novedad agregar docente
  * 29/09/2026 - Resumen de horas y centros con ResumenCargaAssembler
+ * 30/09/2026 - Andrés Hernández - No tomar en cuenta docentes agregados como novedad para la preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
