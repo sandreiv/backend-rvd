@@ -203,13 +203,20 @@ public class CdpController {
             value = "idCoordinacionFacultad",
             required = false
         )
-        String idCoordinacionFacultad) {
+        String idCoordinacionFacultad,
+
+        @RequestPart(
+            value = "idConvocatoria",
+            required = false
+        )
+        String idConvocatoria) {
 
         solicitudCdpService.create(
                 observacion,
                 archivos,
                 idPeriodo,
-                idCoordinacionFacultad
+                idCoordinacionFacultad,
+                idConvocatoria
         );
 
         return ResponseEntity
@@ -261,15 +268,17 @@ public class CdpController {
     )
     @GetMapping("/request")
         public ResponseEntity<CdpRequestDTO> getCurrentCdpRequest(
-                @RequestParam Long idCoordinacionFacultad) {
+                @RequestParam Long idCoordinacionFacultad,
+                @RequestParam Long idPeriodoUniversidad) {
 
         CdpRequestDTO request =
                 solicitudCdpService.getCurrentRequest(
-                        idCoordinacionFacultad
+                        idCoordinacionFacultad,
+                        idPeriodoUniversidad
                 );
 
         return ResponseEntity.ok(request);
-        }       
+    }       
 
 
 }
