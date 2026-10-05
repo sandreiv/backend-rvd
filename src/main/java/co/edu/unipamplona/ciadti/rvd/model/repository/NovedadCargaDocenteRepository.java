@@ -21,14 +21,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
 
 public interface NovedadCargaDocenteRepository
         extends JpaRepository<
                 NovedadCargaDocenteEntity,
-                NovedadCargaDocenteEntityId> {
+                Long> {
 
     Optional<NovedadCargaDocenteEntity> findByIdCargaDocente(
             Long idCargaDocente
@@ -37,6 +36,14 @@ public interface NovedadCargaDocenteRepository
     boolean existsByIdNovedadCatalogo(
             Long idNovedadCatalogo
     );
+
+    // Fase 2: las inserciones usan SEQ_NOVEDADCARGADOCENTE.NEXTVAL; CURRVAL devuelve
+    // ese NOCD_ID dentro de la misma transaccion para colgarle el detalle de la novedad.
+    @Query(value = """
+            SELECT RVD.SEQ_NOVEDADCARGADOCENTE.CURRVAL
+            FROM DUAL
+            """, nativeQuery = true)
+    Long currentNovedadCargaDocenteId();
 
     @Query(value = """
             WITH NOVEDADES_VALIDAS AS (
@@ -121,6 +128,7 @@ public interface NovedadCargaDocenteRepository
 
                     CADO.CADO_ESTADO,
 
+                    NOCD.NOCD_ID,
                     NOCD.NOVE_ID,
                     NOCD.NOCD_ESTADONOVEDAD
 
@@ -166,6 +174,7 @@ public interface NovedadCargaDocenteRepository
                 CR.MOCO_ID AS idModalidadContratacion,
                 CR.CACA_ID AS idCategoriaCatedratico,
 
+                CR.NOCD_ID AS idNovedadCargaDocente,
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
                 NOVE.NOVE_TIPO AS tipoNovedad,
@@ -190,12 +199,30 @@ public interface NovedadCargaDocenteRepository
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
+                    -- Hay novedad valida y tiene detalles esa novedad
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            WHERE DNCD.NOCD_ID = CR.NOCD_ID
+                        )
+                    THEN 1
+
+                    -- Hay novedad valida, no tiene detalles esa novedad, pero tiene vigentes de otra novedad de la misma carga
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                                ON NOCD.NOCD_ID = DNCD.NOCD_ID
+                            WHERE NOCD.CADO_ID = CR.CADO_ID
+                                AND NOCD.NOCD_ID <> CR.NOCD_ID
+                                AND DNCD.DNCD_VIGENTE = '1'
+                        )
+                    THEN 1
+
+                    -- Finalmente comprueba si hay detalles en la carga docente original
                     WHEN EXISTS (
-                        SELECT 1
-                        FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-                        WHERE DNCD.CADO_ID = CR.CADO_ID
-                    )
-                    OR EXISTS (
                         SELECT 1
                         FROM RVD.DETALLECARGADOCENTE DECD
                         WHERE DECD.CADO_ID = CR.CADO_ID
@@ -344,6 +371,7 @@ public interface NovedadCargaDocenteRepository
 
                     CADO.CADO_ESTADO,
 
+                    NOCD.NOCD_ID,
                     NOCD.NOVE_ID,
                     NOCD.NOCD_ESTADONOVEDAD
 
@@ -382,6 +410,7 @@ public interface NovedadCargaDocenteRepository
                 CR.MOCO_ID AS idModalidadContratacion,
                 CR.CACA_ID AS idCategoriaCatedratico,
 
+                CR.NOCD_ID AS idNovedadCargaDocente,
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
                 NOVE.NOVE_TIPO AS tipoNovedad,
@@ -406,19 +435,34 @@ public interface NovedadCargaDocenteRepository
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
-                    WHEN CR.CADO_ID IS NOT NULL
-                        AND (
-                            EXISTS (
-                                SELECT 1
-                                FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-                                WHERE DNCD.CADO_ID = CR.CADO_ID
-                            )
-                            OR EXISTS (
-                                SELECT 1
-                                FROM RVD.DETALLECARGADOCENTE DECD
-                                WHERE DECD.CADO_ID = CR.CADO_ID
-                            )
+                    -- Hay novedad valida y tiene detalles esa novedad
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            WHERE DNCD.NOCD_ID = CR.NOCD_ID
                         )
+                    THEN 1
+
+                    -- Hay novedad valida, no tiene detalles esa novedad, pero tiene vigentes de otra novedad de la misma carga
+                    WHEN CR.NOCD_ID IS NOT NULL
+                        AND EXISTS (
+                            SELECT 1
+                            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                                ON NOCD.NOCD_ID = DNCD.NOCD_ID
+                            WHERE NOCD.CADO_ID = CR.CADO_ID
+                                AND NOCD.NOCD_ID <> CR.NOCD_ID
+                                AND DNCD.DNCD_VIGENTE = '1'
+                        )
+                    THEN 1
+
+                    -- Finalmente comprueba si hay detalles en la carga docente original
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLECARGADOCENTE DECD
+                        WHERE DECD.CADO_ID = CR.CADO_ID
+                    )
                     THEN 1
                     ELSE 0
                 END AS tieneActividades
@@ -563,6 +607,8 @@ public interface NovedadCargaDocenteRepository
             @Param("idCargaDocente") Long idCargaDocente
     );
 
+    // Fase 3: aprueba una novedad por su NOCD_ID exacto (antes usaba MAX(FECHACAMBIO),
+    // que puede empatar al segundo y aprobar la fila equivocada).
     @Modifying(clearAutomatically = true)
     @Query(value = """
         UPDATE RVD.NOVEDADCARGADOCENTE NOCD
@@ -571,25 +617,38 @@ public interface NovedadCargaDocenteRepository
             NOCD.NOCD_VIGENTE = '1',
             NOCD.NOCD_REGISTRADOPOR = :registradoPor,
             NOCD.NOCD_FECHACAMBIO = SYSDATE
-        WHERE NOCD.CADO_ID = :idCargaDocente
+        WHERE NOCD.NOCD_ID = :idNovedadCargaDocente
         AND NOCD.NOCD_ESTADONOVEDAD = '0'
-        AND NOCD.NOCD_FECHACAMBIO = (
-            SELECT MAX(SRC.NOCD_FECHACAMBIO)
-            FROM RVD.NOVEDADCARGADOCENTE SRC
-            WHERE SRC.CADO_ID = :idCargaDocente
-            AND SRC.NOCD_ESTADONOVEDAD = '0'
-        )
         """, nativeQuery = true)
-    int updateEstadoNovedadInReview(
-            @Param("idCargaDocente") Long idCargaDocente,
+    int approveNoveltyById(
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
             @Param("estadoEliminado") String estadoEliminado,
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 4: rechazo logico. La novedad queda en '2' y sin vigencia; no se tocan los
+    // detalles (su foto queda en DNCD_VIGENTE='0') ni CARG_VALOR.
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE RVD.NOVEDADCARGADOCENTE NOCD
+        SET NOCD.NOCD_ESTADONOVEDAD = '2',
+            NOCD.NOCD_VIGENTE = '0',
+            NOCD.NOCD_REGISTRADOPOR = :registradoPor,
+            NOCD.NOCD_FECHACAMBIO = SYSDATE
+        WHERE NOCD.NOCD_ID = :idNovedadCargaDocente
+        AND NOCD.NOCD_ESTADONOVEDAD = '0'
+        """, nativeQuery = true)
+    int rejectNoveltyById(
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente,
+            @Param("registradoPor") String registradoPor
+    );
+
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -621,6 +680,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 SRC.CADO_ID,
                 SRC.CARG_ID,
                 :idPersonaGeneral,
@@ -675,10 +735,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -710,6 +772,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 CADO.CADO_ID,
                 CADO.CARG_ID,
                 :idPersonaGeneral,
@@ -757,10 +820,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -792,6 +857,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 SRC.CADO_ID,
                 SRC.CARG_ID,
                 :idPersonaGeneral,
@@ -846,10 +912,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -881,6 +949,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 CADO.CADO_ID,
                 CADO.CARG_ID,
                 :idPersonaGeneral,
@@ -984,10 +1053,12 @@ public interface NovedadCargaDocenteRepository
             @Param("idPersonaGeneral") Long idPersonaGeneral
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
         INSERT INTO RVD.NOVEDADCARGADOCENTE
         (
+            NOCD_ID,
             CADO_ID,
             CARG_ID,
             PEGE_ID,
@@ -1020,6 +1091,7 @@ public interface NovedadCargaDocenteRepository
             NOCD_FECHACAMBIO
         )
         SELECT
+            RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
             SRC.CADO_ID,
             SRC.CARG_ID,
             SRC.PEGE_ID,
@@ -1066,10 +1138,12 @@ public interface NovedadCargaDocenteRepository
     );
 
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
         INSERT INTO RVD.NOVEDADCARGADOCENTE
         (
+            NOCD_ID,
             CADO_ID,
             CARG_ID,
             PEGE_ID,
@@ -1102,6 +1176,7 @@ public interface NovedadCargaDocenteRepository
             NOCD_FECHACAMBIO
         )
         SELECT
+            RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
             CADO.CADO_ID,
             CADO.CARG_ID,
             CADO.PEGE_ID,
@@ -1142,10 +1217,12 @@ public interface NovedadCargaDocenteRepository
     );
 
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1177,6 +1254,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 SRC.CADO_ID,
                 SRC.CARG_ID,
                 NVL(:idPersonaGeneral, SRC.PEGE_ID),
@@ -1239,10 +1317,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1274,6 +1354,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 CADO.CADO_ID,
                 CADO.CARG_ID,
                 NVL(:idPersonaGeneral, CADO.PEGE_ID),
@@ -1330,10 +1411,12 @@ public interface NovedadCargaDocenteRepository
     );
     
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1365,6 +1448,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 SRC.CADO_ID,
                 SRC.CARG_ID,
                 SRC.PEGE_ID,
@@ -1420,10 +1504,12 @@ public interface NovedadCargaDocenteRepository
             @Param("onceMeses") String onceMeses,
             @Param("registradoPor") String registradoPor
     );
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1455,6 +1541,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 CADO.CADO_ID,
                 CADO.CARG_ID,
                 CADO.PEGE_ID,
@@ -1504,10 +1591,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1539,6 +1628,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 SRC.CADO_ID,
                 SRC.CARG_ID,
                 SRC.PEGE_ID,
@@ -1554,7 +1644,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 SRC.NOCD_ESTADO,
-                SRC.NOCD_VIGENTE,
+                '0',
                 SRC.NOCD_HORAS,
                 SRC.NOCD_HORASDEEXCEPCION,
                 SRC.NOCD_VALORHORA,
@@ -1589,10 +1679,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1624,6 +1716,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 CADO.CADO_ID,
                 CADO.CARG_ID,
                 CADO.PEGE_ID,
@@ -1639,7 +1732,7 @@ public interface NovedadCargaDocenteRepository
                 :valorPrestaciones,
                 :salario,
                 CADO.CADO_ESTADO,
-                CADO.CADO_VIGENTE,
+                '0',
                 CADO.CADO_HORAS,
                 CADO.CADO_HORASDEEXCEPCION,
                 CADO.CADO_VALORHORA,
@@ -1667,10 +1760,12 @@ public interface NovedadCargaDocenteRepository
             @Param("registradoPor") String registradoPor
     );
 
+    // Fase 2: incluye NOCD_ID (PK de la novedad) tomado de SEQ_NOVEDADCARGADOCENTE.
     @Modifying
     @Query(value = """
             INSERT INTO RVD.NOVEDADCARGADOCENTE
             (
+                NOCD_ID,
                 CADO_ID,
                 CARG_ID,
                 PEGE_ID,
@@ -1702,6 +1797,7 @@ public interface NovedadCargaDocenteRepository
                 NOCD_FECHACAMBIO
             )
             SELECT
+                RVD.SEQ_NOVEDADCARGADOCENTE.NEXTVAL,
                 CADO.CADO_ID,
                 CADO.CARG_ID,
                 CADO.PEGE_ID,
@@ -1717,7 +1813,7 @@ public interface NovedadCargaDocenteRepository
                 CADO.CADO_VALORPRESTACIONES,
                 CADO.CADO_SALARIO,
                 CADO.CADO_ESTADO,
-                CADO.CADO_VIGENTE,
+                '0',
                 CADO.CADO_HORAS,
                 CADO.CADO_HORASDEEXCEPCION,
                 CADO.CADO_VALORHORA,

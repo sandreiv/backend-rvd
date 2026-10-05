@@ -5,6 +5,7 @@ import java.util.Date;
 
 public interface NovedadDocenteCargaCoordinacionProjection {
 
+    Long getIdNovedadCargaDocente();
     Long getIdCargaDocente();
     Long getIdPersonaGeneral();
     String getNombreCompleto();

@@ -746,6 +746,21 @@ public class CoordinationController {
     }
 
     @Operation(
+        summary = "Rechaza una novedad en revisión de un docente",
+        description = """
+            Pasa NOCD_ESTADONOVEDAD de 0 a 2 y NOCD_VIGENTE a 0.
+            No modifica CARG_VALOR ni los detalles (la foto queda sin vigencia).
+            Guarda la observación. Si la novedad es Agregar docente,
+            elimina la carga docente creada y sus detalles.
+            """
+    )
+    @PutMapping("/reject-professor-novelty/{idCargaDocente}")
+    public ResponseEntity<Void> rejectProfessorNovelty(@PathVariable Long idCargaDocente, @RequestBody ObservacionDecanoDTO dto) {
+        novedadCargaDocenteService.rejectProfessorNovelty(idCargaDocente, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Actualiza el valor de puntos",
         description = "Actualiza el valor de los puntos segun los que se almacenan en la tabla ESCALAFON siempre y cuando no supere el presupuesto y la modalidad sea TCO"
     )

@@ -38,12 +38,13 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDoc
 public interface DetalleNovedadCargaDocenteMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "idNovedadCargaDocente", source = "idCargaDocente")
+    @Mapping(target = "idNovedadCargaDocente", source = "idNovedadCargaDocente")
     @Mapping(target = "idTipoActividad", expression = "java(resolveTipoActividad(detalle))")
     @Mapping(target = "idPrograma", source = "detalle.idPrograma")
     @Mapping(target = "idGrupo", source = "detalle.idGrupo")
     @Mapping(target = "idCentroCosto", source = "idCentroCosto")
     @Mapping(target = "horas", expression = "java(toHoras(detalle.horas()))")
+    @Mapping(target = "vigente", constant = "0")
     @Mapping(target = "registradoPor", ignore = true)
     @Mapping(target = "fechaCambio", ignore = true)
     @Mapping(target = "novedadCargaDocente", ignore = true)
@@ -52,7 +53,7 @@ public interface DetalleNovedadCargaDocenteMapper {
     @Mapping(target = "tipoActividad", ignore = true)
     @Mapping(target = "centroCosto", ignore = true)
     DetalleNovedadCargaDocenteEntity toEntity(
-            Long idCargaDocente,
+            Long idNovedadCargaDocente,
             DetalleCargaDocenteItemDTO detalle,
             Long idCentroCosto);
 
@@ -263,16 +264,16 @@ public interface DetalleNovedadCargaDocenteMapper {
         return new ArrayList<>(relaciones.values());
     }
 
-    default DetalleNovedadCargaDocenteEntity toEntityFromDto(DetalleCargaDocenteDTO dto, Long idCentroCosto) {
+    default DetalleNovedadCargaDocenteEntity toEntityFromDto(DetalleCargaDocenteDTO dto, Long idNovedadCargaDocente, Long idCentroCosto) {
         DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
         DetalleNovedadCargaDocenteEntity entity = new DetalleNovedadCargaDocenteEntity();
-        entity.setId(dto.idDetalleCargaDocente());
-        entity.setIdNovedadCargaDocente(dto.idCargaDocente());
+        entity.setIdNovedadCargaDocente(idNovedadCargaDocente);
         entity.setIdTipoActividad(resolveTipoActividadFromActividad(actividad));
         entity.setIdPrograma(resolveIdPrograma(actividad));
         entity.setIdGrupo(resolveIdGrupo(actividad));
         entity.setIdCentroCosto(idCentroCosto);
         entity.setHoras(actividad.horas());
+        entity.setVigente("0");
         return entity;
     }
 

@@ -1036,7 +1036,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 && cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionAndIdFechasConvocatoria(
                         dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion(), dto.fechasConvocatoria().id())) {
             log.warn("auxAddProfessorForNovelty ===> Docente duplicado en modalidad. idPersona={}, idCarga={}", dto.idPersonaGeneral(), dto.idCarga());
-            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta modalidad de contratacion");
+            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta modalidad de contratacion desde la precarga");
         }
 
         CargaDocenteEntity entity = cargaDocenteMapper.toEntity(dto);

@@ -56,6 +56,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 class NovedadCargaDocenteServiceImplTest {
 
     private static final Long CADO_ID = 449L;
+    private static final Long NOCD_ID = 900L;
     private static final Long CARG_ID = 112L;
     private static final Long NOVE_ID = 6L;
     private static final Long MOCO_ID = 1L;
@@ -365,14 +366,15 @@ class NovedadCargaDocenteServiceImplTest {
         NovedadCargaDocenteEntity novedadEnRevision =
                 new NovedadCargaDocenteEntity();
 
+        novedadEnRevision.setIdNovedadCargaDocente(NOCD_ID);
         novedadEnRevision.setIdNovedadCatalogo(NOVE_ID);
 
         when(novedadCargaDocenteRepository
                 .findNoveltyInReview(CADO_ID))
                 .thenReturn(Optional.of(novedadEnRevision));
 
-        when(novedadCargaDocenteRepository.updateEstadoNovedadInReview(
-                eq(CADO_ID),
+        when(novedadCargaDocenteRepository.approveNoveltyById(
+                eq(NOCD_ID),
                 eq("0"),
                 anyString()))
                 .thenReturn(1);
@@ -385,8 +387,8 @@ class NovedadCargaDocenteServiceImplTest {
                 .clearVigenteByIdCargaDocente(CADO_ID);
 
         order.verify(novedadCargaDocenteRepository)
-                .updateEstadoNovedadInReview(
-                        eq(CADO_ID),
+                .approveNoveltyById(
+                        eq(NOCD_ID),
                         eq("0"),
                         anyString());
 

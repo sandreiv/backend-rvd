@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 18/09/2026 - Andrés Hernández - Relación de la persona proyecto con detalle novedad
  * 29/09/2026 - Ignora relaciones de solo lectura al crear
  */
 

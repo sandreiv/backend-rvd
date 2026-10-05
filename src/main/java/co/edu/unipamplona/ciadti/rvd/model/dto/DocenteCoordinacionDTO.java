@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: DocenteCoordinacionDTO.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.dto
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 30/06/2026
+ * Modificaciones:
+ * 30/06/2026 - Sebastian Jaimes - Creación inicial
+ * 21/08/2026 - Andrés Hernández - Comprobación de actividades en la carga docente
+ */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 import java.math.BigDecimal;

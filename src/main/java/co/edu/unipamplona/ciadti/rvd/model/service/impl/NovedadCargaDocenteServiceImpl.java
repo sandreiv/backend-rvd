@@ -22,6 +22,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,12 +57,12 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialNovedadResumenDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaFormularioDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionResumenNovedadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenNovedadCargaDocenteDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.TipoActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
@@ -70,11 +71,13 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ModalidadContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionesEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
@@ -93,7 +96,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RelacionCargaProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionPorCoordinacionRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ObservacionResumenProjection;
@@ -515,7 +518,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                     HttpStatus.BAD_REQUEST,
                     "No fue posible registrar la novedad");
         }
-        insertDetails(dto.idCargaDocente(), dto.detalles());
+        // Fase 2: el detalle se cuelga del NOCD_ID de la novedad (historial por novedad).
+        Long nocdId = novedadCargaDocenteRepository.currentNovedadCargaDocenteId();
+        insertDetails(nocdId, dto.detalles());
 
         log.info(
                 "saveContractModalityProfessor ===> Novedad insertada. fuente={}, idCargaDocente={}",
@@ -985,22 +990,13 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
 
         // GUARDAR DETALLES
+        // Fase 2: la novedad guarda su propia foto de detalle (historial). Se copia la
+        // base efectiva, se aplican los cambios y se inserta todo bajo el NOCD_ID nuevo.
         Long idCoordinacion = resolveIdCoordinacionByNovedadCargaDocente(dto.idCargaDocente());
         validatePreassignmentWriteAllowedByNovedadCargaDocente(dto.idCargaDocente());
 
-        if (dto.detallesNuevos() != null && !dto.detallesNuevos().isEmpty()) {
-            agregarDetalleNovedad(dto.idCargaDocente(), dto.detallesNuevos(), idCoordinacion);
-        }
-        if (dto.detallesActualizados() != null && !dto.detallesActualizados().isEmpty()) {
-            for (DetalleCargaDocenteDTO detalle : dto.detallesActualizados()) {
-                actualizarDetalleNovedad(detalle, idCoordinacion);
-            }
-        }
-        if (dto.detallesEliminados() != null && !dto.detallesEliminados().isEmpty()) {
-            for (Long idDetalleNovedad : dto.detallesEliminados()) {
-                deleteDetalleNovedad(idDetalleNovedad);
-            }
-        }
+        Long nocdId = novedadCargaDocenteRepository.currentNovedadCargaDocenteId();
+        guardarFotoDetalleNovedad(dto, nocdId, idCoordinacion);
 
         log.info("saveNoveltyProjectActivities ===> Novedad detalle precarga docente guardado. idCargaDocente={}", dto.idCargaDocente());
     }
@@ -1044,13 +1040,16 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                         ? "1"
                         : "0";
 
+        Long idNovedadCargaDocente = novedadEnRevision.getIdNovedadCargaDocente();
+
         novedadCargaDocenteRepository
                 .clearVigenteByIdCargaDocente(idCargaDocente);
 
+        // Fase 3: se aprueba por NOCD_ID exacto (no por MAX(FECHACAMBIO)).
         int updated =
                 novedadCargaDocenteRepository
-                        .updateEstadoNovedadInReview(
-                                idCargaDocente,
+                        .approveNoveltyById(
+                                idNovedadCargaDocente,
                                 estadoEliminado,
                                 RegistradoPorUtils.value(Accion.UPDATE)
                         );
@@ -1062,17 +1061,124 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             );
         }
 
+        // Fase 3: activar la foto de detalle de la novedad aprobada. Solo si tiene
+        // detalle, para no borrar el conjunto efectivo de una novedad sin actividades.
+        if (detalleNovedadCargaDocenteRepository.countByIdNovedadCargaDocente(idNovedadCargaDocente) > 0) {
+            detalleNovedadCargaDocenteRepository.clearDetalleVigenteByCargaDocente(idCargaDocente);
+            detalleNovedadCargaDocenteRepository.setDetalleVigenteByNovedad(idNovedadCargaDocente);
+        }
+
         cargaBudgetService.refreshCargValor(
                 cargaDocente.getIdCarga()
         );
 
         log.info(
                 "approveProfessorNovelty ===> Novedad aprobada. "
-                        + "idCargaDocente={}, idCarga={}, estadoEliminado={}",
+                        + "idCargaDocente={}, idNovedadCargaDocente={}, idCarga={}, estadoEliminado={}",
                 idCargaDocente,
+                idNovedadCargaDocente,
                 cargaDocente.getIdCarga(),
                 estadoEliminado
         );
+    }
+
+    @Override
+    @Transactional
+    public void rejectProfessorNovelty(Long idCargaDocente, ObservacionDecanoDTO dto) {
+        log.info("rejectProfessorNovelty ===> Rechazando novedad. idCargaDocente={}", idCargaDocente);
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository
+                .findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        NovedadCargaDocenteEntity novedadEnRevision = novedadCargaDocenteRepository
+                .findNoveltyInReview(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.CONFLICT,
+                        "El docente no tiene una novedad en revisión"));
+
+        NovedadEntity novedad = novedadRepository
+                .findById(novedadEnRevision.getIdNovedadCatalogo())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la novedad seleccionada"));
+
+        Long idNovedadCargaDocente = novedadEnRevision.getIdNovedadCargaDocente();
+
+        // Fase 4: rechazo logico; la novedad queda en '2' y sin vigencia.
+        int updated = novedadCargaDocenteRepository.rejectNoveltyById(
+                idNovedadCargaDocente,
+                RegistradoPorUtils.value(Accion.UPDATE));
+        if (updated < 1) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No fue posible rechazar la novedad");
+        }
+
+        // Fase 4: el motivo del rechazo queda en RVD.OBSERVACIONES (fuente del resumen).
+        saveObservacionRechazoNovedad(idCargaDocente, dto);
+
+        // Fase 4: si la novedad agrego un docente, se elimina la carga creada y sus detalles.
+        if (COMPONENT_ADD_NOVELTY_PROFESSOR.equalsIgnoreCase(
+                novedad.getComponente() != null ? novedad.getComponente().trim() : "")) {
+            eliminarDocenteCreadoPorNovedad(cargaDocente, idNovedadCargaDocente);
+        }
+
+        log.info(
+                "rejectProfessorNovelty ===> Novedad rechazada. "
+                        + "idCargaDocente={}, idNovedadCargaDocente={}",
+                idCargaDocente,
+                idNovedadCargaDocente);
+    }
+
+    // Fase 4: guarda el motivo del rechazo en RVD.OBSERVACIONES.
+    private void saveObservacionRechazoNovedad(Long idCargaDocente, ObservacionDecanoDTO dto) {
+        if (dto == null || !StringUtils.hasText(dto.observacion())) {
+            return;
+        }
+        ObservacionesEntity observacion = new ObservacionesEntity();
+        observacion.setIdCargaDocente(idCargaDocente);
+        observacion.setIdPersonaGeneralRegistra(dto.idPersonaGeneral());
+        observacion.setTexto(dto.observacion());
+        observacion.setFecha(new Date());
+        observacion.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
+        observacion.setFechaCambio(new Date());
+        observacionesRepository.save(observacion);
+    }
+
+    // Fase 4: al rechazar add-professor se elimina la carga creada y sus detalles.
+    private void eliminarDocenteCreadoPorNovedad(
+            CargaDocenteEntity cargaDocente,
+            Long idNovedadCargaDocente) {
+
+        String registradoPor = RegistradoPorUtils.value(Accion.DELETE);
+
+        // Detalles de la novedad rechazada (si tiene).
+        for (DetalleNovedadCargaDocenteEntity detalle :
+                detalleNovedadCargaDocenteRepository.findByIdNovedadCargaDocente(idNovedadCargaDocente)) {
+            relacionCargaProyectoRepository.deleteByIdDetalleNovedadCargaDocente(detalle.getId());
+            detalleNovedadCargaDocenteRepository.deleteByProcedure(detalle.getId(), registradoPor);
+        }
+
+        // Detalles originales de la carga (si tiene).
+        for (DetalleCargaDocenteEntity detalle :
+                detalleCargaDocenteRepository.findAllByIdCargaDocente(cargaDocente.getId())) {
+            relacionCargaProyectoRepository.deleteByIdDetalleCargaDocente(detalle.getId());
+            detalleCargaDocenteRepository.deleteByProcedure(detalle.getId(), registradoPor);
+        }
+
+        Long idCarga = cargaDocente.getIdCarga();
+        cargaDocenteRepository.deleteByProcedure(cargaDocente.getId(), registradoPor);
+
+        if (idCarga != null) {
+            cargaBudgetService.refreshPreassignmentTotals(idCarga);
+        }
+
+        log.info(
+                "rejectProfessorNovelty ===> Docente creado por novedad eliminado. idCargaDocente={}",
+                cargaDocente.getId());
     }
 
 
@@ -1377,14 +1483,14 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 .calcularOnceMesesPorSemanas(dto.semanas());
     }
 
-    private void insertDetails(Long idCargaDocente, List<DetalleCargaDocenteItemDTO> detalles) {
+    private void insertDetails(Long idNovedadCargaDocente, List<DetalleCargaDocenteItemDTO> detalles) {
 
         for (DetalleCargaDocenteItemDTO detalle : detalles) {
             DetalleNovedadCargaDocenteEntity entity = new DetalleNovedadCargaDocenteEntity();
 
             fillDetalle(
                     entity,
-                    idCargaDocente,
+                    idNovedadCargaDocente,
                     detalle
             );
             detalleNovedadCargaDocenteRepository.save(entity);
@@ -1393,7 +1499,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private void fillDetalle(
             DetalleNovedadCargaDocenteEntity entity,
-            Long idCargaDocente,
+            Long idNovedadCargaDocente,
             DetalleCargaDocenteItemDTO detalle
     ) {
 
@@ -1402,12 +1508,13 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                         ? detalle.idTipoActividadHija()
                         : detalle.idTipoActividad();
 
-        entity.setIdNovedadCargaDocente(idCargaDocente);
+        entity.setIdNovedadCargaDocente(idNovedadCargaDocente);
         entity.setIdPrograma(detalle.idPrograma());
         entity.setIdGrupo(detalle.idGrupo());
         entity.setIdTipoActividad(tipoActividad);
         entity.setIdCentroCosto(detalle.idCentroCosto());
         entity.setHoras(detalle.horas().toString());
+        entity.setVigente("0");
         entity.setRegistradoPor(
                 RegistradoPorUtils.value(Accion.INSERT)
         );
@@ -1423,9 +1530,83 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         return value.trim();
     }
 
+    // Fase 2: construye la foto de detalle de una novedad de actividades.
+    // Parte de la base efectiva (novedad anterior con detalle) y aplica los cambios;
+    // en la primera novedad el front envia el conjunto completo en detallesNuevos.
+    private void guardarFotoDetalleNovedad(
+            GuardarNovedadesDetallesProyectosDTO dto,
+            Long idNovedadCargaDocente,
+            Long idCoordinacion) {
+
+        List<DetalleCargaDocenteListadoProjection> baseProyecciones =
+                detalleNovedadCargaDocenteRepository.findByIdCargaDocente(dto.idCargaDocente());
+
+        boolean baseEsNovedad = !baseProyecciones.isEmpty()
+                && baseProyecciones.get(0).getEsDeNovedad() != null
+                && baseProyecciones.get(0).getEsDeNovedad().orElse(0) == 1;
+
+        Map<Long, DetalleCargaDocenteItemDTO> foto = new LinkedHashMap<>();
+        if (baseEsNovedad) {
+            Map<Long, Map<Long, List<DetalleCargaDocenteListadoProjection>>> agrupado =
+                    detalleNovedadCargaDocenteMapper.agruparPorCargaYDetalle(baseProyecciones);
+            for (Map.Entry<Long, List<DetalleCargaDocenteListadoProjection>> entry :
+                    agrupado.getOrDefault(dto.idCargaDocente(), Map.of()).entrySet()) {
+                foto.put(entry.getKey(), detalleNovedadCargaDocenteMapper.toItemDtoFromGroup(entry.getValue()));
+            }
+        }
+
+        // Eliminados: se omiten de la foto; la fila historica no se toca.
+        if (dto.detallesEliminados() != null) {
+            for (Long idDetalle : dto.detallesEliminados()) {
+                foto.remove(idDetalle);
+            }
+        }
+
+        // Actualizados: se reemplaza la fila base por los nuevos valores.
+        if (dto.detallesActualizados() != null) {
+            for (DetalleCargaDocenteDTO detalle : dto.detallesActualizados()) {
+                foto.put(detalle.idDetalleCargaDocente(), toItemDto(detalle.detalles().get(0)));
+            }
+        }
+
+        List<DetalleCargaDocenteItemDTO> resultado = new ArrayList<>(foto.values());
+        if (dto.detallesNuevos() != null) {
+            resultado.addAll(dto.detallesNuevos());
+        }
+
+        if (!resultado.isEmpty()) {
+            agregarDetalleNovedad(idNovedadCargaDocente, dto.idCargaDocente(), resultado, idCoordinacion);
+        }
+    }
+
+    // Fase 2: convierte una actividad mostrada al item con el que se persiste el detalle.
+    private DetalleCargaDocenteItemDTO toItemDto(DetalleCargaDocenteActividadDTO actividad) {
+        Long idTipoActividad = actividad.tipoActividad() != null
+                ? actividad.tipoActividad().id()
+                : null;
+        Long idTipoActividadHija = actividad.tipoActividadHija() != null
+                && actividad.tipoActividadHija().size() == 1
+                ? actividad.tipoActividadHija().get(0).id()
+                : null;
+        return new DetalleCargaDocenteItemDTO(
+                idTipoActividad,
+                idTipoActividadHija,
+                actividad.tipoActividad() != null ? actividad.tipoActividad().codigo() : null,
+                detalleNovedadCargaDocenteMapper.parseHoras(actividad.horas()),
+                actividad.unidadRegional() != null ? actividad.unidadRegional().id() : null,
+                actividad.programa() != null ? actividad.programa().id() : null,
+                new MateriaFormularioDTO(
+                        actividad.materia() != null ? actividad.materia().codigoMateria() : null,
+                        actividad.centroCosto() != null ? actividad.centroCosto().id() : null),
+                actividad.grupo() != null ? actividad.grupo().id() : null,
+                actividad.centroCosto() != null ? actividad.centroCosto().id() : null,
+                detalleNovedadCargaDocenteMapper.toRelacionesCargaProyecto(actividad.relacionCargaProyecto()));
+    }
+
     // Similar a SaveDetailProfessorPreload pero enfocado en novedades
-    private void agregarDetalleNovedad(Long idNovedadCargaDocente, List<DetalleCargaDocenteItemDTO> detalles, Long idCoordinacion) {
-        validateProgramHourRestrictionOnSaveNovelty(detalles, idNovedadCargaDocente);
+    private void agregarDetalleNovedad(Long idNovedadCargaDocente, Long idCargaDocente, List<DetalleCargaDocenteItemDTO> detalles, Long idCoordinacion) {
+        // Fase 2: la validacion de horas por programa necesita el CADO_ID, no el NOCD_ID.
+        validateProgramHourRestrictionOnSaveNovelty(detalles, idCargaDocente);
 
         for (DetalleCargaDocenteItemDTO detalle : detalles) {
             validateDetalleItem(detalle, idCoordinacion);
@@ -1440,76 +1621,35 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         }
     }
 
-    // Similar a UpdateDetailProfessorPreload pero enfocado en novedades
-    private void actualizarDetalleNovedad(DetalleCargaDocenteDTO dto, Long idCoordinacion) {
-        validateUpdateNoveltyDetailProfessorPreload(dto, idCoordinacion);
-
-        Long idDetalleNovedadCargaDocente = dto.idDetalleCargaDocente();
-        DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
-        DetalleNovedadCargaDocenteEntity detallePersistido = detalleNovedadCargaDocenteRepository.findById(idDetalleNovedadCargaDocente).orElseThrow();
-        Long idCentroCosto = resolveIdCentroCostoFromActividad(actividad, idCoordinacion);
-        DetalleNovedadCargaDocenteEntity entity = detalleNovedadCargaDocenteMapper.toEntityFromDto(dto, idCentroCosto);
-        entity.setIdTipoActividad(detalleCargaDocenteMapper
-                .resolveTipoActividadFromActividad(
-                        actividad,
-                        detallePersistido.getIdTipoActividad()));
-        entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
-        entity.setFechaCambio(new Date());
-        detalleNovedadCargaDocenteRepository.save(entity);
-
-        relacionCargaProyectoRepository.deleteByIdDetalleNovedadCargaDocente(
-                idDetalleNovedadCargaDocente);
-        saveRelacionesCargaProyectoNovedad(
-                idDetalleNovedadCargaDocente,
-                detalleCargaDocenteMapper.toRelacionesCargaProyecto(
-                        actividad.relacionCargaProyecto()));
-    }
-
-    private void deleteDetalleNovedad(Long idDetalleNovedadCargaDocente) {
-        validatePreassignmentWriteAllowedByNovedadDetalle(idDetalleNovedadCargaDocente);
-
-        detalleNovedadCargaDocenteRepository.deleteByProcedure(
-                idDetalleNovedadCargaDocente,
-                RegistradoPorUtils.value(Accion.DELETE));
-    }
-
-    private Long resolveIdCoordinacionByNovedadCargaDocente(Long idNovedadCargaDocente) {
-        if (idNovedadCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La novedad carga docente es obligatoria");
+    private Long resolveIdCoordinacionByNovedadCargaDocente(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente es obligatoria");
         }
-        NovedadCargaDocenteEntity novedadCargaDocente = novedadCargaDocenteRepository.findByIdCargaDocente(idNovedadCargaDocente)
+        // Fase 2: una carga tiene varias novedades; se resuelve la carga directamente
+        // para no depender de una novedad unica.
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe la novedad carga docente con id " + idNovedadCargaDocente));
-        if (novedadCargaDocente.getIdCarga() == null) {
+                        "No existe la carga docente con id " + idCargaDocente));
+        if (cargaDocente.getIdCarga() == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "La novedad carga docente no tiene carga asociada");
+                    "La carga docente no tiene carga asociada");
         }
-        CargaEntity carga = cargaRepository.findById(novedadCargaDocente.getIdCarga())
+        CargaEntity carga = cargaRepository.findById(cargaDocente.getIdCarga())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-                        "No existe la novedad carga con id " + novedadCargaDocente.getIdCarga()));
+                        "No existe la carga con id " + cargaDocente.getIdCarga()));
         return carga.getIdCoordinacion();
     }
 
-    private void validatePreassignmentWriteAllowedByNovedadDetalle(Long idDetalleNovedadCargaDocente) {
-        if (idDetalleNovedadCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle novedad de novedad carga docente es obligatorio");
+    private void validatePreassignmentWriteAllowedByNovedadCargaDocente(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
         }
 
-        DetalleNovedadCargaDocenteEntity detallNovedad = detalleNovedadCargaDocenteRepository.findById(idDetalleNovedadCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle novedad de novedad carga docente con id " + idDetalleNovedadCargaDocente));
+        // Fase 2: una carga tiene varias novedades; se valida desde la carga.
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
 
-        validatePreassignmentWriteAllowedByNovedadCargaDocente(detallNovedad.getIdNovedadCargaDocente());
-    }
-
-    private void validatePreassignmentWriteAllowedByNovedadCargaDocente(Long idNovedadCargaDocente) {
-        if (idNovedadCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la novedad carga docente es obligatorio");
-        }
-
-        NovedadCargaDocenteEntity novedadCargaDocente = novedadCargaDocenteRepository.findByIdCargaDocente(idNovedadCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad carga docente con id " + idNovedadCargaDocente));
-
-        validatePreassignmentWriteAllowedByCarga(novedadCargaDocente.getIdCarga());
+        validatePreassignmentWriteAllowedByCarga(cargaDocente.getIdCarga());
     }
 
     private void validatePreassignmentWriteAllowedByCarga(Long idCarga) {
@@ -1566,20 +1706,31 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         return totalRestriccionesEditables != null && totalRestriccionesEditables > 0;
     }
 
-    private void validateProgramHourRestrictionOnSaveNovelty(List<DetalleCargaDocenteItemDTO> detalles, Long idCargaDocente) {
-        NovedadCargaDocenteEntity novedadCargaDocente = novedadCargaDocenteRepository
-                .findByIdCargaDocente(idCargaDocente)
+    // Fase 2: la modalidad efectiva es la de la ultima novedad no rechazada de la carga;
+    // si no hay novedades, la de CARGADOCENTE. Evita findByIdCargaDocente (ambiguo con
+    // varias novedades) y conserva la modalidad fotografiada por la novedad.
+    private Long resolveModalidadEfectiva(Long idCargaDocente) {
+        Long fromNovelty = novedadCargaDocenteRepository
+                .findProfessorRecordToDuplicateNovelty(idCargaDocente)
+                .map(NovedadCargaDocenteEntity::getIdModalidadContratacion)
+                .orElse(null);
+        if (fromNovelty != null) {
+            return fromNovelty;
+        }
+        return cargaDocenteRepository.findById(idCargaDocente)
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id "
-                                + idCargaDocente));
+                        "No existe la carga docente con id " + idCargaDocente))
+                .getIdModalidadContratacion();
+    }
 
-        Map<Long, String> maximos = resolveMaximosHorasPrograma(novedadCargaDocente.getIdModalidadContratacion());
+    private void validateProgramHourRestrictionOnSaveNovelty(List<DetalleCargaDocenteItemDTO> detalles, Long idCargaDocente) {
+        Map<Long, String> maximos = resolveMaximosHorasPrograma(resolveModalidadEfectiva(idCargaDocente));
         if (maximos.isEmpty()) {
             return;
         }
 
-        Map<Long, BigDecimal> horasNuevas = new LinkedHashMap<>();
+        Map<Long, BigDecimal> horasPorPrograma = new LinkedHashMap<>();
         for (DetalleCargaDocenteItemDTO detalle : detalles) {
             if (detalle.idPrograma() == null || detalle.horas() == null) {
                 continue;
@@ -1587,64 +1738,22 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             if (!maximos.containsKey(detalle.idPrograma())) {
                 continue;
             }
-            horasNuevas.merge(
+            horasPorPrograma.merge(
                     detalle.idPrograma(),
                     BigDecimal.valueOf(detalle.horas()),
                     BigDecimal::add);
         }
 
-        if (horasNuevas.isEmpty()) {
+        if (horasPorPrograma.isEmpty()) {
             return;
         }
 
-        Map<Long, BigDecimal> horasAsignadas = loadHorasAsignadasPorProgramaEnNovedad(idCargaDocente, null);
-
-        for (Map.Entry<Long, BigDecimal> entry : horasNuevas.entrySet()) {
+        for (Map.Entry<Long, BigDecimal> entry : horasPorPrograma.entrySet()) {
             assertProgramHoursWithinLimit(
                     entry.getKey(),
                     maximos.get(entry.getKey()),
-                    horasAsignadas.getOrDefault(
-                            entry.getKey(),
-                            BigDecimal.ZERO),
                     entry.getValue());
         }
-    }
-
-    private void validateProgramHourRestrictionOnUpdateNovelty(
-            DetalleCargaDocenteDTO dto,
-            Long idDetallePersistido) {
-        DetalleCargaDocenteActividadDTO actividad = dto.detalles().get(0);
-        Long idPrograma = actividad.programa() != null
-                ? actividad.programa().id()
-                : null;
-        if (idPrograma == null || !StringUtils.hasText(actividad.horas())) {
-            return;
-        }
-
-        NovedadCargaDocenteEntity novedadCargaDocente = novedadCargaDocenteRepository
-                .findByIdCargaDocente(dto.idCargaDocente())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id "
-                                + dto.idCargaDocente()));
-
-        Map<Long, String> maximos = resolveMaximosHorasPrograma(
-                novedadCargaDocente.getIdModalidadContratacion());
-        String maximoHoras = maximos.get(idPrograma);
-        if (!StringUtils.hasText(maximoHoras)) {
-            return;
-        }
-
-        Map<Long, BigDecimal> horasAsignadas = loadHorasAsignadasPorProgramaEnNovedad(
-                dto.idCargaDocente(),
-                idDetallePersistido
-        );
-
-        assertProgramHoursWithinLimit(
-                idPrograma,
-                maximoHoras,
-                horasAsignadas.getOrDefault(idPrograma, BigDecimal.ZERO),
-                parseHorasDetalle(actividad.horas()));
     }
 
     private Map<Long, String> resolveMaximosHorasPrograma(Long idModalidadContratacion) {
@@ -1720,43 +1829,18 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         return null;
     }
 
-    private Map<Long, BigDecimal> loadHorasAsignadasPorProgramaEnNovedad(
-            Long idNovedadCargaDocente,
-            Long idDetalleExcluido) {
-        Map<Long, BigDecimal> result = new LinkedHashMap<>();
-        List<HorasProgramaProjection> rows =
-                detalleNovedadCargaDocenteRepository
-                        .findHorasByProgramaAndCargaDocente(
-                                idNovedadCargaDocente,
-                                idDetalleExcluido);
-        for (HorasProgramaProjection row : rows) {
-            if (row.getIdPrograma() == null) {
-                continue;
-            }
-            result.put(
-                    row.getIdPrograma(),
-                    row.getTotalHoras() != null
-                            ? row.getTotalHoras()
-                            : BigDecimal.ZERO);
-        }
-        return result;
-    }
-
     private void assertProgramHoursWithinLimit(
             Long idPrograma,
             String maximoHoras,
-            BigDecimal horasAsignadas,
-            BigDecimal horasNuevas) {
+            BigDecimal horasAsignadas) {
         BigDecimal maximo = parseHorasDetalle(maximoHoras);
-        BigDecimal total = horasAsignadas.add(horasNuevas);
-        if (total.compareTo(maximo) > 0) {
+        if (horasAsignadas.compareTo(maximo) > 0) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "Las horas del programa " + idPrograma
                             + " exceden el máximo permitido de "
                             + maximoHoras
-                            + " (asignadas: " + horasAsignadas
-                            + ", nuevas: " + horasNuevas + ")");
+                            + " (asignadas: " + horasAsignadas + ")");
         }
     }
 
@@ -1806,26 +1890,6 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         return detalle.idCentroCosto();
     }
 
-    private Long resolveIdCentroCostoFromActividad(DetalleCargaDocenteActividadDTO actividad, Long idCoordinacion) {
-        Long idCentroEspecial = findIdCentroCostoByCodigoActividadEspecial(resolveCodigoTipoActividad(actividad));
-        if (idCentroEspecial != null) {
-            return idCentroEspecial;
-        }
-        Long idPrograma = actividad.programa() != null
-                ? actividad.programa().id()
-                : null;
-        Long idCentroPrograma = findIdCentroCostoProgramaAsociado(
-                idCoordinacion, idPrograma);
-        if (idCentroPrograma != null) {
-            return idCentroPrograma;
-        }
-        // En update no hay materia.idCentroCosto; se usa el del formulario.
-        if (actividad.centroCosto() == null) {
-            return null;
-        }
-        return actividad.centroCosto().id();
-    }
-
     private Long findIdCentroCostoByCodigoActividadEspecial(String codigoTipoActividad) {
         if (!StringUtils.hasText(codigoTipoActividad)) {
             return null;
@@ -1861,21 +1925,6 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         }
     }
 
-    private String resolveCodigoTipoActividad(DetalleCargaDocenteActividadDTO actividad) {
-        if (actividad.tipoActividadHija() != null) {
-            for (TipoActividadDTO hija : actividad.tipoActividadHija()) {
-                if (hija != null && StringUtils.hasText(hija.codigo())) {
-                    return hija.codigo();
-                }
-            }
-        }
-        if (actividad.tipoActividad() != null
-                && StringUtils.hasText(actividad.tipoActividad().codigo())) {
-            return actividad.tipoActividad().codigo();
-        }
-        return null;
-    }
-
     private void saveRelacionesCargaProyectoNovedad(Long idDetalleNovedadCargaDocente, List<RelacionCargaProyectoDTO> relaciones) {
         if (relaciones == null || relaciones.isEmpty()) {
             return;
@@ -1885,66 +1934,6 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
             entity.setFechaCambio(new Date());
             relacionCargaProyectoRepository.save(entity);
-        }
-    }
-
-    private void validateUpdateNoveltyDetailProfessorPreload(
-            DetalleCargaDocenteDTO dto,
-            Long idCoordinacion) {
-        if (dto.idDetalleCargaDocente() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id del detalle de carga docente es obligatorio");
-        }
-        if (dto.idCargaDocente() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,  "La carga docente es obligatoria");
-        }
-        if (dto.detalles() == null || dto.detalles().size() != 1) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La actualizacion requiere exactamente un detalle");
-        }
-        if (!cargaDocenteRepository.existsById(dto.idCargaDocente())) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + dto.idCargaDocente());
-        }
-
-        DetalleNovedadCargaDocenteEntity detallePersistido = detalleNovedadCargaDocenteRepository
-                .findById(dto.idDetalleCargaDocente())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe el detalle de carga docente con id " + dto.idDetalleCargaDocente()));
-
-        if (!detallePersistido.getIdNovedadCargaDocente().equals(dto.idCargaDocente())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El detalle no pertenece a la carga docente enviada");
-        }
-
-        validateDetalleActividad(
-                dto.detalles().get(0),
-                detallePersistido.getIdTipoActividad(),
-                idCoordinacion);
-        validateProgramHourRestrictionOnUpdateNovelty(dto, detallePersistido.getId());
-    }
-
-    private void validateDetalleActividad(
-            DetalleCargaDocenteActividadDTO actividad,
-            Long idTipoActividadPersistido,
-            Long idCoordinacion) {
-        if (actividad.horas() == null || actividad.horas().isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Las horas del detalle son obligatorias");
-        }
-        Long idCentroCostoResuelto = resolveIdCentroCostoFromActividad(
-                actividad, idCoordinacion);
-        if (idCentroCostoResuelto == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El centro de costo del detalle es obligatorio");
-        }
-        Long tipoActividad = detalleCargaDocenteMapper
-                .resolveTipoActividadFromActividad(
-                        actividad,
-                        idTipoActividadPersistido);
-        if (tipoActividad == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El tipo de actividad del detalle es obligatorio");
-        }
-        if (actividad.relacionCargaProyecto() != null) {
-            for (RelacionCargaProyectoListadoDTO relacion
-                    : actividad.relacionCargaProyecto()) {
-                validateRelacionCargaProyecto(new RelacionCargaProyectoDTO(
-                        relacion.idPersonaProyecto(),
-                        relacion.idProyecto()));
-            }
         }
     }
 
@@ -2095,11 +2084,11 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 actual.get(), observaciones, novedades);
     }
 
-    private List<DetalleNovedadResumenProjection> loadActivityDetails(Long idCargaDocente) {
+    private List<DetalleNovedadResumenProjection> loadActivityDetails(Long idCargaDocente, Long idNovedadCargaDocente) {
         
-        List<DetalleNovedadResumenProjection> novedad = detalleNovedadCargaDocenteRepository.findResumenByIdCargaDocente(idCargaDocente);
-        if (!novedad.isEmpty()) {
-            return novedad;
+        List<DetalleNovedadResumenProjection> detallesNovedad = detalleNovedadCargaDocenteRepository.findResumenByIdNovedadCargaDocente(idNovedadCargaDocente, idCargaDocente);
+        if (!detallesNovedad.isEmpty()) {
+            return detallesNovedad;
         }
         return detalleCargaDocenteRepository.findResumenByIdCargaDocente(idCargaDocente);
     }
@@ -2130,7 +2119,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             List<HistorialNovedadResumenDTO> novedades) {
         
         List<DetalleResumen> detalles = ResumenCargaAssembler.fromNovedadList(
-                loadActivityDetails(novedad.getIdCargaDocente()));
+                loadActivityDetails(novedad.getIdCargaDocente(), novedad.getIdNovedadCargaDocente()));
         boolean planta = isPlantaModalidad(novedad.getIdModalidadContratacion());
         
         ValorContratacionDTO valor = planta

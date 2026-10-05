@@ -1,3 +1,12 @@
+/**
+ * Aplicación: rvd
+ * Archivo: NovedadDocenteCoordinacionMapper.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.mapper
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 16/09/2026
+ * Modificaciones:
+ * 16/09/2026 - Andrés Hernández - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
 import java.util.Date;

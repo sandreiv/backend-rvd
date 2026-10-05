@@ -6,7 +6,9 @@
  * Fecha de creación: 04/08/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
+ * 27/08/2026 - Andrés Hernández - Manejo de hora local
  * 31/08/2026 - Sebastian Jaimes - Columna V. Hora desde puntos vigencia
+ * 01/09/2026 - Andrés Hernández - Corrección en el formato Excel para la preasignación
  */
 package co.edu.unipamplona.ciadti.rvd.report;
 
