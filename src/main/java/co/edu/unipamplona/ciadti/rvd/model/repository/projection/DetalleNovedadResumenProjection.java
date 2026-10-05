@@ -14,6 +14,8 @@ public interface DetalleNovedadResumenProjection {
 
     String getCodigoTipoActividadPadre();
 
+    String getNombreProyecto();
+
     String getNombreUnidadRegional();
 
     String getNombrePrograma();

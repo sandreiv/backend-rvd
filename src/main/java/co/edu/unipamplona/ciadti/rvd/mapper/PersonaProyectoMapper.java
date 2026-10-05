@@ -6,6 +6,7 @@
  * Fecha de creación: 27/07/2026
  * Modificaciones:
  * 27/07/2026 - Sebastian Jaimes - Creación inicial
+ * 16/09/2026 - Andrés Hernández - Manejo del estado de actividad entre docentes y proyectos
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 

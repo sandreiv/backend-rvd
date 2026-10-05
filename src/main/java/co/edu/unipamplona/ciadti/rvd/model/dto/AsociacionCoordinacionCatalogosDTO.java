@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 31/08/2026 - Andrés Hernández - Campo docentes para asignar solo de modalidad Planta
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.dto;
