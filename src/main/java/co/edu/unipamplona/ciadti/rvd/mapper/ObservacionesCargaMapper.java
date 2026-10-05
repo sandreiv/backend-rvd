@@ -1,3 +1,12 @@
+/**
+ * Aplicación: rvd
+ * Archivo: ObservacionesCargaMapper.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.mapper
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 27/08/2026
+ * Modificaciones:
+ * 27/08/2026 - Andrés Hernández - Creación inicial
+ */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
 import java.util.List;

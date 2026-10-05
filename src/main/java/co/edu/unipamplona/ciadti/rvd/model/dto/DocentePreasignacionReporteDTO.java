@@ -7,6 +7,7 @@
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Creación inicial
  * 04/08/2026 - Sebastian Jaimes - Fila plana por docente con horas por código
+ * 27/08/2026 - Andrés Hernández - Manejo de fechas local
  * 31/08/2026 - Sebastian Jaimes - Columna valor hora desde puntos vigencia
  * 31/08/2026 - Sebastian Jaimes - Horas, grupo y cupos para reporte PDF
  * 31/08/2026 - Sebastian Jaimes - Grupo como conteo numérico
