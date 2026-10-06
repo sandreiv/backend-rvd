@@ -10,6 +10,7 @@
  * 31/08/2026 - Sebastian Jaimes - Grupos y cupos para reporte PDF
  * 29/09/2026 - Resumen de horas para novedad con fallback
  * 06/10/2026 - Andrés Hernández - Correción al mostrar detalles de proyectos dentro del resumen de novedad
+ * 06/10/2026 - Andrés Hernández - Uso de detalles efectivos para generar el CDP
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -29,6 +30,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasActividadP
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetallesCdpReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.TotalHorasPreasignacionProjection;
 
 public interface DetalleCargaDocenteRepository
@@ -356,6 +358,171 @@ public interface DetalleCargaDocenteRepository
             """, nativeQuery = true)
     List<DetalleNovedadResumenProjection> findResumenByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
+
+    @Query(value = """
+            WITH NOVEDADES_VALIDAS AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+            ),
+            CARGAS_RESUELTAS AS (
+                SELECT
+                    CADO.CADO_ID,
+                    NOCD.NOCD_ID
+                FROM RVD.CARGADOCENTE CADO
+
+                LEFT JOIN NOVEDADES_VALIDAS NOCD
+                    ON NOCD.CADO_ID = CADO.CADO_ID
+                    AND NOCD.RN = 1
+
+                WHERE CADO.CARG_ID = :idCarga
+                    AND NVL(NOCD.NOCD_ESTADOELIMINADO, '0') = '0'
+            ),
+            DETALLES_NOVEDAD AS (
+                SELECT
+                    CR.CADO_ID AS idCargaDocente,
+                    DNCD.DNCD_ID AS idDetalle,
+                    DNCD.DNCD_HORAS AS horas,
+                    DNCD.TIAC_ID AS idTipoActividad,
+                    DNCD.PROG_ID AS idPrograma,
+                    DNCD.GRUP_ID AS idGrupo,
+                    DNCD.CECO_ID AS idCentroCosto,
+                    UPPER(TRIM(
+                        NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)
+                    )) AS codigoPadre,
+                    GRUP.GRUP_CUPOS AS cupos
+
+                FROM CARGAS_RESUELTAS CR
+
+                INNER JOIN RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                    ON DNCD.NOCD_ID = CR.NOCD_ID
+                
+                LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                    ON TIAC.TIAC_ID = DNCD.TIAC_ID
+
+                LEFT JOIN RVD.TIPOACTIVIDADES TIAC_PADRE
+                    ON TIAC_PADRE.TIAC_ID = TIAC.TIAC_IDPADRE
+
+                LEFT JOIN ACADEMICO.GRUPO GRUP
+                    ON GRUP.GRUP_ID = DNCD.GRUP_ID
+
+                WHERE CR.NOCD_ID IS NOT NULL
+            ),
+            DETALLES_VIGENTES_NOVEDAD AS (
+                SELECT
+                    CR.CADO_ID AS idCargaDocente,
+                    DNCD.DNCD_ID AS idDetalle,
+                    DNCD.DNCD_HORAS AS horas,
+                    DNCD.TIAC_ID AS idTipoActividad,
+                    DNCD.PROG_ID AS idPrograma,
+                    DNCD.GRUP_ID AS idGrupo,
+                    DNCD.CECO_ID AS idCentroCosto,
+                    UPPER(TRIM(
+                        NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)
+                    )) AS codigoPadre,
+                    GRUP.GRUP_CUPOS AS cupos
+                
+                FROM CARGAS_RESUELTAS CR
+
+                INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                    ON NOCD.CADO_ID = CR.CADO_ID
+                
+                INNER JOIN RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                    ON DNCD.NOCD_ID = NOCD.NOCD_ID
+
+                LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                    ON TIAC.TIAC_ID = DNCD.TIAC_ID
+
+                LEFT JOIN RVD.TIPOACTIVIDADES TIAC_PADRE
+                    ON TIAC_PADRE.TIAC_ID = TIAC.TIAC_IDPADRE
+
+                LEFT JOIN ACADEMICO.GRUPO GRUP
+                    ON GRUP.GRUP_ID = DNCD.GRUP_ID
+                
+                WHERE CR.NOCD_ID IS NOT NULL
+                    AND NOCD.NOCD_ID <> CR.NOCD_ID
+                    AND DNCD.DNCD_VIGENTE = '1'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM DETALLES_NOVEDAD DN
+                        WHERE DN.idCargaDocente = CR.CADO_ID
+                    )
+            ),
+            DETALLES_ORIGINALES AS (
+                SELECT
+                    CR.CADO_ID AS idCargaDocente,
+                    DECD.DECD_ID AS idDetalle,
+                    DECD.DECD_HORAS AS horas,
+                    DECD.TIAC_ID AS idTipoActividad,
+                    DECD.PROG_ID AS idPrograma,
+                    DECD.GRUP_ID AS idGrupo,
+                    DECD.CECO_ID AS idCentroCosto,
+                    UPPER(TRIM(
+                        NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)
+                    )) AS codigoPadre,
+                    GRUP.GRUP_CUPOS AS cupos
+                
+                FROM CARGAS_RESUELTAS CR
+
+                INNER JOIN RVD.DETALLECARGADOCENTE DECD
+                    ON DECD.CADO_ID = CR.CADO_ID
+
+                LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                    ON TIAC.TIAC_ID = DECD.TIAC_ID
+
+                LEFT JOIN RVD.TIPOACTIVIDADES TIAC_PADRE
+                    ON TIAC_PADRE.TIAC_ID = TIAC.TIAC_IDPADRE
+
+                LEFT JOIN ACADEMICO.GRUPO GRUP
+                    ON GRUP.GRUP_ID = DECD.GRUP_ID
+                
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM DETALLES_NOVEDAD DN
+                    WHERE DN.idCargaDocente = CR.CADO_ID
+                )
+
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM DETALLES_VIGENTES_NOVEDAD DVN
+                    WHERE DVN.idCargaDocente = CR.CADO_ID
+                )
+            ),
+            DETALLES_EFECTIVOS AS (
+                SELECT *
+                FROM DETALLES_NOVEDAD
+
+                UNION ALL
+
+                SELECT *
+                FROM DETALLES_VIGENTES_NOVEDAD
+
+                UNION ALL
+
+                SELECT *
+                FROM DETALLES_ORIGINALES
+            )
+
+            SELECT
+                idCargaDocente,
+                idDetalle,
+                horas,
+                idTipoActividad,
+                idPrograma,
+                idGrupo,
+                idCentroCosto,
+                codigoPadre,
+                cupos
+            FROM DETALLES_EFECTIVOS
+            ORDER BY idCargaDocente
+            """, nativeQuery = true)
+    List<DetallesCdpReporteProjection> findCdpDetailsByCarga(
+            @Param("idCarga") Long idCarga);
 
 }
 

@@ -10,18 +10,20 @@
  * 04/09/2026 - Exclusion de once meses heredados solo en segundo periodo
  * 17/09/2026 - Sebastian Jaimes - Valor de contrato con rango de fechas inclusivo
  * 18/09/2026 - Sebastian Jaimes - Contrato cátedra según forma de pago
+ * 06/10/2026 - Andrés Hernández - Uso de docentes y detalles efectivos para generar el CDP
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -42,10 +44,9 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PuntosVigenciaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetallesCdpReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.EncabezadoPreasignacionProjection;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.GrupoCuposReporteProjection;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.report.CdpExcelExporter;
@@ -177,15 +178,18 @@ public class CdpReporteServiceImpl implements CdpReporteService {
                         "No existe la carga con id " + idCarga));
         EncabezadoCargaReporteDTO encabezado = toEncabezado(encabezadoProjection);
         BigDecimal valorHoraVigencia = resolveValorHoraVigencia(encabezado.anio());
+
         List<DocentePreasignacionReporteProjection> docentes =
-                cargaDocenteRepository.findReportProfessorsByCarga(idCarga)
+                cargaDocenteRepository.findCdpProfessorsByCarga(idCarga)
                         .stream()
                         .filter(d -> !OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
                                 d.getOnceMeses(),
                                 encabezadoProjection.getPeriodo()))
                         .toList();
-        Map<Long, Map<String, BigDecimal>> horasByDocente = loadHorasPorDocente(idCarga);
-        Map<Long, GrupoCupos> grupoCuposByDocente = loadGrupoCuposPorDocente(idCarga);
+        List<DetallesCdpReporteProjection> detalles = detalleCargaDocenteRepository.findCdpDetailsByCarga(idCarga);
+
+        Map<Long, Map<String, BigDecimal>> horasByDocente = loadHorasPorDocente(detalles);
+        Map<Long, GrupoCupos> grupoCuposByDocente = loadGrupoCuposPorDocente(detalles);
         List<ModalidadPreasignacionReporteDTO> modalidades = buildModalidades(
                 docentes,
                 horasByDocente,
@@ -237,38 +241,43 @@ public class CdpReporteServiceImpl implements CdpReporteService {
         }
     }
 
-    private Map<Long, Map<String, BigDecimal>> loadHorasPorDocente(Long idCarga) {
-        List<HorasCodigoActividadReporteProjection> rows = detalleCargaDocenteRepository.findHorasPorCodigoPadreByCarga(idCarga);
-        Map<Long, Map<String, BigDecimal>> result = new HashMap<>();
-        for (HorasCodigoActividadReporteProjection row : rows) {
-            if (row.getIdCargaDocente() == null
-                    || !StringUtils.hasText(row.getCodigoPadre())) {
-                continue;
-            }
-            result.computeIfAbsent(row.getIdCargaDocente(), id -> new HashMap<>())
-                    .put(
-                            row.getCodigoPadre().trim().toUpperCase(),
-                            row.getTotalHoras() != null
-                                    ? row.getTotalHoras()
-                                    : BigDecimal.ZERO);
-        }
-        return result;
+    private Map<Long, Map<String, BigDecimal>> loadHorasPorDocente(List<DetallesCdpReporteProjection> detalles) {
+        return detalles.stream()
+            .filter(detalle -> detalle.getIdCargaDocente() != null && StringUtils.hasText(detalle.getCodigoPadre()))
+            .collect(Collectors.groupingBy(
+                    DetallesCdpReporteProjection::getIdCargaDocente,
+                    Collectors.groupingBy(
+                            detalle -> detalle.getCodigoPadre().trim().toUpperCase(),
+                            Collectors.reducing(
+                                    BigDecimal.ZERO,
+                                    detalle -> detalle.getHoras() != null
+                                        ? detalle.getHoras()
+                                        : BigDecimal.ZERO,
+                                    BigDecimal::add
+                            )
+                    )
+            ));
     }
 
-    private Map<Long, GrupoCupos> loadGrupoCuposPorDocente(Long idCarga) {
-        List<GrupoCuposReporteProjection> rows = detalleCargaDocenteRepository.findGruposYCuposByCarga(idCarga);
-        Map<Long, GrupoCupos> result = new HashMap<>();
-        for (GrupoCuposReporteProjection row : rows) {
-            if (row.getIdCargaDocente() == null) {
-                continue;
-            }
-            result.put(
-                    row.getIdCargaDocente(),
-                    new GrupoCupos(
-                            toEntero(row.getCantidadGrupos()),
-                            row.getCupos()));
-        }
-        return result;
+    private Map<Long, GrupoCupos> loadGrupoCuposPorDocente(List<DetallesCdpReporteProjection> detalles) {
+        return detalles.stream()
+            .filter(detalle -> detalle.getIdCargaDocente() != null && detalle.getIdGrupo() != null)
+            .collect(Collectors.groupingBy(
+                    DetallesCdpReporteProjection::getIdCargaDocente,
+                    Collectors.collectingAndThen(
+                            Collectors.toMap(
+                                    DetallesCdpReporteProjection::getIdGrupo,
+                                    DetallesCdpReporteProjection::getCupos,
+                                    (cupos1, cupos2) -> cupos1
+                            ),
+                            grupos -> new GrupoCupos(
+                                    grupos.size(),
+                                    grupos.values().stream()
+                                            .filter(Objects::nonNull)
+                                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            )
+                    )
+            ));
     }
 
     private List<ModalidadPreasignacionReporteDTO> buildModalidades(
@@ -530,13 +539,6 @@ public class CdpReporteServiceImpl implements CdpReporteService {
             this.idModalidad = idModalidad;
             this.nombre = nombre;
         }
-    }
-
-    private Integer toEntero(BigDecimal value) {
-        if (value == null) {
-            return 0;
-        }
-        return value.intValue();
     }
 
     private record GrupoCupos(Integer cantidad, BigDecimal cupos) {}
