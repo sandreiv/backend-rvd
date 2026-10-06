@@ -22,6 +22,7 @@
  * 22/09/2026 - Novedad de actividades: FAD, CTEI e ISU
  * 29/09/2026 - Resumen de carga con novedad vigente
  * 29/09/2026 - Historial de novedades en el resumen
+ * 06/10/2026 - PDF comparativo de novedad por CADO_ID
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -87,6 +88,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
+import co.edu.unipamplona.ciadti.rvd.model.service.NovedadReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ModalidadContratacionService;
@@ -109,6 +111,7 @@ public class CoordinationController {
     private final PeriodoUniversidadService periodoUniversidadService;
     private final NovedadCargaDocenteService novedadCargaDocenteService;
     private final CargaBudgetService cargaBudgetService;
+    private final NovedadReporteService novedadReporteService;
     
     @Operation(
         summary = "Obtiene las convocatorias de precarga activas",
@@ -836,4 +839,24 @@ public class CoordinationController {
     public ResponseEntity<ResumenNovedadCargaDocenteDTO>getProfessorNoveltySummary(@PathVariable Long idCargaDocente) {
         return new ResponseEntity<>(novedadCargaDocenteService.getProfessorNoveltySummary(idCargaDocente), HttpStatus.OK);
     }
+
+    @Operation(
+        summary = "Genera PDF con comparativa de la novedad del docente",
+        description = """
+            Compara la novedad aprobada y vigente con la aprobada anterior.
+            Si es la primera, compara contra el registro original de CARGADOCENTE.
+            Identificador: CADO_ID.
+            """
+    )
+    @GetMapping("/novelty-pdf-report/{idCargaDocente}")
+    public ResponseEntity<byte[]> generateNoveltyPdfReport(@PathVariable Long idCargaDocente) {
+        FileDTO file = novedadReporteService.generateNoveltyPdfReport(idCargaDocente);
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.fileName() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file.content());
+    }
+
 }

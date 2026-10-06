@@ -63,8 +63,7 @@ public class HiringCallController {
     )
     @GetMapping("/list-active-calls")
     public ResponseEntity<List<ConvocatoriaDTO>> callList(@RequestParam Long idPeriodoUniversidad) {
-        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService
-                .findHiringCallListByPeriod(idPeriodoUniversidad);
+        List<ConvocatoriaDTO> callList = convocatoriaPrecargaService.findHiringCallListByPeriod(idPeriodoUniversidad);
         return new ResponseEntity<>(callList, HttpStatus.OK);
     }
 
@@ -79,11 +78,8 @@ public class HiringCallController {
             """
     )
     @GetMapping("/list-coordinations")
-    public ResponseEntity<List<CoordinacionDTO>> listCoordinations(
-            @RequestParam(required = false) Long idConvocatoria,
-            @RequestParam(required = false) Long idPeriodoUniversidad) {
-        List<CoordinacionDTO> coordinations = coordinacionService
-                .findHiringCoordinations(idConvocatoria, idPeriodoUniversidad);
+    public ResponseEntity<List<CoordinacionDTO>> listCoordinations(@RequestParam(required = false) Long idConvocatoria, @RequestParam(required = false) Long idPeriodoUniversidad) {
+        List<CoordinacionDTO> coordinations = coordinacionService.findHiringCoordinations(idConvocatoria, idPeriodoUniversidad);
         return new ResponseEntity<>(coordinations, HttpStatus.OK);
     }
 
@@ -98,11 +94,8 @@ public class HiringCallController {
             """
     )
     @GetMapping("/list-professors-modality")
-    public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(
-            @RequestParam Long idCarga,
-            @RequestParam Long idModalidadContratacion) {
-        List<DocenteCoordinacionDTO> docentes = coordinacionService
-                .listApprovedProfessorsForHiring(idCarga, idModalidadContratacion);
+    public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
+        List<DocenteCoordinacionDTO> docentes = coordinacionService.listApprovedProfessorsForHiring(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
     
