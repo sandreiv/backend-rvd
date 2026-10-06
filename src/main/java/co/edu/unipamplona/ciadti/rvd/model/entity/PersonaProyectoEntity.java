@@ -6,6 +6,7 @@
  * Fecha de creación: 10/06/2026
  * Modificaciones:
  * 10/06/2026 - Sebastian Jaimes - Creación inicial
+ * 16/09/2026 - Andrés Hernández - Campo para identificar los proyectos activos por persona
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 

@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: RestriccionPorCoordinacionMapper.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.mapper
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 17/07/2026
+ * Modificaciones:
+ * 01/08/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
 import java.util.List;

@@ -9,6 +9,7 @@
  * 27/08/2026 - Horas agrupadas por actividad padre
  * 31/08/2026 - Sebastian Jaimes - Grupos y cupos para reporte PDF
  * 29/09/2026 - Resumen de horas para novedad con fallback
+ * 06/10/2026 - Andrés Hernández - Correción al mostrar detalles de proyectos dentro del resumen de novedad
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -303,7 +304,25 @@ public interface DetalleCargaDocenteRepository
                 grup.GRUP_NOMBRE AS nombreGrupo,
                 mate.MATE_NOMBRE AS nombreMateria,
                 ceco.CECO_ID AS idCentroCosto,
-                ceco.CECO_DESCRIPCION AS descripcionCentroCosto
+                ceco.CECO_DESCRIPCION AS descripcionCentroCosto,
+
+                -- Info proyectos
+                pepr.PEPR_ID AS idPersonaProyecto,
+                pepr.PROY_ID AS idProyecto,
+                proy.PROY_IDPROYECTO AS idProyectoPadre,
+                proy.PROY_NOMBRE AS nombreProyecto,
+                proy.PROY_DESCRIPCION AS descripcionProyecto,
+                tipr.TIPR_ID AS idTipoProyecto,
+                tipr.TIPR_NOMBRE AS nombreTipoProyecto,
+                tipr.TIPR_DESCRIPCION AS descripcionTipoProyecto,
+                tipr.TIPR_TIPO AS tipoTipoProyecto,
+                proy_padre.PROY_ID AS idProyectoPadreEntidad,
+                proy_padre.PROY_NOMBRE AS nombreProyectoPadre,
+                proy_padre.PROY_DESCRIPCION AS descripcionProyectoPadre,
+                tipr_padre.TIPR_ID AS idTipoProyectoPadre,
+                tipr_padre.TIPR_NOMBRE AS nombreTipoProyectoPadre,
+                tipr_padre.TIPR_DESCRIPCION AS descripcionTipoProyectoPadre,
+                tipr_padre.TIPR_TIPO AS tipoTipoProyectoPadre
             FROM RVD.DETALLECARGADOCENTE decd
             LEFT JOIN RVD.TIPOACTIVIDADES tiac
                 ON tiac.TIAC_ID = decd.TIAC_ID
@@ -319,6 +338,19 @@ public interface DetalleCargaDocenteRepository
                 ON prog.PROG_ID = decd.PROG_ID
             LEFT JOIN CONTABLEV3.CENTROCOSTO ceco
                 ON ceco.CECO_ID = decd.CECO_ID
+            
+            LEFT JOIN RVD.RELACIONCARGAPROYECTO recp
+                ON recp.DECD_ID = decd.DECD_ID
+            LEFT JOIN RVD.PERSONAPROYECTO pepr
+                ON pepr.PEPR_ID = recp.PEPR_ID
+            LEFT JOIN RVD.PROYECTOS proy
+                ON proy.PROY_ID = pepr.PROY_ID
+            LEFT JOIN RVD.TIPOPROYECTO tipr
+                ON proy.TIPR_ID = tipr.TIPR_ID
+            LEFT JOIN RVD.PROYECTOS proy_padre
+                ON proy.PROY_IDPROYECTO = proy_padre.PROY_ID
+            LEFT JOIN RVD.TIPOPROYECTO tipr_padre
+                ON proy_padre.TIPR_ID = tipr_padre.TIPR_ID
             WHERE decd.CADO_ID = :idCargaDocente
             ORDER BY decd.DECD_ID
             """, nativeQuery = true)

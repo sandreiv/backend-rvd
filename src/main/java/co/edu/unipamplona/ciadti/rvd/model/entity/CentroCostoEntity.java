@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: CentroCostoEntity.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.model.entity
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 26/06/2026
+ * Modificaciones:
+ * 26/06/2026 - Daniel - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 

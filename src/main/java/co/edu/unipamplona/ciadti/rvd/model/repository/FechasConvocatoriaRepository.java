@@ -6,6 +6,7 @@
  * Fecha de creación: 14/07/2026
  * Modificaciones:
  * 14/07/2026 - Sebastian Jaimes - Creación inicial
+ * 27/08/2026 - Andrés Hernández - Manejo de fechas locales
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 

@@ -6,6 +6,8 @@
  * Fecha de creación: 01/09/2026
  * Modificaciones:
  * 01/09/2026 - Sebastian Jaimes - Creación inicial
+ * 04/09/2026 - Andrés Hernández - Campo de periodo universitario
+ * 10/09/2026 - Andrés Hernández - Campo de numero CDP al aprobarlo
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 

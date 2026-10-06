@@ -1,3 +1,13 @@
+/**
+ * Aplicación: rvd
+ * Archivo: FileController.java
+ * Paquete: co.edu.unipamplona.ciadti.rvd.controller
+ * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
+ * Fecha de creación: 31/08/2026
+ * Modificaciones:
+ * 31/08/2026 - Daniel Arias - Creación inicial
+ */
+
 package co.edu.unipamplona.ciadti.rvd.controller;
 
 import java.io.IOException;
@@ -64,3 +74,5 @@ public class FileController {
                 .body(resource);
     }
 }
+
+/* 31/08/2026 @:Daniel Arias */

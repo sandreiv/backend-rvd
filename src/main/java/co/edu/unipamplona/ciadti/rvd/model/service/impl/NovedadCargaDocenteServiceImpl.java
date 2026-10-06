@@ -6,6 +6,7 @@
  * Fecha de creación: 17/09/2026
  * Modificaciones:
  * 17/09/2026 - Sebastian Jaimes - Creación inicial
+ * 18/09/2026 - Andrés Hernández - Controlar los detalles de novedades
  * 18/09/2026 - Sebastian Jaimes - saveContractModalityProfessor inserta
  * fotografía nueva (mismo patrón que assign-name-nn)
  * 18/09/2026 - Sebastian Jaimes - montos de la fotografía con fórmula
@@ -13,10 +14,15 @@
  * 18/09/2026 - Sebastian Jaimes - no actualiza CARG_VALOR al crear;
  * sí al aprobar
  * 22/09/2026 - Reasignación de actividades: FAD, CTEI e ISU
+ * 22/09/2026 - Andrés Hernández - Ajuste de valores monetarios al realizar novedades
+ * 23/09/2026 - Andrés Hernández - Novedad actualizar valores de contrato
+ * 25/09/2026 - Andrés Hernández - Novedad agregar docente
  * 28/09/2026 - La vigencia pasa a la novedad aprobada
  * 29/09/2026 - Resumen de carga con novedad vigente
  * 29/09/2026 - Resumen de horas y centros con ResumenCargaAssembler
  * 29/09/2026 - Historial de novedades y fuente no rechazada
+ * 30/09/2026 - Andrés Hernández - Traer detalles de la carga docente para las novedades
+ * 05/10/2026 - Andrés Hernández - Consulta que trae los detalles para mostrar a desarrollo académico
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
