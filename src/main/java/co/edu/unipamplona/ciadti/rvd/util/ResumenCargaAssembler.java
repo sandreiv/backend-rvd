@@ -6,6 +6,7 @@
  * Fecha de creación: 29/09/2026
  * Modificaciones:
  * 29/09/2026 - Armado compartido de horas y centros de costo
+ * 05/10/2026 - Andrés Hernández - Ajuste para mostrar los nombres del proyecto
  */
 package co.edu.unipamplona.ciadti.rvd.util;
 
