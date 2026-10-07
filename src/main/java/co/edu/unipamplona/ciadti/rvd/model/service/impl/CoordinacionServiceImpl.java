@@ -39,6 +39,7 @@
  * 29/09/2026 - Resumen de horas y centros con ResumenCargaAssembler
  * 30/09/2026 - Andrés Hernández - No tomar en cuenta docentes agregados como novedad para la preasignación
  * 07/10/2026 - Andrés Hernández - Manejo de docentes efectivos para las novedades y la contratación
+ * 07/10/2026 - Andrés Hernández - Desasociar un proyecto en la preasignación borra su relacionCargaProyecto
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -2290,6 +2291,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         detalleCargaDocenteRepository.deleteByProcedure(
                 idDetalleCargaDocente,
                 RegistradoPorUtils.value(Accion.DELETE));
+        relacionCargaProyectoRepository.deleteByIdDetalleCargaDocente(
+                idDetalleCargaDocente);
         if (idCargaDocente != null) {
             refreshCatedraContractValues(idCargaDocente);
             syncPreassignmentTotals(idCargaDocente);
