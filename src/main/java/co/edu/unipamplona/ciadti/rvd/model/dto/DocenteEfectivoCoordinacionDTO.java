@@ -26,6 +26,7 @@ public record DocenteEfectivoCoordinacionDTO(
     Long idNovedadCatalogo,
     String estadoNovedad,
     String tipoNovedad,
+    String motivoRechazo,
     Long idFechasConvocatoria,
     String fechaConvocatoriaCodigo,
     Date fechaInicio,

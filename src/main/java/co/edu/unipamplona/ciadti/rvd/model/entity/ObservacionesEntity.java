@@ -40,6 +40,9 @@ public class ObservacionesEntity implements Serializable, Cloneable {
     @Column(name = "CADO_ID")
     private Long idCargaDocente;
 
+    @Column(name = "NOCD_ID")
+    private Long idNovedadCargaDocente;
+
     @Column(name = "PEGE_IDREGISTRA")
     private Long idPersonaGeneralRegistra;
 
@@ -73,6 +76,7 @@ public class ObservacionesEntity implements Serializable, Cloneable {
         return "ObservacionesEntity{" +
                 "id=" + id +
                 ", idCargaDocente=" + idCargaDocente +
+                ", idNovedadCargaDocente=" + idNovedadCargaDocente +
                 ", idPersonaGeneralRegistra=" + idPersonaGeneralRegistra +
                 ", texto=" + texto +
                 ", fecha=" + fecha +

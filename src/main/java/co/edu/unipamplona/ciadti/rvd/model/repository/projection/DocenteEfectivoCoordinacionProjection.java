@@ -27,6 +27,7 @@ public interface DocenteEfectivoCoordinacionProjection {
     Long getIdNovedadCatalogo();
     String getEstadoNovedad();
     String getTipoNovedad();
+    String getMotivoRechazo();
     Date getCargaFechaInicio();
     Date getCargaFechaFin();
     BigDecimal getValorContrato();

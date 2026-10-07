@@ -7,6 +7,7 @@
  * Modificaciones:
  * 01/07/2026 - Sebastian Jaimes - Creación inicial
  * 17/09/2026 - Sebastian Jaimes - Ignora valores de contrato enviados por el cliente
+ * 06/10/2026 - Ignora creadoEnNovedad (lo asigna manualmente el flujo de novedades)
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
@@ -45,6 +46,7 @@ public interface CargaDocenteMapper {
     @Mapping(target = "fechaConvocatoria", ignore = true)
     @Mapping(target = "horas", ignore = true)
     @Mapping(target = "onceMeses", ignore = true)
+    @Mapping(target = "creadoEnNovedad", ignore = true)
     CargaDocenteEntity toEntity(CargaDocenteFormularioDTO dto);
 
     @InheritConfiguration(name = "toEntity")
@@ -79,5 +81,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "categoriaCatedratico", ignore = true)
     @Mapping(target = "fechaConvocatoria", ignore = true)
     @Mapping(target = "onceMeses", ignore = true)
+    @Mapping(target = "creadoEnNovedad", ignore = true)
     CargaDocenteEntity toEntityFromPlanta(CargaDocentePlantaDTO dto);
 }

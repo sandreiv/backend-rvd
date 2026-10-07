@@ -652,55 +652,74 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     NOCD.*,
                     ROW_NUMBER() OVER (
                         PARTITION BY NOCD.CADO_ID
-                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
                     ) AS RN
                 FROM RVD.NOVEDADCARGADOCENTE NOCD
                 WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+            ),
+            ULTIMA_NOVEDAD AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
             ),
             CARGAS_RESUELTAS AS (
                 SELECT
                     CADO.CADO_ID,
 
-                    COALESCE(NOCD.PEGE_ID, CADO.PEGE_ID) AS PEGE_ID,
-                    COALESCE(NOCD.CARG_ID, CADO.CARG_ID) AS CARG_ID,
-                    COALESCE(NOCD.MOCO_ID, CADO.MOCO_ID) AS MOCO_ID,
-                    COALESCE(NOCD.CACA_ID, CADO.CACA_ID) AS CACA_ID,
-                    COALESCE(NOCD.FECO_ID, CADO.FECO_ID) AS FECO_ID,
+                    COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID) AS PEGE_ID,
+                    COALESCE(DATOS.CARG_ID, CADO.CARG_ID) AS CARG_ID,
+                    COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID) AS MOCO_ID,
+                    COALESCE(DATOS.CACA_ID, CADO.CACA_ID) AS CACA_ID,
+                    COALESCE(DATOS.FECO_ID, CADO.FECO_ID) AS FECO_ID,
 
-                    COALESCE(NOCD.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS CADO_FECHAINICIO,
-                    COALESCE(NOCD.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS CADO_FECHAFIN,
-                    COALESCE(NOCD.NOCD_VALORCONTRATO, CADO.CADO_VALORCONTRATO) AS CADO_VALORCONTRATO,
-                    COALESCE(NOCD.NOCD_VALORPRESTACIONES, CADO.CADO_VALORPRESTACIONES) AS CADO_VALORPRESTACIONES,
-                    COALESCE(NOCD.NOCD_SALARIO, CADO.CADO_SALARIO) AS CADO_SALARIO,
-                    COALESCE(NOCD.NOCD_VALORHORA, CADO.CADO_VALORHORA) AS CADO_VALORHORA,
-                    COALESCE(NOCD.NOCD_PUNTOS, CADO.CADO_PUNTOS) AS CADO_PUNTOS,
-                    COALESCE(NOCD.NOCD_VALORPUNTO, CADO.CADO_VALORPUNTO) AS CADO_VALORPUNTO,
-                    COALESCE(NOCD.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO) AS CADO_TOTALCONTRATO,
-                    COALESCE(NOCD.NOCD_SEMANAS, CADO.CADO_SEMANAS) AS CADO_SEMANAS,
-                    COALESCE(NOCD.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS CADO_ONCEMESES,
-                    COALESCE(NOCD.NOCD_HORASDEEXCEPCION, CADO.CADO_HORASDEEXCEPCION) AS CADO_HORASDEEXCEPCION,
+                    COALESCE(DATOS.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS CADO_FECHAINICIO,
+                    COALESCE(DATOS.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS CADO_FECHAFIN,
+                    COALESCE(DATOS.NOCD_VALORCONTRATO, CADO.CADO_VALORCONTRATO) AS CADO_VALORCONTRATO,
+                    COALESCE(DATOS.NOCD_VALORPRESTACIONES, CADO.CADO_VALORPRESTACIONES) AS CADO_VALORPRESTACIONES,
+                    COALESCE(DATOS.NOCD_SALARIO, CADO.CADO_SALARIO) AS CADO_SALARIO,
+                    COALESCE(DATOS.NOCD_VALORHORA, CADO.CADO_VALORHORA) AS CADO_VALORHORA,
+                    COALESCE(DATOS.NOCD_PUNTOS, CADO.CADO_PUNTOS) AS CADO_PUNTOS,
+                    COALESCE(DATOS.NOCD_VALORPUNTO, CADO.CADO_VALORPUNTO) AS CADO_VALORPUNTO,
+                    COALESCE(DATOS.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO) AS CADO_TOTALCONTRATO,
+                    COALESCE(DATOS.NOCD_SEMANAS, CADO.CADO_SEMANAS) AS CADO_SEMANAS,
+                    COALESCE(DATOS.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS CADO_ONCEMESES,
+                    COALESCE(DATOS.NOCD_HORASDEEXCEPCION, CADO.CADO_HORASDEEXCEPCION) AS CADO_HORASDEEXCEPCION,
 
                     CADO.CADO_ESTADO,
 
-                    NOCD.NOCD_ID,
-                    NOCD.NOVE_ID,
-                    NOCD.NOCD_ESTADONOVEDAD
+                    -- Estado/tipo VISUAL:
+                    -- toma incluso una novedad rechazada.
+                    VISUAL.NOCD_ID,
+                    VISUAL.NOVE_ID,
+                    VISUAL.NOCD_ESTADONOVEDAD,
+
+                    -- Fotografía utilizada para datos/preview:
+                    -- únicamente estados 0 o 1.
+                    DATOS.NOCD_ID AS NOCD_ID_DATOS
 
                 FROM RVD.CARGADOCENTE CADO
 
-                LEFT JOIN NOVEDADES_VALIDAS NOCD
-                    ON NOCD.CADO_ID = CADO.CADO_ID
-                    AND NOCD.RN = 1
+                LEFT JOIN NOVEDADES_VALIDAS DATOS
+                    ON DATOS.CADO_ID = CADO.CADO_ID
+                    AND DATOS.RN = 1
+
+                LEFT JOIN ULTIMA_NOVEDAD VISUAL
+                    ON VISUAL.CADO_ID = CADO.CADO_ID
+                    AND VISUAL.RN = 1
 
                 WHERE CADO.CARG_ID = :idCarga
 
                 AND COALESCE(
-                    NOCD.MOCO_ID,
+                    DATOS.MOCO_ID,
                     CADO.MOCO_ID
                 ) = :idModalidadContratacion
 
                 AND NVL(
-                    NOCD.NOCD_ESTADOELIMINADO,
+                    DATOS.NOCD_ESTADOELIMINADO,
                     '0'
                 ) = '0'
                 
@@ -730,11 +749,27 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CR.MOCO_ID AS idModalidadContratacion,
                 CR.CACA_ID AS idCategoriaCatedratico,
 
+                -- Estos son VISUALES
                 CR.NOCD_ID AS idNovedadCargaDocente,
                 CR.NOVE_ID AS idNovedadCatalogo,
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
                 NOVE.NOVE_TIPO AS tipoNovedad,
 
+                CASE
+                    WHEN CR.NOCD_ESTADONOVEDAD = '2'
+                    THEN (
+                        SELECT OBS.OBSE_TEXTO
+                        FROM RVD.OBSERVACIONES OBS
+                        WHERE OBS.NOCD_ID = CR.NOCD_ID
+                        ORDER BY
+                            OBS.OBSE_FECHA DESC,
+                            OBS.OBSE_ID DESC
+                        FETCH FIRST 1 ROW ONLY
+                    )
+                    ELSE NULL
+                END AS motivoRechazo,
+
+                -- Estos son DATOS/preview
                 CR.CADO_FECHAINICIO AS cargaFechaInicio,
                 CR.CADO_FECHAFIN AS cargaFechaFin,
                 CR.CADO_VALORCONTRATO AS valorContrato,
@@ -754,35 +789,38 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
-                    -- Hay novedad valida y tiene detalles esa novedad
-                    WHEN CR.NOCD_ID IS NOT NULL
+                    -- La fotografía válida actual (0 o 1)
+                    -- tiene sus propios detalles.
+                    WHEN CR.NOCD_ID_DATOS IS NOT NULL
                         AND EXISTS (
                             SELECT 1
                             FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-                            WHERE DNCD.NOCD_ID = CR.NOCD_ID
+                            WHERE DNCD.NOCD_ID = CR.NOCD_ID_DATOS
                         )
                     THEN 1
 
-                    -- Hay novedad valida, no tiene detalles esa novedad, pero tiene vigentes de otra novedad de la misma carga
-                    WHEN CR.NOCD_ID IS NOT NULL
+                    -- La fotografía actual no tiene detalles propios,
+                    -- pero existen detalles vigentes de otra novedad.
+                    WHEN CR.NOCD_ID_DATOS IS NOT NULL
                         AND EXISTS (
                             SELECT 1
                             FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
                             INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
                                 ON NOCD.NOCD_ID = DNCD.NOCD_ID
                             WHERE NOCD.CADO_ID = CR.CADO_ID
-                                AND NOCD.NOCD_ID <> CR.NOCD_ID
+                                AND NOCD.NOCD_ID <> CR.NOCD_ID_DATOS
                                 AND DNCD.DNCD_VIGENTE = '1'
                         )
                     THEN 1
 
-                    -- Finalmente comprueba si hay detalles en la carga docente original
+                    -- Finalmente comprueba la carga original.
                     WHEN EXISTS (
                         SELECT 1
                         FROM RVD.DETALLECARGADOCENTE DECD
                         WHERE DECD.CADO_ID = CR.CADO_ID
                     )
                     THEN 1
+
                     ELSE 0
                 END AS tieneActividades
 
@@ -797,6 +835,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CR.FECO_ID
 
+            -- NOVE utiliza la novedad VISUAL.
             LEFT JOIN RVD.NOVEDADES NOVE
                 ON NOVE.NOVE_ID = CR.NOVE_ID
 
@@ -849,48 +888,65 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     NOCD.*,
                     ROW_NUMBER() OVER (
                         PARTITION BY NOCD.CADO_ID
-                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
                     ) AS RN
                 FROM RVD.NOVEDADCARGADOCENTE NOCD
                 WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+            ),
+            ULTIMA_NOVEDAD AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
             ),
             CARGAS_RESUELTAS AS (
                 SELECT
                     CADO.CADO_ID,
 
-                    COALESCE(NOCD.PEGE_ID, CADO.PEGE_ID) AS PEGE_ID,
-                    COALESCE(NOCD.CARG_ID, CADO.CARG_ID) AS CARG_ID,
-                    COALESCE(NOCD.MOCO_ID, CADO.MOCO_ID) AS MOCO_ID,
-                    COALESCE(NOCD.CACA_ID, CADO.CACA_ID) AS CACA_ID,
-                    COALESCE(NOCD.FECO_ID, CADO.FECO_ID) AS FECO_ID,
+                    COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID) AS PEGE_ID,
+                    COALESCE(DATOS.CARG_ID, CADO.CARG_ID) AS CARG_ID,
+                    COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID) AS MOCO_ID,
+                    COALESCE(DATOS.CACA_ID, CADO.CACA_ID) AS CACA_ID,
+                    COALESCE(DATOS.FECO_ID, CADO.FECO_ID) AS FECO_ID,
 
-                    COALESCE(NOCD.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS CADO_FECHAINICIO,
-                    COALESCE(NOCD.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS CADO_FECHAFIN,
-                    COALESCE(NOCD.NOCD_VALORCONTRATO, CADO.CADO_VALORCONTRATO) AS CADO_VALORCONTRATO,
-                    COALESCE(NOCD.NOCD_VALORPRESTACIONES, CADO.CADO_VALORPRESTACIONES) AS CADO_VALORPRESTACIONES,
-                    COALESCE(NOCD.NOCD_SALARIO, CADO.CADO_SALARIO) AS CADO_SALARIO,
-                    COALESCE(NOCD.NOCD_VALORHORA, CADO.CADO_VALORHORA) AS CADO_VALORHORA,
-                    COALESCE(NOCD.NOCD_PUNTOS, CADO.CADO_PUNTOS) AS CADO_PUNTOS,
-                    COALESCE(NOCD.NOCD_VALORPUNTO, CADO.CADO_VALORPUNTO) AS CADO_VALORPUNTO,
-                    COALESCE(NOCD.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO) AS CADO_TOTALCONTRATO,
-                    COALESCE(NOCD.NOCD_SEMANAS, CADO.CADO_SEMANAS) AS CADO_SEMANAS,
-                    COALESCE(NOCD.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS CADO_ONCEMESES,
-                    COALESCE(NOCD.NOCD_HORASDEEXCEPCION, CADO.CADO_HORASDEEXCEPCION) AS CADO_HORASDEEXCEPCION,
+                    COALESCE(DATOS.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS CADO_FECHAINICIO,
+                    COALESCE(DATOS.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS CADO_FECHAFIN,
+                    COALESCE(DATOS.NOCD_VALORCONTRATO, CADO.CADO_VALORCONTRATO) AS CADO_VALORCONTRATO,
+                    COALESCE(DATOS.NOCD_VALORPRESTACIONES, CADO.CADO_VALORPRESTACIONES) AS CADO_VALORPRESTACIONES,
+                    COALESCE(DATOS.NOCD_SALARIO, CADO.CADO_SALARIO) AS CADO_SALARIO,
+                    COALESCE(DATOS.NOCD_VALORHORA, CADO.CADO_VALORHORA) AS CADO_VALORHORA,
+                    COALESCE(DATOS.NOCD_PUNTOS, CADO.CADO_PUNTOS) AS CADO_PUNTOS,
+                    COALESCE(DATOS.NOCD_VALORPUNTO, CADO.CADO_VALORPUNTO) AS CADO_VALORPUNTO,
+                    COALESCE(DATOS.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO) AS CADO_TOTALCONTRATO,
+                    COALESCE(DATOS.NOCD_SEMANAS, CADO.CADO_SEMANAS) AS CADO_SEMANAS,
+                    COALESCE(DATOS.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS CADO_ONCEMESES,
+                    COALESCE(DATOS.NOCD_HORASDEEXCEPCION, CADO.CADO_HORASDEEXCEPCION) AS CADO_HORASDEEXCEPCION,
 
                     CADO.CADO_ESTADO,
 
-                    NOCD.NOCD_ID,
-                    NOCD.NOVE_ID,
-                    NOCD.NOCD_ESTADONOVEDAD
+                    -- Última novedad para estado/tipo visual.
+                    VISUAL.NOCD_ID,
+                    VISUAL.NOVE_ID,
+                    VISUAL.NOCD_ESTADONOVEDAD,
+
+                    -- Última novedad NO rechazada para datos/preview.
+                    DATOS.NOCD_ID AS NOCD_ID_DATOS
 
                 FROM RVD.CARGADOCENTE CADO
 
-                LEFT JOIN NOVEDADES_VALIDAS NOCD
-                    ON NOCD.CADO_ID = CADO.CADO_ID
-                    AND NOCD.RN = 1
+                LEFT JOIN NOVEDADES_VALIDAS DATOS
+                    ON DATOS.CADO_ID = CADO.CADO_ID
+                    AND DATOS.RN = 1
+
+                LEFT JOIN ULTIMA_NOVEDAD VISUAL
+                    ON VISUAL.CADO_ID = CADO.CADO_ID
+                    AND VISUAL.RN = 1
 
                 WHERE NVL(
-                    NOCD.NOCD_ESTADOELIMINADO,
+                    DATOS.NOCD_ESTADOELIMINADO,
                     '0'
                 ) = '0'
                 
@@ -925,6 +981,20 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CR.NOCD_ESTADONOVEDAD AS estadoNovedad,
                 NOVE.NOVE_TIPO AS tipoNovedad,
 
+                CASE
+                    WHEN CR.NOCD_ESTADONOVEDAD = '2'
+                    THEN (
+                        SELECT OBS.OBSE_TEXTO
+                        FROM RVD.OBSERVACIONES OBS
+                        WHERE OBS.NOCD_ID = CR.NOCD_ID
+                        ORDER BY
+                            OBS.OBSE_FECHA DESC,
+                            OBS.OBSE_ID DESC
+                        FETCH FIRST 1 ROW ONLY
+                    )
+                    ELSE NULL
+                END AS motivoRechazo,
+
                 CR.CADO_FECHAINICIO AS cargaFechaInicio,
                 CR.CADO_FECHAFIN AS cargaFechaFin,
                 CR.CADO_VALORCONTRATO AS valorContrato,
@@ -944,35 +1014,33 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
 
                 CASE
-                    -- Hay novedad valida y tiene detalles esa novedad
-                    WHEN CR.NOCD_ID IS NOT NULL
+                    WHEN CR.NOCD_ID_DATOS IS NOT NULL
                         AND EXISTS (
                             SELECT 1
                             FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
-                            WHERE DNCD.NOCD_ID = CR.NOCD_ID
+                            WHERE DNCD.NOCD_ID = CR.NOCD_ID_DATOS
                         )
                     THEN 1
 
-                    -- Hay novedad valida, no tiene detalles esa novedad, pero tiene vigentes de otra novedad de la misma carga
-                    WHEN CR.NOCD_ID IS NOT NULL
+                    WHEN CR.NOCD_ID_DATOS IS NOT NULL
                         AND EXISTS (
                             SELECT 1
                             FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
                             INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
                                 ON NOCD.NOCD_ID = DNCD.NOCD_ID
                             WHERE NOCD.CADO_ID = CR.CADO_ID
-                                AND NOCD.NOCD_ID <> CR.NOCD_ID
+                                AND NOCD.NOCD_ID <> CR.NOCD_ID_DATOS
                                 AND DNCD.DNCD_VIGENTE = '1'
                         )
                     THEN 1
 
-                    -- Finalmente comprueba si hay detalles en la carga docente original
                     WHEN EXISTS (
                         SELECT 1
                         FROM RVD.DETALLECARGADOCENTE DECD
                         WHERE DECD.CADO_ID = CR.CADO_ID
                     )
                     THEN 1
+
                     ELSE 0
                 END AS tieneActividades
 

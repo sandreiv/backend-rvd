@@ -2612,7 +2612,12 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         for (Long idCargaDocente : idsProfessorsPreassignment) {
-            registerProfessorPreloadHistory(idCargaDocente);
+                CargaDocenteEntity entity = findCargaDocenteOrThrow(idCargaDocente);
+                entity.setHoras(toHorasString(sumHorasActividades(idCargaDocente)));
+                entity.setRegistradoPor(RegistradoPorUtils.value(Accion.UPDATE));
+                entity.setFechaCambio(new Date());
+                cargaDocenteRepository.save(entity);
+                registerProfessorPreloadHistory(idCargaDocente);
         }
 
         log.info("approveProfessorsPreassignment ===> Preasignación aprobada. idCarga={}",

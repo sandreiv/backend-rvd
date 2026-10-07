@@ -1124,7 +1124,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         }
 
         // Fase 4: el motivo del rechazo queda en RVD.OBSERVACIONES (fuente del resumen).
-        saveObservacionRechazoNovedad(idCargaDocente, dto);
+        saveObservacionRechazoNovedad(idCargaDocente, idNovedadCargaDocente, dto);
 
         // Fase 4: si la novedad agrego un docente, se elimina la carga creada y sus detalles.
         if (COMPONENT_ADD_NOVELTY_PROFESSOR.equalsIgnoreCase(
@@ -1139,18 +1139,42 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 idNovedadCargaDocente);
     }
 
-    // Fase 4: guarda el motivo del rechazo en RVD.OBSERVACIONES.
-    private void saveObservacionRechazoNovedad(Long idCargaDocente, ObservacionDecanoDTO dto) {
+    // Fase 4: guarda el motivo del rechazo asociado a la novedad exacta
+    // en RVD.OBSERVACIONES.
+    private void saveObservacionRechazoNovedad(
+            Long idCargaDocente,
+            Long idNovedadCargaDocente,
+            ObservacionDecanoDTO dto) {
+
         if (dto == null || !StringUtils.hasText(dto.observacion())) {
             return;
         }
+
+        Date ahora = new Date();
+
         ObservacionesEntity observacion = new ObservacionesEntity();
+
         observacion.setIdCargaDocente(idCargaDocente);
-        observacion.setIdPersonaGeneralRegistra(dto.idPersonaGeneral());
-        observacion.setTexto(dto.observacion());
-        observacion.setFecha(new Date());
-        observacion.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
-        observacion.setFechaCambio(new Date());
+
+        // Asociación lógica con la novedad exacta que fue rechazada.
+        observacion.setIdNovedadCargaDocente(idNovedadCargaDocente);
+
+        observacion.setIdPersonaGeneralRegistra(
+                dto.idPersonaGeneral()
+        );
+
+        observacion.setTexto(
+                dto.observacion().trim()
+        );
+
+        observacion.setFecha(ahora);
+
+        observacion.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
+
+        observacion.setFechaCambio(ahora);
+
         observacionesRepository.save(observacion);
     }
 
