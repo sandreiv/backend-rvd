@@ -200,6 +200,9 @@ Correccion de BD asociada: `PR_RVD_D_DETALLENOVEDADCARGADOCENTE` habia quedado
 Nota: - `DetalleNovedadCargaDocenteRepository.findEffectiveByIdCargaDocente` no se utiliza
 para hallar los detalles efectivos, eso se realiza mediante `findResumenByIdNovedadCargaDocente`
 dentro del mismo repositorio.
+- `DetalleNovedadCargaDocenteRepository.findByIdCargaDocente` pasa a ser
+`DetalleNovedadCargaDocenteRepository.findEffectiveDetailsByIdCargaDocente` para usar en
+las siguientes partes de la aplicación
 
 
 
