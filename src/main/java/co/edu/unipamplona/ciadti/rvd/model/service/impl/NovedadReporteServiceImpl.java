@@ -6,6 +6,7 @@
  * Fecha de creación: 06/10/2026
  * Modificaciones:
  * 06/10/2026 - Sebastian Jaimes - Creación inicial (comparativa de novedad en PDF)
+ * 07/10/2026 - Horas de la novedad anterior con detalle; la carga original solo si no hay novedad previa
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -46,10 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 public class NovedadReporteServiceImpl implements NovedadReporteService {
 
     private static final ZoneId ZONA_BOGOTA = ZoneId.of("America/Bogota");
-    private static final DateTimeFormatter FECHA_GENERACION =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final List<String> CODIGOS_ACTIVIDAD =
-            List.of("FAD", "FAI", "CTEI", "ISU", "AC");
+    private static final DateTimeFormatter FECHA_GENERACION = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final List<String> CODIGOS_ACTIVIDAD = List.of("FAD", "FAI", "CTEI", "ISU", "AC");
 
     private final CargaDocenteRepository cargaDocenteRepository;
     private final NovedadReporteRepository novedadReporteRepository;
@@ -71,27 +70,19 @@ public class NovedadReporteServiceImpl implements NovedadReporteService {
 
     private ReporteNovedadCargaDTO buildReport(Long idCargaDocente) {
         if (idCargaDocente == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El id de la carga docente es obligatorio");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
         }
         if (!cargaDocenteRepository.existsById(idCargaDocente)) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la carga docente con id " + idCargaDocente);
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
         }
 
         NovedadCargaDocenteEntity actual = novedadReporteRepository
                 .findCurrentApprovedNovelty(idCargaDocente)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe una novedad aprobada y vigente para la carga docente"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe una novedad aprobada y vigente para la carga docente"));
 
         RegistroNovedadProjection actualSnap = novedadReporteRepository
                 .findNovedadSnapshot(actual.getIdNovedadCargaDocente())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No fue posible leer la novedad vigente de la carga docente"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No fue posible leer la novedad vigente de la carga docente"));
 
         RegistroNovedadDTO actualDto = toRegistro(
                 actualSnap,
@@ -160,19 +151,21 @@ public class NovedadReporteServiceImpl implements NovedadReporteService {
                 horasPorTipo);
     }
 
-    private Map<String, BigDecimal> loadHorasNovedad(
-            Long idNovedadCargaDocente,
-            Long idCargaDocente) {
+    private Map<String, BigDecimal> loadHorasNovedad(Long idNovedadCargaDocente, Long idCargaDocente) {
         List<HorasTipoActividadProjection> horas =
                 novedadReporteRepository.findHorasNovedad(idNovedadCargaDocente);
+        if (horas == null || horas.isEmpty()) {
+            horas = novedadReporteRepository.findHorasNovedadAnterior(
+                    idCargaDocente,
+                    idNovedadCargaDocente);
+        }
         if (horas == null || horas.isEmpty()) {
             horas = novedadReporteRepository.findHorasCargaDocente(idCargaDocente);
         }
         return toHorasMap(horas);
     }
 
-    private Map<String, BigDecimal> toHorasMap(
-            List<HorasTipoActividadProjection> rows) {
+    private Map<String, BigDecimal> toHorasMap(List<HorasTipoActividadProjection> rows) {
         Map<String, BigDecimal> horas = new LinkedHashMap<>();
         for (String codigo : CODIGOS_ACTIVIDAD) {
             horas.put(codigo, BigDecimal.ZERO);

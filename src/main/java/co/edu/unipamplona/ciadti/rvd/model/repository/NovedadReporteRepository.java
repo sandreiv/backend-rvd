@@ -6,6 +6,7 @@
  * Fecha de creación: 06/10/2026
  * Modificaciones:
  * 06/10/2026 - Sebastian Jaimes - Creación inicial (comparativa de novedad en PDF)
+ * 07/10/2026 - Horas de la novedad anterior con detalle; la carga original solo si no hay novedad previa
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -133,6 +134,63 @@ public interface NovedadReporteRepository
                 UPPER(TRIM(NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)))
             """, nativeQuery = true)
     List<HorasTipoActividadProjection> findHorasNovedad(
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente);
+
+
+    @Query(value = """
+            SELECT
+                UPPER(TRIM(NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO))) AS codigoPadre,
+                SUM(
+                    NVL(
+                        TO_NUMBER(
+                            REPLACE(TRIM(DNCD.DNCD_HORAS), ',', '.')
+                            DEFAULT NULL ON CONVERSION ERROR
+                        ),
+                        0
+                    )
+                ) AS totalHoras
+            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+                ON TIAC.TIAC_ID = DNCD.TIAC_ID
+            LEFT JOIN RVD.TIPOACTIVIDADES TIAC_PADRE
+                ON TIAC_PADRE.TIAC_ID = TIAC.TIAC_IDPADRE
+            WHERE DNCD.NOCD_ID = (
+                SELECT NOCD_ID
+                FROM (
+                    SELECT NOCD.NOCD_ID
+                    FROM RVD.NOVEDADCARGADOCENTE NOCD
+                    WHERE NOCD.CADO_ID = :idCargaDocente
+                    AND NOCD.NOCD_ESTADONOVEDAD = '1'
+                    AND (
+                        NOCD.NOCD_FECHACAMBIO < (
+                            SELECT ACT.NOCD_FECHACAMBIO
+                            FROM RVD.NOVEDADCARGADOCENTE ACT
+                            WHERE ACT.NOCD_ID = :idNovedadCargaDocente
+                        )
+                        OR (
+                            NOCD.NOCD_FECHACAMBIO = (
+                                SELECT ACT.NOCD_FECHACAMBIO
+                                FROM RVD.NOVEDADCARGADOCENTE ACT
+                                WHERE ACT.NOCD_ID = :idNovedadCargaDocente
+                            )
+                            AND NOCD.NOCD_ID < :idNovedadCargaDocente
+                        )
+                    )
+                    AND EXISTS (
+                        SELECT 1
+                        FROM RVD.DETALLENOVEDADCARGADOCENTE DET
+                        WHERE DET.NOCD_ID = NOCD.NOCD_ID
+                    )
+                    ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
+                    FETCH FIRST 1 ROW ONLY
+                )
+            )
+            AND NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO) IS NOT NULL
+            GROUP BY
+                UPPER(TRIM(NVL(TIAC_PADRE.TIAC_CODIGO, TIAC.TIAC_CODIGO)))
+            """, nativeQuery = true)
+    List<HorasTipoActividadProjection> findHorasNovedadAnterior(
+            @Param("idCargaDocente") Long idCargaDocente,
             @Param("idNovedadCargaDocente") Long idNovedadCargaDocente);
 
     // Horas por tipo de actividad padre del registro original.
