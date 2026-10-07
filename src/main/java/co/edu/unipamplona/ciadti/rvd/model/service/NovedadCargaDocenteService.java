@@ -24,7 +24,7 @@ public interface NovedadCargaDocenteService {
             CambioModalidadHoraCatedraticoDTO dto
     );
 
-    void saveNoveltyProjectActivities(
+    void saveNoveltyActivities(
         GuardarNovedadesDetallesProyectosDTO dto
     );
 

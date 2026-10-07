@@ -886,9 +886,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     @Override
     @Transactional
-    public void saveNoveltyProjectActivities(GuardarNovedadesDetallesProyectosDTO dto) {
+    public void saveNoveltyActivities(GuardarNovedadesDetallesProyectosDTO dto) {
         // Los campos de idCargaDocente o detallesCargaDocente ya vienen correctamente como novedad u original segun sea el caso
-        log.info("saveNoveltyProjectActivities ===> Guardando novedad detalle precarga docente. idCargaDocente={}", dto.idCargaDocente());
+        log.info("saveNoveltyActivities ===> Guardando novedad detalle precarga docente. idCargaDocente={}", dto.idCargaDocente());
 
         NovedadEntity novedad = novedadRepository.findById(dto.idNovedad())
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad seleccionada"));
@@ -1004,7 +1004,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         Long nocdId = novedadCargaDocenteRepository.currentNovedadCargaDocenteId();
         guardarFotoDetalleNovedad(dto, nocdId, idCoordinacion);
 
-        log.info("saveNoveltyProjectActivities ===> Novedad detalle precarga docente guardado. idCargaDocente={}", dto.idCargaDocente());
+        log.info("saveNoveltyActivities ===> Novedad detalle precarga docente guardado. idCargaDocente={}", dto.idCargaDocente());
     }
 
 

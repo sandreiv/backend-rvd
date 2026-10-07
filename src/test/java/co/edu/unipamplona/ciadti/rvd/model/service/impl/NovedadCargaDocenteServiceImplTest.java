@@ -321,7 +321,7 @@ class NovedadCargaDocenteServiceImplTest {
 
         ApiException ex = assertThrows(
                 ApiException.class,
-                () -> service.saveNoveltyProjectActivities(
+                () -> service.saveNoveltyActivities(
                         activityNoveltyDto(11L)));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
@@ -337,7 +337,7 @@ class NovedadCargaDocenteServiceImplTest {
 
         ApiException ex = assertThrows(
                 ApiException.class,
-                () -> service.saveNoveltyProjectActivities(
+                () -> service.saveNoveltyActivities(
                         activityNoveltyDto(7L)));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
@@ -351,7 +351,7 @@ class NovedadCargaDocenteServiceImplTest {
 
         ApiException ex = assertThrows(
                 ApiException.class,
-                () -> service.saveNoveltyProjectActivities(
+                () -> service.saveNoveltyActivities(
                         activityNoveltyDto(3L)));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());

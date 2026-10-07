@@ -815,7 +815,7 @@ public class CoordinationController {
     )
     @PostMapping("/save-novelty-detail-professor-preload")
     public ResponseEntity<Void> saveNoveltyActivities(@RequestBody GuardarNovedadesDetallesProyectosDTO dto) {
-        novedadCargaDocenteService.saveNoveltyProjectActivities(dto);
+        novedadCargaDocenteService.saveNoveltyActivities(dto);
         return ResponseEntity.ok().build();
     }
 
