@@ -35,6 +35,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
@@ -42,7 +43,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -106,11 +106,9 @@ public interface CoordinacionService {
 
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
 
-    List<NovedadDocenteCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion);
+    List<DocenteEfectivoCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion);
 
-    List<DocenteCoordinacionDTO> listApprovedProfessorsForHiring(
-            Long idCarga,
-            Long idModalidadContratacion);
+    List<DocenteEfectivoCoordinacionDTO> listApprovedProfessorsForHiring(Long idCarga, Long idModalidadContratacion);
 
     List<DocenteCoordinacionDTO> listProfessorsForVerification(
             Long idPeriodoUniversidad,

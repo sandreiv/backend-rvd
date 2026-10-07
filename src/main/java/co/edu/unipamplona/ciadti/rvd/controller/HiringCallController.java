@@ -8,6 +8,7 @@
  * 07/09/2026 - Sebastian Jaimes - Creación inicial
  * 10/09/2026 - Sebastian Jaimes - Coordinaciones vía CONV_IDRELACION de contratación
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados (CADO_ESTADO = 4)
+ * 07710/2026 - Andrés Hernández - Los docentes para contratación vienen de los efectivos
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -16,21 +17,14 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenCargaDocenteDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -92,16 +86,16 @@ public class HiringCallController {
         description = """
             Lista docentes con CADO_ESTADO = 4 (aprobado).
             Si la modalidad es planta: docentes de DOCENTESPLANTACOORDINACION
-            de la coordinación de la carga que tengan CARGADOCENTE aprobado.
+            de la coordinación de la carga.
             Para otras modalidades: solo docentes con CARGADOCENTE aprobado
             de esa carga.
             """
     )
     @GetMapping("/list-professors-modality")
-    public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(
+    public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listProfessors(
             @RequestParam Long idCarga,
             @RequestParam Long idModalidadContratacion) {
-        List<DocenteCoordinacionDTO> docentes = coordinacionService
+        List<DocenteEfectivoCoordinacionDTO> docentes = coordinacionService
                 .listApprovedProfessorsForHiring(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }

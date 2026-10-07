@@ -1,6 +1,6 @@
 /**
  * Aplicación: rvd
- * Archivo: NovedadDocenteCargaCoordinacionProjection.java
+ * Archivo: DocenteEfectivoCargaCoordinacionProjection.java
  * Paquete: co.edu.unipamplona.ciadti.rvd.model.repository.projection
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
  * Fecha de creación: 16/09/2026
@@ -14,7 +14,7 @@ package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public interface NovedadDocenteCargaCoordinacionProjection {
+public interface DocenteEfectivoCoordinacionProjection {
 
     Long getIdNovedadCargaDocente();
     Long getIdCargaDocente();

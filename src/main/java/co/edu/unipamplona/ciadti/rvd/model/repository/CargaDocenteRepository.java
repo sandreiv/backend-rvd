@@ -18,6 +18,7 @@
  * 30/09/2026 - Andrés Hernández - Ajuste para no traer docentes agregados como novedad
  * 06/10/2026 - Andrés Hernández - Uso de docentes efectivos para generar el CDP
  * 07/10/2026 - Andrés Hernández - Adición de docentes efectivos como método general
+ * 07/10/2026 - Andrés Hernández - Eliminación de métodos para consultar docentes aprobados
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -32,9 +33,9 @@ import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
 
 public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity, Long> {
 
@@ -175,146 +176,6 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 )) NULLS LAST
             """, nativeQuery = true)
     List<DocenteCargaCoordinacionProjection> findPlantProfessorsByCargaAndModality(
-            @Param("idCarga") Long idCarga,
-            @Param("idModalidadContratacion") Long idModalidadContratacion);
-
-    @Query(value = """
-                SELECT
-                PEGE.PEGE_ID AS idPersonaGeneral,
-                TRIM(
-                TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                || ' ' ||
-                TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                ) AS nombreCompleto,
-                CADO.CADO_ID AS idCargaDocente,
-                CADO.CADO_ESTADO AS estado,
-                CADO.CARG_ID AS idCarga,
-                CADO.MOCO_ID AS idModalidadContratacion,
-                CADO.CACA_ID AS idCategoriaCatedratico,
-                CADO.CADO_FECHAINICIO AS cargaFechaInicio,
-                CADO.CADO_FECHAFIN AS cargaFechaFin,
-                CADO.CADO_VALORCONTRATO AS valorContrato,
-                CADO.CADO_VALORPRESTACIONES AS valorPrestaciones,
-                CADO.CADO_SALARIO AS asignacionSalarial,
-                CADO.CADO_TOTALCONTRATO AS totalContrato,
-                CADO.CADO_VALORHORA AS valorHora,
-                CADO.CADO_PUNTOS AS puntos,
-                CADO.CADO_VALORPUNTO AS valorPunto,
-                CADO.CADO_SEMANAS AS semanas,
-                CADO.CADO_ONCEMESES AS onceMeses,
-                CADO.CADO_HORASDEEXCEPCION AS horasDeExcepcion,
-                FECO.FECO_ID AS idFechasConvocatoria,
-                FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
-                FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
-                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
-
-                CASE
-                    WHEN CADO.CADO_ID IS NOT NULL
-                        AND EXISTS (
-                            SELECT 1
-                            FROM RVD.DETALLECARGADOCENTE DECD
-                            WHERE DECD.CADO_ID = CADO.CADO_ID
-                        )
-                    THEN 1
-                    ELSE 0
-                END AS tieneActividades
-
-                FROM RVD.CARGADOCENTE CADO
-                INNER JOIN RVD.CARGA CARG
-                ON CARG.CARG_ID = CADO.CARG_ID
-                LEFT JOIN GENERAL.PERSONAGENERAL PEGE
-                ON PEGE.PEGE_ID = CADO.PEGE_ID
-                LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
-                ON PENG.PEGE_ID = PEGE.PEGE_ID
-                LEFT JOIN RVD.FECHASCONVOCATORIA FECO
-                ON FECO.FECO_ID = CADO.FECO_ID
-                WHERE CADO.CARG_ID = :idCarga
-                AND CADO.MOCO_ID = :idModalidadContratacion
-                AND CADO.CADO_ESTADO = '4'
-                ORDER BY
-                CASE
-                    WHEN PEGE.PEGE_ID IS NULL THEN 1
-                    WHEN TRIM(
-                        TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                        || ' ' ||
-                        TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                    ) IS NULL THEN 1
-                    ELSE 0
-                END,
-                UPPER(TRIM(
-                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                    || ' ' ||
-                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                )) NULLS LAST
-            """, nativeQuery = true)
-    List<DocenteCargaCoordinacionProjection> findApprovedProfessorsByCargaAndModality(
-            @Param("idCarga") Long idCarga,
-            @Param("idModalidadContratacion") Long idModalidadContratacion);
-
-    @Query(value = """
-                SELECT
-                PEGE.PEGE_ID AS idPersonaGeneral,
-                TRIM(
-                TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                || ' ' ||
-                TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                ) AS nombreCompleto,
-                CADO.CADO_ID AS idCargaDocente,
-                CADO.CADO_ESTADO AS estado,
-                CADO.CARG_ID AS idCarga,
-                CADO.MOCO_ID AS idModalidadContratacion,
-                CADO.CACA_ID AS idCategoriaCatedratico,
-                CADO.CADO_FECHAINICIO AS cargaFechaInicio,
-                CADO.CADO_FECHAFIN AS cargaFechaFin,
-                CADO.CADO_VALORCONTRATO AS valorContrato,
-                CADO.CADO_VALORPRESTACIONES AS valorPrestaciones,
-                CADO.CADO_SALARIO AS asignacionSalarial,
-                CADO.CADO_TOTALCONTRATO AS totalContrato,
-                CADO.CADO_VALORHORA AS valorHora,
-                CADO.CADO_PUNTOS AS puntos,
-                CADO.CADO_VALORPUNTO AS valorPunto,
-                CADO.CADO_SEMANAS AS semanas,
-                CADO.CADO_ONCEMESES AS onceMeses,
-                CADO.CADO_HORASDEEXCEPCION AS horasDeExcepcion,
-                FECO.FECO_ID AS idFechasConvocatoria,
-                FECO.FECO_CODIGO AS fechaConvocatoriaCodigo,
-                FECO.FECO_FECHAINICIO AS fechaConvocatoriaInicio,
-                FECO.FECO_FECHAFIN AS fechaConvocatoriaFin,
-
-                CASE
-                    WHEN CADO.CADO_ID IS NOT NULL
-                        AND EXISTS (
-                            SELECT 1
-                            FROM RVD.DETALLECARGADOCENTE DECD
-                            WHERE DECD.CADO_ID = CADO.CADO_ID
-                        )
-                    THEN 1
-                    ELSE 0
-                END AS tieneActividades
-
-                FROM RVD.CARGA CARG
-                INNER JOIN RVD.DOCENTESPLANTACOORDINACION DOPC
-                ON DOPC.COOR_ID = CARG.COOR_ID
-                INNER JOIN GENERAL.PERSONAGENERAL PEGE
-                ON PEGE.PEGE_ID = DOPC.PEGE_ID
-                INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
-                ON PENG.PEGE_ID = PEGE.PEGE_ID
-                INNER JOIN RVD.CARGADOCENTE CADO
-                ON CADO.PEGE_ID = DOPC.PEGE_ID
-                AND CADO.MOCO_ID = :idModalidadContratacion
-                AND CADO.CARG_ID = CARG.CARG_ID
-                AND CADO.CADO_ESTADO = '4'
-                LEFT JOIN RVD.FECHASCONVOCATORIA FECO
-                ON FECO.FECO_ID = CADO.FECO_ID
-                WHERE CARG.CARG_ID = :idCarga
-                ORDER BY
-                UPPER(TRIM(
-                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
-                    || ' ' ||
-                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
-                )) NULLS LAST
-            """, nativeQuery = true)
-    List<DocenteCargaCoordinacionProjection> findApprovedPlantProfessorsByCargaAndModality(
             @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion") Long idModalidadContratacion);
 
@@ -657,6 +518,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                         NOCD.NOCD_ESTADOELIMINADO,
                         '0'
                     ) = '0'
+                
+                AND CADO.CADO_ESTADO = '4'
             )
             
             SELECT
@@ -973,8 +836,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     )
                 ) NULLS LAST
             """, nativeQuery = true)
-    List<NovedadDocenteCargaCoordinacionProjection>
-    findEffectiveProfessorsByCargaAndModalityInNovelties(
+    List<DocenteEfectivoCoordinacionProjection>
+    findEffectiveProfessorsByCargaAndModality(
             @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion")
             Long idModalidadContratacion
@@ -1154,8 +1017,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     )
                 ) NULLS LAST
             """, nativeQuery = true)
-    List<NovedadDocenteCargaCoordinacionProjection>
-    findEffectivePlantProfessorsByCargaAndModalityInNovelties(
+    List<DocenteEfectivoCoordinacionProjection>
+    findEffectivePlantProfessorsByCargaAndModality(
             @Param("idCarga") Long idCarga,
             @Param("idModalidadContratacion")
             Long idModalidadContratacion

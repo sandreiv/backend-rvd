@@ -1,11 +1,11 @@
 /**
  * Aplicación: rvd
- * Archivo: DocenteEfectivoADocenteCoordinacionMapper.java
+ * Archivo: DocenteEfectivoCoordinacionMapper.java
  * Paquete: co.edu.unipamplona.ciadti.rvd.mapper
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
- * Fecha de creación: 06/09/2026
+ * Fecha de creación: 16/09/2026
  * Modificaciones:
- * 06/10/2026 - Andrés Hernández - Creación inicial
+ * 16/09/2026 - Andrés Hernández - Creación inicial
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
@@ -14,11 +14,11 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoCoordinacionProjection;
 
 @Mapper(componentModel = "spring")
-public interface DocenteEfectivoADocenteCoordinacionMapper {
+public interface DocenteEfectivoCoordinacionMapper {
 
     @Mapping(target = "fechaInicio",
             expression = "java(resolveFechaInicio(projection))")
@@ -28,14 +28,14 @@ public interface DocenteEfectivoADocenteCoordinacionMapper {
             expression = "java(projection.getIdCargaDocente() != null)")
     @Mapping(target = "tieneDetalleActividades",
             expression = "java(hasActivities(projection))")
-    DocenteCoordinacionDTO toDto(
-            NovedadDocenteCargaCoordinacionProjection projection);
+    DocenteEfectivoCoordinacionDTO toDto(
+            DocenteEfectivoCoordinacionProjection projection);
 
-    List<DocenteCoordinacionDTO> toDtoList(
-            List<NovedadDocenteCargaCoordinacionProjection> projections);
+    List<DocenteEfectivoCoordinacionDTO> toDtoList(
+            List<DocenteEfectivoCoordinacionProjection> projections);
 
     default Date resolveFechaInicio(
-            NovedadDocenteCargaCoordinacionProjection projection) {
+            DocenteEfectivoCoordinacionProjection projection) {
         if (projection.getCargaFechaInicio() != null) {
             return projection.getCargaFechaInicio();
         }
@@ -43,7 +43,7 @@ public interface DocenteEfectivoADocenteCoordinacionMapper {
     }
 
     default Date resolveFechaFin(
-            NovedadDocenteCargaCoordinacionProjection projection) {
+            DocenteEfectivoCoordinacionProjection projection) {
         if (projection.getCargaFechaFin() != null) {
             return projection.getCargaFechaFin();
         }
@@ -51,7 +51,7 @@ public interface DocenteEfectivoADocenteCoordinacionMapper {
     }
 
     default boolean hasActivities(
-            NovedadDocenteCargaCoordinacionProjection projection) {
+            DocenteEfectivoCoordinacionProjection projection) {
         return projection.getTieneActividades() != null
                 && projection.getTieneActividades() != 0;
     }

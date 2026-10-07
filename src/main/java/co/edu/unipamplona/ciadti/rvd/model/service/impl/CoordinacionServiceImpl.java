@@ -38,6 +38,7 @@
  * 28/09/2026 - Andrés Hernández - Novedad agregar docente
  * 29/09/2026 - Resumen de horas y centros con ResumenCargaAssembler
  * 30/09/2026 - Andrés Hernández - No tomar en cuenta docentes agregados como novedad para la preasignación
+ * 07/10/2026 - Andrés Hernández - Manejo de docentes efectivos para las novedades y la contratación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -74,14 +75,13 @@ import co.edu.unipamplona.ciadti.rvd.mapper.CategoriaCatedraticoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.CoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DetalleCargaDocenteMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocenteCoordinacionMapper;
-import co.edu.unipamplona.ciadti.rvd.mapper.DocenteEfectivoADocenteCoordinacionMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.DocenteEfectivoCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePlantaCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.HorasActividadesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
-import co.edu.unipamplona.ciadti.rvd.mapper.NovedadDocenteCoordinacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.NovedadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ProgramaMapper;
@@ -107,6 +107,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RelacionCargaProyectoListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
@@ -118,7 +119,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadPadreDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionDecanoDTO;
@@ -186,9 +186,9 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ActividadModali
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CoordinacionListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasProgramaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.MateriaListadoProjection;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.NovedadDocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ResumenSolicitudCdpProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.FechaModalidadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CdpContextProjection;
@@ -247,8 +247,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final ObservacionCargaRepository observacionCargaRepository;
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
-    private final DocenteEfectivoADocenteCoordinacionMapper docenteEfectivoADocenteCoordinacionMapper;
-    private final NovedadDocenteCoordinacionMapper novedadDocenteCoordinacionMapper;
+    private final DocenteEfectivoCoordinacionMapper docenteEfectivoCoordinacionMapper;
     private final UnidadRepository unidadRepository;
     private final ProgramaRepository programaRepository;
     private final UnidadMapper unidadMapper;
@@ -1114,7 +1113,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<NovedadDocenteCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion) {
+    public List<DocenteEfectivoCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion) {
         log.debug("listAlterationProfessors ===> Listando docentes. idCarga={}, idModalidad={}",
                 idCarga, idModalidadContratacion);
 
@@ -1125,22 +1124,22 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<NovedadDocenteCargaCoordinacionProjection> projections;
+        List<DocenteEfectivoCoordinacionProjection> projections;
         if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModalityInNovelties(
-                    idCarga, idModalidadContratacion);
+            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModality(
+                        idCarga, idModalidadContratacion);
         } else {
-            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModalityInNovelties(
-                    idCarga, idModalidadContratacion);
+            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
+                        idCarga, idModalidadContratacion);
         }
-        List<NovedadDocenteCoordinacionDTO> result = novedadDocenteCoordinacionMapper.toDtoList(projections);
+        List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(projections);
         log.info("listAlterationProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
         return result;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocenteCoordinacionDTO> listApprovedProfessorsForHiring(
+    public List<DocenteEfectivoCoordinacionDTO> listApprovedProfessorsForHiring(
             Long idCarga,
             Long idModalidadContratacion) {
         log.debug(
@@ -1155,19 +1154,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<NovedadDocenteCargaCoordinacionProjection> projections;
+        List<DocenteEfectivoCoordinacionProjection> projections;
         if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository
-                    .findEffectivePlantProfessorsByCargaAndModalityInNovelties(
-                            idCarga,
-                            idModalidadContratacion);
+            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModality(
+                        idCarga, idModalidadContratacion);
         } else {
-            projections = cargaDocenteRepository
-                    .findEffectiveProfessorsByCargaAndModalityInNovelties(
-                            idCarga,
-                            idModalidadContratacion);
+            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
+                        idCarga, idModalidadContratacion);
         }
-        List<DocenteCoordinacionDTO> result = docenteEfectivoADocenteCoordinacionMapper.toDtoList(projections);
+        List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(projections);
         log.info(
                 "listApprovedProfessorsForHiring ===> Docentes aprobados listados. idCarga={}, total={}",
                 idCarga,

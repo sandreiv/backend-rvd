@@ -54,6 +54,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EliminarDocenteDTO;
@@ -64,7 +65,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadAgregarProfesorDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadDocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioModalidadHoraCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
@@ -285,8 +285,8 @@ public class CoordinationController {
             """
     )
     @GetMapping("/list-alteration-professors-modality")
-    public ResponseEntity<List<NovedadDocenteCoordinacionDTO>> listAlterationProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
-        List<NovedadDocenteCoordinacionDTO> docentes = coordinacionService.listAlterationProfessors(idCarga, idModalidadContratacion);
+    public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listAlterationProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
+        List<DocenteEfectivoCoordinacionDTO> docentes = coordinacionService.listAlterationProfessors(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
 
