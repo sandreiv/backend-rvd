@@ -86,6 +86,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.AsignarNombreNnDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialGeneralNovedadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadReporteService;
@@ -291,6 +292,31 @@ public class CoordinationController {
     public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listAlterationProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
         List<DocenteEfectivoCoordinacionDTO> docentes = coordinacionService.listAlterationProfessors(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista el historial general de novedades de una carga",
+        description = """
+            Retorna todas las solicitudes de novedades asociadas
+            a los docentes de una carga.
+
+            Incluye docente, tipo de novedad, fecha y hora,
+            estado de la solicitud y motivo de rechazo cuando aplica.
+
+            El resultado se ordena por defecto desde la solicitud
+            más reciente hasta la más antigua.
+            """
+    )
+    @GetMapping("/list-general-novelty-history")
+    public ResponseEntity<List<HistorialGeneralNovedadDTO>>
+    listGeneralNoveltyHistory(
+            @RequestParam Long idCarga) {
+
+        return new ResponseEntity<>(
+                novedadCargaDocenteService
+                        .getGeneralNoveltyHistory(idCarga),
+                HttpStatus.OK
+        );
     }
 
     @Operation(

@@ -74,6 +74,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CambioDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteActividadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialGeneralNovedadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
@@ -106,6 +107,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDoc
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialNovedadResumenProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ObservacionResumenProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialGeneralNovedadProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
@@ -2085,6 +2087,48 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                     "La novedad seleccionada no corresponde a Agregar docente"
             );
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HistorialGeneralNovedadDTO> getGeneralNoveltyHistory(
+            Long idCarga) {
+
+        if (idCarga == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id de carga es obligatorio"
+            );
+        }
+
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la carga con id " + idCarga
+            );
+        }
+
+        return novedadCargaDocenteRepository
+                .findGeneralNoveltyHistory(idCarga)
+                .stream()
+                .map(this::toGeneralNoveltyHistory)
+                .toList();
+    }
+
+    private HistorialGeneralNovedadDTO toGeneralNoveltyHistory(
+            HistorialGeneralNovedadProjection projection) {
+
+        return new HistorialGeneralNovedadDTO(
+                projection.getIdNovedadCargaDocente(),
+                projection.getIdCargaDocente(),
+                projection.getIdPersonaGeneral(),
+                projection.getNombreDocente(),
+                projection.getIdNovedadCatalogo(),
+                projection.getTipoNovedad(),
+                projection.getFecha(),
+                projection.getEstadoNovedad(),
+                projection.getMotivoRechazo()
+        );
     }
 
     @Override

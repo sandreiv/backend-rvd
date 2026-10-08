@@ -23,6 +23,8 @@ import org.springframework.data.jpa.repository.Modifying;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialNovedadResumenProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialGeneralNovedadProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialGeneralNovedadProjection;
 
 public interface NovedadCargaDocenteRepository
         extends JpaRepository<
@@ -90,6 +92,91 @@ public interface NovedadCargaDocenteRepository
             """, nativeQuery = true)
     List<HistorialNovedadResumenProjection> findHistorialByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente
+    );
+
+    @Query(value = """
+            WITH ULTIMA_OBSERVACION_RECHAZO AS (
+                SELECT
+                    OBS.NOCD_ID,
+                    OBS.OBSE_TEXTO,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY OBS.NOCD_ID
+                        ORDER BY
+                            OBS.OBSE_FECHA DESC,
+                            OBS.OBSE_ID DESC
+                    ) AS RN
+                FROM RVD.OBSERVACIONES OBS
+                WHERE OBS.NOCD_ID IS NOT NULL
+            )
+
+            SELECT
+                NOCD.NOCD_ID
+                    AS idNovedadCargaDocente,
+
+                NOCD.CADO_ID
+                    AS idCargaDocente,
+
+                NOCD.PEGE_ID
+                    AS idPersonaGeneral,
+
+                NVL(
+                    TRIM(
+                        TRIM(
+                            PENG.PENG_PRIMERNOMBRE
+                            || ' '
+                            || PENG.PENG_SEGUNDONOMBRE
+                        )
+                        || ' ' ||
+                        TRIM(
+                            PENG.PENG_PRIMERAPELLIDO
+                            || ' '
+                            || PENG.PENG_SEGUNDOAPELLIDO
+                        )
+                    ),
+                    'NN'
+                ) AS nombreDocente,
+
+                NOCD.NOVE_ID
+                    AS idNovedadCatalogo,
+
+                NVL(
+                    NOVE.NOVE_TIPO,
+                    'Novedad'
+                ) AS tipoNovedad,
+
+                NOCD.NOCD_FECHANOVEDAD
+                    AS fecha,
+
+                NOCD.NOCD_ESTADONOVEDAD
+                    AS estadoNovedad,
+
+                CASE
+                    WHEN NOCD.NOCD_ESTADONOVEDAD = '2'
+                    THEN OBS.OBSE_TEXTO
+                    ELSE NULL
+                END AS motivoRechazo
+
+            FROM RVD.NOVEDADCARGADOCENTE NOCD
+
+            LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = NOCD.PEGE_ID
+
+            LEFT JOIN RVD.NOVEDADES NOVE
+                ON NOVE.NOVE_ID = NOCD.NOVE_ID
+
+            LEFT JOIN ULTIMA_OBSERVACION_RECHAZO OBS
+                ON OBS.NOCD_ID = NOCD.NOCD_ID
+                AND OBS.RN = 1
+
+            WHERE NOCD.CARG_ID = :idCarga
+
+            ORDER BY
+                NOCD.NOCD_FECHANOVEDAD DESC,
+                NOCD.NOCD_ID DESC
+            """, nativeQuery = true)
+    List<HistorialGeneralNovedadProjection>
+    findGeneralNoveltyHistory(
+            @Param("idCarga") Long idCarga
     );
 
     @Query(value = """
