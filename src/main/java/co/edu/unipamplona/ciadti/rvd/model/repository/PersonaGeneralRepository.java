@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 08/10/2026 - Andrés Hernández - Corrección para no mostrar cambios de docentes en novedad como libres para la precarga
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -104,6 +105,40 @@ public interface PersonaGeneralRepository
                         LIKE UPPER('%' || :nombre || '%')
                     OR UPPER(PENG.PENG_SEGUNDOAPELLIDO)
                         LIKE UPPER('%' || :nombre || '%'))
+            AND (
+                -- Si tiene carga docente, devuelve para mostrar el modal de advertencia
+                CADO.CADO_ID IS NOT NULL
+                OR (
+                    -- Validar novedades para excluir personas en las ultimas novedades efectivas de cada carga docente
+                    NOT EXISTS (
+                        SELECT 1
+                        FROM RVD.NOVEDADCARGADOCENTE NOCD
+                        WHERE NOCD.PEGE_ID = PEGE.PEGE_ID
+                        AND NOCD.MOCO_ID = :idModalidadContratacion
+                        AND NOCD.NOCD_ESTADONOVEDAD = 1
+                        AND NOCD.NOCD_ID = (
+                            SELECT MAX(NOCD2.NOCD_ID)
+                            FROM RVD.NOVEDADCARGADOCENTE NOCD2
+                            WHERE NOCD2.CADO_ID = NOCD.CADO_ID
+                                AND NOCD2.NOCD_ESTADONOVEDAD = 1
+                        )
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM RVD.NOVEDADCARGADOCENTE NOCD
+                        WHERE NOCD.PEGE_ID = PEGE.PEGE_ID
+                        AND NOCD.MOCO_ID = :idModalidadContratacion
+                        AND NOCD.NOCD_ESTADONOVEDAD = 0
+                        AND NOCD.NOCD_ID = (
+                            SELECT MAX(NOCD2.NOCD_ID)
+                            FROM RVD.NOVEDADCARGADOCENTE NOCD2
+                            WHERE NOCD2.CADO_ID = NOCD.CADO_ID
+                                AND NOCD2.NOCD_ESTADONOVEDAD = 0
+                        )
+                    )
+                )
+            )
+            
             ORDER BY
                 PENG.PENG_PRIMERAPELLIDO,
                 PENG.PENG_SEGUNDOAPELLIDO,
