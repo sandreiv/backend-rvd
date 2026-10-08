@@ -12,6 +12,7 @@
  * 06/10/2026 - Andrés Hernández - Correción al mostrar detalles de proyectos dentro del resumen de novedad
  * 06/10/2026 - Andrés Hernández - Uso de detalles efectivos para generar el CDP
  * 07/10/2026 - Andrés Hernández - Adición de detalles efectivos como método general
+ * 08/10/2026 - Andrés Hernández - Uso de detalles aprobados para generar el CDP
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -369,7 +370,7 @@ public interface DetalleCargaDocenteRepository
                         ORDER BY NOCD.NOCD_FECHACAMBIO DESC
                     ) AS RN
                 FROM RVD.NOVEDADCARGADOCENTE NOCD
-                WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+                WHERE NOCD.NOCD_ESTADONOVEDAD = '1'
             ),
             CARGAS_RESUELTAS AS (
                 SELECT
