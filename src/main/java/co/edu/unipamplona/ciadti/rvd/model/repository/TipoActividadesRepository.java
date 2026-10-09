@@ -59,6 +59,7 @@ public interface TipoActividadesRepository
                 tiac.TIAC_COMPONENTE,
                 tiac.TIAC_MINIMOHORAS,
                 tiac.TIAC_MAXIMOHORAS,
+                tiac.TIAC_PTD,
                 tiac.TIAC_REGISTRADOPOR,
                 tiac.TIAC_FECHACAMBIO
             FROM RVD.TIPOACTIVIDADES tiac
@@ -88,6 +89,7 @@ public interface TipoActividadesRepository
                 TIAC.TIAC_MINIMOHORAS AS minimoHoras,
                 TIAC.TIAC_MAXIMOHORAS AS maximoHoras,
                 TIAC.TIAC_ORDEN AS orden,
+                TIAC.TIAC_PTD AS ptd,
                 TIAC.TIAC_ESTADO AS estado
             FROM RVD.TIPOACTIVIDADES TIAC
             WHERE TIAC.TIAC_IDPADRE IS NULL
@@ -111,6 +113,7 @@ public interface TipoActividadesRepository
                 TIAC.TIAC_MINIMOHORAS AS minimoHoras,
                 TIAC.TIAC_MAXIMOHORAS AS maximoHoras,
                 TIAC.TIAC_ORDEN AS orden,
+                TIAC.TIAC_PTD AS ptd,
                 TIAC.TIAC_ESTADO AS estado
             FROM RVD.TIPOACTIVIDADES TIAC
             WHERE TIAC.TIAC_IDPADRE = :idPadre

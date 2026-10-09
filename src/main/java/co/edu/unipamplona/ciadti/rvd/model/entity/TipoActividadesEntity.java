@@ -73,6 +73,9 @@ public class TipoActividadesEntity implements Serializable, Cloneable{
     @Column(name = "TIAC_MAXIMOHORAS")
     private String maximoHoras;
 
+    @Column(name = "TIAC_PTD")
+    private String ptd;
+
     @Column(name = "TIAC_REGISTRADOPOR")
     private String registradoPor;
 
@@ -97,6 +100,7 @@ public class TipoActividadesEntity implements Serializable, Cloneable{
                 ", componente=" + componente +
                 ", minimoHoras=" + minimoHoras +
                 ", maximoHoras=" + maximoHoras +
+                ", ptd=" + ptd +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

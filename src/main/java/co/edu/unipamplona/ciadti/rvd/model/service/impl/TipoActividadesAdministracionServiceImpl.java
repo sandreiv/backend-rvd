@@ -232,6 +232,7 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
                 item.getMinimoHoras(),
                 item.getMaximoHoras(),
                 item.getOrden(),
+                item.getPtd(),
                 item.getEstado()
         );
     }
@@ -249,6 +250,7 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
                         : null);
         entity.setMinimoHoras(String.valueOf(dto.minimoHoras()));
         entity.setMaximoHoras(String.valueOf(dto.maximoHoras()));
+        entity.setPtd(normalizePtd(dto.ptd()));
         entity.setEstado(normalizeStatus(dto.estado()));
         entity.setRegistradoPor(
         RegistradoPorUtils.value(
@@ -318,6 +320,10 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
                 || "I".equals(normalized)
                 ? "0"
                 : "1";
+    }
+
+    private String normalizePtd(String ptd) {
+        return "1".equals(ptd) ? "1" : "0";
     }
 
     private void validateProcedureResult(BigDecimal result, String message) {

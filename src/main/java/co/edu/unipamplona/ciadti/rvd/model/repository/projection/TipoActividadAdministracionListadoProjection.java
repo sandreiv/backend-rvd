@@ -9,5 +9,6 @@ public interface TipoActividadAdministracionListadoProjection {
     String getMinimoHoras();
     String getMaximoHoras();
     String getOrden();
+    String getPtd();
     String getEstado();
 }
