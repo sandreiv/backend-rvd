@@ -19,11 +19,13 @@
  * 06/10/2026 - Andrés Hernández - Uso de docentes efectivos para generar el CDP
  * 07/10/2026 - Andrés Hernández - Adición de docentes efectivos como método general
  * 07/10/2026 - Andrés Hernández - Eliminación de métodos para consultar docentes aprobados
+ * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,6 +36,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.InformacionDocenteContratacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
 
@@ -1091,4 +1094,53 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             @Param("idModalidadContratacion")
             Long idModalidadContratacion
     );
+
+    @Query(value = """
+            WITH NOVEDADES_VALIDAS AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.CADO_ID = :idCargaDocente
+                    AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+                    AND NVL(NOCD.NOCD_ESTADOELIMINADO, '0') = '0'
+            )
+            SELECT
+                COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID) AS idPersonaGeneral,
+                TRIM(
+                    TRIM(PENG.PENG_PRIMERNOMBRE || ' ' || PENG.PENG_SEGUNDONOMBRE)
+                    || ' ' ||
+                    TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
+                ) AS nombreCompleto,
+                PEGE.PEGE_DOCUMENTOIDENTIDAD AS documentoIdentidad,
+                PEGE.PEGE_DIRECCION AS direccionDomicilio,
+                PEGE.PEGE_MAIL AS correoPersonal,
+                PENG.PENG_EMAILINSTITUCIONAL AS correoInstitucional,
+                MOCO.MOCO_NOMBRE AS modalidadContratacion,
+                COALESCE(DATOS.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS fechaInicio,
+                COALESCE(DATOS.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS fechaFin,
+                CACA.CACA_DESCRIPCION AS categoriaDocente,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_PUNTOS
+                    ELSE CADO.CADO_PUNTOS
+                END AS puntos
+            FROM RVD.CARGADOCENTE CADO
+            LEFT JOIN NOVEDADES_VALIDAS DATOS
+                ON DATOS.CADO_ID = CADO.CADO_ID
+                AND DATOS.RN = 1
+            LEFT JOIN GENERAL.PERSONAGENERAL PEGE
+                ON PEGE.PEGE_ID = COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID)
+            LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID)
+            LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
+                ON CACA.CACA_ID = COALESCE(DATOS.CACA_ID, CADO.CACA_ID)
+            WHERE CADO.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    Optional<InformacionDocenteContratacionProjection> findProfessorInformationByCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente);
 }

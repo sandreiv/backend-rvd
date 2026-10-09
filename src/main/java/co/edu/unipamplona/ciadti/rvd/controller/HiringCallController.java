@@ -8,7 +8,9 @@
  * 07/09/2026 - Sebastian Jaimes - Creación inicial
  * 10/09/2026 - Sebastian Jaimes - Coordinaciones vía CONV_IDRELACION de contratación
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados (CADO_ESTADO = 4)
- * 07710/2026 - Andrés Hernández - Los docentes para contratación vienen de los efectivos
+ * 07/10/2026 - Andrés Hernández - Los docentes para contratación vienen de los efectivos
+ * 07/10/2026 - Andrés Hernández - Información del docente para contratación
+ * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -92,5 +95,22 @@ public class HiringCallController {
         List<DocenteEfectivoCoordinacionDTO> docentes = coordinacionService.listApprovedProfessorsForHiring(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
-    
+
+    @Operation(
+        summary = "Obtiene la información de contratación de un docente",
+        description = """
+            Datos de la persona (nombre, documento, dirección y correos),
+            modalidad con fecha de inicio y fin, categoría del docente,
+            puntos y horas de actividades PTD.
+            Si la carga tiene una novedad vigente, los puntos, la modalidad,
+            las fechas y la categoría salen de esa novedad; si no, de la carga.
+            Las actividades salen de DETALLENOVEDADCARGADOCENTE si DNCD_VIGENTE = 1;
+            si no hay vigentes (rechazada o solo carga), salen de DETALLECARGADOCENTE.
+            """
+    )
+    @GetMapping("/professor-information")
+    public ResponseEntity<InformacionDocenteContratacionDTO> professorInformation(@RequestParam Long idCargaDocente) {
+        InformacionDocenteContratacionDTO information = coordinacionService.findProfessorInformation(idCargaDocente);
+        return new ResponseEntity<>(information, HttpStatus.OK);
+    }
 }

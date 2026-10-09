@@ -17,6 +17,8 @@
  * 10/09/2026 - Sebastian Jaimes - Coordinaciones contratación (preasignación + Aval Desarrollo)
  * 10/09/2026 - Sebastian Jaimes - Docentes aprobados para contratación
  * 16/09/2026 - Andrés Hernández - listAlterationProfessors
+ * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
+ * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -42,6 +44,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteLista
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
@@ -109,6 +112,8 @@ public interface CoordinacionService {
     List<DocenteEfectivoCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion);
 
     List<DocenteEfectivoCoordinacionDTO> listApprovedProfessorsForHiring(Long idCarga, Long idModalidadContratacion);
+
+    InformacionDocenteContratacionDTO findProfessorInformation(Long idCargaDocente);
 
     List<DocenteCoordinacionDTO> listProfessorsForVerification(
             Long idPeriodoUniversidad,

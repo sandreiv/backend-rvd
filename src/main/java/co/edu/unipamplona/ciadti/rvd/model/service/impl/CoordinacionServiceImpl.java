@@ -40,6 +40,8 @@
  * 30/09/2026 - Andrés Hernández - No tomar en cuenta docentes agregados como novedad para la preasignación
  * 07/10/2026 - Andrés Hernández - Manejo de docentes efectivos para las novedades y la contratación
  * 07/10/2026 - Andrés Hernández - Desasociar un proyecto en la preasignación borra su relacionCargaProyecto
+ * 07/10/2026 - Andrés Hernández - Información del docente para contratación
+ * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -82,6 +84,7 @@ import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.HorasActividadesCargaMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.InformacionDocenteContratacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.NovedadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
@@ -109,6 +112,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
@@ -249,6 +253,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
     private final DocenteEfectivoCoordinacionMapper docenteEfectivoCoordinacionMapper;
+    private final InformacionDocenteContratacionMapper informacionDocenteContratacionMapper;
     private final UnidadRepository unidadRepository;
     private final ProgramaRepository programaRepository;
     private final UnidadMapper unidadMapper;
@@ -1168,6 +1173,35 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 "listApprovedProfessorsForHiring ===> Docentes aprobados listados. idCarga={}, total={}",
                 idCarga,
                 result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InformacionDocenteContratacionDTO findProfessorInformation(Long idCargaDocente) {
+        log.debug(
+                "findProfessorInformation ===> Consultando información del docente. idCargaDocente={}",
+                idCargaDocente);
+
+        if (idCargaDocente == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
+        }
+
+        var projection = cargaDocenteRepository
+                .findProfessorInformationByCargaDocente(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        List<ActividadHorasResumenDTO> horasActividades =
+                listVigenteActivityHours(idCargaDocente);
+        InformacionDocenteContratacionDTO result =
+                informacionDocenteContratacionMapper.toDto(projection, horasActividades);
+
+        log.info(
+                "findProfessorInformation ===> Información del docente consultada. idCargaDocente={}, totalTipos={}",
+                idCargaDocente,
+                horasActividades.size());
         return result;
     }
 
@@ -3655,12 +3689,25 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     private Map<Long, DetalleCargaDocenteListadoProjection>loadDetallesUnicosByCargaDocente(Long idCargaDocente) {
-        List<DetalleCargaDocenteListadoProjection> detalles = detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente);
+        return uniqueDetalles(detalleCargaDocenteRepository.findByIdCargaDocente(idCargaDocente));
+    }
+
+    private Map<Long, DetalleCargaDocenteListadoProjection> uniqueDetalles(
+            List<DetalleCargaDocenteListadoProjection> detalles) {
         Map<Long, DetalleCargaDocenteListadoProjection> unicos = new LinkedHashMap<>();
         for (DetalleCargaDocenteListadoProjection detalle : detalles) {
             unicos.putIfAbsent(detalle.getIdDetalleCargaDocente(), detalle);
         }
         return unicos;
+    }
+
+    private List<ActividadHorasResumenDTO> listVigenteActivityHours(Long idCargaDocente) {
+        Map<Long, DetalleCargaDocenteListadoProjection> unicos =
+                uniqueDetalles(
+                        detalleCargaDocenteRepository
+                                .findVigenteDetailsByIdCargaDocente(idCargaDocente));
+        return ResumenCargaAssembler.buildActivityHours(
+                ResumenCargaAssembler.fromCargaList(unicos.values()));
     }
 
     private CargaDocenteEntity findCargaDocenteOrThrow(Long idCargaDocente) {
