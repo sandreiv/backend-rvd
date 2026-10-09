@@ -18,6 +18,7 @@ public record TipoActividadAdministracionFormularioDTO(
         String componente,
         Integer minimoHoras,
         Integer maximoHoras,
+        String ptd,
         String estado
 ) {}
 

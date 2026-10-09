@@ -20,6 +20,7 @@ public record TipoActividadAdministracionListadoDTO(
         String minimoHoras,
         String maximoHoras,
         String orden,
+        String ptd,
         String estado
 ) {}
 
