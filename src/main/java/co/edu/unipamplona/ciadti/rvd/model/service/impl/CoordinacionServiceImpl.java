@@ -1973,7 +1973,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         List<DetalleCargaDocenteDTO> result = detalleCargaDocenteMapper.toDtoList(
-                detalleCargaDocenteRepository.findEffectiveDetailsByIdCargaDocente(idCargaDocente),
+                detalleCargaDocenteRepository.findVigenteDetailsByIdCargaDocente(idCargaDocente),
                 proyectoMapper);
         
         log.info("listNoveltyDetailProfessorPreload ===> Detalle precarga docente listado. idCargaDocente={}, total={}", idCargaDocente, result.size());
