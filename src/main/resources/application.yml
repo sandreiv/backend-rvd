@@ -61,6 +61,11 @@ rvd:
         a8WtLakyNgLl3TZfZQJHYfimo0k/xEC3Bw87IJSgGxIdC6xW3FZuu9lSmg9mZ0zH
         LQIDAQAB
         -----END PUBLIC KEY-----
+    docente:
+      hmac-secret: ${RVD_DOCENTE_HMAC_SECRET:rvd-docente-dev-hmac-secret-cambiar-32b}
+      token-minutes: 20
+      max-attempts: 5
+      lock-minutes: 15
 
 server:
   servlet:

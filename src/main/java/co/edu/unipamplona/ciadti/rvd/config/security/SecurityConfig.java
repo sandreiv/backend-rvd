@@ -6,18 +6,22 @@
  * Fecha de creación: 26/03/2026
  * Modificaciones:
  * 04/08/2026 - Sebastian Jaimes - Resource Server SecurityAuth (solo Vortal)
+ * 09/10/2026 - Cadena aparte para la sesión pública del docente
  */
 package co.edu.unipamplona.ciadti.rvd.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import co.edu.unipamplona.ciadti.rvd.config.cors.CorsConfig;
+import co.edu.unipamplona.ciadti.rvd.config.security.docente.DocenteJwtAuthenticationFilter;
 import co.edu.unipamplona.ciadti.rvd.config.security.jwt.JwtAccessDeniedHandler;
 import co.edu.unipamplona.ciadti.rvd.config.security.jwt.JwtAuthEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +38,32 @@ public class SecurityConfig {
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CorsConfig corsConfig;
+    private final DocenteJwtAuthenticationFilter docenteJwtAuthenticationFilter;
 
     @Bean
+    @Order(1)
+    SecurityFilterChain docenteSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/public/**")
+            .cors(cors -> cors.configurationSource(
+                    corsConfig.corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session ->
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint(jwtAuthEntryPoint)
+                    .accessDeniedHandler(jwtAccessDeniedHandler))
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/public/session").permitAll()
+                    .anyRequest().authenticated())
+            .addFilterBefore(
+                    docenteJwtAuthenticationFilter,
+                    UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(
