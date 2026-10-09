@@ -885,4 +885,50 @@ public class CoordinationController {
                 .body(file.content());
     }
 
+    @Operation(
+        summary = "Genera PDF comparativo de una novedad aprobada histórica",
+        description = """
+            Genera el mismo reporte comparativo de novedades,
+            pero tomando como registro actual una novedad
+            aprobada específica identificada por NOCD_ID.
+
+            La comparación se realiza contra la novedad
+            aprobada inmediatamente anterior.
+
+            Si la novedad seleccionada es la primera aprobación
+            de la carga docente, se compara contra el registro
+            original de CARGADOCENTE.
+
+            Identificador: NOCD_ID.
+            """
+    )
+    @GetMapping(
+        "/novelty-pdf-report/history/{idNovedadCargaDocente}"
+    )
+    public ResponseEntity<byte[]>
+    generateHistoricalNoveltyPdfReport(
+            @PathVariable Long idNovedadCargaDocente) {
+
+        FileDTO file =
+                novedadReporteService
+                        .generateHistoricalNoveltyPdfReport(
+                                idNovedadCargaDocente
+                        );
+
+        return ResponseEntity
+                .ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\""
+                                + file.fileName()
+                                + "\""
+                )
+                .contentType(
+                        MediaType.APPLICATION_PDF
+                )
+                .body(
+                        file.content()
+                );
+    }
+
 }

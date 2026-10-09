@@ -46,189 +46,338 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class NovedadReporteServiceImpl implements NovedadReporteService {
 
-    private static final ZoneId ZONA_BOGOTA = ZoneId.of("America/Bogota");
-    private static final DateTimeFormatter FECHA_GENERACION = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final List<String> CODIGOS_ACTIVIDAD = List.of("FAD", "FAI", "CTEI", "ISU", "AC");
+        private static final ZoneId ZONA_BOGOTA = ZoneId.of("America/Bogota");
+        private static final DateTimeFormatter FECHA_GENERACION = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        private static final List<String> CODIGOS_ACTIVIDAD = List.of("FAD", "FAI", "CTEI", "ISU", "AC");
 
-    private final CargaDocenteRepository cargaDocenteRepository;
-    private final NovedadReporteRepository novedadReporteRepository;
-    private final NovedadPdfExporter novedadPdfExporter;
+        private final CargaDocenteRepository cargaDocenteRepository;
+        private final NovedadReporteRepository novedadReporteRepository;
+        private final NovedadPdfExporter novedadPdfExporter;
 
-    @Override
-    @Transactional(readOnly = true)
-    public FileDTO generateNoveltyPdfReport(Long idCargaDocente) {
-        log.debug("generateNoveltyPdfReport ===> idCargaDocente={}", idCargaDocente);
-        ReporteNovedadCargaDTO reporte = buildReport(idCargaDocente);
-        byte[] content = novedadPdfExporter.export(reporte);
-        String fileName = buildFileName(reporte);
-        log.info(
-                "generateNoveltyPdfReport ===> PDF generado. idCargaDocente={}, bytes={}",
-                idCargaDocente,
-                content.length);
-        return new FileDTO(fileName, content);
-    }
+        @Override
+        @Transactional(readOnly = true)
+        public FileDTO generateNoveltyPdfReport(
+                        Long idCargaDocente) {
 
-    private ReporteNovedadCargaDTO buildReport(Long idCargaDocente) {
-        if (idCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
+                log.debug(
+                                "generateNoveltyPdfReport ===> idCargaDocente={}",
+                                idCargaDocente);
+
+                validateCargaDocente(idCargaDocente);
+
+                /*
+                 * Funcionalidad original:
+                 * busca automáticamente la última novedad
+                 * APROBADA y VIGENTE.
+                 */
+                NovedadCargaDocenteEntity actual = novedadReporteRepository
+                                .findCurrentApprovedNovelty(
+                                                idCargaDocente)
+                                .orElseThrow(() -> new ApiException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No existe una novedad aprobada y vigente para la carga docente"));
+
+                FileDTO file = generateReportFromNovelty(actual);
+
+                log.info(
+                                "generateNoveltyPdfReport ===> PDF generado. " +
+                                                "idCargaDocente={}, idNovedadCargaDocente={}, bytes={}",
+                                idCargaDocente,
+                                actual.getIdNovedadCargaDocente(),
+                                file.content().length);
+
+                return file;
         }
-        if (!cargaDocenteRepository.existsById(idCargaDocente)) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
+
+        /**
+         * Genera el mismo reporte comparativo existente,
+         * pero tomando como fotografía ACTUAL una novedad
+         * aprobada histórica seleccionada por NOCD_ID.
+         */
+        @Override
+        @Transactional(readOnly = true)
+        public FileDTO generateHistoricalNoveltyPdfReport(
+                        Long idNovedadCargaDocente) {
+
+                log.debug(
+                                "generateHistoricalNoveltyPdfReport ===> " +
+                                                "idNovedadCargaDocente={}",
+                                idNovedadCargaDocente);
+
+                if (idNovedadCargaDocente == null) {
+                        throw new ApiException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "El id de la novedad de carga docente es obligatorio");
+                }
+
+                /*
+                 * No se exige NOCD_VIGENTE = 1.
+                 *
+                 * Una aprobación histórica puede no ser la vigente
+                 * y aun así debe poder generar su comparación.
+                 */
+                NovedadCargaDocenteEntity actual = novedadReporteRepository
+                                .findApprovedNoveltyById(
+                                                idNovedadCargaDocente)
+                                .orElseThrow(() -> new ApiException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No existe una novedad aprobada con id "
+                                                                + idNovedadCargaDocente));
+
+                validateCargaDocente(
+                                actual.getIdCargaDocente());
+
+                FileDTO file = generateReportFromNovelty(actual);
+
+                log.info(
+                                "generateHistoricalNoveltyPdfReport ===> " +
+                                                "PDF generado. idNovedadCargaDocente={}, " +
+                                                "idCargaDocente={}, bytes={}",
+                                idNovedadCargaDocente,
+                                actual.getIdCargaDocente(),
+                                file.content().length);
+
+                return file;
         }
 
-        NovedadCargaDocenteEntity actual = novedadReporteRepository
-                .findCurrentApprovedNovelty(idCargaDocente)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe una novedad aprobada y vigente para la carga docente"));
+        /**
+         * Núcleo común de generación.
+         *
+         * Recibe la fotografía que debe actuar como registro ACTUAL.
+         * No importa si fue encontrada automáticamente por CADO_ID
+         * o seleccionada históricamente por NOCD_ID.
+         */
+        private FileDTO generateReportFromNovelty(
+                        NovedadCargaDocenteEntity actual) {
 
-        RegistroNovedadProjection actualSnap = novedadReporteRepository
-                .findNovedadSnapshot(actual.getIdNovedadCargaDocente())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No fue posible leer la novedad vigente de la carga docente"));
+                ReporteNovedadCargaDTO reporte = buildReport(actual);
 
-        RegistroNovedadDTO actualDto = toRegistro(
-                actualSnap,
-                loadHorasNovedad(
-                        actual.getIdNovedadCargaDocente(),
-                        idCargaDocente));
+                byte[] content = novedadPdfExporter.export(reporte);
 
-        RegistroNovedadDTO anteriorDto = novedadReporteRepository
-                .findPreviousApprovedNovelty(
-                        idCargaDocente,
-                        actual.getIdNovedadCargaDocente())
-                .map(this::toRegistroFromNovelty)
-                .orElseGet(() -> toRegistroFromCarga(idCargaDocente));
+                String fileName = buildFileName(reporte);
 
-        EncabezadoCargaReporteDTO encabezado = novedadReporteRepository
-                .findEncabezadoByIdCargaDocente(idCargaDocente)
-                .map(this::toEncabezado)
-                .orElse(null);
-
-        return new ReporteNovedadCargaDTO(
-                encabezado,
-                actualSnap.getTipoNovedad(),
-                anteriorDto,
-                actualDto,
-                resolveGeneradoPor(),
-                ZonedDateTime.now(ZONA_BOGOTA).format(FECHA_GENERACION));
-    }
-
-    private RegistroNovedadDTO toRegistroFromNovelty(
-            NovedadCargaDocenteEntity novedad) {
-        RegistroNovedadProjection snap = novedadReporteRepository
-                .findNovedadSnapshot(novedad.getIdNovedadCargaDocente())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No fue posible leer la novedad anterior de la carga docente"));
-        return toRegistro(
-                snap,
-                loadHorasNovedad(
-                        novedad.getIdNovedadCargaDocente(),
-                        novedad.getIdCargaDocente()));
-    }
-
-    private RegistroNovedadDTO toRegistroFromCarga(Long idCargaDocente) {
-        RegistroNovedadProjection snap = novedadReporteRepository
-                .findCargaDocenteSnapshot(idCargaDocente)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe el registro original de la carga docente"));
-        return toRegistro(
-                snap,
-                toHorasMap(novedadReporteRepository.findHorasCargaDocente(idCargaDocente)));
-    }
-
-    private RegistroNovedadDTO toRegistro(
-            RegistroNovedadProjection snap,
-            Map<String, BigDecimal> horasPorTipo) {
-        return new RegistroNovedadDTO(
-                snap.getNombre(),
-                snap.getDocumento(),
-                snap.getModalidad(),
-                snap.getPuntos(),
-                snap.getHorasSemana(),
-                snap.getValorContrato(),
-                snap.getPrestaciones(),
-                snap.getTotalContrato(),
-                horasPorTipo);
-    }
-
-    private Map<String, BigDecimal> loadHorasNovedad(Long idNovedadCargaDocente, Long idCargaDocente) {
-        List<HorasTipoActividadProjection> horas =
-                novedadReporteRepository.findHorasNovedad(idNovedadCargaDocente);
-        if (horas == null || horas.isEmpty()) {
-            horas = novedadReporteRepository.findHorasNovedadAnterior(
-                    idCargaDocente,
-                    idNovedadCargaDocente);
+                return new FileDTO(
+                                fileName,
+                                content);
         }
-        if (horas == null || horas.isEmpty()) {
-            horas = novedadReporteRepository.findHorasCargaDocente(idCargaDocente);
-        }
-        return toHorasMap(horas);
-    }
 
-    private Map<String, BigDecimal> toHorasMap(List<HorasTipoActividadProjection> rows) {
-        Map<String, BigDecimal> horas = new LinkedHashMap<>();
-        for (String codigo : CODIGOS_ACTIVIDAD) {
-            horas.put(codigo, BigDecimal.ZERO);
-        }
-        if (rows == null) {
-            return horas;
-        }
-        for (HorasTipoActividadProjection row : rows) {
-            if (!StringUtils.hasText(row.getCodigoPadre())) {
-                continue;
-            }
-            horas.put(
-                    row.getCodigoPadre().trim().toUpperCase(),
-                    row.getTotalHoras() != null
-                            ? row.getTotalHoras()
-                            : BigDecimal.ZERO);
-        }
-        return horas;
-    }
+        /**
+         * Construye la comparación:
+         *
+         * ACTUAL:
+         * la novedad aprobada recibida.
+         *
+         * ANTERIOR:
+         * la aprobación inmediatamente anterior.
+         *
+         * Si no existe aprobación anterior:
+         * CARGADOCENTE original.
+         */
+        private ReporteNovedadCargaDTO buildReport(
+                        NovedadCargaDocenteEntity actual) {
 
-    private EncabezadoCargaReporteDTO toEncabezado(
-            EncabezadoPreasignacionProjection projection) {
-        return new EncabezadoCargaReporteDTO(
-                projection.getIdCarga(),
-                projection.getIdCoordinacion(),
-                projection.getUnidad(),
-                projection.getFacultad(),
-                projection.getCoordinacion(),
-                projection.getIdPeriodoUniversidad(),
-                projection.getPeriodoAcademico(),
-                projection.getAnio(),
-                projection.getIdConvocatoria(),
-                projection.getConvocatoria());
-    }
+                if (actual == null) {
+                        throw new ApiException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La novedad actual es obligatoria");
+                }
 
-    private String resolveGeneradoPor() {
-        return SecurityUtils.currentIdPersona()
-                .map(novedadReporteRepository::findNombrePersona)
-                .filter(StringUtils::hasText)
-                .map(String::trim)
-                .orElseGet(() -> SecurityUtils.currentUser()
-                        .map(AuthUserDetails::getUsername)
-                        .filter(StringUtils::hasText)
-                        .orElse("Sistema"));
-    }
+                Long idCargaDocente = actual.getIdCargaDocente();
 
-    private String buildFileName(ReporteNovedadCargaDTO reporte) {
-        String docente = reporte.actual() != null
-                ? sanitizeFilePart(reporte.actual().nombre())
-                : "";
-        String base = StringUtils.hasText(docente)
-                ? "novedad-" + docente
-                : "novedad-carga-docente";
-        return base + ".pdf";
-    }
+                if (idCargaDocente == null) {
+                        throw new ApiException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La novedad no tiene una carga docente asociada");
+                }
 
-    private String sanitizeFilePart(String value) {
-        if (!StringUtils.hasText(value)) {
-            return "";
+                /*
+                 * Fotografía ACTUAL.
+                 */
+                RegistroNovedadProjection actualSnap = novedadReporteRepository
+                                .findNovedadSnapshot(
+                                                actual.getIdNovedadCargaDocente())
+                                .orElseThrow(() -> new ApiException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No fue posible leer la novedad seleccionada de la carga docente"));
+
+                RegistroNovedadDTO actualDto = toRegistro(
+                                actualSnap,
+                                loadHorasNovedad(
+                                                actual.getIdNovedadCargaDocente(),
+                                                idCargaDocente));
+
+                /*
+                 * Fotografía ANTERIOR.
+                 *
+                 * La consulta ya garantiza que sea una aprobación
+                 * cronológicamente anterior a ACTUAL.
+                 *
+                 * Si no existe, se usa CARGADOCENTE.
+                 */
+                RegistroNovedadDTO anteriorDto = novedadReporteRepository
+                                .findPreviousApprovedNovelty(
+                                                idCargaDocente,
+                                                actual.getIdNovedadCargaDocente())
+                                .map(this::toRegistroFromNovelty)
+                                .orElseGet(() -> toRegistroFromCarga(
+                                                idCargaDocente));
+
+                EncabezadoCargaReporteDTO encabezado = novedadReporteRepository
+                                .findEncabezadoByIdCargaDocente(
+                                                idCargaDocente)
+                                .map(this::toEncabezado)
+                                .orElse(null);
+
+                return new ReporteNovedadCargaDTO(
+                                encabezado,
+                                actualSnap.getTipoNovedad(),
+                                anteriorDto,
+                                actualDto,
+                                resolveGeneradoPor(),
+                                ZonedDateTime
+                                                .now(ZONA_BOGOTA)
+                                                .format(FECHA_GENERACION));
         }
-        return value.trim()
-                .replaceAll("[\\\\/:*?\"<>|]", "")
-                .replaceAll("\\s+", "-")
-                .toLowerCase();
-    }
+
+        /**
+         * Validación común para las dos entradas de reporte.
+         */
+        private void validateCargaDocente(
+                        Long idCargaDocente) {
+
+                if (idCargaDocente == null) {
+                        throw new ApiException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "El id de la carga docente es obligatorio");
+                }
+
+                if (!cargaDocenteRepository.existsById(
+                                idCargaDocente)) {
+                        throw new ApiException(
+                                        HttpStatus.NOT_FOUND,
+                                        "No existe la carga docente con id "
+                                                        + idCargaDocente);
+                }
+        }
+
+        private RegistroNovedadDTO toRegistroFromNovelty(
+                        NovedadCargaDocenteEntity novedad) {
+                RegistroNovedadProjection snap = novedadReporteRepository
+                                .findNovedadSnapshot(novedad.getIdNovedadCargaDocente())
+                                .orElseThrow(() -> new ApiException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No fue posible leer la novedad anterior de la carga docente"));
+                return toRegistro(
+                                snap,
+                                loadHorasNovedad(
+                                                novedad.getIdNovedadCargaDocente(),
+                                                novedad.getIdCargaDocente()));
+        }
+
+        private RegistroNovedadDTO toRegistroFromCarga(Long idCargaDocente) {
+                RegistroNovedadProjection snap = novedadReporteRepository
+                                .findCargaDocenteSnapshot(idCargaDocente)
+                                .orElseThrow(() -> new ApiException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No existe el registro original de la carga docente"));
+                return toRegistro(
+                                snap,
+                                toHorasMap(novedadReporteRepository.findHorasCargaDocente(idCargaDocente)));
+        }
+
+        private RegistroNovedadDTO toRegistro(
+                        RegistroNovedadProjection snap,
+                        Map<String, BigDecimal> horasPorTipo) {
+                return new RegistroNovedadDTO(
+                                snap.getNombre(),
+                                snap.getDocumento(),
+                                snap.getModalidad(),
+                                snap.getPuntos(),
+                                snap.getHorasSemana(),
+                                snap.getValorContrato(),
+                                snap.getPrestaciones(),
+                                snap.getTotalContrato(),
+                                horasPorTipo);
+        }
+
+        private Map<String, BigDecimal> loadHorasNovedad(Long idNovedadCargaDocente, Long idCargaDocente) {
+                List<HorasTipoActividadProjection> horas = novedadReporteRepository
+                                .findHorasNovedad(idNovedadCargaDocente);
+                if (horas == null || horas.isEmpty()) {
+                        horas = novedadReporteRepository.findHorasNovedadAnterior(
+                                        idCargaDocente,
+                                        idNovedadCargaDocente);
+                }
+                if (horas == null || horas.isEmpty()) {
+                        horas = novedadReporteRepository.findHorasCargaDocente(idCargaDocente);
+                }
+                return toHorasMap(horas);
+        }
+
+        private Map<String, BigDecimal> toHorasMap(List<HorasTipoActividadProjection> rows) {
+                Map<String, BigDecimal> horas = new LinkedHashMap<>();
+                for (String codigo : CODIGOS_ACTIVIDAD) {
+                        horas.put(codigo, BigDecimal.ZERO);
+                }
+                if (rows == null) {
+                        return horas;
+                }
+                for (HorasTipoActividadProjection row : rows) {
+                        if (!StringUtils.hasText(row.getCodigoPadre())) {
+                                continue;
+                        }
+                        horas.put(
+                                        row.getCodigoPadre().trim().toUpperCase(),
+                                        row.getTotalHoras() != null
+                                                        ? row.getTotalHoras()
+                                                        : BigDecimal.ZERO);
+                }
+                return horas;
+        }
+
+        private EncabezadoCargaReporteDTO toEncabezado(
+                        EncabezadoPreasignacionProjection projection) {
+                return new EncabezadoCargaReporteDTO(
+                                projection.getIdCarga(),
+                                projection.getIdCoordinacion(),
+                                projection.getUnidad(),
+                                projection.getFacultad(),
+                                projection.getCoordinacion(),
+                                projection.getIdPeriodoUniversidad(),
+                                projection.getPeriodoAcademico(),
+                                projection.getAnio(),
+                                projection.getIdConvocatoria(),
+                                projection.getConvocatoria());
+        }
+
+        private String resolveGeneradoPor() {
+                return SecurityUtils.currentIdPersona()
+                                .map(novedadReporteRepository::findNombrePersona)
+                                .filter(StringUtils::hasText)
+                                .map(String::trim)
+                                .orElseGet(() -> SecurityUtils.currentUser()
+                                                .map(AuthUserDetails::getUsername)
+                                                .filter(StringUtils::hasText)
+                                                .orElse("Sistema"));
+        }
+
+        private String buildFileName(ReporteNovedadCargaDTO reporte) {
+                String docente = reporte.actual() != null
+                                ? sanitizeFilePart(reporte.actual().nombre())
+                                : "";
+                String base = StringUtils.hasText(docente)
+                                ? "novedad-" + docente
+                                : "novedad-carga-docente";
+                return base + ".pdf";
+        }
+
+        private String sanitizeFilePart(String value) {
+                if (!StringUtils.hasText(value)) {
+                        return "";
+                }
+                return value.trim()
+                                .replaceAll("[\\\\/:*?\"<>|]", "")
+                                .replaceAll("\\s+", "-")
+                                .toLowerCase();
+        }
 }

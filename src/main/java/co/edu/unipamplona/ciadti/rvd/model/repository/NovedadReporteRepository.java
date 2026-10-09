@@ -7,6 +7,7 @@
  * Modificaciones:
  * 06/10/2026 - Sebastian Jaimes - Creación inicial (comparativa de novedad en PDF)
  * 07/10/2026 - Horas de la novedad anterior con detalle; la carga original solo si no hay novedad previa
+ * 08/10/2026 - Daniel Arias - Modificación : PDFHISTORICO
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -38,19 +39,51 @@ public interface NovedadReporteRepository
     Optional<NovedadCargaDocenteEntity> findCurrentApprovedNovelty(
             @Param("idCargaDocente") Long idCargaDocente);
 
-    // Novedad aprobada inmediatamente anterior a la actual.
+    // Novedad aprobada exacta seleccionada desde el historial.
+    // No exige NOCD_VIGENTE = '1' porque puede ser una aprobación histórica.
     @Query(value = """
             SELECT NOCD.*
             FROM RVD.NOVEDADCARGADOCENTE NOCD
-            WHERE NOCD.CADO_ID = :idCargaDocente
+            WHERE NOCD.NOCD_ID = :idNovedadCargaDocente
             AND NOCD.NOCD_ESTADONOVEDAD = '1'
-            AND NOCD.NOCD_ID <> :idNovedadActual
-            ORDER BY NOCD.NOCD_FECHACAMBIO DESC
+            """, nativeQuery = true)
+    Optional<NovedadCargaDocenteEntity> findApprovedNoveltyById(
+            @Param("idNovedadCargaDocente") Long idNovedadCargaDocente
+    );        
+
+    // Novedad aprobada inmediatamente anterior a la seleccionada.
+    // La comparación se realiza cronológicamente por FECHACAMBIO
+    // y NOCD_ID se utiliza como desempate cuando dos registros
+    // tienen exactamente la misma fecha.
+    @Query(value = """
+            SELECT ANTERIOR.*
+            FROM RVD.NOVEDADCARGADOCENTE ANTERIOR
+
+            INNER JOIN RVD.NOVEDADCARGADOCENTE ACTUAL
+                ON ACTUAL.NOCD_ID = :idNovedadActual
+
+            WHERE ANTERIOR.CADO_ID = :idCargaDocente
+            AND ANTERIOR.NOCD_ESTADONOVEDAD = '1'
+
+            AND (
+                ANTERIOR.NOCD_FECHACAMBIO < ACTUAL.NOCD_FECHACAMBIO
+
+                OR (
+                    ANTERIOR.NOCD_FECHACAMBIO = ACTUAL.NOCD_FECHACAMBIO
+                    AND ANTERIOR.NOCD_ID < ACTUAL.NOCD_ID
+                )
+            )
+
+            ORDER BY
+                ANTERIOR.NOCD_FECHACAMBIO DESC,
+                ANTERIOR.NOCD_ID DESC
+
             FETCH FIRST 1 ROW ONLY
             """, nativeQuery = true)
     Optional<NovedadCargaDocenteEntity> findPreviousApprovedNovelty(
             @Param("idCargaDocente") Long idCargaDocente,
-            @Param("idNovedadActual") Long idNovedadActual);
+            @Param("idNovedadActual") Long idNovedadActual
+    );
 
     // Foto de la novedad (nombre, documento, modalidad, montos y tipo de novedad).
     @Query(value = """
