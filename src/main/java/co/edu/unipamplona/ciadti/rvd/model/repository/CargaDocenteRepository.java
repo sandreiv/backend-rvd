@@ -19,7 +19,8 @@
  * 06/10/2026 - Andrés Hernández - Uso de docentes efectivos para generar el CDP
  * 07/10/2026 - Andrés Hernández - Adición de docentes efectivos como método general
  * 07/10/2026 - Andrés Hernández - Eliminación de métodos para consultar docentes aprobados
- * 07/10/2026 - Andrés Hernández - Información del docente para contratación
+ * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
+ * 08/10/2026 - Andrés Hernández - Uso de docentes aprobados para generar el CDP
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -487,7 +488,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                         ORDER BY NOCD.NOCD_FECHACAMBIO DESC
                     ) AS RN
                 FROM RVD.NOVEDADCARGADOCENTE NOCD
-                WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+                WHERE NOCD.NOCD_ESTADONOVEDAD = '1'
             ),
             CARGAS_RESUELTAS AS (
                 SELECT
