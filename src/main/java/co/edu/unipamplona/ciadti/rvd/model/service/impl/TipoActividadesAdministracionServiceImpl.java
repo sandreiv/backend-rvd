@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TipoActividadesAdministracionServiceImpl implements TipoActividadesAdministracionService {
 
-    private static final Set<String> CODIGOS_PERMITIDOS = Set.of("CTEI", "AC", "FAD", "FAI", "ISU");
+    private static final Set<String> CODIGOS_PERMITIDOS = Set.of("CTEI", "AC", "FAD", "FAI", "ISU", "PTD");
 
     private final TipoActividadesRepository tipoActividadesRepository;
 
@@ -248,8 +248,14 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
                 StringUtils.hasText(dto.componente())
                         ? dto.componente().trim()
                         : null);
-        entity.setMinimoHoras(String.valueOf(dto.minimoHoras()));
-        entity.setMaximoHoras(String.valueOf(dto.maximoHoras()));
+        entity.setMinimoHoras(
+                dto.minimoHoras() != null
+                    ? String.valueOf(dto.minimoHoras())
+                    : null);
+        entity.setMaximoHoras(
+                dto.maximoHoras() != null
+                    ? String.valueOf(dto.maximoHoras())
+                    : null);
         entity.setPtd(normalizePtd(dto.ptd()));
         entity.setEstado(normalizeStatus(dto.estado()));
         entity.setRegistradoPor(
@@ -288,23 +294,25 @@ public class TipoActividadesAdministracionServiceImpl implements TipoActividades
             throw new ApiException(HttpStatus.BAD_REQUEST, "El código del tipo de actividad no es válido");
         }
 
-        if (dto.minimoHoras() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El mínimo de horas es obligatorio");
-        }
+        if (!"1".equals(dto.ptd())) {
+            if (dto.minimoHoras() == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El mínimo de horas es obligatorio");
+            }
 
-        if (dto.maximoHoras() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El máximo de horas es obligatorio");
-        }
+            if (dto.maximoHoras() == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El máximo de horas es obligatorio");
+            }
 
-        if (dto.minimoHoras() < 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El mínimo de horas no puede ser negativo");
-        }
+            if (dto.minimoHoras() < 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El mínimo de horas no puede ser negativo");
+            }
 
-        if (dto.maximoHoras() <= dto.minimoHoras()) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "El máximo de horas debe ser mayor al mínimo de horas"
-            );
+            if (dto.maximoHoras() <= dto.minimoHoras()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El máximo de horas debe ser mayor al mínimo de horas"
+                );
+            }
         }
     }
 
