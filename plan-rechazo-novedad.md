@@ -201,7 +201,7 @@ Nota: - `DetalleNovedadCargaDocenteRepository.findEffectiveByIdCargaDocente` no 
 para hallar los detalles efectivos, eso se realiza mediante `findResumenByIdNovedadCargaDocente`
 dentro del mismo repositorio.
 - `DetalleNovedadCargaDocenteRepository.findByIdCargaDocente` pasa a ser
-`DetalleNovedadCargaDocenteRepository.findEffectiveDetailsByIdCargaDocente` para usar en
+`DetalleNovedadCargaDocenteRepository.findVigenteDetailsByIdCargaDocente` para usar en
 las siguientes partes de la aplicación
 - `saveNoveltyProjectActivities` pasa a ser `saveNoveltyActivities` para indicar que no
 solo guarda actividades de proyectos sino en general

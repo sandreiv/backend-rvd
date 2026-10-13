@@ -41,6 +41,25 @@ public interface TipoActividadesRepository
                 tiac.TIAC_CODIGO AS codigo,
                 tiac.TIAC_COMPONENTE AS componente
             FROM RVD.TIPOACTIVIDADES tiac
+            WHERE tiac.TIAC_IDPADRE IS NULL
+                AND (
+                    tiac.TIAC_COMPONENTE IN ('direct', 'project')
+                    OR tiac.TIAC_COMPONENTE IS NULL
+                )
+            ORDER BY CAST(tiac.TIAC_ORDEN AS INTEGER), tiac.TIAC_NOMBRE
+            """, nativeQuery = true)
+    List<TipoActividadListadoProjection> findPtdActivityTypes();
+
+    @Query(value = """
+            SELECT
+                tiac.TIAC_ID AS id,
+                tiac.TIAC_IDPADRE AS idPadre,
+                tiac.TIAC_NOMBRE AS nombre,
+                tiac.TIAC_DESCRIPCION AS descripcion,
+                tiac.TIAC_ORDEN AS orden,
+                tiac.TIAC_CODIGO AS codigo,
+                tiac.TIAC_COMPONENTE AS componente
+            FROM RVD.TIPOACTIVIDADES tiac
             WHERE tiac.TIAC_IDPADRE = :idPadre
             ORDER BY tiac.TIAC_ORDEN, tiac.TIAC_NOMBRE
             """, nativeQuery = true)

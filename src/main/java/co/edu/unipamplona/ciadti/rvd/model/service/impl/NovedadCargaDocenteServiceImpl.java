@@ -908,7 +908,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente seleccionada"));
 
         List<DetalleCargaDocenteDTO> detallesBase = detalleCargaDocenteMapper.toDtoList(
-                detalleCargaDocenteRepository.findEffectiveDetailsByIdCargaDocente(dto.idCargaDocente()),
+                detalleCargaDocenteRepository.findVigenteDetailsByIdCargaDocente(dto.idCargaDocente()),
                 proyectoMapper);
         BigDecimal horasActividades = resolveDetallesHorasFromNoveltyActivityChanges(dto, detallesBase);
 
@@ -1571,7 +1571,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             Long idCoordinacion) {
 
         List<DetalleCargaDocenteListadoProjection> baseProyecciones =
-                detalleCargaDocenteRepository.findEffectiveDetailsByIdCargaDocente(dto.idCargaDocente());
+                detalleCargaDocenteRepository.findVigenteDetailsByIdCargaDocente(dto.idCargaDocente());
 
         boolean baseEsNovedad = !baseProyecciones.isEmpty()
                 && baseProyecciones.get(0).getEsDeNovedad() != null
