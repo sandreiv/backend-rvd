@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
@@ -112,5 +113,15 @@ public class HiringCallController {
     public ResponseEntity<InformacionDocenteContratacionDTO> professorInformation(@RequestParam Long idCargaDocente) {
         InformacionDocenteContratacionDTO information = coordinacionService.findProfessorInformation(idCargaDocente);
         return new ResponseEntity<>(information, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los tipos de actividad para el PTD",
+        description = "Lista los tipos de actividad que son para gestionar el plan de trabajo digital"
+    )
+    @GetMapping("/list-ptd-activities")
+    public ResponseEntity<List<ActividadPtdDTO>> listPtdActivities(@RequestParam Long idCargaDocente) {
+        List<ActividadPtdDTO> actividades = coordinacionService.listPtdActivities(idCargaDocente);
+        return new ResponseEntity<>(actividades, HttpStatus.OK);
     }
 }

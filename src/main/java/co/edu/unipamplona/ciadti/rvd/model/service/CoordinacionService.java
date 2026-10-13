@@ -26,6 +26,7 @@ import java.util.List;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
@@ -135,6 +136,8 @@ public interface CoordinacionService {
     List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad);
 
     List<TipoActividadDTO> listActivityTypes();
+
+    List<ActividadPtdDTO> listPtdActivities(Long idCargaDocente);
 
     ActividadModalidadDTO listActivitiesModality(Long idModalidadContratacion);
 

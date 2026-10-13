@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 13/10/2026 - Andrés Hernández - Manejo de campos nulos para actividades PTD
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
