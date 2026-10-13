@@ -6,6 +6,7 @@
  * Fecha de creación: 09/10/2026
  * Modificaciones:
  * 09/10/2026 - Creación inicial
+ * 13/10/2026 - Solo corre en /public y no limpia la sesión de Vortal
  */
 package co.edu.unipamplona.ciadti.rvd.config.security.docente;
 
@@ -35,8 +36,12 @@ public class DocenteJwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        if (path == null || !path.startsWith("/public/")) {
+            return true;
+        }
         return HttpMethod.POST.matches(request.getMethod())
-                && "/public/session".equals(request.getServletPath());
+                && "/public/session".equals(path);
     }
 
     @Override
@@ -55,7 +60,8 @@ public class DocenteJwtAuthenticationFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("DOCENTE")));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException | IllegalArgumentException ignored) {
-                SecurityContextHolder.clearContext();
+                // El token de Vortal no es un JWT de docente. No se borra
+                // el contexto: la cadena de SecurityAuth ya autenticó al personal.
             }
         }
         filterChain.doFilter(request, response);
