@@ -67,8 +67,7 @@ public class DocenteSessionServiceImpl implements DocenteSessionService {
                     "Demasiados intentos. Intente más tarde");
         }
 
-        List<PersonaGeneralEntity> candidatos =
-                personaGeneralRepository.findDocentesByDocumentoExacto(documento);
+        List<PersonaGeneralEntity> candidatos = personaGeneralRepository.findDocentesByDocumentoExacto(documento);
 
         List<PersonaGeneralEntity> coincidencias = candidatos.stream()
                 .filter(persona -> fechasCoinciden(
