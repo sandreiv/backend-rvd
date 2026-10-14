@@ -10,6 +10,7 @@
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
 public record ActivityWeightsDTO(
+    String nivel,
     Long ponderado,
     Long idTipoActividad
 ) {}
