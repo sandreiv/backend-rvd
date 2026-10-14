@@ -7,6 +7,7 @@
  * Modificaciones:
  * 13/10/2026 - Andrés Hernández - Creación inicial
  * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD y su observación
+ * 14/10/2026 - Andrés Hernández - Visualización del PTD con su ponderación y observación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -22,6 +23,9 @@ import co.edu.unipamplona.ciadti.rvd.config.security.AuthUserDetails;
 import co.edu.unipamplona.ciadti.rvd.config.security.SecurityUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.mapper.PlanTrabajoDigitalMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActivityWeightsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSavePayloadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
@@ -31,6 +35,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.PlanTrabajoDigitalReposito
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +49,8 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
     private final PlanTrabajoDigitalMapper planTrabajoDigitalMapper;
 
+    @Override
+    @Transactional
     public void savePtd(PtdSaveRequestDTO dto) {
         log.info("savePtd ===> Guardando información del PTD. idPersona={}", dto.registros().getFirst().idPersonaGeneral());
         
@@ -93,6 +100,28 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
         observacionPtdRepository.save(observacion);
 
         log.info("savePtd ===> Información del PTD guardada. idPersona={}", dto.registros().getFirst().idPersonaGeneral());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente) {
+        log.info("getInfoPtdWithWeights ===> Obteniendo información del PTD. idPersona={}, idCargaDocente={}", idPersonaGeneral, idCargaDocente);
+
+        ObservacionPtdEntity observacionEntity = observacionPtdRepository.findByIdCargaDocente(idCargaDocente);
+        List<ActivityWeightsDTO> actividades = planTrabajoDigitalRepository
+            .findActivityWeightsByPersona(idPersonaGeneral)
+            .stream()
+            .map(planTrabajoDigitalMapper::toActivityWeightsDTO)
+            .toList();
+
+        if (actividades.isEmpty() || observacionEntity == null) {
+            return null;
+        }
+
+        PtdObservationDTO observacion = new PtdObservationDTO(observacionEntity.getTexto(), observacionEntity.getIdCargaDocente());
+
+        log.info("getInfoPtdWithWeights ===> Información del PTD obtenida. idPersona={}, idCargaDocente={}", idPersonaGeneral, idCargaDocente);
+        return new PtdInfoWithWeightsDTO(actividades, observacion);
     }
 
 

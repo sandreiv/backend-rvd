@@ -32,6 +32,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -139,5 +140,15 @@ public class HiringCallController {
     public ResponseEntity<Void> savePtd(@RequestBody PtdSaveRequestDTO dto) {
         planTrabajoDigitalService.savePtd(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Objeto con la información del ptd y la especificación de la ponderación por actividades",
+        description = "Objeto con la información de la novedad registrada por el coordinador y las ponderaciones de cada actividad"
+    )
+    @GetMapping("/get-ptd-with-weights")
+    public ResponseEntity<PtdInfoWithWeightsDTO> getInfoPtdWithWeights(@RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente) {
+        PtdInfoWithWeightsDTO ptd = planTrabajoDigitalService.getInfoPtdWithWeights(idPersonaGeneral, idCargaDocente);
+        return new ResponseEntity<>(ptd, HttpStatus.OK);
     }
 }

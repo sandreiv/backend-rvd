@@ -13,5 +13,5 @@ import java.util.List;
 
 public record PtdSaveRequestDTO(
     List<PtdSavePayloadDTO> registros,
-    PtdSaveObservationDTO observacion
+    PtdObservationDTO observacion
 ) {}

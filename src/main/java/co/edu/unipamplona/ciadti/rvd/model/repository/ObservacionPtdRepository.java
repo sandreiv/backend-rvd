@@ -10,9 +10,17 @@
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
 
 public interface ObservacionPtdRepository extends JpaRepository<ObservacionPtdEntity, Long> {
     
+    @Query(value = """
+            SELECT OBPT.*
+            FROM RVD.OBSERVACIONPTD OBPT
+            WHERE OBPT.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    ObservacionPtdEntity findByIdCargaDocente(@Param("idCargaDocente") Long idCargaDocente);  
 }

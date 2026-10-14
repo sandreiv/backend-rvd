@@ -1,6 +1,6 @@
 /**
  * Aplicación: rvd
- * Archivo: PtdSaveObservationDTO.java
+ * Archivo: PtdObservationDTO.java
  * Paquete: co.edu.unipamplona.ciadti.rvd.model.dto
  * Autor: GRUPO DE DESARROLLO ESPECÍFICO - CIADTI - Universidad de Pamplona
  * Fecha de creación: 14/10/2026
@@ -9,7 +9,7 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
-public record PtdSaveObservationDTO(
+public record PtdObservationDTO(
     String descripcion,
     Long idCargaDocente
 ) {}

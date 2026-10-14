@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.ActivityWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSavePayloadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PlanTrabajoDigitalEntity;
 
@@ -27,4 +28,6 @@ public interface PlanTrabajoDigitalMapper {
     @Mapping(target = "tipoActividadesEntity", ignore = true)
     @Mapping(target = "personaGeneralEntity", ignore = true)
     PlanTrabajoDigitalEntity toEntity(PtdSavePayloadDTO dto);
+
+    ActivityWeightsDTO toActivityWeightsDTO(PlanTrabajoDigitalEntity entity);
 }
