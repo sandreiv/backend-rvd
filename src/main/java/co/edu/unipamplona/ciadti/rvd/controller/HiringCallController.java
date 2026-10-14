@@ -11,6 +11,7 @@
  * 07/10/2026 - Andrés Hernández - Los docentes para contratación vienen de los efectivos
  * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
+ * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -19,6 +20,8 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,9 +32,11 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
+import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +49,7 @@ public class HiringCallController {
     private final PeriodoUniversidadService periodoUniversidadService;
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
+    private final PlanTrabajoDigitalService planTrabajoDigitalService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -123,5 +129,15 @@ public class HiringCallController {
     public ResponseEntity<List<ActividadPtdDTO>> listPtdActivities(@RequestParam Long idCargaDocente) {
         List<ActividadPtdDTO> actividades = coordinacionService.listPtdActivities(idCargaDocente);
         return new ResponseEntity<>(actividades, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Guarda los detalles de las actividades del PTD",
+        description = "Guarda los detalles de las actividades relacionadas al PTD de una persona"
+    )
+    @PostMapping("/save-ptd")
+    public ResponseEntity<Void> savePtd(@RequestBody PtdSaveRequestDTO dto) {
+        planTrabajoDigitalService.savePtd(dto);
+        return ResponseEntity.ok().build();
     }
 }

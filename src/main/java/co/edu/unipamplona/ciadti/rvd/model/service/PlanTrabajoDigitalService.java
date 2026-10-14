@@ -9,6 +9,9 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
+
 public interface PlanTrabajoDigitalService {
     
+    void savePtd(PtdSaveRequestDTO dto);
 }
