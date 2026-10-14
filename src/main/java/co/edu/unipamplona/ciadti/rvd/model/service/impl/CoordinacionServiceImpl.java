@@ -43,6 +43,7 @@
  * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  * 13/10/2026 - Andrés Hernández - Consulta de las actividades para mostrar en el PTD
+ * 13/10/2026 - Andrés Hernández - Información, parámetros y PTD movidos a HiringCallService
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -85,7 +86,6 @@ import co.edu.unipamplona.ciadti.rvd.mapper.DocentePreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.FechasConvocatoriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.GrupoMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.HorasActividadesCargaMapper;
-import co.edu.unipamplona.ciadti.rvd.mapper.InformacionDocenteContratacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.MateriaMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.NovedadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.ObservacionesCargaMapper;
@@ -100,7 +100,6 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
@@ -114,12 +113,10 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CategoriaCatedraticoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionBusquedaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionRestriccionFormularioDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.DetalleActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePlantaCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocentePreasignacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
@@ -256,7 +253,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final CargaDocenteMapper cargaDocenteMapper;
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
     private final DocenteEfectivoCoordinacionMapper docenteEfectivoCoordinacionMapper;
-    private final InformacionDocenteContratacionMapper informacionDocenteContratacionMapper;
     private final UnidadRepository unidadRepository;
     private final ProgramaRepository programaRepository;
     private final UnidadMapper unidadMapper;
@@ -1181,35 +1177,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public InformacionDocenteContratacionDTO findProfessorInformation(Long idCargaDocente) {
-        log.debug(
-                "findProfessorInformation ===> Consultando información del docente. idCargaDocente={}",
-                idCargaDocente);
-
-        if (idCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
-        }
-
-        var projection = cargaDocenteRepository
-                .findProfessorInformationByCargaDocente(idCargaDocente)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "No existe la carga docente con id " + idCargaDocente));
-
-        List<ActividadHorasResumenDTO> horasActividades =
-                listVigenteActivityHours(idCargaDocente);
-        InformacionDocenteContratacionDTO result =
-                informacionDocenteContratacionMapper.toDto(projection, horasActividades);
-
-        log.info(
-                "findProfessorInformation ===> Información del docente consultada. idCargaDocente={}, totalTipos={}",
-                idCargaDocente,
-                horasActividades.size());
-        return result;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<DocenteCoordinacionDTO> listProfessorsForVerification(
             Long idPeriodoUniversidad,
             Long idConvocatoria,
@@ -1831,26 +1798,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         List<TipoActividadDTO> result = tipoActividadMapper.toDtoList(tipoActividadesRepository.findParentActivityTypes());
         
         log.info("listActivityTypes ===> Tipos de actividad listados. total={}", result.size());
-        return result;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ActividadPtdDTO> listPtdActivities(Long idCargaDocente) {
-        log.debug("listPtdActivities ===> Listando actividades para el PTD");
-
-        if (idCargaDocente == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
-        }
-        
-        List<TipoActividadDTO> actividades = tipoActividadMapper.toDtoList(tipoActividadesRepository.findPtdActivityTypes());
-        
-        Map<Long, DetalleCargaDocenteListadoProjection> unicos =
-            uniqueDetalles(detalleCargaDocenteRepository.findVigenteDetailsByIdCargaDocente(idCargaDocente));
-        
-        List<ActividadPtdDTO> result = toPtdActivitiesDto(actividades, unicos);
-        
-        log.info("listPtdActivities ===> Tipos de actividades para el PTD listadas. total={}", actividades.size());
         return result;
     }
 
@@ -3724,15 +3671,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return unicos;
     }
 
-    private List<ActividadHorasResumenDTO> listVigenteActivityHours(Long idCargaDocente) {
-        Map<Long, DetalleCargaDocenteListadoProjection> unicos =
-                uniqueDetalles(
-                        detalleCargaDocenteRepository
-                                .findVigenteDetailsByIdCargaDocente(idCargaDocente));
-        return ResumenCargaAssembler.buildActivityHours(
-                ResumenCargaAssembler.fromCargaList(unicos.values()));
-    }
-
     private CargaDocenteEntity findCargaDocenteOrThrow(Long idCargaDocente) {
         if (idCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de carga docente es obligatorio");
@@ -3975,75 +3913,4 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
     }
 
-    private boolean perteneceActividad(DetalleCargaDocenteListadoProjection detalle, Long idActividad) {
-        Long idPadre = detalle.getIdTipoActividadPadre();
-        if (idPadre != null) {
-            return idPadre.equals(idActividad);
-        }
-
-        return Objects.equals(detalle.getIdTipoActividadResuelto(), idActividad);
-    }
-
-    private String resolveDescripcionActividadPtd(DetalleCargaDocenteListadoProjection detalle) {
-        String codigo = detalle.getCodigoTipoActividadPadre();
-        if ("FAD".equalsIgnoreCase(codigo)) {
-            return detalle.getNombreMateria() +  " - " + detalle.getNombreGrupo();
-        }
-
-        return detalle.getNombreProyecto();
-    }
-
-    private List<ActividadPtdDTO> toPtdActivitiesDto(List<TipoActividadDTO> actividades, Map<Long, DetalleCargaDocenteListadoProjection> unicos) {
-        return actividades.stream()
-            .map(actividad -> {
-                if ("PTD".equalsIgnoreCase(actividad.codigo())) {
-                    DetalleActividadPtdDTO detallePtd = new DetalleActividadPtdDTO(null, null, actividad.descripcion());
-
-                    return new ActividadPtdDTO(
-                        actividad.id(),
-                        actividad.codigo(),
-                        List.of(detallePtd),
-                        actividad.nombre(),
-                        actividad.nombre(),
-                        null
-                    );
-                };
-
-                List<DetalleCargaDocenteListadoProjection> detalles = unicos.values().stream()
-                    .filter(detalle -> perteneceActividad(detalle, actividad.id()))
-                    .toList();
-        
-                List<DetalleActividadPtdDTO> detallesDto = detalles.stream()
-                    .map(detalle -> new DetalleActividadPtdDTO(
-                        detalle.getIdDetalleCargaDocente(),
-                        detalle.getEsDeNovedad().orElse(null),
-                        resolveDescripcionActividadPtd(detalle)
-                    ))
-                    .toList();
-                
-                BigDecimal totalHoras = detalles.stream()
-                    .map(DetalleCargaDocenteListadoProjection::getHoras)
-                    .filter(Objects::nonNull)
-                    .map(this::parseDecimal)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-                
-                String criterio = "FAD".equalsIgnoreCase(actividad.codigo())
-                    ? detalles.stream()
-                        .map(DetalleCargaDocenteListadoProjection::getNombreTipoActividad)
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .orElse(actividad.nombre())
-                    : actividad.nombre();
-                
-                return new ActividadPtdDTO(
-                    actividad.id(),
-                    actividad.codigo(),
-                    detallesDto,
-                    criterio,
-                    actividad.nombre(),
-                    totalHoras
-                );
-            })
-        .toList();
-    }
 }

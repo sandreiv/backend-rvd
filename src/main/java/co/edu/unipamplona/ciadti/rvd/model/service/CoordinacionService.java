@@ -19,6 +19,7 @@
  * 16/09/2026 - Andrés Hernández - listAlterationProfessors
  * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
+ * 13/10/2026 - Andrés Hernández - Información, parámetros y PTD movidos a HiringCallService
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -26,7 +27,6 @@ import java.util.List;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocenteFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CargaDocentePlantaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CentroCostoResumenDTO;
@@ -45,7 +45,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteVerificacionPendienteLista
 import co.edu.unipamplona.ciadti.rvd.model.dto.FechaModalidadFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GrupoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HorasActividadesCargaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MateriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.NovedadListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDTO;
@@ -114,8 +113,6 @@ public interface CoordinacionService {
 
     List<DocenteEfectivoCoordinacionDTO> listApprovedProfessorsForHiring(Long idCarga, Long idModalidadContratacion);
 
-    InformacionDocenteContratacionDTO findProfessorInformation(Long idCargaDocente);
-
     List<DocenteCoordinacionDTO> listProfessorsForVerification(
             Long idPeriodoUniversidad,
             Long idConvocatoria,
@@ -136,8 +133,6 @@ public interface CoordinacionService {
     List<TipoActividadCriterioDTO> listCriteria(Long idTipoActividad);
 
     List<TipoActividadDTO> listActivityTypes();
-
-    List<ActividadPtdDTO> listPtdActivities(Long idCargaDocente);
 
     ActividadModalidadDTO listActivitiesModality(Long idModalidadContratacion);
 

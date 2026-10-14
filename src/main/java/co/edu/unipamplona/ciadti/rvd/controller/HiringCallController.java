@@ -11,6 +11,8 @@
  * 07/10/2026 - Andrés Hernández - Los docentes para contratación vienen de los efectivos
  * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
+ * 13/10/2026 - Andrés Hernández - Parámetros de contratación por carga docente
+ * 13/10/2026 - Andrés Hernández - Información, parámetros y PTD en HiringCallService
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -28,9 +30,11 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ParametrosContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.HiringCallService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,6 +48,7 @@ public class HiringCallController {
     private final PeriodoUniversidadService periodoUniversidadService;
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
+    private final HiringCallService hiringCallService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -111,8 +116,27 @@ public class HiringCallController {
     )
     @GetMapping("/professor-information")
     public ResponseEntity<InformacionDocenteContratacionDTO> professorInformation(@RequestParam Long idCargaDocente) {
-        InformacionDocenteContratacionDTO information = coordinacionService.findProfessorInformation(idCargaDocente);
+        InformacionDocenteContratacionDTO information = hiringCallService.findProfessorInformation(idCargaDocente);
         return new ResponseEntity<>(information, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene los parámetros de contratación de un docente",
+        description = """
+            Unidad regional, coordinación, modalidad, categorización, puntos,
+            estado de categorización, asignación salarial, valor hora y horas
+            de trabajo.
+            Si la carga tiene una novedad vigente, la modalidad, la categorización,
+            los puntos, el salario, el valor hora, las horas y la carga de la
+            coordinación salen de esa novedad; si no, de la carga docente.
+            El estado es Categorizado cuando la categorización no es nula y
+            No categorizado cuando es nula.
+            """
+    )
+    @GetMapping("/hiring-parameters")
+    public ResponseEntity<ParametrosContratacionDTO> hiringParameters(@RequestParam Long idCargaDocente) {
+        ParametrosContratacionDTO parameters = hiringCallService.findHiringParameters(idCargaDocente);
+        return new ResponseEntity<>(parameters, HttpStatus.OK);
     }
 
     @Operation(
@@ -121,7 +145,7 @@ public class HiringCallController {
     )
     @GetMapping("/list-ptd-activities")
     public ResponseEntity<List<ActividadPtdDTO>> listPtdActivities(@RequestParam Long idCargaDocente) {
-        List<ActividadPtdDTO> actividades = coordinacionService.listPtdActivities(idCargaDocente);
+        List<ActividadPtdDTO> actividades = hiringCallService.listPtdActivities(idCargaDocente);
         return new ResponseEntity<>(actividades, HttpStatus.OK);
     }
 }

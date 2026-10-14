@@ -21,6 +21,7 @@
  * 07/10/2026 - Andrés Hernández - Eliminación de métodos para consultar docentes aprobados
  * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
  * 08/10/2026 - Andrés Hernández - Uso de docentes aprobados para generar el CDP
+ * 13/10/2026 - Andrés Hernández - Parámetros de contratación por carga docente
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -38,6 +39,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.InformacionDocenteContratacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ParametrosContratacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
 
@@ -1143,5 +1145,71 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             WHERE CADO.CADO_ID = :idCargaDocente
             """, nativeQuery = true)
     Optional<InformacionDocenteContratacionProjection> findProfessorInformationByCargaDocente(
+            @Param("idCargaDocente") Long idCargaDocente);
+
+    @Query(value = """
+            WITH NOVEDADES_VALIDAS AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.CADO_ID = :idCargaDocente
+                    AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+                    AND NVL(NOCD.NOCD_ESTADOELIMINADO, '0') = '0'
+            )
+            SELECT
+                UNID_REG.UNID_NOMBRE AS unidadRegional,
+                COOR.COOR_NOMBRE AS coordinacion,
+                MOCO.MOCO_NOMBRE AS modalidadContratacion,
+                CACA.CACA_DESCRIPCION AS categorizacion,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_PUNTOS
+                    ELSE CADO.CADO_PUNTOS
+                END AS puntosAsignados,
+                CASE
+                    WHEN (
+                        CASE
+                            WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.CACA_ID
+                            ELSE CADO.CACA_ID
+                        END
+                    ) IS NOT NULL
+                        THEN 'Categorizado'
+                    ELSE 'No categorizado'
+                END AS estadoCategorizacion,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_SALARIO
+                    ELSE CADO.CADO_SALARIO
+                END AS asignacionSalarial,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_VALORHORA
+                    ELSE CADO.CADO_VALORHORA
+                END AS valorHora,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_HORAS
+                    ELSE CADO.CADO_HORAS
+                END AS horasTrabajo
+            FROM RVD.CARGADOCENTE CADO
+            LEFT JOIN NOVEDADES_VALIDAS DATOS
+                ON DATOS.CADO_ID = CADO.CADO_ID
+                AND DATOS.RN = 1
+            LEFT JOIN RVD.CARGA CARG
+                ON CARG.CARG_ID = COALESCE(DATOS.CARG_ID, CADO.CARG_ID)
+            LEFT JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+            LEFT JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID)
+            LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
+                ON CACA.CACA_ID = CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.CACA_ID
+                    ELSE CADO.CACA_ID
+                END
+            WHERE CADO.CADO_ID = :idCargaDocente
+            """, nativeQuery = true)
+    Optional<ParametrosContratacionProjection> findHiringParametersByCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
 }
