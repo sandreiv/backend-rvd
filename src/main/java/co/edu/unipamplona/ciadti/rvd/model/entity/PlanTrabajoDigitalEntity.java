@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import jakarta.persistence.NamedStoredProcedureQuery;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.StoredProcedureParameter;
 import jakarta.persistence.Column;
@@ -75,11 +76,11 @@ public class PlanTrabajoDigitalEntity implements Serializable, Cloneable {
     @Column(name = "PTDI_FECHACAMBIO")
     private Date fechaCambio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DECD_ID", insertable = false, updatable = false)
     private DetalleCargaDocenteEntity detalleCargaDocenteEntity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DNCD_ID", insertable = false, updatable = false)
     private DetalleNovedadCargaDocenteEntity detalleNovedadCargaDocenteEntity;
     
