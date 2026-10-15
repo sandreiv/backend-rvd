@@ -1105,11 +1105,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         List<DocenteCargaCoordinacionProjection> projections;
         if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findPlantProfessorsByCargaAndModality(
-                    idCarga, idModalidadContratacion);
+            projections = cargaDocenteRepository.findPlantProfessorsByCargaAndModality(idCarga, idModalidadContratacion);
         } else {
-            projections = cargaDocenteRepository.findProfessorsByCargaAndModality(
-                    idCarga, idModalidadContratacion);
+            projections = cargaDocenteRepository.findProfessorsByCargaAndModality(idCarga, idModalidadContratacion);
         }
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
         log.info("listProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
@@ -1131,11 +1129,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         List<DocenteEfectivoCoordinacionProjection> projections;
         if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModality(
-                        idCarga, idModalidadContratacion);
+            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModality(idCarga, idModalidadContratacion);
         } else {
-            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
-                        idCarga, idModalidadContratacion);
+            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(idCarga, idModalidadContratacion);
         }
         List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(projections);
         log.info("listAlterationProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
