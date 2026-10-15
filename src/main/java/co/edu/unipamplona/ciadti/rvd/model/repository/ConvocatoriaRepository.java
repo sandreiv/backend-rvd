@@ -253,7 +253,6 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             c.idPersonaGeneral = :idPersonaGeneral,
             c.idPeriodoUniversidad = :idPeriodoUniversidad,
             c.idNivelEducativo = :idNivelEducativo,
-            c.idRelacion = :idRelacion,
             c.contratacion = :contratacion,
             c.fechaCambio = :fechaCambio
             where c.id = :id
@@ -264,7 +263,6 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             @Param("idPersonaGeneral") Long idPersonaGeneral,
             @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
             @Param("idNivelEducativo") Long idNivelEducativo,
-            @Param("idRelacion") Long idRelacion,
             @Param("contratacion") String contratacion,
             @Param("fechaCambio") Date fechaCambio,
             @Param("id") Long id);

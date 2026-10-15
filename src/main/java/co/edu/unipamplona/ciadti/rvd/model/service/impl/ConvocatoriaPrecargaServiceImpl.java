@@ -9,6 +9,7 @@
  * 27/08/2026 - Andrés Hernández - Manejo de las fechas locales
  * 09/09/2026 - Sebastian Jaimes - Campo contratacion en insert y update
  * 09/09/2026 - Sebastian Jaimes - Relación contratación-preasignación
+ * 15/10/2026 - Andrés Hernández - Metodos 'save' y 'update' no manejan relaciones entre convocatorias
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -196,7 +197,6 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
         convocatoria.setIdPersonaGeneral(datos.autoriza().id());
         convocatoria.setIdPeriodoUniversidad(datos.periodo().id());
         convocatoria.setIdNivelEducativo(datos.nivelEducativo().id());
-        convocatoria.setIdRelacion(resolveIdRelacion(datos.idRelacion(), null));
         convocatoria.setContratacion(normalizeParam(datos.contratacion()));
         convocatoria.setEstado("1");
         convocatoria.setFechaCambio(new Date());
@@ -267,7 +267,6 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 datos.autoriza().id(),
                 datos.periodo().id(),
                 datos.nivelEducativo().id(),
-                resolveIdRelacion(datos.idRelacion(), id),
                 normalizeParam(datos.contratacion()),
                 new Date(),
                 id);
