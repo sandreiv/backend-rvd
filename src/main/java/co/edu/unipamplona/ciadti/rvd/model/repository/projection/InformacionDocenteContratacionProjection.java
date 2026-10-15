@@ -6,9 +6,11 @@
  * Fecha de creación: 07/10/2026
  * Modificaciones:
  * 07/10/2026 - Andrés Hernández - Creación inicial
+ * 15/10/2026 - Sebastian Jaimes - Estado, salario, valor hora y horas de trabajo
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public interface InformacionDocenteContratacionProjection {
@@ -34,4 +36,12 @@ public interface InformacionDocenteContratacionProjection {
     String getCategoriaDocente();
 
     String getPuntos();
+
+    String getEstadoCategorizacion();
+
+    BigDecimal getAsignacionSalarial();
+
+    BigDecimal getValorHora();
+
+    String getHorasTrabajo();
 }

@@ -7,9 +7,11 @@
  * Modificaciones:
  * 07/10/2026 - Sebastian Jaimes  - Creación inicial
  * 08/10/2026 - Sebastian Jaimes - Incluye horas de actividades PTD vigentes
+ * 15/10/2026 - Sebastian Jaimes - Estado, salario, valor hora y horas de trabajo
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -25,5 +27,9 @@ public record InformacionDocenteContratacionDTO(
     Date fechaFin,
     String categoriaDocente,
     String puntos,
+    String estadoCategorizacion,
+    BigDecimal asignacionSalarial,
+    BigDecimal valorHora,
+    String horasTrabajo,
     List<ActividadHorasResumenDTO> horasActividades
 ) {}

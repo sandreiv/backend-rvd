@@ -22,6 +22,7 @@
  * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
  * 08/10/2026 - Andrés Hernández - Uso de docentes aprobados para generar el CDP
  * 13/10/2026 - Andrés Hernández - Parámetros de contratación por carga docente
+ * 15/10/2026 - Sebastian Jaimes - Estado, salario, valor hora y horas en información del docente
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -1129,7 +1130,24 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CASE
                     WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_PUNTOS
                     ELSE CADO.CADO_PUNTOS
-                END AS puntos
+                END AS puntos,
+                CASE
+                    WHEN COALESCE(DATOS.CACA_ID, CADO.CACA_ID) IS NOT NULL
+                        THEN 'Categorizado'
+                    ELSE 'No categorizado'
+                END AS estadoCategorizacion,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_SALARIO
+                    ELSE CADO.CADO_SALARIO
+                END AS asignacionSalarial,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_VALORHORA
+                    ELSE CADO.CADO_VALORHORA
+                END AS valorHora,
+                CASE
+                    WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_HORAS
+                    ELSE CADO.CADO_HORAS
+                END AS horasTrabajo
             FROM RVD.CARGADOCENTE CADO
             LEFT JOIN NOVEDADES_VALIDAS DATOS
                 ON DATOS.CADO_ID = CADO.CADO_ID

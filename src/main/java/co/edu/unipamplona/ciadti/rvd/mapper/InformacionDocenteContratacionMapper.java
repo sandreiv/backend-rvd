@@ -7,6 +7,7 @@
  * Modificaciones:
  * 07/10/2026 - Andrés Hernández - Creación inicial
  * 08/10/2026 - Sebastian Jaimes - Combina datos del docente con horas PTD
+ * 15/10/2026 - Sebastian Jaimes - Estado, salario, valor hora y horas de trabajo
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
@@ -44,6 +45,10 @@ public interface InformacionDocenteContratacionMapper {
                 base.fechaFin(),
                 base.categoriaDocente(),
                 base.puntos(),
+                base.estadoCategorizacion(),
+                base.asignacionSalarial(),
+                base.valorHora(),
+                base.horasTrabajo(),
                 horasActividades == null ? List.of() : horasActividades);
     }
 }
