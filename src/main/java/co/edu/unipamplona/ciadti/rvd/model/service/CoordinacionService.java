@@ -19,6 +19,7 @@
  * 16/09/2026 - Andrés Hernández - listAlterationProfessors
  * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
+ * 15/10/2026 - Andrés Hernández - Las novedades ahora se relacionan a la modalidad de contratación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
@@ -215,5 +216,5 @@ public interface CoordinacionService {
 
     void approvePreloadDevelopment(Long idCarga);
     
-    List<NovedadListadoDTO> listNovelties(String accion);
+    List<NovedadListadoDTO> listNovelties(String accion, Long idModalidadContratacion);
 }

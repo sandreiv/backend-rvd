@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 15/10/2026 - Andrés Hernández - Buscar novedades para los modalidad Planta
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -44,6 +45,20 @@ public interface NovedadRepository
                 NOVE.NOVE_TIPO
             """, nativeQuery = true)
     List<NovedadEntity> findAllNovedadesPorAccion(
+            @Param("accion") String accion
+    );
+
+    @Query(value = """
+            SELECT
+                NOVE.*
+            FROM RVD.NOVEDADES NOVE
+            WHERE UPPER(TRIM(NOVE.NOVE_ACCION)) = UPPER(TRIM(:accion))
+                AND NOVE.NOVE_FORPLANTA = '1'
+            ORDER BY
+                NOVE.NOVE_ACCION,
+                NOVE.NOVE_TIPO
+            """, nativeQuery = true)
+    List<NovedadEntity> findAllNovedadesPlantaPorAccion(
             @Param("accion") String accion
     );
 

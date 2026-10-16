@@ -272,6 +272,8 @@ public class NovedadesServiceImpl
                         : null
         );
 
+        entity.setForPlanta(normalizePlantaFlag(dto.forPlanta()));
+
         entity.setRegistradoPor(
                 RegistradoPorUtils.value(
                         entity.getId() == null
@@ -368,5 +370,9 @@ public class NovedadesServiceImpl
                     message
             );
         }
+    }
+
+    private String normalizePlantaFlag(String planta) {
+        return "1".equals(planta) ? "1" : "0";
     }
 }

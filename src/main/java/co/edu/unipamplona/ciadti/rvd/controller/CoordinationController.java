@@ -23,6 +23,7 @@
  * 29/09/2026 - Resumen de carga con novedad vigente
  * 29/09/2026 - Historial de novedades en el resumen
  * 06/10/2026 - PDF comparativo de novedad por CADO_ID
+ * 15/10/2026 - Andrés Hernández - Las novedades ahora se relacionan a la modalidad de contratación
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -726,12 +727,12 @@ public class CoordinationController {
     // -----------------------------------------------------------
 
     @Operation(
-        summary = "Obtiene las novedades por acción",
+        summary = "Obtiene las novedades por acción y modalidad de contratación",
         description = "Retorna las novedades de la acción solicitada. Si no se envía acción, consulta ACTUALIZAR"
     )
     @GetMapping("/list-novelties")
-    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(@RequestParam(defaultValue = "ACTUALIZAR") String accion) {
-        List<NovedadListadoDTO> novedades =coordinacionService.listNovelties(accion);
+    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(@RequestParam(defaultValue = "ACTUALIZAR") String accion, @RequestParam Long idModalidadContratacion) {
+        List<NovedadListadoDTO> novedades = coordinacionService.listNovelties(accion, idModalidadContratacion);
         return new ResponseEntity<>(novedades, HttpStatus.OK
         );
     }
