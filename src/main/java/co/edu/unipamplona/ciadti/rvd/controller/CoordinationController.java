@@ -268,11 +268,7 @@ public class CoordinationController {
 
     @Operation(
         summary = "Lista los docentes de una carga según la modalidad de contratacion",
-        description = """
-            Si la modalidad es planta: lista todos los de DOCENTESPLANTACOORDINACION
-            de la coordinación de la carga, con datos de CARGADOCENTE solo de esa carga.
-            Para otras modalidades: solo docentes con registro en CARGADOCENTE de esa carga.
-            """
+        description = "Solo docentes con registro en CARGADOCENTE de esa carga y modalidad."
     )
     @GetMapping("/list-professors-modality")
     public ResponseEntity<List<DocenteCoordinacionDTO>> listProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
@@ -281,17 +277,37 @@ public class CoordinationController {
     }
 
     @Operation(
-        summary = "Lista los docentes de una carga según la modalidad de contratacion para la sección de novedades",
+        summary = "Lista los docentes de planta de una carga",
         description = """
-            Si la modalidad es planta: lista todos los de DOCENTESPLANTACOORDINACION
-            de la coordinación de la carga, con datos de CARGADOCENTE solo de esa carga.
-            Para otras modalidades: solo docentes con registro en CARGADOCENTE de esa carga.
+            Docentes de DOCENTESPLANTACOORDINACION de la coordinación de la carga.
+            Los datos de CARGADOCENTE corresponden a la fila sin modalidad de contratación.
             """
+    )
+    @GetMapping("/list-career-professor-loads")
+    public ResponseEntity<List<DocenteCoordinacionDTO>> listCareerProfessorLoads(@RequestParam Long idCarga) {
+        return new ResponseEntity<>(coordinacionService.listCareerProfessorLoads(idCarga), HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los docentes de una carga según la modalidad de contratacion para la sección de novedades",
+        description = "Solo docentes con registro en CARGADOCENTE de esa carga y modalidad."
     )
     @GetMapping("/list-alteration-professors-modality")
     public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listAlterationProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
         List<DocenteEfectivoCoordinacionDTO> docentes = coordinacionService.listAlterationProfessors(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los docentes de planta de una carga para la sección de novedades",
+        description = """
+            Docentes de DOCENTESPLANTACOORDINACION de la coordinación de la carga,
+            con la carga aprobada sin modalidad de contratación.
+            """
+    )
+    @GetMapping("/list-career-alteration-professors")
+    public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listCareerAlterationProfessors(@RequestParam Long idCarga) {
+        return new ResponseEntity<>(coordinacionService.listCareerAlterationProfessors(idCarga), HttpStatus.OK);
     }
 
     @Operation(

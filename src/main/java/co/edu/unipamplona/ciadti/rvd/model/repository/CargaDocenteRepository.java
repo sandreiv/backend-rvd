@@ -166,8 +166,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 ON PENG.PEGE_ID = PEGE.PEGE_ID
                 LEFT JOIN RVD.CARGADOCENTE CADO
                 ON CADO.PEGE_ID = DOPC.PEGE_ID
-                AND CADO.MOCO_ID = :idModalidadContratacion
                 AND CADO.CARG_ID = CARG.CARG_ID
+                AND CADO.MOCO_ID IS NULL
                 LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CADO.FECO_ID
                 WHERE CARG.CARG_ID = :idCarga
@@ -179,9 +179,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     TRIM(PENG.PENG_PRIMERAPELLIDO || ' ' || PENG.PENG_SEGUNDOAPELLIDO)
                 )) NULLS LAST
             """, nativeQuery = true)
-    List<DocenteCargaCoordinacionProjection> findPlantProfessorsByCargaAndModality(
-            @Param("idCarga") Long idCarga,
-            @Param("idModalidadContratacion") Long idModalidadContratacion);
+    List<DocenteCargaCoordinacionProjection> findPlantProfessorsByCarga(
+            @Param("idCarga") Long idCarga);
 
     @Procedure(name = "CargaDocenteEntity.deleteByProcedure")
     BigDecimal deleteByProcedure(
@@ -1062,7 +1061,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             LEFT JOIN CARGAS_RESUELTAS CR
                 ON CR.PEGE_ID = DOPC.PEGE_ID
                 AND CR.CARG_ID = CARG.CARG_ID
-                AND CR.MOCO_ID = :idModalidadContratacion
+                AND CR.MOCO_ID IS NULL
 
             LEFT JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.FECO_ID = CR.FECO_ID
@@ -1090,11 +1089,13 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 ) NULLS LAST
             """, nativeQuery = true)
     List<DocenteEfectivoCoordinacionProjection>
-    findEffectivePlantProfessorsByCargaAndModality(
-            @Param("idCarga") Long idCarga,
-            @Param("idModalidadContratacion")
-            Long idModalidadContratacion
+    findEffectivePlantProfessorsByCarga(
+            @Param("idCarga") Long idCarga
     );
+
+    boolean existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionIsNull(
+            Long idPersonaGeneral,
+            Long idCarga);
 
     @Query(value = """
             WITH NOVEDADES_VALIDAS AS (

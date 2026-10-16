@@ -249,7 +249,7 @@ class CargaBudgetServiceImplTest {
         CargaDocenteEntity planta = new CargaDocenteEntity();
         planta.setId(CADO_PLANTA);
         planta.setIdCarga(ID_CARGA);
-        planta.setIdModalidadContratacion(ID_PLANTA);
+        planta.setIdModalidadContratacion(null);
         planta.setSalario(SALARIO_TCO);
         planta.setFechaInicio(INICIO);
         planta.setFechaFin(FIN);
@@ -376,7 +376,7 @@ class CargaBudgetServiceImplTest {
     private CargaBudgetOverlay overlayPlanta(Long idCargaDocente) {
         return new CargaBudgetOverlay(
                 idCargaDocente,
-                ID_PLANTA,
+                null,
                 INICIO,
                 FIN,
                 SALARIO_TCO,

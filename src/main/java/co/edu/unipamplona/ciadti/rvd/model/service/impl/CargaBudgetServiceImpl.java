@@ -39,14 +39,12 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.ModalidadContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
@@ -88,8 +86,6 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
     private final DetalleCargaDocenteRepository detalleCargaDocenteRepository;
     private final DetalleNovedadCargaDocenteRepository
             detalleNovedadCargaDocenteRepository;
-    private final ModalidadContratacionRepository
-            modalidadContratacionRepository;
     private final RestriccionCargaRepository restriccionCargaRepository;
 
     @Override
@@ -532,28 +528,13 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
     }
 
     private BudgetKind resolveKind(Long idModalidad) {
-        if (isPlanta(idModalidad)) {
+        if (idModalidad == null) {
             return BudgetKind.PLANTA;
         }
         if (isCatedra(idModalidad)) {
             return BudgetKind.CATEDRA;
         }
         return BudgetKind.TCO;
-    }
-
-    private boolean isPlanta(Long idModalidad) {
-        if (idModalidad == null) {
-            return false;
-        }
-        return modalidadContratacionRepository.findById(idModalidad)
-                .map(this::isPlantaModalidad)
-                .orElse(false);
-    }
-
-    private boolean isPlantaModalidad(ModalidadContratacionEntity modalidad) {
-        return ValorContratacionCalculator.isPlanta(
-                modalidad.getNombre(),
-                modalidad.getSigla());
     }
 
     private boolean isCatedra(Long idModalidad) {

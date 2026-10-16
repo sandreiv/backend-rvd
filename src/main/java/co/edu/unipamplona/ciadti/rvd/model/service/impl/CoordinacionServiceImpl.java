@@ -171,7 +171,9 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaModalidadReposito
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEntityId;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocentesPlantaCoordinacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.GrupoRepository;
@@ -236,6 +238,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final ConvocatoriaRepository convocatoriaRepository;
     private final EstadoCargaRepository estadoCargaRepository;
     private final DocentesPlantaCoordinacionRepository docentesPlantaCoordinacionRepository;
+    private final TrabajadorLaborRepository trabajadorLaborRepository;
     private final PersonaGeneralRepository personaGeneralRepository;
     private final FechasConvocatoriaRepository fechasConvocatoriaRepository;
     private final PuntosVigenciaRepository puntosVigenciaRepository;
@@ -915,17 +918,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         List<FechaModalidadProjection> fechas =
-                isModalidadPlanta(idModalidadContratacion)
-                        ? fechasConvocatoriaRepository
-                                .findPlantByCargaAndModalityAndRestrictionSemanal(
-                                        idCarga,
-                                        idModalidadContratacion
-                                )
-                        : fechasConvocatoriaRepository
-                                .findByCargaAndModalityAndRestrictionSemanal(
-                                        idCarga,
-                                        idModalidadContratacion
-                                );
+                fechasConvocatoriaRepository
+                        .findByCargaAndModalityAndRestrictionSemanal(
+                                idCarga,
+                                idModalidadContratacion
+                        );
 
         List<FechaModalidadFormularioDTO> result =
                 fechasConvocatoriaMapper.toModalidadDtoList(fechas);
@@ -1094,6 +1091,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return idNewCargaDocente;
     }
 
+    // Para listar a docentes planta se debe hacer de otra manera. Una consulta aparte, no relacionada con idModalidadContratacion.
     @Override
     @Transactional(readOnly = true)
     public List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion) {
@@ -1107,19 +1105,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<DocenteCargaCoordinacionProjection> projections;
-        if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findPlantProfessorsByCargaAndModality(
-                    idCarga, idModalidadContratacion);
-        } else {
-            projections = cargaDocenteRepository.findProfessorsByCargaAndModality(
-                    idCarga, idModalidadContratacion);
-        }
+        List<DocenteCargaCoordinacionProjection> projections =
+                cargaDocenteRepository.findProfessorsByCargaAndModality(
+                        idCarga, idModalidadContratacion);
         List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(projections);
         log.info("listProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
         return result;
     }
 
+    // Para listar a docentes planta se debe hacer de otra manera. Una consulta aparte, no relacionada con idModalidadContratacion. Aqui tambien.
     @Override
     @Transactional(readOnly = true)
     public List<DocenteEfectivoCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion) {
@@ -1133,19 +1127,15 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<DocenteEfectivoCoordinacionProjection> projections;
-        if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModality(
+        List<DocenteEfectivoCoordinacionProjection> projections =
+                cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
                         idCarga, idModalidadContratacion);
-        } else {
-            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
-                        idCarga, idModalidadContratacion);
-        }
         List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(projections);
         log.info("listAlterationProfessors ===> Docentes listados. idCarga={}, total={}", idCarga, result.size());
         return result;
     }
 
+        // Para listar a docentes planta se debe hacer de otra manera. Una consulta aparte, no relacionada con idModalidadContratacion.   
     @Override
     @Transactional(readOnly = true)
     public List<DocenteEfectivoCoordinacionDTO> listApprovedProfessorsForHiring(
@@ -1163,14 +1153,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
         }
 
-        List<DocenteEfectivoCoordinacionProjection> projections;
-        if (isModalidadPlanta(idModalidadContratacion)) {
-            projections = cargaDocenteRepository.findEffectivePlantProfessorsByCargaAndModality(
+        List<DocenteEfectivoCoordinacionProjection> projections =
+                cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
                         idCarga, idModalidadContratacion);
-        } else {
-            projections = cargaDocenteRepository.findEffectiveProfessorsByCargaAndModality(
-                        idCarga, idModalidadContratacion);
-        }
         List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(projections);
         log.info(
                 "listApprovedProfessorsForHiring ===> Docentes aprobados listados. idCarga={}, total={}",
@@ -1352,6 +1337,9 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private Map<Long, String> resolveMaximosHorasPrograma(
             Long idModalidadContratacion) {
         Map<Long, String> result = new LinkedHashMap<>();
+        if (idModalidadContratacion == null) { // PARA PODER CARGAR DOCENTES PLANTA
+            return result;
+        }
 
         restriccionCargaRepository.findById(idModalidadContratacion)
                 .map(RestriccionCargaEntity::getExcepcion)
@@ -1547,11 +1535,46 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         return null;
     }
 
-    private boolean isModalidadPlanta(Long idModalidadContratacion) {
-        return modalidadContratacionRepository.findById(idModalidadContratacion)
-                .map(modalidad -> modalidad.getNombre() != null
-                        && "planta".equalsIgnoreCase(modalidad.getNombre().trim()))
-                .orElse(false);
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocenteCoordinacionDTO> listCareerProfessorLoads(Long idCarga) {
+        log.debug("listCareerProfessorLoads ===> idCarga={}", idCarga);
+        requireCarga(idCarga);
+        List<DocenteCoordinacionDTO> result = docenteCoordinacionMapper.toDtoList(
+                cargaDocenteRepository.findPlantProfessorsByCarga(idCarga));
+        log.info("listCareerProfessorLoads ===> idCarga={}, total={}", idCarga, result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocenteEfectivoCoordinacionDTO> listCareerAlterationProfessors(Long idCarga) {
+        log.debug("listCareerAlterationProfessors ===> idCarga={}", idCarga);
+        requireCarga(idCarga);
+        List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(
+                cargaDocenteRepository.findEffectivePlantProfessorsByCarga(idCarga));
+        log.info("listCareerAlterationProfessors ===> idCarga={}, total={}", idCarga, result.size());
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocenteEfectivoCoordinacionDTO> listCareerApprovedProfessorsForHiring(Long idCarga) {
+        log.debug("listCareerApprovedProfessorsForHiring ===> idCarga={}", idCarga);
+        requireCarga(idCarga);
+        List<DocenteEfectivoCoordinacionDTO> result = docenteEfectivoCoordinacionMapper.toDtoList(
+                cargaDocenteRepository.findEffectivePlantProfessorsByCarga(idCarga));
+        log.info("listCareerApprovedProfessorsForHiring ===> idCarga={}, total={}", idCarga, result.size());
+        return result;
+    }
+
+    private void requireCarga(Long idCarga) {
+        if (idCarga == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga es obligatorio");
+        }
+        if (!cargaRepository.existsById(idCarga)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + idCarga);
+        }
     }
 
     @Override
@@ -2261,40 +2284,23 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     @Override
     @Transactional
     public void saveCareerProfessorPreload(CargaDocentePlantaDTO dto) {
-        log.info("saveCareerProfessorPreload ===> Guardando docente planta en precarga. idPersona={}, idCarga={}, idModalidad={}",
+        log.info("saveCareerProfessorPreload ===> Guardando docente planta en precarga. idPersona={}, idCarga={}",
                 dto != null ? dto.idPersonaGeneral() : null,
-                dto != null ? dto.idCarga() : null,
-                dto != null ? dto.idModalidadContratacion() : null);
+                dto != null ? dto.idCarga() : null);
         validateCareerProfessorPreload(dto);
 
         validatePreassignmentWriteAllowedByCarga(dto.idCarga());
 
-        if (cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
-                dto.idPersonaGeneral(), dto.idCarga(), dto.idModalidadContratacion())) {
+        if (cargaDocenteRepository.existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacionIsNull(
+                dto.idPersonaGeneral(), dto.idCarga())) {
             log.warn("saveCareerProfessorPreload ===> Docente planta duplicado. idPersona={}, idCarga={}",
                     dto.idPersonaGeneral(), dto.idCarga());
-            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta carga y modalidad");
+            throw new ApiException(HttpStatus.CONFLICT, "El docente ya se encuentra registrado en esta carga");
         }
-
-        FechasConvocatoriaEntity fechaConvocatoria =
-                convocatoriaRepository.findFechaCnvByConvocatoriaId(
-                        dto.idConvocatoria()
-                );
-
-        if (fechaConvocatoria == null) {
-            throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "No existe la fecha general de la convocatoria seleccionada"
-            );
-        }
-
-        CategoriaModalidadEntity categoriaModalidad = categoriaModalidadRepository
-                .findByIdModalidadContratacion(dto.idModalidadContratacion())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe categoria asociada a la modalidad de contratacion"));
 
         CargaDocenteEntity entity = cargaDocenteMapper.toEntityFromPlanta(dto);
-        entity.setIdFechasConvocatoria(fechaConvocatoria.getId());
-        entity.setIdCategoriaCatedratico(categoriaModalidad.getIdCategoriaCatedratico());
+        entity.setIdModalidadContratacion(null);
+        entity.setIdFechasConvocatoria(null);
         entity.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
         entity.setFechaCambio(new Date());
         entity.setEstado("0");
@@ -2313,9 +2319,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (dto == null
                 || dto.idCarga() == null
                 || dto.idConvocatoria() == null
-                || dto.idPersonaGeneral() == null
-                || dto.idModalidadContratacion() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga, convocatoria, persona y modalidad son obligatorias");
+                || dto.idPersonaGeneral() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La carga, convocatoria y persona son obligatorias");
         }
 
         if (!cargaRepository.existsByIdAndIdConvocatoria(
@@ -2325,6 +2330,16 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         if (!personaGeneralRepository.existsById(dto.idPersonaGeneral())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la persona general con id " + dto.idPersonaGeneral());
+        }
+
+        Long idCoordinacion = cargaRepository.findById(dto.idCarga())
+                .map(carga -> carga.getIdCoordinacion())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga con id " + dto.idCarga()));
+        DocentesPlantaCoordinacionEntityId plantId = new DocentesPlantaCoordinacionEntityId();
+        plantId.setIdPersonaGeneral(dto.idPersonaGeneral());
+        plantId.setIdCoordinacion(idCoordinacion);
+        if (!docentesPlantaCoordinacionRepository.existsById(plantId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La persona no es docente de planta de la coordinación");
         }
     }
 
@@ -2610,25 +2625,11 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     private boolean isDocentePlanta(CargaDocenteEntity cargaDocente) {
-        Long idModalidadContratacion = cargaDocente.getIdModalidadContratacion();
-
-        if (idModalidadContratacion == null) {
+        Long idPersonaGeneral = cargaDocente.getIdPersonaGeneral();
+        if (idPersonaGeneral == null) {
             return false;
         }
-
-        return modalidadContratacionRepository.findById(idModalidadContratacion)
-                .map(modalidad -> {
-                    String nombre = normalizeUpperText(modalidad.getNombre());
-                    String sigla = normalizeUpperText(modalidad.getSigla());
-
-                    return "PLANTA".equals(sigla)
-                            || "CARRERA".equals(sigla)
-                            || "DOCENTE_CARRERA".equals(sigla)
-                            || "DOCENTE DE CARRERA".equals(sigla)
-                            || nombre.contains("PLANTA")
-                            || nombre.contains("CARRERA");
-                })
-                .orElse(false);
+        return trabajadorLaborRepository.existsVigenteByIdPersonaGeneral(idPersonaGeneral);
     }
 
     private String normalizeUpperText(String value) {
@@ -2681,6 +2682,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 idCarga);
     }
     
+    // Validar que docente sea de docentePlantaCoordinacion.
     private void validatePlantaHasCteiOrIsuProject(
             CargaDocenteEntity cargaDocente) {
 
@@ -3295,6 +3297,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         log.debug("updatePreloadObservations ===> Estado de observaciones cambiado. idCarga={}, updated={}", idCarga, updated);
     }
 
+    // Validar que docente sea de docentePlantaCoordinacion.
     @Override
     @Transactional(readOnly = true)
     public ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente) {
@@ -3841,6 +3844,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 entity.getFechaFin());
     }
 
+    // Validar que docente sea de docentePlantaCoordinacion.
     private boolean canCalculateContractValue(CargaDocenteEntity entity) {
         if (entity == null || isDocentePlanta(entity)) {
             return false;

@@ -91,17 +91,28 @@ public class HiringCallController {
     @Operation(
         summary = "Lista los docentes aprobados de una carga según la modalidad de contratacion",
         description = """
-            Lista docentes con CADO_ESTADO = 4 (aprobado).
-            Si la modalidad es planta: docentes de DOCENTESPLANTACOORDINACION
-            de la coordinación de la carga.
-            Para otras modalidades: solo docentes con CARGADOCENTE aprobado
-            de esa carga.
+            Lista docentes con CADO_ESTADO = 4 (aprobado)
+            y con CARGADOCENTE de esa carga y modalidad.
             """
     )
     @GetMapping("/list-professors-modality")
     public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listProfessors(@RequestParam Long idCarga, @RequestParam Long idModalidadContratacion) {
         List<DocenteEfectivoCoordinacionDTO> docentes = coordinacionService.listApprovedProfessorsForHiring(idCarga, idModalidadContratacion);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista los docentes de planta aprobados de una carga",
+        description = """
+            Docentes de DOCENTESPLANTACOORDINACION de la coordinación de la carga
+            con CARGADOCENTE aprobado y sin modalidad de contratación.
+            """
+    )
+    @GetMapping("/list-career-professors")
+    public ResponseEntity<List<DocenteEfectivoCoordinacionDTO>> listCareerProfessors(@RequestParam Long idCarga) {
+        return new ResponseEntity<>(
+                coordinacionService.listCareerApprovedProfessorsForHiring(idCarga),
+                HttpStatus.OK);
     }
 
     @Operation(

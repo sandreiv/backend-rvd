@@ -163,11 +163,7 @@ public interface CoordinacionMapper {
     }
 
     default boolean esModalidadPlanta(String nombreModalidadContratacion) {
-        if (nombreModalidadContratacion == null
-                || nombreModalidadContratacion.isBlank()) {
-            return false;
-        }
-        return "planta".equalsIgnoreCase(nombreModalidadContratacion.trim());
+        return false;
     }
 
     @Named("toCarga")

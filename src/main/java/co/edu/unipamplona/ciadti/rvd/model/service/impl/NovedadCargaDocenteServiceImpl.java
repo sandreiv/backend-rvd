@@ -81,7 +81,6 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.ModalidadContratacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionesEntity;
@@ -95,7 +94,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionesRepository;
@@ -164,7 +163,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     private final RelacionCargaProyectoMapper relacionCargaProyectoMapper;
     private final ProyectoMapper proyectoMapper;
     private final ObservacionesRepository observacionesRepository;
-    private final ModalidadContratacionRepository modalidadContratacionRepository;
+    private final TrabajadorLaborRepository trabajadorLaborRepository;
 
 
     private final CoordinacionServiceImpl coordinacionServiceImpl;
@@ -1790,6 +1789,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private Map<Long, String> resolveMaximosHorasPrograma(Long idModalidadContratacion) {
         Map<Long, String> result = new LinkedHashMap<>();
+        if (idModalidadContratacion == null) { // PARA PODER CARGAR DOCENTES PLANTA
+            return result;
+        }
 
         restriccionCargaRepository.findById(idModalidadContratacion)
                 .map(RestriccionCargaEntity::getExcepcion)
@@ -2194,7 +2196,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         
         List<DetalleResumen> detalles = ResumenCargaAssembler.fromNovedadList(
                 loadActivityDetails(novedad.getIdCargaDocente(), novedad.getIdNovedadCargaDocente()));
-        boolean planta = isPlantaModalidad(novedad.getIdModalidadContratacion());
+        boolean planta = novedad.getIdPersonaGeneral() != null
+                && trabajadorLaborRepository.existsVigenteByIdPersonaGeneral(
+                        novedad.getIdPersonaGeneral());
         
         ValorContratacionDTO valor = planta
                 ? null
@@ -2343,19 +2347,6 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         if (!cargaDocenteRepository.existsById(idCargaDocente)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente);
         }
-    }
-
-    private boolean isPlantaModalidad(Long idModalidad) {
-        if (idModalidad == null) {
-            return false;
-        }
-        return modalidadContratacionRepository.findById(idModalidad).map(this::isPlantaNombre).orElse(false);
-    }
-
-    private boolean isPlantaNombre(ModalidadContratacionEntity modalidad) {
-        return ValorContratacionCalculator.isPlanta(
-                modalidad.getNombre(),
-                modalidad.getSigla());
     }
 
     private boolean isCatedraModalidad(Long idModalidad) {

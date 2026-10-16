@@ -45,7 +45,6 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaTipoContratacionRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FechasConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
@@ -66,7 +65,6 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private final ConvocatoriaTipoContratacionRepository convocatoriaTipoContratacionRepository;
     private final FechasConvocatoriaRepository fechasConvocatoriaRepository;
     private final PersonaGeneralRepository personaGeneralRepository;
-    private final ModalidadContratacionRepository modalidadContratacionRepository;
     private final PersonaAutorizaConvocatoriaMapper personaAutorizaConvocatoriaMapper;
     private final ConvocatoriaDatosInsertarMapper convocatoriaDatosInsertarMapper;
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
@@ -227,10 +225,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
                 cotc.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
                 Long cotcId = convocatoriaTipoContratacionRepository.save(cotc).getId();
 
-                boolean esPlanta =
-                        isModalidadPlanta(cotcDto.idModalidadContratacion());
-
-                if (!esPlanta && cotcDto.fechas() != null) {
+                if (cotcDto.fechas() != null) {
                     for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
                         FechasConvocatoriaEntity entity = new FechasConvocatoriaEntity();
                         entity.setIdConvocatoria(convId);
@@ -328,10 +323,7 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
 
                 Set<Long> fechaModalidadIds = new HashSet<>();
 
-                boolean esPlanta =
-                        isModalidadPlanta(cotcDto.idModalidadContratacion());
-
-                if (!esPlanta && cotcDto.fechas() != null) {
+                if (cotcDto.fechas() != null) {
                     for (FechaModalidadFormularioDTO fecha : cotcDto.fechas()) {
                         String onceMeses =
                                 resolveOnceMeses(
@@ -631,29 +623,6 @@ public class ConvocatoriaPrecargaServiceImpl implements ConvocatoriaPrecargaServ
     private boolean isConvocatoriaPreasignacion(String contratacion) {
         return contratacion == null || "0".equals(contratacion);
     }
-
-    private boolean isModalidadPlanta(Long idModalidadContratacion) {
-        if (idModalidadContratacion == null) {
-            return false;
-        }
-
-        return modalidadContratacionRepository
-                .findById(idModalidadContratacion)
-                .map(modalidad -> {
-                    String sigla = modalidad.getSigla() == null
-                            ? ""
-                            : modalidad.getSigla().trim();
-
-                    String nombre = modalidad.getNombre() == null
-                            ? ""
-                            : modalidad.getNombre().trim();
-
-                    return "PLANTA".equalsIgnoreCase(sigla)
-                            || "PLANTA".equalsIgnoreCase(nombre);
-                })
-                .orElse(false);
-    }
-
 
 }
 

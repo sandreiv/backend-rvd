@@ -110,9 +110,15 @@ public interface CoordinacionService {
 
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
 
+    List<DocenteCoordinacionDTO> listCareerProfessorLoads(Long idCarga);
+
     List<DocenteEfectivoCoordinacionDTO> listAlterationProfessors(Long idCarga, Long idModalidadContratacion);
 
+    List<DocenteEfectivoCoordinacionDTO> listCareerAlterationProfessors(Long idCarga);
+
     List<DocenteEfectivoCoordinacionDTO> listApprovedProfessorsForHiring(Long idCarga, Long idModalidadContratacion);
+
+    List<DocenteEfectivoCoordinacionDTO> listCareerApprovedProfessorsForHiring(Long idCarga);
 
     InformacionDocenteContratacionDTO findProfessorInformation(Long idCargaDocente);
 
