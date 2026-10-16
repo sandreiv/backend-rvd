@@ -962,32 +962,32 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             inserted = novedadCargaDocenteRepository.insertChangeProjectActivitiesFromNovelty(
                 dto.idCargaDocente(),
                 dto.idNovedad(),
-                valores.valorContrato(),
-                valores.totalPrestaciones(),
-                valores.salario(),
+                nullIfZero(valores.valorContrato()),
+                nullIfZero(valores.totalPrestaciones()),
+                nullIfZero(valores.salario()),
                 overlay.horasActividades().toString(),
                 previous.get().getHorasDeExcepcion(),
                 overlay.valorHora(),
                 overlay.puntos(),
                 overlay.valorPunto(),
-                valores.totalContrato(),
-                overlay.semanas().toString(),
+                nullIfZero(valores.totalContrato()),
+                overlay.semanas() != null ? overlay.semanas().toString() : null,
                 previous.get().getOnceMeses(),
                 registradoPor);
         } else {
             inserted = novedadCargaDocenteRepository.insertChangeProjectActivitiesFromCargaDocente(
                 dto.idCargaDocente(),
                 dto.idNovedad(),
-                valores.valorContrato(),
-                valores.totalPrestaciones(),
-                valores.salario(),
+                nullIfZero(valores.valorContrato()),
+                nullIfZero(valores.totalPrestaciones()),
+                nullIfZero(valores.salario()),
                 overlay.horasActividades().toString(),
                 cargaOriginal.getHorasDeExcepcion(),
                 overlay.valorHora(),
                 overlay.puntos(),
                 overlay.valorPunto(),
-                valores.totalContrato(),
-                overlay.semanas().toString(),
+                nullIfZero(valores.totalContrato()),
+                overlay.semanas() != null ? overlay.semanas().toString() : null,
                 cargaOriginal.getOnceMeses(),
                 registradoPor);
         }
@@ -1500,6 +1500,12 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    private static BigDecimal nullIfZero(BigDecimal value) {
+        return value != null && value.compareTo(BigDecimal.ZERO) == 0
+            ? null
+            : value;
     }
 
     private String resolveOnceMeses(

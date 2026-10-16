@@ -1058,7 +1058,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             INNER JOIN GENERAL.PERSONANATURALGENERAL PENG
                 ON PENG.PEGE_ID = PEGE.PEGE_ID
 
-            LEFT JOIN CARGAS_RESUELTAS CR
+            INNER JOIN CARGAS_RESUELTAS CR
                 ON CR.PEGE_ID = DOPC.PEGE_ID
                 AND CR.CARG_ID = CARG.CARG_ID
                 AND CR.MOCO_ID IS NULL

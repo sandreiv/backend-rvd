@@ -43,6 +43,7 @@
  * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  * 13/10/2026 - Andrés Hernández - Consulta de las actividades para mostrar en el PTD
+ * 15/10/2026 - Andrés Hernández - Las novedades ahora se relacionan a la modalidad de contratación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -157,6 +158,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.HistorialCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
@@ -3642,17 +3644,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-        public List<NovedadListadoDTO> listNovelties(String accion) {
+        public List<NovedadListadoDTO> listNovelties(String accion, Long idModalidadContratacion) {
 
         String accionNormalizada = StringUtils.hasText(accion)
                 ? accion.trim().toUpperCase()
                 : "ACTUALIZAR";
+        
+        List<NovedadEntity> novedades;
+        if (isModalidadPlanta(idModalidadContratacion)) {
+            novedades = novedadRepository.findAllNovedadesPlantaPorAccion(accionNormalizada);
+        } else {
+            novedades = novedadRepository.findAllNovedadesPorAccion(accionNormalizada);
+        }
 
-        return novedadMapper.toNovedadListadoDTOList(
-                novedadRepository.findAllNovedadesPorAccion(
-                        accionNormalizada
-                )
-        );
+        return novedadMapper.toNovedadListadoDTOList(novedades);
      }
 
     @Override

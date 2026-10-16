@@ -5,5 +5,6 @@ public record NovedadListadoDTO(
         String tipo,
         String descripcion,
         String accion,
-        String componente
+        String componente,
+        String forPlanta
 ) {}
