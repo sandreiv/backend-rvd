@@ -3644,21 +3644,20 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-        public List<NovedadListadoDTO> listNovelties(String accion, Long idModalidadContratacion) {
-
+    public List<NovedadListadoDTO> listNovelties(String accion, Long idModalidadContratacion) {
         String accionNormalizada = StringUtils.hasText(accion)
                 ? accion.trim().toUpperCase()
                 : "ACTUALIZAR";
-        
+
         List<NovedadEntity> novedades;
-        if (isModalidadPlanta(idModalidadContratacion)) {
+        if (idModalidadContratacion == null) {
             novedades = novedadRepository.findAllNovedadesPlantaPorAccion(accionNormalizada);
         } else {
             novedades = novedadRepository.findAllNovedadesPorAccion(accionNormalizada);
         }
 
         return novedadMapper.toNovedadListadoDTOList(novedades);
-     }
+    }
 
     @Override
     @Transactional(readOnly = true)

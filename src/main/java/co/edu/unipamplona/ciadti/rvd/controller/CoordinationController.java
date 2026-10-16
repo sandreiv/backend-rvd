@@ -744,10 +744,13 @@ public class CoordinationController {
 
     @Operation(
         summary = "Obtiene las novedades por acción y modalidad de contratación",
-        description = "Retorna las novedades de la acción solicitada. Si no se envía acción, consulta ACTUALIZAR"
+        description = "Retorna las novedades de la acción solicitada. Si no se envía acción, consulta ACTUALIZAR. "
+                + "Sin modalidad de contratación retorna las novedades de docente de planta"
     )
     @GetMapping("/list-novelties")
-    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(@RequestParam(defaultValue = "ACTUALIZAR") String accion, @RequestParam Long idModalidadContratacion) {
+    public ResponseEntity<List<NovedadListadoDTO>> listNovelties(
+            @RequestParam(defaultValue = "ACTUALIZAR") String accion,
+            @RequestParam(required = false) Long idModalidadContratacion) {
         List<NovedadListadoDTO> novedades = coordinacionService.listNovelties(accion, idModalidadContratacion);
         return new ResponseEntity<>(novedades, HttpStatus.OK
         );

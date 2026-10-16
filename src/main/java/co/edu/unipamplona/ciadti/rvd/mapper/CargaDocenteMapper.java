@@ -82,5 +82,6 @@ public interface CargaDocenteMapper {
     @Mapping(target = "fechaConvocatoria", ignore = true)
     @Mapping(target = "onceMeses", ignore = true)
     @Mapping(target = "creadoEnNovedad", ignore = true)
+    @Mapping(target = "idModalidadContratacion", ignore = true)
     CargaDocenteEntity toEntityFromPlanta(CargaDocentePlantaDTO dto);
 }
