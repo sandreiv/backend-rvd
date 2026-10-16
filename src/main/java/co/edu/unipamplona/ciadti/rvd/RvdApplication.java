@@ -8,12 +8,16 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import co.edu.unipamplona.ciadti.rvd.config.security.SecurityAuthProperties;
+import co.edu.unipamplona.ciadti.rvd.config.security.docente.DocenteSessionProperties;
 
 @SpringBootApplication
 @EnableAsync
 @EnableScheduling
 @EnableCaching
-@EnableConfigurationProperties(SecurityAuthProperties.class)
+@EnableConfigurationProperties({
+        SecurityAuthProperties.class,
+        DocenteSessionProperties.class
+})
 public class RvdApplication {
 
     public static void main(String[] args) {

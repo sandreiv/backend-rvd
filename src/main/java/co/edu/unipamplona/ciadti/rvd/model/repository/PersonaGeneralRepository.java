@@ -7,6 +7,7 @@
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
  * 08/10/2026 - Andrés Hernández - Corrección para no mostrar cambios de docentes en novedad como libres para la precarga
+ * 09/10/2026 - Creación de búsqueda exacta de docente por documento
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -18,6 +19,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DocentesPlantaCoordinacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.CatalogoAdministracionProjection;
@@ -31,6 +34,24 @@ public interface PersonaGeneralRepository
             WHERE pege.id = :id
             """)
     Optional<PersonaGeneralEntity> findGeneralPersonById(@Param("id") Long id);
+
+    @Query("""
+            SELECT pege FROM PersonaGeneralEntity pege
+            INNER JOIN FETCH pege.personaNaturalGeneral peng
+            WHERE pege.documentoIdentidad = :documento
+            AND (
+                EXISTS (
+                    SELECT 1 FROM CargaDocenteEntity cado
+                    WHERE cado.idPersonaGeneral = pege.id
+                )
+                OR EXISTS (
+                    SELECT 1 FROM DocentesPlantaCoordinacionEntity dopc
+                    WHERE dopc.idPersonaGeneral = pege.id
+                )
+            )
+            """)
+    List<PersonaGeneralEntity> findDocentesByDocumentoExacto(
+            @Param("documento") String documento);
 
     @Query("""
             SELECT DISTINCT pege FROM PersonaGeneralEntity pege
