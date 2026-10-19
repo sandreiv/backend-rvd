@@ -177,7 +177,12 @@ public class PreasignacionExcelExporter {
         int rowIdx = startRow;
         Row modalityTitle = sheet.createRow(rowIdx);
         Cell titleCell = modalityTitle.createCell(0);
-        titleCell.setCellValue("Modalidad de contratación: " + nullToEmpty(modalidad.nombreModalidad()));
+        String nombreModalidad = nullToEmpty(modalidad.nombreModalidad());
+        String tituloModalidad = "Sin modalidad".equalsIgnoreCase(nombreModalidad)
+                || nombreModalidad.isBlank()
+                ? "planta"
+                : "Modalidad de contratación: " + nombreModalidad;
+        titleCell.setCellValue(tituloModalidad);
         titleCell.setCellStyle(styles.modalityTitle);
         sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 0, LAST_COL));
 
