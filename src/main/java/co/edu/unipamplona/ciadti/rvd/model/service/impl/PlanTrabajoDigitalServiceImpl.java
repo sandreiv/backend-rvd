@@ -8,6 +8,7 @@
  * 13/10/2026 - Andrés Hernández - Creación inicial
  * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD y su observación
  * 14/10/2026 - Andrés Hernández - Visualización del PTD con su ponderación y observación
+ * 20/10/2026 - Andrés Hernández - Busqueda de estados del PTD por persona y filtrado general por periodo universitario
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -28,6 +29,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSavePayloadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PlanTrabajoDigitalEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionPtdRepository;
@@ -123,6 +125,25 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
         log.info("getInfoPtdWithWeights ===> Información del PTD obtenida. idPersona={}, idCargaDocente={}", idPersonaGeneral, idCargaDocente);
         return new PtdInfoWithWeightsDTO(actividades, observacion);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario) {
+        log.info("getPtdStatesProfessors ===> Obteniendo estados del PTD por persona. idPeriodo={}", idPeriodoUniversitario);
+
+        List<PtdStatesProfessorsDTO> states = planTrabajoDigitalRepository
+            .findPtdStatesByPeriod(idPeriodoUniversitario)
+            .stream()
+            .map(planTrabajoDigitalMapper::toPtdStatesProfessorsDTO)
+            .toList();
+
+        if (states.isEmpty()) {
+            return null;
+        }
+
+        log.info("getPtdStatesProfessors ===> Estados por persona obtenidos. idPeriodo={}, cantidad={}", idPeriodoUniversitario, states.size());
+        return states;
     }
 
 

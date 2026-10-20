@@ -46,6 +46,22 @@ public interface PlanTrabajoDigitalRepository extends JpaRepository<PlanTrabajoD
         @Param("idPeriodoUniversitario") Long idPeriodoUniversitario
     );
 
+    @Query(value = """
+            SELECT *
+            FROM (
+                SELECT
+                    PTDI.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY PTDI.PEGE_ID
+                        ORDER BY PTDI.PTDI_ID
+                    ) AS rn
+                FROM RVD.PLANTRABAJODIGITAL PTDI
+                WHERE PTDI.PEUN_ID = :idPeriodoUniversitario
+            )
+            WHERE rn = 1
+            """, nativeQuery = true)
+    List<PlanTrabajoDigitalEntity> findPtdStatesByPeriod(@Param("idPeriodoUniversitario") Long idPeriodoUniversitario);
+
     boolean existsByIdPersonaGeneralAndIdPeriodoUniversitario(
         Long idPersonaGeneral,
         Long idPeriodoUniversitario

@@ -34,6 +34,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -150,5 +151,15 @@ public class HiringCallController {
     public ResponseEntity<PtdInfoWithWeightsDTO> getInfoPtdWithWeights(@RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente, @RequestParam Long idPeriodoUniversitario) {
         PtdInfoWithWeightsDTO ptd = planTrabajoDigitalService.getInfoPtdWithWeights(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario);
         return new ResponseEntity<>(ptd, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Lista con los estados del ptd por persona",
+        description = "Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado"
+    )
+    @GetMapping("/get-ptd-states-professors")
+    public ResponseEntity<List<PtdStatesProfessorsDTO>> getPtdStatesProfessors(@RequestParam Long idPeriodoUniversitario) {
+        List<PtdStatesProfessorsDTO> states = planTrabajoDigitalService.getPtdStatesProfessors(idPeriodoUniversitario);
+        return new ResponseEntity<>(states, HttpStatus.OK);
     }
 }
