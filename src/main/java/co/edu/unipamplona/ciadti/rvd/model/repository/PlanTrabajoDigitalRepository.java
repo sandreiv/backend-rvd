@@ -37,9 +37,12 @@ public interface PlanTrabajoDigitalRepository extends JpaRepository<PlanTrabajoD
                     ) AS rn
                 FROM RVD.PLANTRABAJODIGITAL PTDI
                 WHERE PTDI.PEGE_ID = :idPersonaGeneral
-                    AND PTDI.PTDI_ESTADO = '0'
+                    AND PTDI.PEUN_ID = :idPeriodoUniversitario
             )
             WHERE rn = 1
             """, nativeQuery = true)
-    List<PlanTrabajoDigitalEntity> findActivityWeightsByPersona(@Param("idPersonaGeneral") Long idPersonaGeneral);
+    List<PlanTrabajoDigitalEntity> findActivityWeightsByPersona(
+        @Param("idPersonaGeneral") Long idPersonaGeneral,
+        @Param("idPeriodoUniversitario") Long idPeriodoUniversitario
+    );
 }

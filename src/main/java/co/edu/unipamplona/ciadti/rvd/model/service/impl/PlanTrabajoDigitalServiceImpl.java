@@ -104,12 +104,12 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
     @Override
     @Transactional(readOnly = true)
-    public PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente) {
+    public PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario) {
         log.info("getInfoPtdWithWeights ===> Obteniendo información del PTD. idPersona={}, idCargaDocente={}", idPersonaGeneral, idCargaDocente);
 
         ObservacionPtdEntity observacionEntity = observacionPtdRepository.findByIdCargaDocente(idCargaDocente);
         List<ActivityWeightsDTO> actividades = planTrabajoDigitalRepository
-            .findActivityWeightsByPersona(idPersonaGeneral)
+            .findActivityWeightsByPersona(idPersonaGeneral, idPeriodoUniversitario)
             .stream()
             .map(planTrabajoDigitalMapper::toActivityWeightsDTO)
             .toList();
@@ -158,6 +158,10 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
             if (item.idPersonaGeneral() == null) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "La persona es obligatoria");
+            }
+
+            if (item.idPeriodoUniversitario() == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
             }
         }
     }

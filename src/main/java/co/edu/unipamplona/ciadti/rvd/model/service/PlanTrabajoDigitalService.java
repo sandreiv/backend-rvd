@@ -16,5 +16,5 @@ public interface PlanTrabajoDigitalService {
     
     void savePtd(PtdSaveRequestDTO dto);
 
-    PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente);
+    PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario);
 }

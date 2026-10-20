@@ -147,8 +147,8 @@ public class HiringCallController {
         description = "Objeto con la información de la novedad registrada por el coordinador y las ponderaciones de cada actividad"
     )
     @GetMapping("/get-ptd-with-weights")
-    public ResponseEntity<PtdInfoWithWeightsDTO> getInfoPtdWithWeights(@RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente) {
-        PtdInfoWithWeightsDTO ptd = planTrabajoDigitalService.getInfoPtdWithWeights(idPersonaGeneral, idCargaDocente);
+    public ResponseEntity<PtdInfoWithWeightsDTO> getInfoPtdWithWeights(@RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente, @RequestParam Long idPeriodoUniversitario) {
+        PtdInfoWithWeightsDTO ptd = planTrabajoDigitalService.getInfoPtdWithWeights(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario);
         return new ResponseEntity<>(ptd, HttpStatus.OK);
     }
 }
