@@ -139,7 +139,7 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
             .toList();
 
         if (states.isEmpty()) {
-            return null;
+            return List.of();
         }
 
         log.info("getPtdStatesProfessors ===> Estados por persona obtenidos. idPeriodo={}, cantidad={}", idPeriodoUniversitario, states.size());
