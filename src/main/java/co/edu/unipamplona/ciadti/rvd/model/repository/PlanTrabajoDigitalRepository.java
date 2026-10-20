@@ -45,4 +45,9 @@ public interface PlanTrabajoDigitalRepository extends JpaRepository<PlanTrabajoD
         @Param("idPersonaGeneral") Long idPersonaGeneral,
         @Param("idPeriodoUniversitario") Long idPeriodoUniversitario
     );
+
+    boolean existsByIdPersonaGeneralAndIdPeriodoUniversitario(
+        Long idPersonaGeneral,
+        Long idPeriodoUniversitario
+    );
 }

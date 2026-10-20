@@ -73,6 +73,7 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
             );
         }
 
+        validateCreation(dto.registros().getFirst());
         validatePtdSaveDto(dto.registros());
         validatePonderacion(dto.registros());
 
@@ -125,6 +126,12 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
     }
 
 
+    private void validateCreation(PtdSavePayloadDTO primerRegistro) {
+        if (planTrabajoDigitalRepository.existsByIdPersonaGeneralAndIdPeriodoUniversitario(primerRegistro.idPersonaGeneral(), primerRegistro.idPeriodoUniversitario())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El docente ya cuenta con actividades en el PTD para este periodo");
+        }
+    }
+    
     private void validatePtdSaveDto(List<PtdSavePayloadDTO> dto) {
         if (dto == null || dto.isEmpty()) {
             throw new ApiException(
