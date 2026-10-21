@@ -1297,6 +1297,9 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CR.CADO_ID
                     AS idCargaDocente,
 
+                CONV.PEUN_ID
+                    AS idPeriodoUniversitario,    
+
                 CONV.CONV_ID
                     AS idConvocatoriaPreasignacion,
 

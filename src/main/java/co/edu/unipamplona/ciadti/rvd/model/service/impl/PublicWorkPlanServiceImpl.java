@@ -303,10 +303,6 @@ public class PublicWorkPlanServiceImpl
                         ? ""
                         : query.trim();
 
-        /*
-        * El componente de frontend empieza
-        * a buscar desde dos caracteres.
-        */
         if (normalizedQuery.length() < 2) {
             return List.of();
         }
@@ -386,10 +382,6 @@ public class PublicWorkPlanServiceImpl
             );
         }
 
-        /*
-        * El nivel 0 es válido:
-        * SIN DEFINIR / Bachiller.
-        */
         if (!tituloDocenteSniesRepository
                 .existsById(
                         body.idNivelAcademico()
@@ -401,11 +393,7 @@ public class PublicWorkPlanServiceImpl
             );
         }
 
-        /*
-        * Evitamos que desde el navegador envíen,
-        * por ejemplo, un título de Doctorado
-        * diciendo que pertenece a Maestría.
-        */
+        
         Long titleCount =
                 tituloPersonaNaturalGeneralRepository
                         .countTitleByIdAndAcademicLevel(
@@ -570,16 +558,6 @@ public class PublicWorkPlanServiceImpl
             );
         }
 
-        /*
-        * ACTIVIDADES:
-        * Mantiene la fotografía efectiva.
-        *
-        * Si existe novedad vigente utiliza
-        * DETALLENOVEDADCARGADOCENTE.
-        *
-        * Si no existe, utiliza
-        * DETALLECARGADOCENTE.
-        */
         var detalles =
                 detalleCargaDocenteRepository
                         .findVigenteDetailsByIdCargaDocente(
@@ -595,11 +573,6 @@ public class PublicWorkPlanServiceImpl
                                         )
                         );
 
-        /*
-        * OBSERVACIÓN:
-        * Se encuentra asociada directamente
-        * a la carga docente mediante CADO_ID.
-        */
         ObservacionPtdEntity observacionEntity =
                 observacionPtdRepository
                         .findByIdCargaDocente(
@@ -663,64 +636,50 @@ public class PublicWorkPlanServiceImpl
             );
         }
 
-        /*
-        * La contratación seleccionada debe
-        * pertenecer al docente autenticado.
-        */
-        boolean contratacionPermitida =
+        var contratacion =
                 cargaDocenteRepository
                         .findPublicHiringRecordsByProfessor(
                                 idPersonaGeneral
                         )
                         .stream()
-                        .anyMatch(record ->
+                        .filter(record ->
                                 Objects.equals(
                                         record.getIdCargaDocente(),
                                         idCargaDocente
                                 )
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new ApiException(
+                                        HttpStatus.NOT_FOUND,
+                                        "La contratación seleccionada no está disponible para el docente autenticado"
+                                )
                         );
 
-        if (!contratacionPermitida) {
+        Long idPeriodoUniversitario =
+                contratacion.getIdPeriodoUniversitario();
+
+        if (idPeriodoUniversitario == null) {
             throw new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "La contratación seleccionada no está disponible para el docente autenticado"
+                    HttpStatus.CONFLICT,
+                    "No se encontró el período universitario de la contratación"
             );
         }
 
-        /*
-        * Esta es la misma estructura utilizada
-        * actualmente por el módulo administrativo
-        * para construir el PTD.
-        *
-        * Internamente ya resuelve la fotografía
-        * efectiva CARGA / NOVEDAD mediante
-        * findVigenteDetailsByIdCargaDocente().
-        */
         List<ActividadPtdDTO> actividadesPtd =
                 coordinacionService
                         .listPtdActivities(
                                 idCargaDocente
                         );
 
-        /*
-        * Recuperamos las ponderaciones y niveles
-        * que realmente quedaron almacenados
-        * en PLANTRABAJODIGITAL.
-        *
-        * No recalculamos porcentajes en Vista Pública.
-        */
         PtdInfoWithWeightsDTO informacionPtd =
-                planTrabajoDigitalService
-                        .getInfoPtdWithWeights(
-                                idPersonaGeneral,
-                                idCargaDocente
-                        );
+        planTrabajoDigitalService
+                .getInfoPtdWithWeights(
+                        idPersonaGeneral,
+                        idCargaDocente,
+                        idPeriodoUniversitario
+                );
 
-        /*
-        * Si no existe PTD almacenado,
-        * Vista Pública no debe mostrar
-        * ponderaciones calculadas provisionalmente.
-        */
         if (informacionPtd == null
                 || informacionPtd.actividades() == null
                 || informacionPtd.actividades().isEmpty()) {
@@ -788,15 +747,6 @@ public class PublicWorkPlanServiceImpl
                         })
                         .toList();
 
-        /*
-        * El total se calcula sobre las ponderaciones
-        * realmente almacenadas.
-        *
-        * Normalmente será 100 porque savePtd()
-        * ya exige exactamente 100 %, pero así
-        * representamos el dato real incluso ante
-        * información histórica inconsistente.
-        */
         long totalPonderacion =
                 informacionPtd
                         .actividades()
@@ -999,11 +949,6 @@ public class PublicWorkPlanServiceImpl
             );
         }
 
-        /*
-        * Primera barrera:
-        * la contratación tiene que pertenecer
-        * al profesor autenticado.
-        */
         boolean contratacionPermitida =
                 cargaDocenteRepository
                         .findPublicHiringRecordsByProfessor(
@@ -1024,12 +969,6 @@ public class PublicWorkPlanServiceImpl
             );
         }
 
-        /*
-        * Segunda barrera:
-        * buscamos el PTDI exclusivamente
-        * dentro del PTD activo del mismo
-        * profesor y de esta contratación.
-        */
         Long idPlanTrabajoDigital =
                 planTrabajoDigitalRepository
                         .findReferencePtdIdByHiringAndProfessor(

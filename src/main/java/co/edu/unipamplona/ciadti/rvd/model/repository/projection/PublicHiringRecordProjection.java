@@ -8,6 +8,8 @@ public interface PublicHiringRecordProjection {
 
     Long getIdCargaDocente();
 
+    Long getIdPeriodoUniversitario();
+
     Long getIdConvocatoriaPreasignacion();
 
     Long getIdConvocatoriaContratacion();
