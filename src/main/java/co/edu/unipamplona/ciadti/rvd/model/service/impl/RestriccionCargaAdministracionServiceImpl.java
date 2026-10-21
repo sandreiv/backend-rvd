@@ -112,7 +112,7 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                                 null
                         ))
                         .toList(),
-                tipoActividadesRepository.findAdministrationParentList()
+                tipoActividadesRepository.findLoadRestrictionParentList()
                         .stream()
                         .map(this::mapTipoActividadCatalog)
                         .toList(),
