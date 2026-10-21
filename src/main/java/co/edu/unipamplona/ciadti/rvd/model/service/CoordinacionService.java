@@ -66,6 +66,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorPuntosPrecargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ObservacionCargaDocenteDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.EnvioVerificacionDetalleCargaDocenteDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PublicHiringRecordDTO;
 
 public interface CoordinacionService {
 
@@ -123,6 +124,10 @@ public interface CoordinacionService {
 
     InformacionDocenteContratacionDTO findProfessorInformation(Long idCargaDocente);
 
+    List<PublicHiringRecordDTO> findPublicHiringRecords(
+                Long idPersonaGeneral
+        );
+    
     List<DocenteCoordinacionDTO> listProfessorsForVerification(
             Long idPeriodoUniversidad,
             Long idConvocatoria,
