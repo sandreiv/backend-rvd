@@ -40,6 +40,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivo
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.InformacionDocenteContratacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicHiringRecordProjection;
 
 public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity, Long> {
 
@@ -1145,4 +1146,281 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             """, nativeQuery = true)
     Optional<InformacionDocenteContratacionProjection> findProfessorInformationByCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
+
+    @Query(value = """
+            WITH NOVEDADES_VALIDAS AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY
+                            NOCD.NOCD_FECHACAMBIO DESC,
+                            NOCD.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.NOCD_ESTADONOVEDAD <> '2'
+            ),
+
+            CARGAS_RESUELTAS AS (
+                SELECT
+                    CADO.CADO_ID,
+
+                    COALESCE(
+                        DATOS.PEGE_ID,
+                        CADO.PEGE_ID
+                    ) AS PEGE_ID,
+
+                    COALESCE(
+                        DATOS.CARG_ID,
+                        CADO.CARG_ID
+                    ) AS CARG_ID,
+
+                    COALESCE(
+                        DATOS.MOCO_ID,
+                        CADO.MOCO_ID
+                    ) AS MOCO_ID,
+
+                    COALESCE(
+                        DATOS.FECO_ID,
+                        CADO.FECO_ID
+                    ) AS FECO_ID,
+
+                    COALESCE(
+                        DATOS.NOCD_FECHAINICIO,
+                        CADO.CADO_FECHAINICIO
+                    ) AS CADO_FECHAINICIO,
+
+                    COALESCE(
+                        DATOS.NOCD_FECHAFIN,
+                        CADO.CADO_FECHAFIN
+                    ) AS CADO_FECHAFIN
+
+                FROM RVD.CARGADOCENTE CADO
+
+                LEFT JOIN NOVEDADES_VALIDAS DATOS
+                    ON DATOS.CADO_ID = CADO.CADO_ID
+                    AND DATOS.RN = 1
+
+                WHERE CADO.CADO_ESTADO = '4'
+
+                AND NVL(
+                    DATOS.NOCD_ESTADOELIMINADO,
+                    '0'
+                ) = '0'
+            ),
+
+            ESCALAFON_ACTUAL AS (
+                SELECT
+                    ESC.ESCA_ID,
+                    ESC.PEGE_ID,
+                    ESC.MOCO_ID,
+                    ESC.CACA_ID,
+                    ESC.ESCA_PUNTOS,
+
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            ESC.PEGE_ID,
+                            ESC.MOCO_ID
+                        ORDER BY
+                            ESC.ESCA_FECHACAMBIO DESC NULLS LAST,
+                            ESC.ESCA_ID DESC
+                    ) AS RN
+
+                FROM COMITES.ESCALAFON ESC
+            ),
+
+            PTD_ACTUAL AS (
+                SELECT
+                    PTD_BASE.CADO_ID,
+                    PTD_BASE.PEGE_ID,
+                    PTD_BASE.PTDI_ESTADO,
+
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            PTD_BASE.CADO_ID,
+                            PTD_BASE.PEGE_ID
+                        ORDER BY
+                            PTD_BASE.PTDI_FECHACAMBIO DESC NULLS LAST,
+                            PTD_BASE.PTDI_ID DESC
+                    ) AS RN
+
+                FROM (
+                    /* PTD generado desde el detalle original de la carga */
+                    SELECT
+                        DECD.CADO_ID,
+                        PTDI.PEGE_ID,
+                        PTDI.PTDI_ID,
+                        PTDI.PTDI_ESTADO,
+                        PTDI.PTDI_FECHACAMBIO
+
+                    FROM RVD.PLANTRABAJODIGITAL PTDI
+
+                    INNER JOIN RVD.DETALLECARGADOCENTE DECD
+                        ON DECD.DECD_ID = PTDI.DECD_ID
+
+                    WHERE PTDI.DECD_ID IS NOT NULL
+
+                    UNION ALL
+
+                    /* PTD generado desde el detalle de una novedad */
+                    SELECT
+                        NOCD.CADO_ID,
+                        PTDI.PEGE_ID,
+                        PTDI.PTDI_ID,
+                        PTDI.PTDI_ESTADO,
+                        PTDI.PTDI_FECHACAMBIO
+
+                    FROM RVD.PLANTRABAJODIGITAL PTDI
+
+                    INNER JOIN RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                        ON DNCD.DNCD_ID = PTDI.DNCD_ID
+
+                    INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                        ON NOCD.NOCD_ID = DNCD.NOCD_ID
+
+                    WHERE PTDI.DNCD_ID IS NOT NULL
+
+                    AND NOCD.NOCD_ESTADONOVEDAD <> '2'
+
+                    AND NVL(
+                        NOCD.NOCD_ESTADOELIMINADO,
+                        '0'
+                    ) = '0'
+                ) PTD_BASE
+            )
+
+            SELECT DISTINCT
+
+                CARG.CARG_ID
+                    AS idCarga,
+
+                CR.CADO_ID
+                    AS idCargaDocente,
+
+                CONV.CONV_ID
+                    AS idConvocatoriaPreasignacion,
+
+                CONTR.CONV_ID
+                    AS idConvocatoriaContratacion,
+
+                COOR.COOR_ID
+                    AS idCoordinacion,
+
+                UNID_REG.UNID_ID
+                    AS idUnidadRegional,
+
+                NIED.NIED_ID
+                    AS idNivelEducativo,
+
+                CR.MOCO_ID
+                    AS idModalidadContratacion,
+
+                CONTR.CONV_NOMBRE
+                    AS convocatoria,
+
+                NIED.NIED_DESCRIPCION
+                    AS nivelEducativo,
+
+                UNID_REG.UNID_NOMBRE
+                    AS unidadRegional,
+
+                COOR.COOR_NOMBRE
+                    AS coordinacion,
+
+                MOCO.MOCO_NOMBRE
+                    AS modalidadContratacion,
+
+                COALESCE(
+                    CR.CADO_FECHAINICIO,
+                    FECO.FECO_FECHAINICIO
+                ) AS fechaInicio,
+
+                COALESCE(
+                    CR.CADO_FECHAFIN,
+                    FECO.FECO_FECHAFIN
+                ) AS fechaFin,
+
+                CASE
+                    WHEN ESC.CACA_ID IS NOT NULL
+                        THEN 'Categorizado'
+                    ELSE 'No categorizado'
+                END AS estadoCategorizacion,
+
+                CASE PTD.PTDI_ESTADO
+                    WHEN '0' THEN 'Estipulado'
+                    WHEN '1' THEN 'Aceptado'
+                    WHEN '2' THEN 'Rechazado'
+                    ELSE NULL
+                END AS estadoPlanTrabajo
+
+            FROM CARGAS_RESUELTAS CR
+
+            INNER JOIN RVD.CARGA CARG
+                ON CARG.CARG_ID = CR.CARG_ID
+
+            INNER JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CARG.CONV_ID
+
+            INNER JOIN RVD.CONVOCATORIA CONTR
+                ON CONTR.CONV_IDRELACION = CONV.CONV_ID
+
+            INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
+                ON NIED.NIED_ID = CONV.NIED_ID
+
+            INNER JOIN RVD.ESTADOCARGA ECAR
+                ON ECAR.ESCA_ID = CARG.ESCA_ID
+
+            INNER JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+
+            INNER JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = CR.MOCO_ID
+
+            LEFT JOIN RVD.FECHASCONVOCATORIA FECO
+                ON FECO.FECO_ID = CR.FECO_ID
+
+            LEFT JOIN ESCALAFON_ACTUAL ESC
+                ON ESC.PEGE_ID = CR.PEGE_ID
+                AND ESC.MOCO_ID = CR.MOCO_ID
+                AND ESC.RN = 1
+
+            LEFT JOIN PTD_ACTUAL PTD
+                ON PTD.CADO_ID = CR.CADO_ID
+                AND PTD.PEGE_ID = CR.PEGE_ID
+                AND PTD.RN = 1
+
+            WHERE CR.PEGE_ID = :idPersonaGeneral
+
+            AND CONTR.CONV_ESTADO = '1'
+
+            AND CONTR.CONV_CONTRATACION = '1'
+
+            AND CONV.CONV_ESTADO = '1'
+
+            AND NVL(
+                CONV.CONV_CONTRATACION,
+                '0'
+            ) = '0'
+
+            AND UPPER(
+                TRIM(ECAR.ESCA_NOMBRE)
+            ) = 'AVAL DESARROLLO'
+
+            ORDER BY
+                CONTR.CONV_NOMBRE,
+                UNID_REG.UNID_NOMBRE,
+                COOR.COOR_NOMBRE,
+                MOCO.MOCO_NOMBRE,
+                fechaInicio DESC
+            """, nativeQuery = true)
+    List<PublicHiringRecordProjection>
+    findPublicHiringRecordsByProfessor(
+            @Param("idPersonaGeneral")
+            Long idPersonaGeneral
+    );
+
+
 }
