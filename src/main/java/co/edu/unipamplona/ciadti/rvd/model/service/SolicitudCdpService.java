@@ -15,6 +15,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpSearchDTO;
 
 public interface SolicitudCdpService {
 
@@ -32,6 +33,8 @@ public interface SolicitudCdpService {
     );
 
     void sendRequestToVice(Long idSolicitud);
+
+    List<CdpSearchDTO> searchCdpsTesoreriaV3(String numeroCdp, Long idUnidad, Long anioVigencia);
 
     void approveCdpRequest(Long idSolicitud);
 }

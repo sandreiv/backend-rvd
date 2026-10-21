@@ -32,6 +32,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpSearchDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenSolicitudCdpDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CdpReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
@@ -240,6 +241,20 @@ public class CdpController {
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @Operation(
+        summary = "Obtiene los CDPs generados por presupuesto",
+        description = """
+                Consulta las solicitudes CDP registradas en TESORERIAV3 para la
+                unidad regional asociada a Vicerrectoria academica autenticada.
+                """
+    )
+    @GetMapping("/search-cdps")
+        public ResponseEntity<List<CdpSearchDTO>> searchCdpsTesoreriaV3(@RequestParam String numeroCdp, @RequestParam Long idUnidad, @RequestParam Long anioVigencia) {
+        
+        List<CdpSearchDTO> results = solicitudCdpService.searchCdpsTesoreriaV3(numeroCdp, idUnidad, anioVigencia);
+        return ResponseEntity.ok(results);
+    } 
 
     @Operation(
         summary = "Actualiza el estado y codigo de una solicitud CDP",

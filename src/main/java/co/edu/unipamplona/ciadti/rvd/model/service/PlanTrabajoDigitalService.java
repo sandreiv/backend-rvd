@@ -9,12 +9,17 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
+import java.util.List;
+
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
 
 public interface PlanTrabajoDigitalService {
     
     void savePtd(PtdSaveRequestDTO dto);
 
-    PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente);
+    PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario);
+
+    List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario);
 }

@@ -14,6 +14,7 @@ import org.mapstruct.Mapping;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActivityWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSavePayloadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PlanTrabajoDigitalEntity;
 
 @Mapper(componentModel = "spring")
@@ -30,4 +31,6 @@ public interface PlanTrabajoDigitalMapper {
     PlanTrabajoDigitalEntity toEntity(PtdSavePayloadDTO dto);
 
     ActivityWeightsDTO toActivityWeightsDTO(PlanTrabajoDigitalEntity entity);
+
+    PtdStatesProfessorsDTO toPtdStatesProfessorsDTO(PlanTrabajoDigitalEntity entity);
 }

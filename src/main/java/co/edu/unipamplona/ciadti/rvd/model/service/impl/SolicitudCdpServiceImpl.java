@@ -34,10 +34,12 @@ import co.edu.unipamplona.ciadti.rvd.config.security.AuthUserDetails;
 import co.edu.unipamplona.ciadti.rvd.config.security.SecurityUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpSearchDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpAdjuntoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.SolicitudCdpEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.SolicitudCdpRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.SolicitudCdpRepository;   
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.SearchCdpResultsTesoreriaV3Projection;
 import co.edu.unipamplona.ciadti.rvd.model.service.SolicitudCdpService;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
@@ -320,6 +322,28 @@ public class SolicitudCdpServiceImpl
         solicitudCdpRepository.save(solicitud);
 
         log.info("sendRequestToVice ===> Solicitud CDP actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CdpSearchDTO> searchCdpsTesoreriaV3(String numeroCdp, Long idUnidad, Long anioVigencia) {
+        requireRol(ROL_VICERRECTORIA_ACADEMICA);
+        log.info("approveCdpRequest ===> Buscando CDPs en TALENTOV3. numero={}, idUnidad={}, anio={}", numeroCdp, idUnidad, anioVigencia);
+
+        List<SearchCdpResultsTesoreriaV3Projection> projections = solicitudCdpRepository.searchCdpsTesoreriaV3(numeroCdp, idUnidad, anioVigencia);
+
+        log.info("approveCdpRequest ===> CDPs encontrados en TALENTOV3. cantidad={}", projections.size());
+        return projections.stream()
+            .map(cdp -> new CdpSearchDTO(
+                cdp.getIdRubro(),
+                cdp.getIdCdp(),
+                cdp.getNumero(),
+                cdp.getFecha(),
+                cdp.getVigencia(),
+                cdp.getArticulo(),
+                cdp.getDescripcion()
+            ))
+            .toList();
     }
 
     @Override

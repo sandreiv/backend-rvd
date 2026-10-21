@@ -15,5 +15,6 @@ public record PtdSavePayloadDTO(
     Long idDetalleCargaDocente,
     Long idDetalleNovedadCargaDocente,
     Long idTipoActividad,
-    Long idPersonaGeneral
+    Long idPersonaGeneral,
+    Long idPeriodoUniversitario
 ) {}

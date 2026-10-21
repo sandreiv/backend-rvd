@@ -61,6 +61,9 @@ public class PlanTrabajoDigitalEntity implements Serializable, Cloneable {
     @Column(name = "PEGE_ID")
     private Long idPersonaGeneral;
 
+    @Column(name = "PEUN_ID")
+    private Long idPeriodoUniversitario;
+
     @Column(name = "PTDI_NIVEL")
     private String nivel;
 
@@ -105,6 +108,7 @@ public class PlanTrabajoDigitalEntity implements Serializable, Cloneable {
                 ", idDetalleNovedadCargaDocente=" + idDetalleNovedadCargaDocente +
                 ", idTipoActividad=" + idTipoActividad +
                 ", idPersonaGeneral=" + idPersonaGeneral +
+                ", idPeriodoUniversitario=" + idPeriodoUniversitario +
                 ", nivel=" + nivel +
                 ", ponderado=" + ponderado +
                 ", estado=" + estado +
