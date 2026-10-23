@@ -4,8 +4,8 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 101MB
+      max-file-size: -1
+      max-request-size: -1
   
   datasource:
     url: jdbc:oracle:thin:@172.26.4.137:1521/XEPDB1?oracle.net.ENCODING=UTF8&oracle.net.legacyFormat=false
@@ -25,6 +25,10 @@ file:
   cdp:
     root-path: ${file.storage.root-path}
     path: ${file.storage.root-path}/archivos/cdp
+
+  ptd:
+    root-path: ${file.storage.root-path}
+    path: ${file.storage.root-path}/archivos/ptd
 
 
 # SpringDoc OpenAPI (Swagger)

@@ -102,6 +102,8 @@ import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadCriterioMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TipoActividadMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.TotalPreasignacionMapper;
 import co.edu.unipamplona.ciadti.rvd.mapper.UnidadMapper;
+import co.edu.unipamplona.ciadti.rvd.mapper.PublicHiringRecordMapper;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PublicHiringRecordDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
@@ -263,6 +265,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final DocenteCoordinacionMapper docenteCoordinacionMapper;
     private final DocenteEfectivoCoordinacionMapper docenteEfectivoCoordinacionMapper;
     private final InformacionDocenteContratacionMapper informacionDocenteContratacionMapper;
+    private final PublicHiringRecordMapper publicHiringRecordMapper;
     private final UnidadRepository unidadRepository;
     private final ProgramaRepository programaRepository;
     private final UnidadMapper unidadMapper;
@@ -861,8 +864,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion) {
-        log.debug("searchProfessor ===> Buscando docente. nombre={}, documento={}, idModalidad={}", nombre, documento, idModalidadContratacion);
+    public List<DocentePreasignacionDTO> searchProfessor(
+            String nombre,
+            String documento,
+            Long idModalidadContratacion,
+            Long idConvocatoria) {
+        log.debug("searchProfessor ===> Buscando docente. nombre={}, documento={}, idModalidad={}, idConvocatoria={}",
+                nombre, documento, idModalidadContratacion, idConvocatoria);
         String nombreParam = normalizeParam(nombre);
         String documentoParam = normalizeParam(documento);
         if (nombreParam == null && documentoParam == null) {
@@ -871,7 +879,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
         List<DocentePreasignacionDTO> result = docentePreasignacionMapper.toDtoList(
                 personaGeneralRepository.searchProfessorsForPreassignment(
-                        nombreParam, documentoParam, idModalidadContratacion));
+                        nombreParam, documentoParam, idModalidadContratacion, idConvocatoria));
                         
         log.info("searchProfessor ===> Docentes encontrados. total={}", result.size());
         return result;
@@ -1210,6 +1218,45 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 horasActividades.size());
         return result;
     }
+
+    @Override
+        @Transactional(readOnly = true)
+        public List<PublicHiringRecordDTO>
+        findPublicHiringRecords(
+                Long idPersonaGeneral) {
+
+        log.debug(
+                "findPublicHiringRecords ===> " +
+                "Consultando contrataciones del docente. " +
+                "idPersonaGeneral={}",
+                idPersonaGeneral
+        );
+
+        if (idPersonaGeneral == null) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El id de la persona es obligatorio"
+                );
+        }
+
+        List<PublicHiringRecordDTO> result =
+                publicHiringRecordMapper.toDtoList(
+                        cargaDocenteRepository
+                                .findPublicHiringRecordsByProfessor(
+                                        idPersonaGeneral
+                                )
+                );
+
+        log.info(
+                "findPublicHiringRecords ===> " +
+                "Contrataciones públicas consultadas. " +
+                "idPersonaGeneral={}, total={}",
+                idPersonaGeneral,
+                result.size()
+        );
+
+        return result;
+        }
 
     @Override
     @Transactional(readOnly = true)
