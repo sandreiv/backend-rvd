@@ -44,6 +44,7 @@
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  * 13/10/2026 - Andrés Hernández - Consulta de las actividades para mostrar en el PTD
  * 15/10/2026 - Andrés Hernández - Las novedades ahora se relacionan a la modalidad de contratación
+ * 21/10/2026 - Andrés Hernández - Busqueda de coordinaciones de contratación permiten revisión por Talento Humano
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -152,7 +153,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialCargaDocenteObservacionD
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.CategoriaModalidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
@@ -169,7 +169,6 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepo
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaModalidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
@@ -228,6 +227,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String ROL_DECANO = "Decano";
     private static final String ROL_DESARROLLO = "Desarrollo academico";
     private static final String ROL_VICERRECTORIA = "Vicerrectoria academica";
+    private static final String ROL_TALENTO = "Talento Humano";
 
     private static final int ESCALA_MONETARIA = 2;
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
@@ -246,7 +246,6 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final PuntosVigenciaRepository puntosVigenciaRepository;
     private final PuntosCategoriaRepository puntosCategoriaRepository;
     private final CategoriaCatedraticoRepository categoriaCatedraticoRepository;
-    private final CategoriaModalidadRepository categoriaModalidadRepository;
     private final EscalafonRepository escalafonRepository;
     private final CoordinacionMapper coordinacionMapper;
     private final SolicitudCdpMapper solicitudCdpMapper;
@@ -342,10 +341,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             Long idConvocatoria,
             Long idPeriodoUniversidad) {
         AuthUserDetails user = requireListadoUser();
-        if (!hasRole(user, ROL_COORDINADOR)) {
+
+        boolean coordinador = hasRole(user, ROL_COORDINADOR);
+        boolean talento = hasRole(user, ROL_TALENTO);
+        if (!coordinador && !talento) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "El listado de coordinaciones de contratación requiere rol Coordinador");
+                    "El listado de coordinaciones de contratación requiere rol Coordinador o Talento Humano");
         }
 
         Long idPersona = user.getIdPersonaGeneral();
@@ -361,12 +363,24 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
 
         List<CoordinacionListadoProjection> projections;
-        if (idConvocatoria != null) {
-            projections = coordinacionRepository
-                    .findByConvocatoriaForHiringCoordinator(idConvocatoria, idPersona);
+        // Talento consulta todas las coordinaciones
+        if (talento) {
+            if (idConvocatoria != null) {
+                projections = coordinacionRepository
+                    .findAllByConvocatoriaForHiring(idConvocatoria);
+            } else {
+                projections = coordinacionRepository
+                    .findAllByPeriodoForHiring(idPeriodoUniversidad);
+            }
+        // Coordinador consulta aquellas en donde esta relacionado
         } else {
-            projections = coordinacionRepository
+            if (idConvocatoria != null) {
+                projections = coordinacionRepository
+                    .findByConvocatoriaForHiringCoordinator(idConvocatoria, idPersona);
+            } else {
+                projections = coordinacionRepository
                     .findByPeriodoForHiringCoordinator(idPeriodoUniversidad, idPersona);
+            }
         }
 
         List<CoordinacionDTO> result = coordinacionMapper.toDtoList(projections);
@@ -406,8 +420,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (user.getIdPersonaGeneral() == null) {
             throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
         }
-        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA)) {
-            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano, Desarrollo academico o Vicerrectoria academica");
+        if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA) && !hasRole(user, ROL_TALENTO)) {
+            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano, Desarrollo academico, Vicerrectoria academica o Talento Humano");
         }
         return user;
     }
