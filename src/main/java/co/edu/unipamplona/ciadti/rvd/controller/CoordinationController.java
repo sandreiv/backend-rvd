@@ -187,8 +187,13 @@ public class CoordinationController {
     public ResponseEntity<List<DocentePreasignacionDTO>> searchProfessor(
         @RequestParam(required = false) String nombre,  
         @RequestParam(required = false) String documento, 
-        @RequestParam(required = true) Long idModalidadContratacion) {
-        List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(nombre, documento, idModalidadContratacion);
+        @RequestParam(required = true) Long idModalidadContratacion,
+        @RequestParam(required = false) Long idConvocatoria) {
+        List<DocentePreasignacionDTO> docentes = coordinacionService.searchProfessor(
+                nombre,
+                documento,
+                idModalidadContratacion,
+                idConvocatoria);
         return new ResponseEntity<>(docentes, HttpStatus.OK);
     }
 

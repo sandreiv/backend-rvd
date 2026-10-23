@@ -107,6 +107,15 @@ public interface PersonaGeneralRepository
                     FROM RVD.CARGADOCENTE CADO2
                     WHERE CADO2.PEGE_ID = PEGE.PEGE_ID
                         AND CADO2.MOCO_ID = :idModalidadContratacion
+                        AND (
+                            :idConvocatoria IS NULL
+                            OR EXISTS (
+                                SELECT 1
+                                FROM RVD.CARGA CARGF
+                                WHERE CARGF.CARG_ID = CADO2.CARG_ID
+                                    AND CARGF.CONV_ID = :idConvocatoria
+                            )
+                        )
                 )
             LEFT JOIN RVD.CARGA CARG
                 ON CARG.CARG_ID = CADO.CARG_ID
@@ -169,7 +178,8 @@ public interface PersonaGeneralRepository
     List<DocentePreasignacionProjection> searchProfessorsForPreassignment(
             @Param("nombre") String nombre,
             @Param("documento") String documento,
-            @Param("idModalidadContratacion") Long idModalidadContratacion);
+            @Param("idModalidadContratacion") Long idModalidadContratacion,
+            @Param("idConvocatoria") Long idConvocatoria);
 
     @Query(value = """
             SELECT
