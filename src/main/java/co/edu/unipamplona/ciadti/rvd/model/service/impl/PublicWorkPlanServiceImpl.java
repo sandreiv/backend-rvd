@@ -57,6 +57,7 @@ public class PublicWorkPlanServiceImpl
                 implements PublicWorkPlanService {
 
         private static final ZoneId ZONA = ZoneId.of("America/Bogota");
+        private static final String ROL_COORDINADOR = "Coordinador";
 
         private final PersonaGeneralRepository personaGeneralRepository;
 
@@ -483,8 +484,9 @@ public class PublicWorkPlanServiceImpl
                                                                                 detalles));
 
                 ObservacionPtdEntity observacionEntity = observacionPtdRepository
-                                .findByIdCargaDocente(
-                                                idCargaDocente);
+                                .findByIdCargaDocenteAndPegeRole(
+                                                idCargaDocente,
+                                                ROL_COORDINADOR);
 
                 String observacion = null;
 
