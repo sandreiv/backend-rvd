@@ -21,6 +21,7 @@ public interface ObservacionPtdRepository extends JpaRepository<ObservacionPtdEn
             SELECT OBPT.*
             FROM RVD.OBSERVACIONPTD OBPT
             WHERE OBPT.CADO_ID = :idCargaDocente
+                AND OBPT_PEGEROL = :rolPersonaRegistra
             """, nativeQuery = true)
-    ObservacionPtdEntity findByIdCargaDocente(@Param("idCargaDocente") Long idCargaDocente);  
+    ObservacionPtdEntity findByIdCargaDocenteAndPegeRole(@Param("idCargaDocente") Long idCargaDocente, @Param("rolPersonaRegistra") String rolPersonaRegistra);
 }
