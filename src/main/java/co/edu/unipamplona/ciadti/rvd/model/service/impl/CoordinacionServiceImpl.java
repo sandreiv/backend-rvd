@@ -845,8 +845,13 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion) {
-        log.debug("searchProfessor ===> Buscando docente. nombre={}, documento={}, idModalidad={}", nombre, documento, idModalidadContratacion);
+    public List<DocentePreasignacionDTO> searchProfessor(
+            String nombre,
+            String documento,
+            Long idModalidadContratacion,
+            Long idConvocatoria) {
+        log.debug("searchProfessor ===> Buscando docente. nombre={}, documento={}, idModalidad={}, idConvocatoria={}",
+                nombre, documento, idModalidadContratacion, idConvocatoria);
         String nombreParam = normalizeParam(nombre);
         String documentoParam = normalizeParam(documento);
         if (nombreParam == null && documentoParam == null) {
@@ -855,7 +860,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         }
         List<DocentePreasignacionDTO> result = docentePreasignacionMapper.toDtoList(
                 personaGeneralRepository.searchProfessorsForPreassignment(
-                        nombreParam, documentoParam, idModalidadContratacion));
+                        nombreParam, documentoParam, idModalidadContratacion, idConvocatoria));
                         
         log.info("searchProfessor ===> Docentes encontrados. total={}", result.size());
         return result;
