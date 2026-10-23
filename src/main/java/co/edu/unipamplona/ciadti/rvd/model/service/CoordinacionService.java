@@ -92,7 +92,7 @@ public interface CoordinacionService {
 
     List<DocentePlantaCoordinacionDTO> listCareerProfessors(Long idCoordinacion);
 
-    List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion);
+    List<DocentePreasignacionDTO> searchProfessor(String nombre, String documento, Long idModalidadContratacion, Long idConvocatoria);
 
     List<DocentePreasignacionDTO> searchFreeProfessor(String nombre, String documento, Long idModalidadContratacion);
 

@@ -122,6 +122,38 @@ public interface TipoActividadesRepository
             """, nativeQuery = true)
     List<TipoActividadAdministracionListadoProjection> findAdministrationParentList();
 
+    /**
+     * Tipos de actividad padre habilitables en una restricción de carga.
+     *
+     * A diferencia de findAdministrationParentList(), excluye las actividades marcadas como PTD
+     * (TIAC_PTD = '1'), que no admiten rango de horas por modalidad. El COALESCE mantiene
+     * visibles los registros históricos con TIAC_PTD en NULL.
+     */
+    @Query(value = """
+            SELECT
+                TIAC.TIAC_ID AS id,
+                TIAC.TIAC_NOMBRE AS nombre,
+                TIAC.TIAC_DESCRIPCION AS descripcion,
+                TIAC.TIAC_CODIGO AS codigo,
+                TIAC.TIAC_COMPONENTE AS componente,
+                TIAC.TIAC_MINIMOHORAS AS minimoHoras,
+                TIAC.TIAC_MAXIMOHORAS AS maximoHoras,
+                TIAC.TIAC_ORDEN AS orden,
+                TIAC.TIAC_PTD AS ptd,
+                TIAC.TIAC_ESTADO AS estado
+            FROM RVD.TIPOACTIVIDADES TIAC
+            WHERE TIAC.TIAC_IDPADRE IS NULL
+                AND COALESCE(TIAC.TIAC_PTD, '0') <> '1'
+            ORDER BY
+                CASE
+                    WHEN REGEXP_LIKE(NVL(TIAC.TIAC_ORDEN, '0'), '^[0-9]+$')
+                    THEN TO_NUMBER(TIAC.TIAC_ORDEN)
+                    ELSE 999999
+                END,
+                TIAC.TIAC_NOMBRE
+            """, nativeQuery = true)
+    List<TipoActividadAdministracionListadoProjection> findLoadRestrictionParentList();
+
     @Query(value = """
             SELECT
                 TIAC.TIAC_ID AS id,
