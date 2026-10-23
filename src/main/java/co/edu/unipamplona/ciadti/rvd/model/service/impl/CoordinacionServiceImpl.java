@@ -45,6 +45,8 @@
  * 13/10/2026 - Andrés Hernández - Consulta de las actividades para mostrar en el PTD
  * 15/10/2026 - Andrés Hernández - Las novedades ahora se relacionan a la modalidad de contratación
  * 21/10/2026 - Andrés Hernández - Busqueda de coordinaciones de contratación permiten revisión por Talento Humano
+ * 23/10/2026 - Andrés Hernández - Vice academica ahora consulta solicitudes en 'VICERRECTORIA ACADEMICA' y 'CDP APROBADO'.
+ * La información del CDP es del primer registro que encuentre con ese numero
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -3637,15 +3639,16 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El periodo universitario es obligatorio");
         }
 
-        String estadoSolicitud;
+        List<String> estadoSolicitud = new ArrayList<>();
         if (hasRole(user, ROL_DESARROLLO)) {
-            estadoSolicitud = "DESARROLLO ACADEMICO";
+            estadoSolicitud.add("DESARROLLO ACADEMICO");
         } else {
-            estadoSolicitud = "VICERRECTORIA ACADEMICA";
+            estadoSolicitud.addAll(
+                List.of("VICERRECTORIA ACADEMICA", "CDP APROBADO")
+            );
         }
 
         List<ResumenSolicitudCdpProjection> projections = coordinacionRepository.findByPeriodoForCdpAcademics(idPeriodoUniversidad, estadoSolicitud);
-
         List<ResumenSolicitudCdpDTO> result = solicitudCdpMapper.toDtoList(projections);
         
         log.info(

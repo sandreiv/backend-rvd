@@ -1090,9 +1090,19 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 SOCD.SOCD_OBSERVACION AS observacionSolicitud,
                 SOCD.SOCD_ADJUNTO AS adjuntoSolicitud,
                 SOCD.SOCD_FECHACAMBIO AS fechaCambioSolicitud,
+                SOCD.SOCD_NUMERO AS numeroCdpSolicitud,
                 PEUN.PEUN_ID AS idPeriodoUniversidad,
                 PEUN.PEUN_ANO AS anioPeriodo,
-                PEUN.PEUN_PERIODO AS descripcionPeriodo
+                PEUN.PEUN_PERIODO AS descripcionPeriodo,
+
+                -- Info CDP del esquema TESORERIA
+                TES.idRubro AS idRubroTesoreria,
+                TES.idCdp AS idCdpTesoreria,
+                TES.numero AS numeroCdpTesoreria,
+                TES.fecha AS fechaCdpTesoreria,
+                TES.vigencia AS vigenciaCdpTesoreria,
+                TES.articulo AS articuloCdpTesoreria,
+                TES.descripcion AS descripcionCdpTesoreria
             FROM RVD.COORDINACIONES COOR
             INNER JOIN RVD.SOLICITUDCDP SOCD
                 ON SOCD.COOR_ID = COOR.COOR_ID
@@ -1106,8 +1116,59 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON METO.METO_ID = COOR.METO_ID
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
+            
+            -- Busqueda CDP en esquema TESORERIA
+            LEFT JOIN (
+                SELECT
+                    UNID_ID,
+                    idRubro,
+                    idCdp,
+                    numero,
+                    fecha,
+                    vigencia,
+                    articulo,
+                    descripcion
+                FROM (
+                    SELECT
+                        CDP.UNID_ID,
+                        CDP.CDP_NUMERO AS numero,
+                        CDP.CDP_FECHAEXPEDICION AS fecha,
+                        CDP.CDP_VIGENCIA AS vigencia,
+                        CDP.CDP_CONCEPTO AS descripcion,
+                        RUVI.RUVI_CODIGORUBRO AS articulo,
+                        RUBR.RUBR_ID AS idRubro,
+                        CDP.CDP_ID AS idCdp,
+
+                        ROW_NUMBER() OVER (
+                            PARTITION BY
+                                CDP.CDP_NUMERO,
+                                CDP.CDP_VIGENCIA,
+                                CDP.UNID_ID
+                            ORDER BY RUBR.RUBR_ID ASC
+                        ) AS rn
+
+                    FROM TESORERIAV3.CDP CDP
+
+                    INNER JOIN TESORERIAV3.CDPRUBRO CDRU
+                        ON CDRU.CDP_ID = CDP.CDP_ID
+
+                    INNER JOIN TESORERIAV3.PRESUPUESTOEGRESOINVERSION PREI
+                        ON PREI.PREI_ID = CDRU.PREI_ID
+
+                    INNER JOIN TESORERIAV3.RUBROVIGENCIA RUVI
+                        ON RUVI.RUVI_ID = PREI.RUVI_ID
+
+                    INNER JOIN TESORERIAV3.RUBRO RUBR
+                        ON RUBR.RUBR_ID = RUVI.RUBR_ID
+                )
+                WHERE rn = 1
+            ) TES
+                ON TES.numero = SOCD.SOCD_NUMERO
+                AND TES.vigencia = PEUN.PEUN_ANO
+                AND TES.UNID_ID = UNID_REG.UNID_ID
+            
             WHERE COOR.COOR_IDPADRE IS NULL
-                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = :estadoSolicitud
+                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) IN (:estadosSolicitud)
                 AND SOCD.PEUN_ID = PEUN.PEUN_ID
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
@@ -1116,7 +1177,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             """, nativeQuery = true)
     List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademics(
         @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
-        @Param("estadoSolicitud") String estadoSolicitud); 
+        @Param("estadosSolicitud") List<String> estadosSolicitud); 
 
     @Query(value = """
             SELECT

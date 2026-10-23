@@ -20,5 +20,6 @@ public record ResumenSolicitudCdpDTO(
     MetodologiaDTO metodologia,
     ModalidadDTO modalidad,
     PeriodoUniversidadDTO periodoUniversidad,
-    SolicitudCdpListadoDTO solicitud
+    SolicitudCdpListadoDTO solicitud,
+    CdpSearchDTO cdpTesoreria
 ) {}

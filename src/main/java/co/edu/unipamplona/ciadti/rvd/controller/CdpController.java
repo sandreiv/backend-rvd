@@ -7,6 +7,7 @@
  * Modificaciones:
  * 31/08/2026 - Daniel Arias - Creación inicial
  * 04/09/2026 - Exclusion de once meses heredados en segundo periodo
+ * 23/10/2026 - Andrés Hernández - Aprobar y desaprobar la asociación del CDP por Vicerrectoria
  */
 
 package co.edu.unipamplona.ciadti.rvd.controller;
@@ -24,11 +25,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unipamplona.ciadti.rvd.model.service.SolicitudCdpService;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.AprobarCdpBodyDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpContextDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
@@ -257,21 +260,30 @@ public class CdpController {
     } 
 
     @Operation(
-        summary = "Actualiza el estado y codigo de una solicitud CDP",
+        summary = "Actualiza el estado y cdp de una solicitud CDP",
         description = """
-                Actualiza una solicitud CDP para la facultad
-                asociada a Vicerrectoria academica autenticada,
-                cambiando su estado de envio a CDP aprobado y
-                generando su codigo de identificación.
+                Actualiza una solicitud CDP para la facultad asociada a Vicerrectoria academica autenticada,
+                cambiando su estado de envio a CDP aprobado y guardando la información del CDP desde TESORERIA V3.
                 """
     )
-    @PutMapping("/approve-cdp-request/{idSolicitud}")
-    public ResponseEntity<Void> approveCdpRequest(
-        @PathVariable Long idSolicitud) {
+    @PutMapping("/approve-cdp-request")
+    public ResponseEntity<Void> approveCdpRequest(@RequestBody AprobarCdpBodyDTO dto) {
+        solicitudCdpService.approveCdpRequest(dto);
+        return ResponseEntity.ok().build();
+    }
 
-        solicitudCdpService.approveCdpRequest(idSolicitud);
-
-        return ResponseEntity.status(HttpStatus.OK).build();
+    @Operation(
+        summary = "Actualiza el estado y cdp de una solicitud CDP",
+        description = """
+                Actualiza una solicitud CDP para la facultad asociada a Vicerrectoria academica autenticada,
+                cambiando su estado de envio a Vicerrectoria academica y limpiando la información del CDP desde TESORERIA V3.
+                Esto permite relacionar nuevamente un CDP desde TESORERIAV3 en caso de fallo al seleccionarlo.
+                """
+    )
+    @PutMapping("/disapprove-cdp-request/{idSolicitud}")
+    public ResponseEntity<Void> disapproveCdpRequest(@PathVariable Long idSolicitud) {
+        solicitudCdpService.disapproveCdpRequest(idSolicitud);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(

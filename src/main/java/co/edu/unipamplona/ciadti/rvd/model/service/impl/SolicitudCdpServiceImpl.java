@@ -6,6 +6,7 @@
  * Fecha de creación: 17/07/2026
  * Modificaciones:
  * 17/07/2026 - Daniel Arias - Creación inicial
+ * 23/10/2026 - Andrés Hernández - Aprobar y desaprobar la asociación del CDP por Vicerrectoria
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
@@ -35,6 +36,7 @@ import co.edu.unipamplona.ciadti.rvd.config.security.SecurityUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpSearchDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.AprobarCdpBodyDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpAdjuntoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.SolicitudCdpEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CoordinacionRepository;
@@ -214,6 +216,8 @@ public class SolicitudCdpServiceImpl
 
         solicitud.setNumero(null);
 
+        solicitud.setIdCdp(null);
+
         solicitud.setRegistradoPor(
                 RegistradoPorUtils.value(
                         Accion.INSERT
@@ -348,7 +352,47 @@ public class SolicitudCdpServiceImpl
 
     @Override
     @Transactional
-    public void approveCdpRequest(Long idSolicitud) {
+    public void approveCdpRequest(AprobarCdpBodyDTO dto) {
+        requireRol(ROL_VICERRECTORIA_ACADEMICA);
+
+        if (dto.idSolicitud() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El ID de la solicitud es obligatorio");
+        }
+
+        SolicitudCdpEntity solicitud = solicitudCdpRepository.findById(dto.idSolicitud()).orElseThrow(() -> {
+            return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud CDP con id " + dto.idSolicitud());
+        });
+        if (ESTADO_CDP_APROBADO.equals(solicitud.getEstado())) {
+            log.info(
+                "approveCdpRequest ===> La solicitud CDP ya se encuentra aprobada por vicerrectoria academica. idSolicitud={}", dto.idSolicitud()
+            );
+            return;
+        }
+        if (solicitudCdpRepository.existsByNumero(dto.numero())) {
+            throw new ApiException(
+                HttpStatus.CONFLICT,
+                "Ya existe una solicitud CDP asignada al número ingresado"
+            );
+        }
+
+        solicitud.setEstado(ESTADO_CDP_APROBADO);
+        solicitud.setNumero(dto.numero());
+        solicitud.setIdCdp(dto.idCdp());
+        solicitud.setRegistradoPor(
+            RegistradoPorUtils.value(
+                Accion.UPDATE
+            )
+        );
+        solicitud.setFechaCambio(new Date());
+
+        solicitudCdpRepository.save(solicitud);
+
+        log.info("approveCdpRequest ===> Solicitud CDP actualizada. id={}, estado={}, numero={}", dto.idSolicitud(), ESTADO_CDP_APROBADO, dto.numero());
+    }
+
+    @Override
+    @Transactional
+    public void disapproveCdpRequest(Long idSolicitud) {
         requireRol(ROL_VICERRECTORIA_ACADEMICA);
 
         if (idSolicitud == null) {
@@ -359,17 +403,16 @@ public class SolicitudCdpServiceImpl
             return new ApiException(HttpStatus.NOT_FOUND, "No existe la solicitud CDP con id " + idSolicitud);
         });
 
-        if (ESTADO_CDP_APROBADO.equals(solicitud.getEstado())) {
+        if (ESTADO_VICERRECTORIA_ACADEMICA.equals(solicitud.getEstado())) {
             log.info(
-                "approveCdpRequest ===> La solicitud CDP ya se encuentra aprobada por vicerrectoria academica. idSolicitud={}", idSolicitud
+                "disapproveCdpRequest ===> La solicitud CDP ya se encuentra en estado vicerrectoria academica. idSolicitud={}", idSolicitud
             );
             return;
         }
 
-        String numeroCdp = generateRandomCdpCode();
-
-        solicitud.setEstado(ESTADO_CDP_APROBADO);
-        solicitud.setNumero(numeroCdp);
+        solicitud.setEstado(ESTADO_VICERRECTORIA_ACADEMICA);
+        solicitud.setNumero(null);
+        solicitud.setIdCdp(null);
         solicitud.setRegistradoPor(
             RegistradoPorUtils.value(
                 Accion.UPDATE
@@ -379,7 +422,7 @@ public class SolicitudCdpServiceImpl
 
         solicitudCdpRepository.save(solicitud);
 
-        log.info("approveCdpRequest ===> Solicitud CDP actualizada. id={}, estado={}, numero={}", idSolicitud, ESTADO_CDP_APROBADO, numeroCdp);
+        log.info("disapproveCdpRequest ===> Solicitud CDP actualizada. id={}, estado={}", idSolicitud, ESTADO_VICERRECTORIA_ACADEMICA);
     }
 
     private List<CdpAdjuntoDTO> saveAttachments(
@@ -657,10 +700,5 @@ public class SolicitudCdpServiceImpl
                         "El identificador recibido no es válido"
                 );
         }
-    }
-
-    private String generateRandomCdpCode() {
-        int number = (int) (Math.random() * 1_000_000);
-        return String.format("%06d", number);
     }
 }
