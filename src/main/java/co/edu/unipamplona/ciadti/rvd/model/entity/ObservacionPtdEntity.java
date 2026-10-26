@@ -42,7 +42,13 @@ public class ObservacionPtdEntity {
     private Long idPersonaGeneralRegistra;
 
     @Column(name = "OBPT_TEXTO")
-    String texto;
+    private String texto;
+
+    @Column(name = "OBPT_RETROALIMENTACION")
+    private String retroalimentacion;
+
+    @Column(name = "OBPT_PEGEROL")
+    private String rolPersonaGeneralRegistra;
 
     @Column(name = "OBPT_REGISTRADOPOR")
     private String registradoPor;
@@ -70,6 +76,8 @@ public class ObservacionPtdEntity {
                 ", idCargaDocente=" + idCargaDocente +
                 ", idPersonaGeneralRegistra=" + idPersonaGeneralRegistra +
                 ", texto=" + texto +
+                ", retroalimentacion=" + retroalimentacion +
+                ", rolPersonaGeneralRegistra=" + rolPersonaGeneralRegistra +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

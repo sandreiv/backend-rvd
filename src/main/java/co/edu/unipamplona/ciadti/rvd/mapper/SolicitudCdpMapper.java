@@ -6,6 +6,7 @@
  * Fecha de creación: 03/09/2026
  * Modificaciones:
  * 03/09/2026 - Andrés Hernández - Creación inicial
+ * 23/10/2026 - Andrés Hernández - Mapeo de información del CDP asociada desde TESORERIA
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.AnexosSolicitudCdpDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.CdpSearchDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MetodologiaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
@@ -39,6 +41,7 @@ public interface SolicitudCdpMapper {
     @Mapping(target = "metodologia", source = ".", qualifiedByName = "toMetodologia")
     @Mapping(target = "modalidad", source = ".", qualifiedByName = "toModalidad")
     @Mapping(target = "solicitud", source = ".", qualifiedByName = "toSolicitud")
+    @Mapping(target = "cdpTesoreria", source = ".", qualifiedByName = "toCdpTesoreria")
     @Mapping(target = "periodoUniversidad", source = ".", qualifiedByName = "toPeriodo")
     ResumenSolicitudCdpDTO toDto(ResumenSolicitudCdpProjection projection);
 
@@ -82,6 +85,23 @@ public interface SolicitudCdpMapper {
                 projection.getObservacionSolicitud(),
                 toAnexos(projection.getAdjuntoSolicitud()),
                 projection.getFechaCambioSolicitud());
+    }
+
+    @Named("toCdpTesoreria")
+    default CdpSearchDTO toCdpTesoreria(ResumenSolicitudCdpProjection projection) {
+        if (projection.getIdCdpTesoreria() == null) {
+            return null;
+        }
+
+        return new CdpSearchDTO(
+                projection.getIdRubroTesoreria(),
+                projection.getIdCdpTesoreria(),
+                projection.getNumeroCdpTesoreria(),
+                projection.getFechaCdpTesoreria(),
+                projection.getVigenciaCdpTesoreria(),
+                projection.getArticuloCdpTesoreria(),
+                projection.getDescripcionCdpTesoreria()
+        );
     }
 
     @Named("toPeriodo")

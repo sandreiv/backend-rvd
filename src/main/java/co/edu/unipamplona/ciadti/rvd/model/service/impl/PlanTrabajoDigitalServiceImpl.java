@@ -9,6 +9,7 @@
  * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD y su observación
  * 14/10/2026 - Andrés Hernández - Visualización del PTD con su ponderación y observación
  * 20/10/2026 - Andrés Hernández - Busqueda de estados del PTD por persona y filtrado general por periodo universitario
+ * 23/10/2026 - Andrés Hernández - Guardar el PTD y ver su info trae las observaciones hechas por el Coordinador
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -16,6 +17,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
+
+    private static final String ROL_COORDINADOR = "Coordinador";
     
     private final PlanTrabajoDigitalRepository planTrabajoDigitalRepository;
     private final ObservacionPtdRepository observacionPtdRepository;
@@ -74,6 +78,12 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
                     "El token no trae idPersona"
             );
         }
+        if (!hasRole(user, ROL_COORDINADOR)) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "Para guardar el PTD se requiere rol Coordinador"
+            );
+        }
 
         validateCreation(dto.registros().getFirst());
         validatePtdSaveDto(dto.registros());
@@ -97,6 +107,8 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
         observacion.setIdCargaDocente(dto.observacion().idCargaDocente());
         observacion.setIdPersonaGeneralRegistra(user.getIdPersonaGeneral());
         observacion.setTexto(dto.observacion().descripcion());
+        observacion.setRetroalimentacion(null);
+        observacion.setRolPersonaGeneralRegistra(ROL_COORDINADOR);
         observacion.setRegistradoPor(registradoPor);
         observacion.setFechaCambio(fechaActual);
 
@@ -110,7 +122,7 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
     public PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario) {
         log.info("getInfoPtdWithWeights ===> Obteniendo información del PTD. idPersona={}, idCargaDocente={}", idPersonaGeneral, idCargaDocente);
 
-        ObservacionPtdEntity observacionEntity = observacionPtdRepository.findByIdCargaDocente(idCargaDocente);
+        ObservacionPtdEntity observacionEntity = observacionPtdRepository.findByIdCargaDocenteAndPegeRole(idCargaDocente, ROL_COORDINADOR);
         List<ActivityWeightsDTO> actividades = planTrabajoDigitalRepository
             .findActivityWeightsByPersona(idPersonaGeneral, idPeriodoUniversitario)
             .stream()
@@ -212,5 +224,11 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
         if (sumaPonderaciones != 100) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La suma de las ponderaciones por actividad debe ser igual a 100");
         }
+    }
+
+    private static boolean hasRole(AuthUserDetails user, String role) {
+        return user.getRoles().stream()
+            .filter(Objects::nonNull)
+            .anyMatch(item -> role.equalsIgnoreCase(item.trim()));
     }
 }

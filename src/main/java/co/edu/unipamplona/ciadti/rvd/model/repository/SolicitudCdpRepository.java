@@ -27,6 +27,8 @@ public interface SolicitudCdpRepository
             Long idPeriodoUniversitario
     );
 
+    boolean existsByNumero(String numero);
+
     Optional<SolicitudCdpEntity>
             findByIdCoordinacionAndIdPeriodoUniversitario(
                     Long idCoordinacion,
@@ -52,8 +54,9 @@ public interface SolicitudCdpRepository
             INNER JOIN TESORERIAV3.RUBRO RUBR
                 ON RUBR.RUBR_ID = RUVI.RUBR_ID
             WHERE CDP.CDP_NUMERO = :numeroCdp
-            AND CDP.CDP_VIGENCIA = :anioVigencia
-            AND CDP.UNID_ID = :idUnidad
+                AND CDP.CDP_VIGENCIA = :anioVigencia
+                AND CDP.UNID_ID = :idUnidad
+            ORDER BY RUBR.RUBR_ID ASC
             """, nativeQuery = true)
     List<SearchCdpResultsTesoreriaV3Projection> searchCdpsTesoreriaV3(
         String numeroCdp,

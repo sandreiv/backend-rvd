@@ -83,4 +83,10 @@ public interface PublicWorkPlanService {
             String idArchivo
     );
 
+    void decideDigitalWorkPlan(
+            Long idCargaDocente,
+            Long idPersonaGeneral,
+            String nuevoEstado
+    );
+
 }

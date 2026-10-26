@@ -253,6 +253,86 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
     List<CoordinacionListadoProjection> findByConvocatoriaForHiringCoordinator(
             @Param("convId") Long convId,
             @Param("idPersonaGeneral") Long idPersonaGeneral);
+    
+    @Query(value = """
+            SELECT
+                COOR.COOR_ID AS idCoordinacion,
+                COOR.COOR_NOMBRE AS nombreCoordinacion,
+                COOR.COOR_DESCRIPCION AS descripcionCoordinacion,
+                COOR.COOR_CODIGO AS codigo,
+                COOR.COOR_ESACADEMICA AS esAcademica,
+                UNID_REG.UNID_ID AS idUnidadRegional,
+                UNID_REG.UNID_NOMBRE AS nombreUnidadRegional,
+                UNID_AREA.UNID_ID AS idUnidadArea,
+                UNID_AREA.UNID_NOMBRE AS nombreUnidadArea,
+                METO.METO_ID AS idMetodologia,
+                METO.METO_DESCRIPCION AS descripcionMetodologia,
+                MODA.MODA_ID AS idModalidad,
+                MODA.MODA_DESCRIPCION AS descripcionModalidad,
+                CONV.CONV_ID AS idConvocatoria,
+                CONV.CONV_NOMBRE AS nombreConvocatoria,
+                CONV.CONV_DESCRIPCION AS descripcionConvocatoria,
+                CONV.CONV_ESTADO AS estadoConvocatoria,
+                NIED.NIED_ID AS idNivelEducativo,
+                NIED.NIED_DESCRIPCION AS descripcionNivelEducativo,
+                PEUN.PEUN_ID AS idPeriodoUniversidad,
+                PEUN.PEUN_ANO AS anioPeriodo,
+                PEUN.PEUN_PERIODO AS descripcionPeriodo,
+                CARG.CARG_ID AS idCarga,
+                CARG.CARG_VALOR AS valor,
+                CARG.CARG_VALORAUTORIZADO AS valorAutorizado,
+                ESCA.ESCA_ID AS idEstadoCarga,
+                ESCA.ESCA_NOMBRE AS nombreEstadoCarga,
+                ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga,
+                MOCO.MOCO_ID AS idModalidadContratacion,
+                MOCO.MOCO_NOMBRE AS nombreModalidadContratacion,
+                CECO.CECO_ID AS idCentroCosto,
+                CECO.CECO_DESCRIPCION AS descripcionCentroCosto,
+                CAST('0' AS VARCHAR2(1)) AS canEditPreassignment,
+                CAST('READ_ONLY' AS VARCHAR2(30)) AS editionMode,
+                CAST(NULL AS VARCHAR2(4000)) AS editBlockReason
+            FROM RVD.CONVOCATORIA CONTR
+            INNER JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CONTR.CONV_IDRELACION
+            INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
+                ON NIED.NIED_ID = CONV.NIED_ID
+            INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
+            LEFT JOIN RVD.CONVOCATORIATIPOCONTRATACION COTC
+                ON COTC.CONV_ID = CONV.CONV_ID
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = COTC.MOCO_ID
+            INNER JOIN RVD.CARGA CARG
+                ON CARG.CONV_ID = CONV.CONV_ID
+            INNER JOIN RVD.ESTADOCARGA ESCA
+                ON ESCA.ESCA_ID = CARG.ESCA_ID
+            INNER JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+            INNER JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            INNER JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            INNER JOIN ACADEMICO.METODOLOGIA METO
+                ON METO.METO_ID = COOR.METO_ID
+            INNER JOIN ACADEMICO.MODALIDAD MODA
+                ON MODA.MODA_ID = COOR.MODA_ID
+            LEFT JOIN RVD.ASIGNARCENTROCOSTO ASCC
+                ON ASCC.COOR_ID = COOR.COOR_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO CECO
+                ON CECO.CECO_ID = ASCC.CECO_ID
+            WHERE CONTR.CONV_ID = :convId
+            AND CONTR.CONV_ESTADO = '1'
+            AND CONTR.CONV_CONTRATACION = '1'
+            AND CONV.CONV_ESTADO = '1'
+            AND NVL(CONV.CONV_CONTRATACION, '0') = '0'
+            AND UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'AVAL DESARROLLO'
+            ORDER BY
+                UNID_REG.UNID_NOMBRE,
+                UNID_AREA.UNID_NOMBRE,
+                COOR.COOR_NOMBRE,
+                MOCO.MOCO_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionListadoProjection> findAllByConvocatoriaForHiring(@Param("convId") Long convId);
 
     @Query(value = """
             SELECT
@@ -338,6 +418,86 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
     List<CoordinacionListadoProjection> findByPeriodoForHiringCoordinator(
             @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
             @Param("idPersonaGeneral") Long idPersonaGeneral);
+    
+    @Query(value = """
+            SELECT
+                COOR.COOR_ID AS idCoordinacion,
+                COOR.COOR_NOMBRE AS nombreCoordinacion,
+                COOR.COOR_DESCRIPCION AS descripcionCoordinacion,
+                COOR.COOR_CODIGO AS codigo,
+                COOR.COOR_ESACADEMICA AS esAcademica,
+                UNID_REG.UNID_ID AS idUnidadRegional,
+                UNID_REG.UNID_NOMBRE AS nombreUnidadRegional,
+                UNID_AREA.UNID_ID AS idUnidadArea,
+                UNID_AREA.UNID_NOMBRE AS nombreUnidadArea,
+                METO.METO_ID AS idMetodologia,
+                METO.METO_DESCRIPCION AS descripcionMetodologia,
+                MODA.MODA_ID AS idModalidad,
+                MODA.MODA_DESCRIPCION AS descripcionModalidad,
+                CONV.CONV_ID AS idConvocatoria,
+                CONV.CONV_NOMBRE AS nombreConvocatoria,
+                CONV.CONV_DESCRIPCION AS descripcionConvocatoria,
+                CONV.CONV_ESTADO AS estadoConvocatoria,
+                NIED.NIED_ID AS idNivelEducativo,
+                NIED.NIED_DESCRIPCION AS descripcionNivelEducativo,
+                PEUN.PEUN_ID AS idPeriodoUniversidad,
+                PEUN.PEUN_ANO AS anioPeriodo,
+                PEUN.PEUN_PERIODO AS descripcionPeriodo,
+                CARG.CARG_ID AS idCarga,
+                CARG.CARG_VALOR AS valor,
+                CARG.CARG_VALORAUTORIZADO AS valorAutorizado,
+                ESCA.ESCA_ID AS idEstadoCarga,
+                ESCA.ESCA_NOMBRE AS nombreEstadoCarga,
+                ESCA.ESCA_DESCRIPCION AS descripcionEstadoCarga,
+                MOCO.MOCO_ID AS idModalidadContratacion,
+                MOCO.MOCO_NOMBRE AS nombreModalidadContratacion,
+                CECO.CECO_ID AS idCentroCosto,
+                CECO.CECO_DESCRIPCION AS descripcionCentroCosto,
+                CAST('0' AS VARCHAR2(1)) AS canEditPreassignment,
+                CAST('READ_ONLY' AS VARCHAR2(30)) AS editionMode,
+                CAST(NULL AS VARCHAR2(4000)) AS editBlockReason
+            FROM RVD.CONVOCATORIA CONTR
+            INNER JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CONTR.CONV_IDRELACION
+            INNER JOIN ACADEMICO.NIVELEDUCATIVO NIED
+                ON NIED.NIED_ID = CONV.NIED_ID
+            INNER JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
+            LEFT JOIN RVD.CONVOCATORIATIPOCONTRATACION COTC
+                ON COTC.CONV_ID = CONV.CONV_ID
+            LEFT JOIN CONTRATOS.MODALIDADCONTRATACION MOCO
+                ON MOCO.MOCO_ID = COTC.MOCO_ID
+            INNER JOIN RVD.CARGA CARG
+                ON CARG.CONV_ID = CONV.CONV_ID
+            INNER JOIN RVD.ESTADOCARGA ESCA
+                ON ESCA.ESCA_ID = CARG.ESCA_ID
+            INNER JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+            INNER JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            INNER JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            INNER JOIN ACADEMICO.METODOLOGIA METO
+                ON METO.METO_ID = COOR.METO_ID
+            INNER JOIN ACADEMICO.MODALIDAD MODA
+                ON MODA.MODA_ID = COOR.MODA_ID
+            LEFT JOIN RVD.ASIGNARCENTROCOSTO ASCC
+                ON ASCC.COOR_ID = COOR.COOR_ID
+            LEFT JOIN CONTABLEV3.CENTROCOSTO CECO
+                ON CECO.CECO_ID = ASCC.CECO_ID
+            WHERE CONTR.PEUN_ID = :idPeriodoUniversidad
+            AND CONTR.CONV_ESTADO = '1'
+            AND CONTR.CONV_CONTRATACION = '1'
+            AND CONV.CONV_ESTADO = '1'
+            AND NVL(CONV.CONV_CONTRATACION, '0') = '0'
+            AND UPPER(TRIM(ESCA.ESCA_NOMBRE)) = 'AVAL DESARROLLO'
+            ORDER BY
+                UNID_REG.UNID_NOMBRE,
+                UNID_AREA.UNID_NOMBRE,
+                COOR.COOR_NOMBRE,
+                MOCO.MOCO_NOMBRE
+            """, nativeQuery = true)
+    List<CoordinacionListadoProjection> findAllByPeriodoForHiring(@Param("idPeriodoUniversidad") Long idPeriodoUniversidad);
 
     @Query(value = """
             SELECT DISTINCT
@@ -930,9 +1090,19 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 SOCD.SOCD_OBSERVACION AS observacionSolicitud,
                 SOCD.SOCD_ADJUNTO AS adjuntoSolicitud,
                 SOCD.SOCD_FECHACAMBIO AS fechaCambioSolicitud,
+                SOCD.SOCD_NUMERO AS numeroCdpSolicitud,
                 PEUN.PEUN_ID AS idPeriodoUniversidad,
                 PEUN.PEUN_ANO AS anioPeriodo,
-                PEUN.PEUN_PERIODO AS descripcionPeriodo
+                PEUN.PEUN_PERIODO AS descripcionPeriodo,
+
+                -- Info CDP del esquema TESORERIA
+                TES.idRubro AS idRubroTesoreria,
+                TES.idCdp AS idCdpTesoreria,
+                TES.numero AS numeroCdpTesoreria,
+                TES.fecha AS fechaCdpTesoreria,
+                TES.vigencia AS vigenciaCdpTesoreria,
+                TES.articulo AS articuloCdpTesoreria,
+                TES.descripcion AS descripcionCdpTesoreria
             FROM RVD.COORDINACIONES COOR
             INNER JOIN RVD.SOLICITUDCDP SOCD
                 ON SOCD.COOR_ID = COOR.COOR_ID
@@ -946,8 +1116,59 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
                 ON METO.METO_ID = COOR.METO_ID
             INNER JOIN ACADEMICO.MODALIDAD MODA
                 ON MODA.MODA_ID = COOR.MODA_ID
+            
+            -- Busqueda CDP en esquema TESORERIA
+            LEFT JOIN (
+                SELECT
+                    UNID_ID,
+                    idRubro,
+                    idCdp,
+                    numero,
+                    fecha,
+                    vigencia,
+                    articulo,
+                    descripcion
+                FROM (
+                    SELECT
+                        CDP.UNID_ID,
+                        CDP.CDP_NUMERO AS numero,
+                        CDP.CDP_FECHAEXPEDICION AS fecha,
+                        CDP.CDP_VIGENCIA AS vigencia,
+                        CDP.CDP_CONCEPTO AS descripcion,
+                        RUVI.RUVI_CODIGORUBRO AS articulo,
+                        RUBR.RUBR_ID AS idRubro,
+                        CDP.CDP_ID AS idCdp,
+
+                        ROW_NUMBER() OVER (
+                            PARTITION BY
+                                CDP.CDP_NUMERO,
+                                CDP.CDP_VIGENCIA,
+                                CDP.UNID_ID
+                            ORDER BY RUBR.RUBR_ID ASC
+                        ) AS rn
+
+                    FROM TESORERIAV3.CDP CDP
+
+                    INNER JOIN TESORERIAV3.CDPRUBRO CDRU
+                        ON CDRU.CDP_ID = CDP.CDP_ID
+
+                    INNER JOIN TESORERIAV3.PRESUPUESTOEGRESOINVERSION PREI
+                        ON PREI.PREI_ID = CDRU.PREI_ID
+
+                    INNER JOIN TESORERIAV3.RUBROVIGENCIA RUVI
+                        ON RUVI.RUVI_ID = PREI.RUVI_ID
+
+                    INNER JOIN TESORERIAV3.RUBRO RUBR
+                        ON RUBR.RUBR_ID = RUVI.RUBR_ID
+                )
+                WHERE rn = 1
+            ) TES
+                ON TES.numero = SOCD.SOCD_NUMERO
+                AND TES.vigencia = PEUN.PEUN_ANO
+                AND TES.UNID_ID = UNID_REG.UNID_ID
+            
             WHERE COOR.COOR_IDPADRE IS NULL
-                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) = :estadoSolicitud
+                AND UPPER(TRIM(SOCD.SOCD_ESTADO)) IN (:estadosSolicitud)
                 AND SOCD.PEUN_ID = PEUN.PEUN_ID
             ORDER BY
                 UNID_REG.UNID_NOMBRE,
@@ -956,7 +1177,7 @@ public interface CoordinacionRepository extends JpaRepository<CoordinacionesEnti
             """, nativeQuery = true)
     List<ResumenSolicitudCdpProjection> findByPeriodoForCdpAcademics(
         @Param("idPeriodoUniversidad") Long idPeriodoUniversidad,
-        @Param("estadoSolicitud") String estadoSolicitud); 
+        @Param("estadosSolicitud") List<String> estadosSolicitud); 
 
     @Query(value = """
             SELECT

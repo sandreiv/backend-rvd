@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import jakarta.validation.Valid;
 
@@ -294,6 +295,53 @@ public class PublicWorkPlanController {
         }
 
         return ResponseEntity.ok(result);
+        }
+
+
+        @Operation(
+                summary = "Aprueba o rechaza el Plan de Trabajo Digital",
+                description = """
+                        Permite al docente autenticado tomar
+                        una decisión definitiva sobre su PTD.
+
+                        Estados permitidos:
+
+                        1 = Aceptado
+                        2 = Rechazado
+
+                        Solamente se permite cambiar desde
+                        estado 0 (Estipulado).
+
+                        La contratación debe pertenecer
+                        al docente autenticado.
+
+                        El PEGE_ID se obtiene desde la sesión
+                        y el PEUN_ID se resuelve internamente.
+                        """
+        )
+        @PutMapping(
+                "/hiring-records/{idCargaDocente}/digital-work-plan/status/{nuevoEstado}"
+        )
+        public ResponseEntity<Void> decideDigitalWorkPlan(
+                @PathVariable Long idCargaDocente,
+                @PathVariable String nuevoEstado) {
+
+        
+        Long idPersonaGeneral =
+                DocenteSecurity
+                        .requireIdPersonaGeneral();
+
+      
+        publicWorkPlanService
+                .decideDigitalWorkPlan(
+                        idCargaDocente,
+                        idPersonaGeneral,
+                        nuevoEstado
+                );
+
+        return ResponseEntity
+                .noContent()
+                .build();
         }
 
         @Operation(
