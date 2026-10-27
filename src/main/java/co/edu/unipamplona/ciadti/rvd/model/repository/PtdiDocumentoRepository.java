@@ -34,4 +34,14 @@ public interface PtdiDocumentoRepository
     int updateStatePtdAttachments(
         @Param("idsAdjuntos") List<String> idsAdjuntos
     );
+
+    List<PtdiDocumentoEntity>
+            findByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNotNullOrderByFechaCambioDesc(
+                    Long idPlanTrabajoDigital
+            );
+    
+    Optional<PtdiDocumentoEntity>
+            findFirstByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNullOrderByFechaCambioDesc(
+                    Long idPlanTrabajoDigital
+            );                    
 }

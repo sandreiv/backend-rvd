@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
 
 public interface PtdiDocumentoService {
 
@@ -16,6 +17,8 @@ public interface PtdiDocumentoService {
 
     List<PtdiDocumentoCategoriaDTO> getAvailableCategories();
 
+    List<TipoDocumentoContratacionDTO> getDocumentTypes();
+
     PtdiDocumentoContenidoDTO addFiles(
             Long idCargaDocente,
             Long idPlanTrabajoDigital,
@@ -23,6 +26,13 @@ public interface PtdiDocumentoService {
             String nombreCategoria,
             List<MultipartFile> archivos
     );
+
+    PtdiDocumentoContenidoDTO addFilesByType(
+            Long idCargaDocente,
+            Long idPlanTrabajoDigital,
+            Long idTipoDocumento,
+            List<MultipartFile> archivos
+    );    
 
     PtdiDocumentoArchivoDescargaDTO getFile(
             Long idCargaDocente,

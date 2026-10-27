@@ -4,8 +4,11 @@ import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import lombok.Getter;
@@ -48,4 +51,28 @@ public class PtdiDocumentoEntity {
             nullable = false
     )
     private Date fechaCambio;
+
+    @Column(
+            name = "PTDI_ESTADO",
+            length = 30
+    )
+    private String estado;
+
+    @Column(
+            name = "TIDC_ID"
+    )
+    private Long idTipoDocumentoContratacion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "TIDC_ID", insertable = false, updatable = false)
+    
+    
+    private TipoDocumentoContratacionEntity tipoDocumentoContratacion;
+
+    @Column(
+        name = "PTDI_ESTADO",
+        length = 30
+    )
+    private String estado;
+    
 }

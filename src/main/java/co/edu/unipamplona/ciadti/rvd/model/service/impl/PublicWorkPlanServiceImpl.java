@@ -30,6 +30,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicAcademicTrainingProjection;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaNaturalGeneralEntity;
@@ -787,6 +788,14 @@ public class PublicWorkPlanServiceImpl
 
         @Override
         @Transactional(readOnly = true)
+        public List<TipoDocumentoContratacionDTO> getSupportDocumentTypes() {
+
+        return ptdiDocumentoService
+                .getDocumentTypes();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public PtdiDocumentoContenidoDTO getSupportDocuments(
                         Long idCargaDocente,
                         Long idPersonaGeneral) {
@@ -867,6 +876,32 @@ public class PublicWorkPlanServiceImpl
                                                 nombreCategoria,
                                                 archivos);
         }
+
+        @Override
+        @Transactional
+        public PtdiDocumentoContenidoDTO addSupportDocumentsByType(
+                        Long idCargaDocente,
+                        Long idPersonaGeneral,
+                        Long idTipoDocumento,
+                        List<MultipartFile> archivos) {
+
+                requireEditableDigitalWorkPlan(
+                        idCargaDocente,
+                        idPersonaGeneral
+                );
+
+                Long idPlanTrabajoDigital = resolveDocumentPtdId(
+                        idCargaDocente,
+                        idPersonaGeneral
+                );
+
+                return ptdiDocumentoService.addFilesByType(
+                        idCargaDocente,
+                        idPlanTrabajoDigital,
+                        idTipoDocumento,
+                        archivos
+                );
+        }        
 
         private LocalDate toLocalDate(Date value) {
 

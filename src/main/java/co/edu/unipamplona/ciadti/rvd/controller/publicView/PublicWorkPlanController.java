@@ -38,6 +38,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PublicWorkPlanService;
 
@@ -372,12 +373,39 @@ public class PublicWorkPlanController {
         }
 
         @Operation(
-        summary = "Consulta los documentos de soporte de la contratación",
-        description = """
-                Consulta el paquete documental asociado
-                al Plan de Trabajo Digital de la contratación
-                seleccionada del docente autenticado.
-                """
+                summary = "Consulta los tipos de documentos de contratación",
+                description = """
+                        Recupera el catálogo de tipos documentales
+                        desde RVD.TIPODOCUMENTOCONTRATACION.
+
+                        Incluye identificador, nombre,
+                        descripción y obligatoriedad.
+
+                        No permite modificar estados documentales
+                        ni registrar archivos.
+                        """
+        )
+        @GetMapping("/support-documents/types")
+        public ResponseEntity<List<TipoDocumentoContratacionDTO>>
+                getSupportDocumentTypes() {
+
+   
+        DocenteSecurity.requireIdPersonaGeneral();
+
+
+        return ResponseEntity.ok(
+                publicWorkPlanService
+                        .getSupportDocumentTypes()
+        );
+        }
+
+        @Operation(
+                summary = "Consulta los documentos de soporte de la contratación",
+                description = """
+                        Consulta el paquete documental asociado
+                        al Plan de Trabajo Digital de la contratación
+                        seleccionada del docente autenticado.
+                        """
         )
         @GetMapping(
         "/hiring-records/{idCargaDocente}/support-documents"
@@ -595,8 +623,55 @@ public class PublicWorkPlanController {
         );
         }
 
+        @Operation(
+                summary = "Registra documentos de soporte por tipo documental",
+                description = """
+                        Permite al docente autenticado cargar uno o varios
+                        archivos utilizando el TIDC_ID registrado en
+                        RVD.TIPODOCUMENTOCONTRATACION.
 
+                        Cada archivo genera un registro independiente
+                        en RVD.PTDIDOCUMENTO.
 
+                        La contratación debe pertenecer al docente
+                        autenticado y el PTD debe permitir modificaciones.
 
+                        No modifica el estado de revisión individual
+                        de los documentos.
+                        """
+        )
+        @PostMapping(
+                value = "/hiring-records/{idCargaDocente}/support-documents/by-type",
+                consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+        )
+        public ResponseEntity<PtdiDocumentoContenidoDTO>
+        addSupportDocumentsByType(
+
+                @PathVariable
+                Long idCargaDocente,
+
+                @RequestParam("idTipoDocumento")
+                Long idTipoDocumento,
+
+                @RequestParam("archivos")
+                List<MultipartFile> archivos) {
+
+        Long idPersonaGeneral =
+                DocenteSecurity
+                        .requireIdPersonaGeneral();
+
+        PtdiDocumentoContenidoDTO resultado =
+                publicWorkPlanService
+                        .addSupportDocumentsByType(
+                                idCargaDocente,
+                                idPersonaGeneral,
+                                idTipoDocumento,
+                                archivos
+                        );
+
+        return ResponseEntity.ok(
+                resultado
+        );
+        }        
 
 }
