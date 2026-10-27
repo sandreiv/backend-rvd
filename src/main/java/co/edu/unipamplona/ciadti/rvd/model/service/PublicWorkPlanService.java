@@ -15,6 +15,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
 
 public interface PublicWorkPlanService {
 
@@ -58,6 +59,8 @@ public interface PublicWorkPlanService {
 
     List<PtdiDocumentoCategoriaDTO> getSupportDocumentCategories();
 
+    List<TipoDocumentoContratacionDTO> getSupportDocumentTypes();
+
     PtdiDocumentoContenidoDTO getSupportDocuments(
             Long idCargaDocente,
             Long idPersonaGeneral
@@ -76,6 +79,13 @@ public interface PublicWorkPlanService {
             String nombreCategoria,
             List<MultipartFile> archivos
     );
+
+    PtdiDocumentoContenidoDTO addSupportDocumentsByType(
+            Long idCargaDocente,
+            Long idPersonaGeneral,
+            Long idTipoDocumento,
+            List<MultipartFile> archivos
+    );    
 
     PtdiDocumentoContenidoDTO deleteSupportDocumentFile(
             Long idCargaDocente,

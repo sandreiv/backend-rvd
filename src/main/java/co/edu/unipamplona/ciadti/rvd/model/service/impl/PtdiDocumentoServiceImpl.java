@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.nio.file.LinkOption;
 import java.util.Arrays;
@@ -34,9 +36,11 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PtdiDocumentoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PlanTrabajoDigitalRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PtdiDocumentoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TipoDocumentoContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.PtdiDocumentoService;
 
 import lombok.RequiredArgsConstructor;
@@ -62,54 +66,290 @@ public class PtdiDocumentoServiceImpl
     private final PlanTrabajoDigitalRepository
             planTrabajoDigitalRepository;
 
+    private final TipoDocumentoContratacionRepository
+            tipoDocumentoContratacionRepository;        
+
     private final ObjectMapper objectMapper;
 
 
+    
     @Override
     @Transactional(readOnly = true)
-    public PtdiDocumentoContenidoDTO getContent(
-            Long idPlanTrabajoDigital) {
+        public PtdiDocumentoContenidoDTO getContent(
+                Long idPlanTrabajoDigital) {
 
         validatePtdId(
                 idPlanTrabajoDigital
         );
 
-        return ptdiDocumentoRepository
-                .findFirstByIdPlanTrabajoDigitalOrderByFechaCambioDesc(
-                        idPlanTrabajoDigital
-                )
-                .map(PtdiDocumentoEntity::getAdjunto)
-                .map(this::parseContent)
-                .orElseGet(
-                        this::emptyContent
+        PtdiDocumentoContenidoDTO contenidoHistorico =
+                ptdiDocumentoRepository
+                        .findFirstByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNullOrderByFechaCambioDesc(
+                                idPlanTrabajoDigital
+                        )
+                        .map(PtdiDocumentoEntity::getAdjunto)
+                        .map(this::parseContent)
+                        .orElseGet(this::emptyContent);
+
+        List<PtdiDocumentoEntity> individuales =
+                ptdiDocumentoRepository
+                        .findByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNotNullOrderByFechaCambioDesc(
+                                idPlanTrabajoDigital
+                        );
+
+        List<PtdiDocumentoCategoriaDTO> catalogo =
+                getAvailableCategories();
+
+        List<PtdiDocumentoCategoriaDTO> categorias =
+                new ArrayList<>();
+
+        for (
+                PtdiDocumentoCategoriaDTO historica :
+                contenidoHistorico.categorias()
+        ) {
+
+                if (
+                        historica == null
+                        || !StringUtils.hasText(
+                                historica.codigo()
+                        )
+                ) {
+
+                throw new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "El contenido documental histórico no es válido"
                 );
+                }
+
+                PtdiDocumentoCategoriaDTO tipo =
+                        catalogo.stream()
+                                .filter(categoria ->
+                                        categoria.codigo().equals(
+                                                historica.codigo()
+                                        )
+                                )
+                                .findFirst()
+                                .orElse(null);
+
+                List<PtdiDocumentoArchivoDTO> archivos =
+                        historica.archivos() == null
+                                ? List.of()
+                                : historica.archivos();
+
+                categorias.add(
+                        new PtdiDocumentoCategoriaDTO(
+                                historica.codigo(),
+
+                                tipo != null
+                                        ? tipo.nombre()
+                                        : historica.nombre(),
+
+                                archivos,
+
+                                tipo != null
+                                        ? tipo.idTipoDocumento()
+                                        : null,
+
+                                tipo != null
+                                        ? tipo.obligatorio()
+                                        : null
+                        )
+                );
+        }
+
+        for (
+                PtdiDocumentoEntity documento :
+                individuales
+        ) {
+
+                Long idTipoDocumento =
+                        documento
+                                .getIdTipoDocumentoContratacion();
+
+                PtdiDocumentoCategoriaDTO tipo =
+                        catalogo.stream()
+                                .filter(categoria ->
+                                        idTipoDocumento.equals(
+                                                categoria.idTipoDocumento()
+                                        )
+                                )
+                                .findFirst()
+                                .orElseThrow(() ->
+                                        new ApiException(
+                                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                                "El documento tiene un tipo documental no registrado"
+                                        )
+                                );
+
+                PtdiDocumentoArchivoDTO archivo =
+                        parseIndividualFile(
+                                documento
+                        );
+
+                int indiceCategoria = -1;
+
+                for (
+                        int i = 0;
+                        i < categorias.size();
+                        i++
+                ) {
+
+                if (
+                        tipo.codigo().equals(
+                                categorias.get(i).codigo()
+                        )
+                ) {
+
+                        indiceCategoria = i;
+                        break;
+                }
+                }
+
+                if (indiceCategoria < 0) {
+
+                categorias.add(
+                        new PtdiDocumentoCategoriaDTO(
+                                tipo.codigo(),
+                                tipo.nombre(),
+                                List.of(archivo),
+                                tipo.idTipoDocumento(),
+                                tipo.obligatorio()
+                        )
+                );
+
+                continue;
+                }
+
+                PtdiDocumentoCategoriaDTO categoriaActual =
+                        categorias.get(
+                                indiceCategoria
+                        );
+
+                List<PtdiDocumentoArchivoDTO> archivos =
+                        new ArrayList<>(
+                                categoriaActual.archivos() == null
+                                        ? List.of()
+                                        : categoriaActual.archivos()
+                        );
+
+                archivos.add(
+                        archivo
+                );
+
+                categorias.set(
+                        indiceCategoria,
+
+                        new PtdiDocumentoCategoriaDTO(
+                                tipo.codigo(),
+                                tipo.nombre(),
+                                List.copyOf(archivos),
+                                tipo.idTipoDocumento(),
+                                tipo.obligatorio()
+                        )
+                );
+        }
+
+        return new PtdiDocumentoContenidoDTO(
+                CONTENT_VERSION,
+                List.copyOf(categorias)
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PtdiDocumentoCategoriaDTO> getAvailableCategories() {
 
-        return Arrays.stream(
-                PtdiDocumentoCategoriaEnum.values()
-        )
-        .map(categoria ->
-                new PtdiDocumentoCategoriaDTO(
-                        categoria.getCodigo(),
-                        categoria.getNombre(),
-                        List.of()
-                )
-        )
-        .toList();
+        return tipoDocumentoContratacionRepository
+                .findAllByOrderByIdAsc()
+                .stream()
+                .map(tipo -> {
+
+                        String codigoCategoria =
+                                Arrays.stream(
+                                        PtdiDocumentoCategoriaEnum.values()
+                                )
+                                .filter(categoria ->
+                                        categoria.getNombre()
+                                                .trim()
+                                                .equalsIgnoreCase(
+                                                        tipo.getNombre().trim()
+                                                )
+                                )
+                                .map(
+                                        PtdiDocumentoCategoriaEnum::getCodigo
+                                )
+                                .findFirst()
+                                .orElse(
+                                        "TIDC_" + tipo.getId()
+                                );
+
+                        return new PtdiDocumentoCategoriaDTO(
+
+                                codigoCategoria,
+
+                                tipo.getNombre(),
+
+                                List.of(),
+
+                                tipo.getId(),
+
+                                "1".equals(
+                                        tipo.getObligatorio()
+                                )
+                        );
+                })
+                .toList();
     }
 
+
     @Override
-    @Transactional
-    public PtdiDocumentoContenidoDTO addFiles(
-            Long idCargaDocente,
-            Long idPlanTrabajoDigital,
-            String codigoCategoria,
-            String nombreCategoria,
-            List<MultipartFile> archivos) {
+    @Transactional(readOnly = true)
+    public List<TipoDocumentoContratacionDTO> getDocumentTypes() {
+
+        return tipoDocumentoContratacionRepository
+                .findAllByOrderByIdAsc()
+                .stream()
+                .map(tipo ->
+
+                        new TipoDocumentoContratacionDTO(
+
+                                /*
+                                * TIDC_ID
+                                */
+                                tipo.getId(),
+
+                                /*
+                                * TIDC_NOMBRE
+                                */
+                                tipo.getNombre(),
+
+                                /*
+                                * TIDC_DESCRIPCION
+                                */
+                                tipo.getDescripcion(),
+
+                                /*
+                                * TIDC_OBLIGATORIO
+                                *
+                                * 1 = Obligatorio
+                                * 0 = Opcional
+                                */
+                                "1".equals(
+                                        tipo.getObligatorio()
+                                )
+                        )
+                )
+                .toList();
+        }
+    
+        @Override
+        @Transactional
+        public PtdiDocumentoContenidoDTO addFiles(
+                Long idCargaDocente,
+                Long idPlanTrabajoDigital,
+                String codigoCategoria,
+                String nombreCategoria,
+                List<MultipartFile> archivos) {
 
         validateRequiredId(
                 idCargaDocente,
@@ -125,11 +365,100 @@ public class PtdiDocumentoServiceImpl
                         codigoCategoria
                 );
 
-        String codigoSeguro =
-                categoria.getCodigo();
+        List<Long> tiposCoincidentes =
+                tipoDocumentoContratacionRepository
+                        .findAllByOrderByIdAsc()
+                        .stream()
+                        .filter(tipo ->
+                                tipo.getNombre() != null
+                                && categoria.getNombre()
+                                        .trim()
+                                        .equalsIgnoreCase(
+                                                tipo.getNombre().trim()
+                                        )
+                        )
+                        .map(tipo -> tipo.getId())
+                        .toList();
 
-        String nombreNormalizado =
-                categoria.getNombre();
+        if (tiposCoincidentes.size() != 1) {
+
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        "No fue posible identificar de forma única "
+                                + "el tipo documental en Oracle"
+                );
+        }
+
+        Long idTipoDocumento =
+                tiposCoincidentes.get(0);
+
+        return addFilesPorTipo(
+                idCargaDocente,
+                idPlanTrabajoDigital,
+                idTipoDocumento,
+                archivos
+        );
+        }
+
+        @Override 
+        @Transactional
+        public PtdiDocumentoContenidoDTO addFilesByType(
+                Long idCargaDocente,
+                Long idPlanTrabajoDigital,
+                Long idTipoDocumento,
+                List<MultipartFile> archivos) {
+
+        return addFilesPorTipo(
+                idCargaDocente,
+                idPlanTrabajoDigital,
+                idTipoDocumento,
+                archivos
+        );
+        }
+
+        private PtdiDocumentoContenidoDTO addFilesPorTipo(
+                Long idCargaDocente,
+                Long idPlanTrabajoDigital,
+                Long idTipoDocumento,
+                List<MultipartFile> archivos) {
+
+        validateRequiredId(
+                idCargaDocente,
+                "La contratación es obligatoria"
+        );
+
+        validatePtdId(
+                idPlanTrabajoDigital
+        );
+
+        validateRequiredId(
+                idTipoDocumento,
+                "El tipo documental es obligatorio"
+        );
+
+        tipoDocumentoContratacionRepository
+                .findById(idTipoDocumento)
+                .orElseThrow(() ->
+                        new ApiException(
+                                HttpStatus.BAD_REQUEST,
+                                "El tipo documental seleccionado no existe en Oracle"
+                        )
+                );
+
+        String codigoFisico =
+                "TIDC_" + idTipoDocumento;        
+
+        List<MultipartFile> archivosValidos =
+                normalizeFiles(
+                        archivos
+                );
+
+        if (archivosValidos.isEmpty()) {
+
+                return getContent(
+                        idPlanTrabajoDigital
+                );
+        }
 
         planTrabajoDigitalRepository
                 .lockForDocumentUpdate(
@@ -140,165 +469,153 @@ public class PtdiDocumentoServiceImpl
                                 HttpStatus.NOT_FOUND,
                                 "No existe el Plan de Trabajo Digital seleccionado"
                         )
-                );        
-
-        PtdiDocumentoEntity documento =
-                ptdiDocumentoRepository
-                        .findFirstByIdPlanTrabajoDigitalOrderByFechaCambioDesc(
-                                idPlanTrabajoDigital
-                        )
-                        .orElseGet(() ->
-                                newDocument(
-                                        idPlanTrabajoDigital
-                                )
-                        );
-
-        PtdiDocumentoContenidoDTO contenidoActual =
-                parseContent(
-                        documento.getAdjunto()
-                );
-
-        List<MultipartFile> archivosValidos =
-                normalizeFiles(
-                        archivos
-                );
-
-        if (archivosValidos.isEmpty()) {
-            return contenidoActual;
-        }
-
-        Path storageDirectory =
-                buildStorageDirectory(
-                        idCargaDocente,
-                        documento.getUniqueId(),
-                        codigoSeguro
                 );
 
         List<Path> archivosCreados =
                 new ArrayList<>();
 
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
+        TransactionSynchronizationManager
+                .registerSynchronization(
+                        new TransactionSynchronization() {
 
-                    @Override
-                    public void afterCompletion(int status) {
+                                @Override
+                                public void afterCompletion(int status) {
 
-                        if (status !=
-                                TransactionSynchronization.STATUS_COMMITTED) {
+                                if (status !=
+                                        TransactionSynchronization.STATUS_COMMITTED) {
 
-                            cleanupCreatedFiles(
-                                    archivosCreados
-                            );
+                                        cleanupCreatedFiles(
+                                                archivosCreados
+                                        );
+                                }
+                                }
                         }
-                    }
-                }
-        );
+                );
 
         try {
 
-            Files.createDirectories(
-                    storageDirectory
-            );
+                for (MultipartFile archivo : archivosValidos) {
 
-            List<PtdiDocumentoArchivoDTO>
-                    nuevosArchivos =
-                    new ArrayList<>();
+                String idArchivo =
+                        UUID.randomUUID().toString();
 
-            for (
-                    MultipartFile archivo :
-                    archivosValidos
-            ) {
+                Path storageDirectory =
+                        buildStorageDirectory(
+                                idCargaDocente,
+                                idArchivo,
+                                codigoFisico
+                        );
 
-                PtdiDocumentoArchivoDTO
-                        archivoGuardado =
+                Files.createDirectories(
+                        storageDirectory
+                );
+
+                PtdiDocumentoArchivoDTO archivoGuardado =
                         savePhysicalFile(
                                 archivo,
                                 idCargaDocente,
-                                documento.getUniqueId(),
-                                codigoSeguro,
+                                idArchivo,
+                                codigoFisico,
                                 storageDirectory,
-                                archivosCreados
+                                archivosCreados,
+                                idArchivo
                         );
 
-                nuevosArchivos.add(
-                        archivoGuardado
+                String jsonArchivo =
+                        objectMapper.writeValueAsString(
+                                archivoGuardado
+                        );
+
+                PtdiDocumentoEntity documento =
+                        new PtdiDocumentoEntity();
+
+                documento.setUniqueId(
+                        idArchivo
                 );
-            }
 
-            PtdiDocumentoContenidoDTO
-                    contenidoActualizado =
-                    mergeCategory(
-                            contenidoActual,
-                            codigoSeguro,
-                            nombreNormalizado,
-                            nuevosArchivos
-                    );
+                documento.setIdPlanTrabajoDigital(
+                        idPlanTrabajoDigital
+                );
 
-            String json =
-                    objectMapper
-                            .writeValueAsString(
-                                    contenidoActualizado
-                            );
+                documento.setIdTipoDocumentoContratacion(
+                        idTipoDocumento
+                );
 
-            documento.setAdjunto(
-                    json
-            );
+                documento.setAdjunto(
+                        jsonArchivo
+                );
 
-            documento.setFechaCambio(
-                    new Date()
-            );
+                documento.setFechaCambio(
+                        new Date()
+                );
 
-            ptdiDocumentoRepository
-                    .saveAndFlush(
-                            documento
-                    );
+                ptdiDocumentoRepository.save(
+                        documento
+                );
 
-            log.info(
-                    "addFiles ===> Documentos PTD registrados. "
-                            + "idCargaDocente={}, "
-                            + "idPlanTrabajoDigital={}, "
-                            + "uniqueId={}, "
-                            + "categoria={}, "
-                            + "archivosAgregados={}",
-                    idCargaDocente,
-                    idPlanTrabajoDigital,
-                    documento.getUniqueId(),
-                    codigoSeguro,
-                    nuevosArchivos.size()
-            );
+                log.info(
+                        "addFiles ===> Documento individual preparado. "
+                                + "idCargaDocente={}, "
+                                + "idPlanTrabajoDigital={}, "
+                                + "idTipoDocumento={}, "
+                                + "idArchivo={}",
+                        idCargaDocente,
+                        idPlanTrabajoDigital,
+                        idTipoDocumento,
+                        idArchivo
+                );
+                }
 
-            return contenidoActualizado;
+                ptdiDocumentoRepository.flush();
 
-        } catch (
-            IOException ex) {
+                PtdiDocumentoContenidoDTO contenidoActualizado =
+                        getContent(
+                                idPlanTrabajoDigital
+                        );
 
-            cleanupCreatedFiles(
-                    archivosCreados
-            );
+                log.info(
+                        "addFiles ===> Carga documental individual completada. "
+                                + "idCargaDocente={}, "
+                                + "idPlanTrabajoDigital={}, "
+                                + "idTipoDocumento={}, "
+                                + "archivosAgregados={}",
+                        idCargaDocente,
+                        idPlanTrabajoDigital,
+                        idTipoDocumento,
+                        archivosValidos.size()
+                );
 
-            log.error(
-                    "addFiles ===> Error registrando documentos PTD. "
-                            + "idCargaDocente={}, "
-                            + "idPlanTrabajoDigital={}, "
-                            + "categoria={}",
-                    idCargaDocente,
-                    idPlanTrabajoDigital,
-                    codigoSeguro,
-                    ex
-            );
+                return contenidoActualizado;
 
-            throw new ApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "No fue posible guardar los documentos"
-            );
+        } catch (IOException ex) {
+
+                cleanupCreatedFiles(
+                        archivosCreados
+                );
+
+                log.error(
+                        "addFiles ===> Error guardando documentos individuales. "
+                                + "idCargaDocente={}, "
+                                + "idPlanTrabajoDigital={}, "
+                                + "idTipoDocumento={}",
+                        idCargaDocente,
+                        idPlanTrabajoDigital,
+                        idTipoDocumento,
+                        ex
+                );
+
+                throw new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No fue posible guardar los documentos"
+                );
 
         } catch (RuntimeException ex) {
 
-            cleanupCreatedFiles(
-                    archivosCreados
-            );
+                cleanupCreatedFiles(
+                        archivosCreados
+                );
 
-            throw ex;
+                throw ex;
         }
     }
 
@@ -318,9 +635,70 @@ public class PtdiDocumentoServiceImpl
                 idPlanTrabajoDigital
         );
 
-        PtdiDocumentoEntity documento =
+        if (
+                idArchivo == null
+                || !idArchivo.matches(
+                        "[0-9a-fA-F]{8}-"
+                        + "[0-9a-fA-F]{4}-"
+                        + "[0-9a-fA-F]{4}-"
+                        + "[0-9a-fA-F]{4}-"
+                        + "[0-9a-fA-F]{12}"
+                )
+        ) {
+
+        throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "El identificador del archivo no es válido"
+        );
+        }
+
+        PtdiDocumentoEntity documentoIndividual =
                 ptdiDocumentoRepository
-                        .findFirstByIdPlanTrabajoDigitalOrderByFechaCambioDesc(
+                        .findById(
+                                idArchivo
+                        )
+                        .filter(documento ->
+                                idPlanTrabajoDigital.equals(
+                                        documento.getIdPlanTrabajoDigital()
+                                )
+                        )
+                        .filter(documento ->
+                                documento.getIdTipoDocumentoContratacion()
+                                        != null
+                        )
+                        .orElse(null);
+
+        PtdiDocumentoEntity documento;
+
+        ArchivoLocalizado archivo;
+
+        if (documentoIndividual != null) {
+
+        documento =
+                documentoIndividual;
+
+        Long idTipoDocumento =
+                documento.getIdTipoDocumentoContratacion();
+
+        String codigoCategoria =
+                "TIDC_" + idTipoDocumento;
+
+        PtdiDocumentoArchivoDTO datosArchivo =
+                parseIndividualFile(
+                        documento
+                );
+
+        archivo =
+                new ArchivoLocalizado(
+                        codigoCategoria,
+                        datosArchivo
+                );
+
+        } else {
+
+        documento =
+                ptdiDocumentoRepository
+                        .findFirstByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNullOrderByFechaCambioDesc(
                                 idPlanTrabajoDigital
                         )
                         .orElseThrow(() ->
@@ -330,11 +708,12 @@ public class PtdiDocumentoServiceImpl
                                 )
                         );
 
-        ArchivoLocalizado archivo =
+        archivo =
                 findFile(
                         documento,
                         idArchivo
                 );
+        }
 
         Path filePath =
                 resolveDocumentFilePath(
@@ -455,9 +834,42 @@ public class PtdiDocumentoServiceImpl
                         )
                 );
 
+        if (!StringUtils.hasText(idArchivo)) {
+
+        throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "El identificador del archivo es obligatorio"
+        );
+        }
+
+        PtdiDocumentoEntity documentoIndividual =
+                ptdiDocumentoRepository
+                        .findById(idArchivo)
+                        .filter(documentoEncontrado ->
+                                idPlanTrabajoDigital.equals(
+                                        documentoEncontrado
+                                                .getIdPlanTrabajoDigital()
+                                )
+                        )
+                        .filter(documentoEncontrado ->
+                                documentoEncontrado
+                                        .getIdTipoDocumentoContratacion() != null
+                        )
+                        .orElse(null);
+
+        if (documentoIndividual != null) {
+
+        return deleteIndividualFile(
+                idCargaDocente,
+                idPlanTrabajoDigital,
+                idArchivo,
+                documentoIndividual
+        );
+        }               
+
         PtdiDocumentoEntity documento =
                 ptdiDocumentoRepository
-                        .findFirstByIdPlanTrabajoDigitalOrderByFechaCambioDesc(
+                        .findFirstByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNullOrderByFechaCambioDesc(
                                 idPlanTrabajoDigital
                         )
                         .orElseThrow(() ->
@@ -667,8 +1079,130 @@ public class PtdiDocumentoServiceImpl
                 idArchivo
         );
 
-        return contenidoActualizado;
+        return getContent(
+                idPlanTrabajoDigital
+        );
     }
+
+       
+    private PtdiDocumentoContenidoDTO deleteIndividualFile(
+                Long idCargaDocente,
+                Long idPlanTrabajoDigital,
+                String idArchivo,
+                PtdiDocumentoEntity documento) {
+
+        if (StringUtils.hasText(documento.getEstado())) {
+
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        "El documento ya tiene un estado de revisión y no puede eliminarse"
+                );
+        }
+
+        PtdiDocumentoArchivoDTO datosArchivo =
+                parseIndividualFile(
+                        documento
+                );
+
+        String codigoCategoria =
+                "TIDC_"
+                        + documento
+                                .getIdTipoDocumentoContratacion();
+
+        ArchivoLocalizado archivoLocalizado =
+                new ArchivoLocalizado(
+                        codigoCategoria,
+                        datosArchivo
+                );
+
+        Path archivoFisico =
+                resolveDocumentFilePath(
+                        idCargaDocente,
+                        documento,
+                        archivoLocalizado
+                );
+
+        validateDeletePath(
+                archivoFisico
+        );
+
+        ptdiDocumentoRepository.delete(
+                documento
+        );
+
+        ptdiDocumentoRepository.flush();
+
+        TransactionSynchronizationManager
+                .registerSynchronization(
+                        new TransactionSynchronization() {
+
+                                @Override
+                                public void afterCommit() {
+
+                                try {
+
+                                        /*
+                                        * Verificar nuevamente
+                                        * la ruta física.
+                                        */
+                                        validateDeletePath(
+                                                archivoFisico
+                                        );
+
+                                        /*
+                                        * Eliminar el archivo.
+                                        */
+                                        boolean eliminado =
+                                                Files.deleteIfExists(
+                                                        archivoFisico
+                                                );
+
+                                        if (!eliminado) {
+
+                                        log.warn(
+                                                "deleteIndividualFile ===> "
+                                                        + "El archivo físico ya no existe. "
+                                                        + "idArchivo={}, path={}",
+                                                idArchivo,
+                                                archivoFisico
+                                        );
+                                        }
+
+                                } catch (
+                                        IOException
+                                        | RuntimeException ex
+                                ) {
+
+                                        log.error(
+                                                "deleteIndividualFile ===> "
+                                                        + "Error eliminando archivo físico "
+                                                        + "después del commit. "
+                                                        + "idArchivo={}, path={}",
+                                                idArchivo,
+                                                archivoFisico,
+                                                ex
+                                        );
+                                }
+                                }
+                        }
+                );
+
+        log.info(
+                "deleteIndividualFile ===> Documento eliminado. "
+                        + "idCargaDocente={}, "
+                        + "idPlanTrabajoDigital={}, "
+                        + "idArchivo={}, "
+                        + "idTipoDocumento={}",
+                idCargaDocente,
+                idPlanTrabajoDigital,
+                idArchivo,
+                documento.getIdTipoDocumentoContratacion()
+        );
+
+        return getContent(
+                idPlanTrabajoDigital
+        );
+    }    
 
     private void validateDeletePath(
             Path archivoFisico) {
@@ -934,13 +1468,14 @@ public class PtdiDocumentoServiceImpl
 
 
     private PtdiDocumentoArchivoDTO savePhysicalFile(
-            MultipartFile archivo,
-            Long idCargaDocente,
-            String uniqueIdDocumento,
-            String codigoCategoria,
-            Path storageDirectory,
-            List<Path> archivosCreados)
-            throws IOException {
+                MultipartFile archivo,
+                Long idCargaDocente,
+                String uniqueIdDocumento,
+                String codigoCategoria,
+                Path storageDirectory,
+                List<Path> archivosCreados,
+                String idArchivo)
+                throws IOException {
 
         String nombreOriginal =
                 archivo.getOriginalFilename();
@@ -969,10 +1504,6 @@ public class PtdiDocumentoServiceImpl
                 getExtension(
                         nombreSeguro
                 );
-
-        String idArchivo =
-                UUID.randomUUID()
-                        .toString();
 
         String nombreFisico =
                 extension == null
@@ -1168,6 +1699,75 @@ public class PtdiDocumentoServiceImpl
                 )
         );
     }
+
+
+    private PtdiDocumentoArchivoDTO parseIndividualFile(
+                PtdiDocumentoEntity documento) {
+
+        String json =
+                documento.getAdjunto();
+
+        if (!StringUtils.hasText(json)) {
+
+                throw new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "El documento individual no tiene información de archivo"
+                );
+        }
+
+        try {
+
+                PtdiDocumentoArchivoDTO archivo =
+                        objectMapper.readValue(
+                                json,
+                                PtdiDocumentoArchivoDTO.class
+                        );
+
+                if (
+                        archivo == null
+                        || archivo.id() == null
+                        || !archivo.id().equals(
+                                documento.getUniqueId()
+                        )
+                        || !StringUtils.hasText(
+                                archivo.nombre()
+                        )
+                        || !StringUtils.hasText(
+                                archivo.path()
+                        )
+                ) {
+
+                throw new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "La información del documento individual no es válida"
+                );
+                }
+
+                return new PtdiDocumentoArchivoDTO(
+                        archivo.id(),
+                        archivo.nombre(),
+                        archivo.path(),
+                        archivo.extension(),
+                        archivo.tamano(),
+                        documento.getEstado()
+                );
+
+        } catch (JsonProcessingException ex) {
+
+                log.error(
+                        "parseIndividualFile ===> "
+                                + "Error leyendo documento individual. "
+                                + "uniqueId={}",
+                        documento.getUniqueId(),
+                        ex
+                );
+
+                throw new ApiException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No fue posible leer el documento individual"
+                );
+        }
+    }    
 
 
     private PtdiDocumentoContenidoDTO parseContent(

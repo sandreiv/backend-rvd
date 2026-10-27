@@ -21,4 +21,14 @@ public interface PtdiDocumentoRepository
             findFirstByIdPlanTrabajoDigitalOrderByFechaCambioDesc(
                     Long idPlanTrabajoDigital
             );
+
+    List<PtdiDocumentoEntity>
+            findByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNotNullOrderByFechaCambioDesc(
+                    Long idPlanTrabajoDigital
+            );
+    
+    Optional<PtdiDocumentoEntity>
+            findFirstByIdPlanTrabajoDigitalAndIdTipoDocumentoContratacionIsNullOrderByFechaCambioDesc(
+                    Long idPlanTrabajoDigital
+            );                    
 }

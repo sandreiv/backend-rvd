@@ -59,5 +59,14 @@ public class PtdiDocumentoEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TIDC_ID", insertable = false, updatable = false)
+    
+    
     private TipoDocumentoContratacionEntity tipoDocumentoContratacion;
+
+    @Column(
+        name = "PTDI_ESTADO",
+        length = 30
+    )
+    private String estado;
+    
 }
