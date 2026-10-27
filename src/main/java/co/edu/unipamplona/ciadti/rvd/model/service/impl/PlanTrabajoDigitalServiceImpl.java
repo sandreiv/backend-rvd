@@ -11,7 +11,7 @@
  * 20/10/2026 - Andrés Hernández - Busqueda de estados del PTD por persona y filtrado general por periodo universitario
  * 23/10/2026 - Andrés Hernández - Guardar el PTD y ver su info trae las observaciones hechas por el Coordinador
  * 26/10/2026 - Andrés Hernández - Gestión del PTD por Talento humano (Rechazo y Aprobación)
- * 27/10/2026 - Andrés Hernández - Listado de adjuntos del PTD
+ * 27/10/2026 - Andrés Hernández - Listado, visualización y descarga de adjuntos del PTD
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -37,6 +37,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSavePayloadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
@@ -182,6 +183,15 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
         Long idPtdReferencia = planTrabajoDigitalRepository.findReferencePtdIdByHiringAndProfessor(idCargaDocente, idPersonaGeneral, idPeriodoUniversitario);
         return ptdiDocumentoService.getContent(idPtdReferencia);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PtdiDocumentoArchivoDescargaDTO getPtdDocumentFile(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario, String fileId) {
+        log.info("getPtdDocumentFile ===> Obteniendo archivo adjunto del PTD. idPeriodo={}", idPeriodoUniversitario);
+
+        Long idPtdReferencia = planTrabajoDigitalRepository.findReferencePtdIdByHiringAndProfessor(idCargaDocente, idPersonaGeneral, idPeriodoUniversitario);
+        return ptdiDocumentoService.getFile(idCargaDocente, idPtdReferencia, fileId);
     }
 
     @Override

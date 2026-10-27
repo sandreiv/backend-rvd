@@ -16,11 +16,19 @@
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,6 +46,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
@@ -200,6 +209,54 @@ public class HiringCallController {
         List<PtdiDocumentoCategoriaDTO> categorias = ptdiDocumentoService.getAvailableCategories();
         return new ResponseEntity<>(categorias, HttpStatus.OK);
     }
+
+    @Operation(
+        summary = "Visualiza o descarga un documento de soporte fuera de la vista pública",
+        description = """
+            Recupera un documento registrado en el paquete documental de la contratación.
+            El PTDI_ID se resuelve internamente.
+            El archivo se identifica mediante su UUID registrado en PTDI_ADJUNTO.
+            No se reciben rutas físicas desde el cliente.
+            """
+        )
+        @GetMapping("/get-ptd-document-file/{fileId}/file")
+        public ResponseEntity<Resource> getPtdDocumentFile(@PathVariable String fileId, @RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente, @RequestParam Long idPeriodoUniversitario) {
+        
+        PtdiDocumentoArchivoDescargaDTO documento =
+            planTrabajoDigitalService.getPtdDocumentFile(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario, fileId);
+
+        String nombreOriginal = documento.nombre();
+        String nombreMinusculas = nombreOriginal.toLowerCase(Locale.ROOT);
+        MediaType contentType;
+
+        if (nombreMinusculas.endsWith(".pdf")) {
+            contentType = MediaType.APPLICATION_PDF;
+        } else if (nombreMinusculas.endsWith(".png")) {
+            contentType = MediaType.IMAGE_PNG;
+        } else if (nombreMinusculas.endsWith(".jpg") || nombreMinusculas.endsWith(".jpeg")) {
+            contentType = MediaType.IMAGE_JPEG;
+        } else {
+            contentType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        boolean visualizar = !MediaType.APPLICATION_OCTET_STREAM.equals(contentType);
+        ContentDisposition disposition =(visualizar ? ContentDisposition.inline() : ContentDisposition.attachment())
+            .filename(nombreOriginal, StandardCharsets.UTF_8)
+            .build();
+
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())
+            .header(
+                "X-Content-Type-Options",
+                "nosniff"
+            )
+            .header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                disposition.toString()
+            )
+            .contentType(contentType)
+            .body(documento.resource());
+        }
 
     @Operation(
         summary = "Actualiza el estado del PTD y sus adjuntos",
