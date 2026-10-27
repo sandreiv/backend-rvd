@@ -36,6 +36,10 @@ public record PublicHiringRecordDTO(
 
     String estadoCategorizacion,
 
-    String estadoPlanTrabajo
+    String estadoPlanTrabajo,
+
+    String periodoUniversidad,
+
+    String onceMeses
 
 ) {}

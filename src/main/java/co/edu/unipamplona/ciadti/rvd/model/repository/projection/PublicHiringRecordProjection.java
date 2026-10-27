@@ -10,6 +10,10 @@ public interface PublicHiringRecordProjection {
 
     Long getIdPeriodoUniversitario();
 
+    String getPeriodoUniversidad();
+
+    String getOnceMeses();    
+
     Long getIdConvocatoriaPreasignacion();
 
     Long getIdConvocatoriaContratacion();

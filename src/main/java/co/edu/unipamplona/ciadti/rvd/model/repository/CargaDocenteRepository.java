@@ -1193,7 +1193,12 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     COALESCE(
                         DATOS.NOCD_FECHAFIN,
                         CADO.CADO_FECHAFIN
-                    ) AS CADO_FECHAFIN
+                    ) AS CADO_FECHAFIN,
+
+                    COALESCE(
+                        DATOS.NOCD_ONCEMESES,
+                        CADO.CADO_ONCEMESES
+                    ) AS CADO_ONCEMESES
 
                 FROM RVD.CARGADOCENTE CADO
 
@@ -1298,7 +1303,13 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     AS idCargaDocente,
 
                 CONV.PEUN_ID
-                    AS idPeriodoUniversitario,    
+                    AS idPeriodoUniversitario,
+
+                TRIM(PEUN.PEUN_PERIODO)
+                    AS periodoUniversidad,
+
+                TRIM(CR.CADO_ONCEMESES)
+                    AS onceMeses,
 
                 CONV.CONV_ID
                     AS idConvocatoriaPreasignacion,
@@ -1338,7 +1349,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     FECO.FECO_FECHAINICIO
                 ) AS fechaInicio,
 
-                COALESCE(
+               COALESCE(
                     CR.CADO_FECHAFIN,
                     FECO.FECO_FECHAFIN
                 ) AS fechaFin,
@@ -1363,6 +1374,9 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
 
             INNER JOIN RVD.CONVOCATORIA CONV
                 ON CONV.CONV_ID = CARG.CONV_ID
+
+            LEFT JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
 
             INNER JOIN RVD.CONVOCATORIA CONTR
                 ON CONTR.CONV_IDRELACION = CONV.CONV_ID
