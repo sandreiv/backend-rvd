@@ -741,6 +741,68 @@ public class PublicWorkPlanServiceImpl
                                         "El Plan de Trabajo Digital ya tiene una decisión registrada o presenta estados inconsistentes");
                 }
 
+                List<PtdiDocumentoCategoriaDTO> tiposObligatorios =
+                        ptdiDocumentoService
+                                .getAvailableCategories()
+                                .stream()
+                                .filter(tipo ->
+                                        Boolean.TRUE.equals(
+                                                tipo.obligatorio()
+                                        )
+                                )
+                                .toList();
+
+                if (!tiposObligatorios.isEmpty()) {
+
+                PtdiDocumentoContenidoDTO contenido =
+                        ptdiDocumentoService.getContent(
+                                idPtdReferencia
+                        );
+
+                List<PtdiDocumentoCategoriaDTO> categoriasRegistradas =
+                        contenido.categorias() == null
+                                ? List.of()
+                                : contenido.categorias();
+
+                List<String> documentosFaltantes =
+                        tiposObligatorios
+                                .stream()
+                                .filter(tipoObligatorio ->
+
+                                        categoriasRegistradas
+                                                .stream()
+                                                .noneMatch(categoria ->
+
+                                                        Objects.equals(
+                                                                tipoObligatorio.idTipoDocumento(),
+                                                                categoria.idTipoDocumento()
+                                                        )
+
+                                                        && categoria.archivos() != null
+
+                                                        && !categoria.archivos().isEmpty()
+                                                )
+                                )
+                                .map(PtdiDocumentoCategoriaDTO::nombre)
+                                .toList();
+                                
+                if (!documentosFaltantes.isEmpty()) {
+
+                        throw new ApiException(
+                                HttpStatus.CONFLICT,
+                                "No es posible aprobar ni rechazar el "
+                                        + "Plan de Trabajo Digital. "
+                                        + "Debe adjuntar al menos un archivo "
+                                        + "en cada tipo documental obligatorio. "
+                                        + "Documentos pendientes: "
+                                        + String.join(
+                                                ", ",
+                                                documentosFaltantes
+                                        )
+                        );
+                }
+                }                
+
                 Date fechaActual = new Date();
 
                 String registradoPor = "idPersona:"
