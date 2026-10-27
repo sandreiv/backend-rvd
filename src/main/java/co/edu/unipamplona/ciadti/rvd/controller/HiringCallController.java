@@ -12,6 +12,7 @@
  * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD
+ * 26/10/2026 - Andrés Hernández - Gestión del PTD por Talento humano
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -21,12 +22,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
@@ -35,6 +38,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -172,5 +176,30 @@ public class HiringCallController {
     public ResponseEntity<List<PtdStatesProfessorsDTO>> getPtdStatesProfessors(@RequestParam Long idPeriodoUniversitario) {
         List<PtdStatesProfessorsDTO> states = planTrabajoDigitalService.getPtdStatesProfessors(idPeriodoUniversitario);
         return new ResponseEntity<>(states, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Actualiza el estado del PTD y sus adjuntos",
+        description = """
+                Actualiza el estado del PTD a 'Aprobado por Talento' y marca los documentos adjuntos enviados como validos
+                """
+    )
+    @PutMapping("/approve-ptd-th")
+    public ResponseEntity<Void> approvePtdByTh(@RequestBody ApprovePtdRequestDTO dto) {
+        planTrabajoDigitalService.approvePtdByTh(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Actualiza el estado del PTD y sus adjuntos validados por TH. Ademas de una observación que indica las correcciones",
+        description = """
+                Actualiza el estado del PTD a 'Estipulado', marca los documentos adjuntos enviados como validos y registra
+                la observación para corregir los adjuntos invalidos
+                """
+    )
+    @PutMapping("/decline-ptd-th")
+    public ResponseEntity<Void> declinePtdByTh(@RequestBody RejectPtdRequestDTO dto) {
+        planTrabajoDigitalService.declinePtdByTh(dto);
+        return ResponseEntity.ok().build();
     }
 }
