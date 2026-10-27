@@ -15,6 +15,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 
 public interface PlanTrabajoDigitalService {
@@ -24,6 +25,8 @@ public interface PlanTrabajoDigitalService {
     PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario);
 
     List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario);
+
+    PtdiDocumentoContenidoDTO getPtdAttachments(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario);
 
     void approvePtdByTh(ApprovePtdRequestDTO dto);
 

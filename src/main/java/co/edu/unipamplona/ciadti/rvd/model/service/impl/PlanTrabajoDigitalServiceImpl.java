@@ -11,6 +11,7 @@
  * 20/10/2026 - Andrés Hernández - Busqueda de estados del PTD por persona y filtrado general por periodo universitario
  * 23/10/2026 - Andrés Hernández - Guardar el PTD y ver su info trae las observaciones hechas por el Coordinador
  * 26/10/2026 - Andrés Hernández - Gestión del PTD por Talento humano (Rechazo y Aprobación)
+ * 27/10/2026 - Andrés Hernández - Listado de adjuntos del PTD
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -36,6 +37,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSavePayloadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PlanTrabajoDigitalEntity;
@@ -44,6 +46,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionPtdRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PlanTrabajoDigitalRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PtdiDocumentoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
+import co.edu.unipamplona.ciadti.rvd.model.service.PtdiDocumentoService;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +68,8 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
     private final ObservacionPtdRepository observacionPtdRepository;
     private final PtdiDocumentoRepository ptdiDocumentoRepository;
 
+    private final PtdiDocumentoService ptdiDocumentoService;
+    
     private final PlanTrabajoDigitalMapper planTrabajoDigitalMapper;
 
     @Override
@@ -168,6 +173,15 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
         log.info("getPtdStatesProfessors ===> Estados por persona obtenidos. idPeriodo={}, cantidad={}", idPeriodoUniversitario, states.size());
         return states;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PtdiDocumentoContenidoDTO getPtdAttachments(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario) {
+        log.info("getPtdAttachments ===> Obteniendo adjuntos del PTD por persona. idPeriodo={}", idPeriodoUniversitario);
+
+        Long idPtdReferencia = planTrabajoDigitalRepository.findReferencePtdIdByHiringAndProfessor(idCargaDocente, idPersonaGeneral, idPeriodoUniversitario);
+        return ptdiDocumentoService.getContent(idPtdReferencia);
     }
 
     @Override

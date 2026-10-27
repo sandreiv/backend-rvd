@@ -53,12 +53,6 @@ public class PtdiDocumentoEntity {
     private Date fechaCambio;
 
     @Column(
-            name = "PTDI_ESTADO",
-            length = 30
-    )
-    private String estado;
-
-    @Column(
             name = "TIDC_ID"
     )
     private Long idTipoDocumentoContratacion;

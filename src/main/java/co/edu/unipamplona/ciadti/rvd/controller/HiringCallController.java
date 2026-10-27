@@ -38,12 +38,14 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
-
+import co.edu.unipamplona.ciadti.rvd.model.service.PtdiDocumentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -56,6 +58,7 @@ public class HiringCallController {
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
+    private final PtdiDocumentoService ptdiDocumentoService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -176,6 +179,26 @@ public class HiringCallController {
     public ResponseEntity<List<PtdStatesProfessorsDTO>> getPtdStatesProfessors(@RequestParam Long idPeriodoUniversitario) {
         List<PtdStatesProfessorsDTO> states = planTrabajoDigitalService.getPtdStatesProfessors(idPeriodoUniversitario);
         return new ResponseEntity<>(states, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Objeto con los adjuntos pertenecientes al PTD",
+        description = "Objeto con los adjuntos cargados por el docente para el PTD"
+    )
+    @GetMapping("/get-ptd-attachments")
+    public ResponseEntity<PtdiDocumentoContenidoDTO> getPtdAttachments(@RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente, @RequestParam Long idPeriodoUniversitario) {
+        PtdiDocumentoContenidoDTO adjuntos = planTrabajoDigitalService.getPtdAttachments(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario);
+        return new ResponseEntity<>(adjuntos, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Objeto con los adjuntos pertenecientes al PTD",
+        description = "Objeto con los adjuntos cargados por el docente para el PTD"
+    )
+    @GetMapping("/get-ptd-attachment-categories")
+    public ResponseEntity<List<PtdiDocumentoCategoriaDTO>> getPtdAttachmentCategories() {
+        List<PtdiDocumentoCategoriaDTO> categorias = ptdiDocumentoService.getAvailableCategories();
+        return new ResponseEntity<>(categorias, HttpStatus.OK);
     }
 
     @Operation(
