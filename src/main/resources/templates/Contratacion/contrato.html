@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Anexo - Contrato docente</title>
+    <!--
+    =====================================================================================
+    PLANTILLA: Anexo de contratación - Docente con funciones administrativas (COORDINADOR)
+    Ruta: templates/Contratacion/contrato.html
+    Motor: Thymeleaf (SpringTemplateEngine) -> OpenHTMLtoPDF 1.0.10
+    =====================================================================================
+    PLANTILLA VACÍA: no contiene NINGÚN dato de ejemplo. Todo valor visible (datos del
+    docente, anexo, academia, remuneración, funciones, actividades, valores en letras,
+    CDP, rubros, ciudad y fecha de suscripción, nombres de las firmas) entra por
+    th:text desde la base de datos. Los textos fijos son solo los del formato legal:
+    títulos de sección, nombres de columnas, cláusulas y las etiquetas de cargo.
+    =====================================================================================
+    VARIABLES DE CONTEXTO ESPERADAS
+      contrato : DTO raíz (records anidados, nombres en español)
+        anexo        -> tipoVinculacion, unidadRegional, programa, numeroAnexo,
+                        fechaInicio, fechaFin
+        docente      -> nombreCompleto, documento, expedidoEn, fechaIngreso, genero,
+                        fechaNacimiento, ciudadNacimiento, departamentoNacimiento,
+                        direccion, telefono, celular, correo
+        academico    -> ultimoTitulo, tituloObtenido, institucionEducativa,
+                        fechaTitulo, actoHomologacion, pais
+        remuneracion -> categoria, puntos, horasSemanales, remuneracionMensual,
+                        valorContrato, valorPrestaciones, totalContrato
+        funciones                 -> List<String>  (15 funciones administrativas)
+        formacionDirectaCreditos  -> List<{sede, programa, nucleoTematico, semestre,
+                                          grupo, creditos, htp, hta, total}>
+        formacionDirectaAsignaturas -> List<{sede, programa, asignatura, semestre,
+                                          grupo, horasSemana}>
+        formacionIndirecta        -> List<{actividad, horasSemana}>
+        ctei                      -> List<{grupo, linea, actividad, proyecto, horasSemanales}>
+        isu                       -> List<{actividad, proyecto, horasSemanales}>
+        administracion            -> List<{proyecto, horasSemanales}>
+        presupuesto  -> cdpNumero, rubros
+        suscripcion  -> ciudad, fechaSuscripcion
+        firmas       -> decanoNombre, docenteNombre
+                        (los cargos de las firmas son texto fijo del formato)
+      fmt : objeto de formato (clase report/ContratoPdfFormat) con
+            text(Object)     null -> "" (acepta String, Integer, etc.)
+            fecha(..)        LocalDate -> dd-MM-yyyy        p.ej. 12-02-2020
+            fechaLarga(..)   LocalDate -> "15 de enero de 2026"
+            numero(Object)   Number -> "1.234.567"          (miles con punto, sin $)
+            decimal(Object)  Number -> "123,4"
+            pesos(Object)    Number -> "$1.234.567"
+            letras(Object)   Number -> "UN MILLON ... ($1.234.567) M/CTE"
+    =====================================================================================
+    TOKENS DE DISEÑO (valores literales: OpenHTMLtoPDF no soporta var())
+      verde institucional  #5bb530   cabeceras de sección, viñetas, acentos
+      verde claro          #c7e4b8   etiquetas de campo / columnas / subtítulos
+      blanco               #ffffff   celdas de datos
+      borde                #cccccc   líneas de 1px
+      texto                #000000   todo el texto (negro puro)
+      fuente               Helvetica, Arial, "Liberation Sans", sans-serif
+    =====================================================================================
+    -->
+    <style type="text/css">
+        @page {
+            size: 8.5in 14in;                 /* US Legal / Oficio, vertical */
+            margin: 12mm 18mm 15mm 18mm;
+            @top-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: Helvetica, Arial, "Liberation Sans", sans-serif;
+                font-size: 11pt;
+                color: #000000;
+                vertical-align: bottom;
+                padding-bottom: 3px;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Helvetica, Arial, "Liberation Sans", sans-serif;
+            color: #000000;
+        }
+
+        body {
+            margin: 0;
+            font-size: 7.5pt;
+            line-height: 1.2;
+        }
+
+        .hoja {
+            page-break-after: always;
+        }
+
+        .hoja-final {
+            page-break-after: auto;
+        }
+
+        /* ---------- Tablas de formulario ---------- */
+        table.form {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 0 3px 0;
+            table-layout: fixed;
+        }
+
+        table.form th,
+        table.form td {
+            border: 1px solid #cccccc;
+            padding: 2px 4px;
+            font-size: 7.5pt;
+            line-height: 1.12;
+            vertical-align: middle;
+        }
+
+        /* ---------- Cabeceras ---------- */
+        .titulo-seccion {
+            background-color: #5bb530;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            padding: 3px 4px;
+            letter-spacing: .2px;
+        }
+
+        .subtitulo-seccion {
+            background-color: #5bb530;
+            font-weight: normal;
+            text-align: center;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            padding: 2px 4px;
+        }
+
+        .etiqueta {
+            background-color: #c7e4b8;
+            font-weight: bold;
+            text-align: center;
+            font-size: 7.5pt;
+        }
+
+        .etiqueta-izq {
+            background-color: #c7e4b8;
+            font-weight: bold;
+            text-align: left;
+            font-size: 7.5pt;
+        }
+
+        .dato {
+            background-color: #ffffff;
+            text-align: center;
+            font-size: 7.5pt;
+        }
+
+        .dato-izq {
+            background-color: #ffffff;
+            text-align: left;
+            font-size: 7.5pt;
+        }
+
+        .dato-num {
+            background-color: #ffffff;
+            text-align: right;
+            font-size: 7.5pt;
+            white-space: nowrap;
+        }
+
+        .fila-vacia td {
+            height: 15px;
+        }
+
+        .dato,
+        .dato-izq,
+        .dato-num {
+            height: 14px;
+        }
+
+        ul.lista-funciones li.relleno {
+            height: 12px;
+        }
+
+        .vacio {
+            background-color: #ffffff;
+            text-align: center;
+            font-size: 7pt;
+            color: #555555;
+            font-style: italic;
+        }
+
+        /* ---------- Control de cortes de pagina ---------- */
+        table.evitar-corte {
+            page-break-inside: avoid;
+        }
+
+        /* ---------- Bloque de funciones (viñetas verdes) ---------- */
+        .funciones {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 0 5px 0;
+            page-break-inside: avoid;
+        }
+
+        .funciones td {
+            border: 1px solid #cccccc;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        ul.lista-funciones {
+            list-style-type: none;
+            margin: 0;
+            padding: 5px 8px 5px 22px;
+        }
+
+        ul.lista-funciones li {
+            position: relative;
+            font-size: 7.1pt;
+            line-height: 1.2;
+            margin: 0 0 1.5px 0;
+            text-align: justify;
+        }
+
+        ul.lista-funciones li .vineta {
+            color: #5bb530;
+            font-size: 10pt;
+            margin-right: 5px;
+        }
+
+        /* ---------- Página 2: cláusulas ---------- */
+        .clausulas {
+            font-size: 7.2pt;
+            line-height: 1.28;
+            text-align: justify;
+            margin: 4px 0 10px 0;
+        }
+
+        .clausulas .rotulo {
+            font-weight: normal;
+            text-transform: uppercase;
+        }
+
+        /* ---------- Firmas ---------- */
+        table.firmas {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+        }
+
+        table.firmas td {
+            width: 62%;
+            vertical-align: top;
+            padding: 0 0 26px 0;
+        }
+
+        .firma-cargo {
+            font-weight: bold;
+            font-size: 8pt;
+            text-transform: uppercase;
+            margin: 0 0 30px 0;
+        }
+
+        .firma-nombre {
+            font-size: 9pt;
+            margin: 0 0 2px 0;
+        }
+
+        .firma-linea {
+            font-size: 8pt;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================================
+     HOJA 1 - INFORMACIÓN DEL ANEXO, DATOS, REMUNERACIÓN Y ACTIVIDADES
+     ============================================================================ -->
+<div class="hoja">
+
+    <!-- 1. INFORMACIÓN DEL ANEXO -->
+    <table class="form">
+        <colgroup>
+            <col style="width:30%"/><col style="width:30%"/>
+            <col style="width:25%"/><col style="width:15%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="4">Información del anexo</td>
+        </tr>
+        <tr>
+            <td class="subtitulo-seccion" colspan="4">
+                A las condiciones generales del negocio jurídico académico
+            </td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Tipo de Vinculación</td>
+            <td class="etiqueta">Unidad Regional</td>
+            <td class="etiqueta">Programa</td>
+            <td class="etiqueta">Número de Anexo</td>
+        </tr>
+        <tr>
+            <td class="dato" th:text="${fmt.text(contrato.anexo().tipoVinculacion())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.anexo().unidadRegional())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.anexo().programa())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.anexo().numeroAnexo())}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta" colspan="2">Fecha de Inicio</td>
+            <td class="etiqueta" colspan="2">Fecha de Finalización</td>
+        </tr>
+        <tr>
+            <td class="dato" colspan="2" th:text="${fmt.fechaLarga(contrato.anexo().fechaInicio())}"></td>
+            <td class="dato" colspan="2" th:text="${fmt.fechaLarga(contrato.anexo().fechaFin())}"></td>
+        </tr>
+    </table>
+
+    <!-- 2. INFORMACIÓN PERSONAL DEL DOCENTE -->
+    <table class="form">
+        <colgroup>
+            <col style="width:25%"/><col style="width:25%"/>
+            <col style="width:25%"/><col style="width:25%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="4">Información personal docente</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Nombre</td>
+            <td class="etiqueta">Documento Identidad</td>
+            <td class="etiqueta">Expedida En</td>
+            <td class="etiqueta">Fecha Ingreso</td>
+        </tr>
+        <tr>
+            <td class="dato" th:text="${fmt.text(contrato.docente().nombreCompleto())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().documento())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().expedidoEn())}"></td>
+            <td class="dato" th:text="${fmt.fecha(contrato.docente().fechaIngreso())}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Género</td>
+            <td class="etiqueta">Fecha de Nacimiento</td>
+            <td class="etiqueta">Ciudad Nacimiento</td>
+            <td class="etiqueta">Departamento Nacimiento</td>
+        </tr>
+        <tr>
+            <td class="dato" th:text="${fmt.text(contrato.docente().genero())}"></td>
+            <td class="dato" th:text="${fmt.fecha(contrato.docente().fechaNacimiento())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().ciudadNacimiento())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().departamentoNacimiento())}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Dirección</td>
+            <td class="etiqueta">Teléfono</td>
+            <td class="etiqueta">Celular</td>
+            <td class="etiqueta">Correo Electrónico</td>
+        </tr>
+        <tr>
+            <td class="dato" th:text="${fmt.text(contrato.docente().direccion())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().telefono())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().celular())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.docente().correo())}"></td>
+        </tr>
+    </table>
+
+    <!-- 3. INFORMACIÓN ACADÉMICA -->
+    <table class="form">
+        <colgroup>
+            <col style="width:20%"/><col style="width:35%"/>
+            <col style="width:30%"/><col style="width:15%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="4">Información académica</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Último Título</td>
+            <td class="etiqueta">Título Obtenido</td>
+            <td class="etiqueta">Institución Educativa</td>
+            <td class="etiqueta">Fecha de Título</td>
+        </tr>
+        <tr>
+            <td class="dato" th:text="${fmt.text(contrato.academico().ultimoTitulo())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.academico().tituloObtenido())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.academico().institucionEducativa())}"></td>
+            <td class="dato" th:text="${fmt.fecha(contrato.academico().fechaTitulo())}"></td>
+        </tr>
+        <tr>
+            <td class="etiqueta" colspan="3">Acto de Homologación Títulos Extranjeros</td>
+            <td class="etiqueta">País</td>
+        </tr>
+        <tr>
+            <td class="dato" colspan="3" th:text="${fmt.text(contrato.academico().actoHomologacion())}"></td>
+            <td class="dato" th:text="${fmt.text(contrato.academico().pais())}"></td>
+        </tr>
+    </table>
+
+    <!-- 4. REMUNERACIÓN -->
+    <table class="form">
+        <colgroup>
+            <col style="width:14%"/><col style="width:10%"/><col style="width:10%"/>
+            <col style="width:18%"/><col style="width:15%"/><col style="width:16%"/>
+            <col style="width:17%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="7">Remuneración</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Categoría Docente</td>
+            <td class="etiqueta">Puntos Asignados</td>
+            <td class="etiqueta">Horas Semanales</td>
+            <td class="etiqueta">Remuneración Mensual</td>
+            <td class="etiqueta">Valor Contrato</td>
+            <td class="etiqueta">Valor Prestaciones</td>
+            <td class="etiqueta">Total Contrato</td>
+        </tr>
+        <tr>
+            <td class="dato" th:text="${fmt.text(contrato.remuneracion().categoria())}"></td>
+            <td class="dato" th:text="${fmt.decimal(contrato.remuneracion().puntos())}"></td>
+            <td class="dato" th:text="${fmt.numero(contrato.remuneracion().horasSemanales())}"></td>
+            <td class="dato-num" th:text="${fmt.numero(contrato.remuneracion().remuneracionMensual())}"></td>
+            <td class="dato-num" th:text="${fmt.numero(contrato.remuneracion().valorContrato())}"></td>
+            <td class="dato-num" th:text="${fmt.numero(contrato.remuneracion().valorPrestaciones())}"></td>
+            <td class="dato-num" th:text="${fmt.numero(contrato.remuneracion().totalContrato())}"></td>
+        </tr>
+    </table>
+
+    <!-- 5. FUNCIONES DEL DOCENTE CON FUNCIONES ADMINISTRATIVAS -->
+    <table class="funciones">
+        <tr>
+            <td class="titulo-seccion">
+                Funciones docente ocasional tiempo completo con funciones administrativas
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <ul class="lista-funciones">
+                    <li th:each="funcion : ${contrato.funciones()}">
+                        <span class="vineta">&#9679;</span><span th:text="${funcion}"></span>
+                    </li>
+                    <li th:if="${#lists.isEmpty(contrato.funciones())}" class="relleno">&#160;</li>
+                </ul>
+            </td>
+        </tr>
+    </table>
+
+    <!-- 6. ACTIVIDADES DE FORMACIÓN - APRENDIZAJE DIRECTO -->
+    <table class="form">
+        <colgroup>
+            <col style="width:12%"/><col style="width:22%"/><col style="width:28%"/>
+            <col style="width:8%"/><col style="width:8%"/><col style="width:6%"/>
+            <col style="width:5%"/><col style="width:6%"/><col style="width:5%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="9">
+                Actividades de formación - Aprendizaje directo
+            </td>
+        </tr>
+        <tr>
+            <td class="subtitulo-seccion" colspan="9">Por créditos</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Sede</td>
+            <td class="etiqueta">Programa</td>
+            <td class="etiqueta">Núcleo Temático</td>
+            <td class="etiqueta">Semestre</td>
+            <td class="etiqueta">Grupo</td>
+            <td class="etiqueta">Cred</td>
+            <td class="etiqueta">HTP</td>
+            <td class="etiqueta">HTA</td>
+            <td class="etiqueta">Total</td>
+        </tr>
+        <tr th:each="credito : ${contrato.formacionDirectaCreditos()}">
+            <td class="dato" th:text="${fmt.text(credito.sede())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.programa())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.nucleoTematico())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.semestre())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.grupo())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.creditos())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.htp())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.hta())}"></td>
+            <td class="dato" th:text="${fmt.text(credito.total())}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(contrato.formacionDirectaCreditos())}" class="fila-vacia"><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td></tr>
+        <tr>
+            <td class="subtitulo-seccion" colspan="9">Por asignaturas</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Sede</td>
+            <td class="etiqueta">Programa</td>
+            <td class="etiqueta">Asignatura</td>
+            <td class="etiqueta">Semestre</td>
+            <td class="etiqueta">Grupo</td>
+            <td class="etiqueta" colspan="4">Horas Semana</td>
+        </tr>
+        <tr th:each="asignatura : ${contrato.formacionDirectaAsignaturas()}">
+            <td class="dato" th:text="${fmt.text(asignatura.sede())}"></td>
+            <td class="dato" th:text="${fmt.text(asignatura.programa())}"></td>
+            <td class="dato" th:text="${fmt.text(asignatura.asignatura())}"></td>
+            <td class="dato" th:text="${fmt.text(asignatura.semestre())}"></td>
+            <td class="dato" th:text="${fmt.text(asignatura.grupo())}"></td>
+            <td class="dato" colspan="4" th:text="${fmt.text(asignatura.horasSemana())}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(contrato.formacionDirectaAsignaturas())}" class="fila-vacia"><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato" colspan="4"></td></tr>
+    </table>
+
+    <!-- 7. ACTIVIDADES DE FORMACIÓN - APRENDIZAJE INDIRECTO -->
+    <table class="form evitar-corte">
+        <colgroup>
+            <col style="width:85%"/><col style="width:15%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="2">
+                Actividades de formación - Aprendizaje indirecto
+            </td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Actividades de Formación - Indirecto</td>
+            <td class="etiqueta">Horas Semana</td>
+        </tr>
+        <tr th:each="indirecta : ${contrato.formacionIndirecta()}">
+            <td class="dato-izq" th:text="${fmt.text(indirecta.actividad())}"></td>
+            <td class="dato" th:text="${fmt.numero(indirecta.horasSemana())}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(contrato.formacionIndirecta())}" class="fila-vacia"><td class="dato-izq"></td><td class="dato"></td></tr>
+    </table>
+
+    <!-- 8. ACTIVIDADES DE CIENCIA, TECNOLOGÍA E INNOVACIÓN -->
+    <table class="form evitar-corte">
+        <colgroup>
+            <col style="width:20%"/><col style="width:20%"/><col style="width:28%"/>
+            <col style="width:22%"/><col style="width:10%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="5">
+                Actividades de ciencia, tecnología e innovación
+            </td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Grupo</td>
+            <td class="etiqueta">Línea</td>
+            <td class="etiqueta">Actividad</td>
+            <td class="etiqueta">Proyecto</td>
+            <td class="etiqueta">Horas Semanales</td>
+        </tr>
+        <tr th:each="actividadCtei : ${contrato.ctei()}">
+            <td class="dato" th:text="${fmt.text(actividadCtei.grupo())}"></td>
+            <td class="dato" th:text="${fmt.text(actividadCtei.linea())}"></td>
+            <td class="dato" th:text="${fmt.text(actividadCtei.actividad())}"></td>
+            <td class="dato" th:text="${fmt.text(actividadCtei.proyecto())}"></td>
+            <td class="dato" th:text="${fmt.numero(actividadCtei.horasSemanales())}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(contrato.ctei())}" class="fila-vacia"><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td></tr>
+    </table>
+
+    <!-- 9. ACTIVIDADES DE INTERACCIÓN SOCIAL UNIVERSITARIA -->
+    <table class="form evitar-corte">
+        <colgroup>
+            <col style="width:40%"/><col style="width:45%"/><col style="width:15%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="3">
+                Actividades de interacción social universitaria
+            </td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Actividades</td>
+            <td class="etiqueta">Proyecto</td>
+            <td class="etiqueta">Horas Semanales</td>
+        </tr>
+        <tr th:each="actividadIsu : ${contrato.isu()}">
+            <td class="dato-izq" th:text="${fmt.text(actividadIsu.actividad())}"></td>
+            <td class="dato" th:text="${fmt.text(actividadIsu.proyecto())}"></td>
+            <td class="dato" th:text="${fmt.numero(actividadIsu.horasSemanales())}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(contrato.isu())}" class="fila-vacia"><td class="dato-izq"></td><td class="dato"></td><td class="dato"></td></tr>
+    </table>
+
+    <!-- 10. ACTIVIDADES DE ADMINISTRACIÓN ACADÉMICA -->
+    <table class="form evitar-corte">
+        <colgroup>
+            <col style="width:85%"/><col style="width:15%"/>
+        </colgroup>
+        <tr>
+            <td class="titulo-seccion" colspan="2">
+                Actividades de administración académica
+            </td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Proyecto</td>
+            <td class="etiqueta">Horas Semanales</td>
+        </tr>
+        <tr th:each="administracion : ${contrato.administracion()}">
+            <td class="dato-izq" th:text="${fmt.text(administracion.proyecto())}"></td>
+            <td class="dato" th:text="${fmt.numero(administracion.horasSemanales())}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(contrato.administracion())}" class="fila-vacia"><td class="dato-izq"></td><td class="dato"></td></tr>
+    </table>
+
+</div>
+
+<!-- ============================================================================
+     HOJA 2 - CLÁUSULAS DEL NEGOCIO JURÍDICO ACADÉMICO Y FIRMAS
+     ============================================================================ -->
+<div class="hoja hoja-final">
+
+    <div class="clausulas">
+
+        
+            Que, en desarrollo de las Condiciones Generales de Contratación para la Vinculación de
+            Personal Académico Mediante Negocio Académico de la Universidad de Cundinamarca, del que
+            trata el Acuerdo 021 de 2025, el (la) docente con funciones administrativas
+            <strong th:text="${fmt.text(contrato.docente().nombreCompleto())}"></strong>
+            identificado(a) con CÉDULA DE CIUDADANÍA No.
+            <strong th:text="${fmt.text(contrato.docente().documento())}"></strong>
+            de <strong th:text="${fmt.text(contrato.docente().expedidoEn())}"></strong>
+            se vincula a la Universidad de Cundinamarca teniendo en cuenta las siguientes cláusulas.
+
+        
+            <span class="rotulo">PRIMERA. - OBJETO.-</span>
+            El presente anexo tiene por objeto formalizar la vinculación del personal académico para
+            el desarrollo de actividades administrativas, conforme a las funciones descritas en el
+            presente anexo y a las condiciones generales de contratación para la vinculación de
+            personal académico mediante negocio jurídico académico de la Universidad de Cundinamarca.
+
+        
+            <span class="rotulo">SEGUNDA. - ACEPTACIÓN.</span>
+            Con la suscripción del presente Anexo, el docente con funciones administrativas declara
+            conocer y aceptar de manera expresa, íntegra e incondicional las Condiciones Generales de
+            Contratación para la Vinculación de Personal Académico mediante Negocio Jurídico
+            Académico, las cuales hacen parte integral de esta vinculación.
+
+        
+            <span class="rotulo">TERCERA. - SERVICIOS PERSONALES.</span>
+            El docente con funciones administrativas se compromete a prestar sus servicios en
+            desarrollo de las actividades descritas en la parte inicial del anexo.
+
+        
+            <span class="rotulo">CUARTA. - PLAZO.-</span>
+            El término de ejecución de las actividades a desarrollar será del
+            <strong th:text="${fmt.fechaLarga(contrato.anexo().fechaInicio())}"></strong>
+            al <strong th:text="${fmt.fechaLarga(contrato.anexo().fechaFin())}"></strong>.
+
+        
+            <span class="rotulo">QUINTA. - VALOR PACTADO.</span>
+            El valor pactado por concepto de remuneración del presente negocio jurídico académico
+            corresponde a
+            <strong th:text="${fmt.letras(contrato.remuneracion().remuneracionMensual())}"></strong>
+            y por prestaciones sociales
+            <strong th:text="${fmt.letras(contrato.remuneracion().valorPrestaciones())}"></strong>
+            para un total de
+            <strong th:text="${fmt.letras(contrato.remuneracion().totalContrato())}"></strong>.
+
+        
+            <span class="rotulo">SEXTA. - FORMA DE PAGO.</span>
+            El reconocimiento económico derivado del presente negocio jurídico académico se realizará
+            conforme al calendario institucional de pagos, previa verificación por parte de la
+            supervisión académica y del cumplimiento de las actividades pactadas.
+
+        
+            <span class="rotulo">SÉPTIMA. - AUTORIZACIÓN.</span>
+            El docente autoriza de manera expresa a la Universidad de Cundinamarca para efectuar los
+            ajustes o deducciones proporcionales sobre el valor reconocido, cuando no se ejecuten
+            actividades programadas por causa atribuible al mismo, siempre que dichas situaciones se
+            encuentren debidamente sustentadas por la supervisión.
+
+        
+            <span class="rotulo">OCTAVA. - CAUSALES DE TERMINACIÓN.</span>
+            El presente negocio jurídico académico podrá darse por terminado por las siguientes
+            causales: a) Mutuo acuerdo entre las partes. b) Terminación unilateral por parte del
+            Gestor del Conocimiento y el Aprendizaje, mediante comunicación escrita radicada con una
+            antelación no inferior a quince (15) días calendario. c) Incumplimiento de las
+            obligaciones académicas pactadas en el presente Anexo, en el Plan de Trabajo Digital o en
+            las Condiciones Generales de Vinculación, previo agotamiento del debido proceso.
+            d) Inhabilidad o incompatibilidad sobreviniente debidamente comprobada. e) Fuerza mayor o
+            caso fortuito que impida de manera definitiva la ejecución de las actividades académicas.
+            f) Muerte del personal académico.
+
+        
+            <span class="rotulo">NOVENA. - TERMINACIÓN UNILATERAL POR PARTE DEL DOCENTE.</span>
+            En el evento en que el docente con funciones administrativas decida dar por terminado el
+            presente negocio jurídico académico de manera anticipada e injustificada, o sin el
+            cumplimiento del preaviso establecido, la Universidad de Cundinamarca aplicará las
+            deducciones a que haya lugar conforme a la liquidación correspondiente.
+
+        
+            <span class="rotulo">DÉCIMA. - INHABILIDAD E INCOMPATIBILIDAD.</span>
+            El docente con funciones administrativas manifiesta bajo la gravedad de juramento no estar
+            incurso en ninguna causal de inhabilidad o incompatibilidad consagrada en la Constitución
+            Política o en la ley.
+
+        
+            <span class="rotulo">DÉCIMA PRIMERA. - SUSPENSIÓN.</span>
+            La vinculación se podrá suspender por fuerza mayor, caso fortuito o por motivos de salud
+            debidamente soportados mediante incapacidad médica expedida o validada por la entidad de
+            seguridad social correspondiente.
+
+        
+            <span class="rotulo">DÉCIMA SEGUNDA.</span>
+            Durante el tiempo que dure la suspensión se interrumpe la obligación de prestar el
+            servicio estipulado y para la Universidad la obligación de pagar los valores pactados.
+
+        
+            <span class="rotulo">DÉCIMA TERCERA. - PROPIEDAD INTELECTUAL.</span>
+            Los productos académicos, contenidos, materiales y resultados que se generen con ocasión
+            del desarrollo del presente negocio jurídico académico serán de uso institucional de la
+            Universidad de Cundinamarca, conforme a la normativa interna sobre propiedad intelectual,
+            sin perjuicio del reconocimiento de los derechos morales que correspondan al docente con
+            funciones administrativas, de acuerdo con la legislación vigente.
+
+        
+            <span class="rotulo">DÉCIMA CUARTA. - OBLIGACIÓN ESPECIAL DEL PERSONAL ACADÉMICO.</span>
+            Con la firma del presente Anexo, los suscriptores declaran bajo la gravedad de juramento
+            que el docente con funciones administrativas cumple con los requisitos académicos, de
+            experiencia y legales exigidos por la Universidad de Cundinamarca para la vigencia actual.
+
+        
+            <span class="rotulo">DÉCIMA QUINTA. - REQUISITOS DOCUMENTALES.</span>
+            A la firma del presente anexo el personal académico aportó los documentos exigidos por la
+            Universidad para la formalización de la vinculación. PARÁGRAFO. - Si en el trámite de
+            verificación documental se detecta el incumplimiento en la entrega de cualquiera de los
+            documentos exigidos se dará lugar a la terminación de la vinculación.
+
+        
+            <span class="rotulo">DÉCIMA SEXTA. - CONOCIMIENTO DE CONDICIONES GENERALES DE CONTRATACIÓN.</span>
+            Con la firma del presente anexo declaro bajo la gravedad de juramento que he recibido
+            copia de las Condiciones Generales del Negocio Jurídico Académico.
+
+        
+            <span class="rotulo">DÉCIMA SÉPTIMA. - CUMPLIMIENTO DE REQUISITOS.</span>
+            Con la firma del presente anexo, el docente con funciones administrativas declara bajo la
+            gravedad de juramento que cumple con los requisitos académicos, la experiencia y legales
+            exigidos por la Universidad de Cundinamarca para la vigencia actual.
+
+        
+            <span class="rotulo">DÉCIMA OCTAVA. - OBLIGACIONES DE LA UNIVERSIDAD.</span>
+            La Universidad de Cundinamarca se obliga a: a) Reconocer y pagar oportunamente los valores
+            pactados en el presente negocio jurídico académico, conforme al régimen aplicable y a la
+            prestación efectiva del servicio. b) Brindar las orientaciones académicas y
+            administrativas necesarias para la adecuada ejecución de las actividades asignadas.
+            c) Designar la supervisión académica correspondiente y realizar el seguimiento al
+            cumplimiento de las funciones pactadas. d) Garantizar el acceso a los sistemas
+            institucionales requeridos para el desarrollo de las actividades pactadas, conforme a la
+            normativa interna.
+
+        
+            <span class="rotulo">DÉCIMA NOVENA. - OBLIGACIÓN CON LOS SISTEMAS DE GESTIÓN.</span>
+            El docente con funciones administrativas se compromete a conocer, analizar y cumplir con
+            las normas y las disposiciones establecidas para los sistemas de gestión, entre ellos, los
+            de Seguridad y Salud en el Trabajo SST y el Sistema de Gestión de Seguridad de la
+            Información SGSI, conforme a lo establecido en la cláusula de confidencialidad.
+
+        
+            <span class="rotulo">VIGÉSIMA. - OBLIGACIÓN CON EL SISTEMA DE EVALUACIÓN.</span>
+            El docente con funciones administrativas se compromete a cumplir con las actividades que
+            le competen en ejecución del proceso de evaluación del desempeño y a realizar los planes
+            de mejoramiento que de él se derive.
+
+        
+            <span class="rotulo">VIGÉSIMA PRIMERA. - CONFIDENCIALIDAD.</span>
+            El docente con funciones administrativas se obliga a guardar reserva y confidencialidad
+            sobre toda la información institucional a la que tenga acceso con ocasión del desarrollo
+            del presente negocio jurídico académico. Esta obligación se mantendrá durante su vigencia
+            y subsistirá después de su terminación. El incumplimiento dará lugar a las actuaciones a
+            que haya lugar, conforme al régimen aplicable y con observancia del debido proceso.
+
+        
+            <span class="rotulo">VIGÉSIMA SEGUNDA.</span>
+            Para efectos de reconocimiento y pago de vacaciones, se tendrá en cuenta lo establecido en
+            el Acuerdo No. 007 del 26 de mayo de 2017.
+
+        
+            <span class="rotulo">VIGÉSIMA TERCERA. - SUPERVISIÓN.</span>
+            La supervisión la llevará a cabo el Decano de la Facultad a la cual está adscrito el
+            docente con funciones administrativas y para el caso de los vinculados a los programas de
+            posgrado se llevará a cabo por el Director del Instituto de Posgrados.
+
+        
+            <span class="rotulo">VIGÉSIMA CUARTA. - IMPUTACIÓN PRESUPUESTAL.</span>
+            El docente con funciones administrativas se vincula con base en el Certificado de
+            Disponibilidad Presupuestal No.
+            <strong th:text="${fmt.text(contrato.presupuesto().cdpNumero())}"></strong>, rubros
+            <strong th:text="${fmt.text(contrato.presupuesto().rubros())}"></strong>,
+            del Presupuesto General de la Universidad de Cundinamarca, para la actual vigencia fiscal.
+
+        
+            <span class="rotulo">VIGÉSIMA QUINTA. - SUSCRIPCIÓN.</span>
+            En constancia se suscribe el presente anexo en
+            <strong th:text="${fmt.text(contrato.suscripcion().ciudad())}"></strong>
+            el día
+            <strong th:text="${fmt.fechaLarga(contrato.suscripcion().fechaSuscripcion())}"></strong>.
+
+    </div>
+
+    <!-- FIRMAS: 2 firmantes, alineados a la izquierda y apilados -->
+    <table class="firmas">
+        <tr>
+            <td>
+                <div class="firma-cargo">DECANO(A) DE FACULTAD</div>
+                <!-- Espacio reservado para la firma manuscrita / sello -->
+                <div class="firma-nombre"
+                     th:text="${fmt.text(contrato.firmas().decano().nombre())}"></div>
+                <div class="firma-linea">
+                    Nombre: ____________________________________________
+                </div>
+                <div class="firma-linea">
+                    Firma: _____________________________________________
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="firma-cargo">DOCENTE CON FUNCIONES ADMINISTRATIVAS</div>
+                <div class="firma-nombre"
+                     th:text="${fmt.text(contrato.firmas().docente().nombre())}"></div>
+                <div class="firma-linea">
+                    Nombre: ____________________________________________
+                </div>
+                <div class="firma-linea">
+                    Firma: _____________________________________________
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</div>
+
+</body>
+</html>
