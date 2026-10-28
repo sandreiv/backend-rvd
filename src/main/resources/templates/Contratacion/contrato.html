@@ -41,6 +41,10 @@
         suscripcion  -> ciudad, fechaSuscripcion
         firmas       -> decanoNombre, docenteNombre
                         (los cargos de las firmas son texto fijo del formato)
+      checkImage : data URI del ícono de viñeta (PNG en
+                   templates/Contratacion/img/check-verde.png). El exporter lo genera así:
+                   "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes)
+                   (el .webp original NO sirve: OpenHTMLtoPDF solo lee PNG/JPEG/GIF).
       fmt : objeto de formato (clase report/ContratoPdfFormat) con
             text(Object)     null -> "" (acepta String, Integer, etc.)
             fecha(..)        LocalDate -> dd-MM-yyyy        p.ej. 12-02-2020
@@ -218,10 +222,12 @@
             text-align: justify;
         }
 
-        ul.lista-funciones li .vineta {
-            color: #5bb530;
-            font-size: 10pt;
-            margin-right: 5px;
+        /* Viñeta con imagen (Check-Verde): OpenHTMLtoPDF no lee webp, se usa el PNG. */
+        img.vineta-check {
+            width: 8px;
+            height: 8px;
+            margin-right: 4px;
+            vertical-align: -1px;
         }
 
         /* ---------- Página 2: cláusulas ---------- */
@@ -435,7 +441,7 @@
             <td>
                 <ul class="lista-funciones">
                     <li th:each="funcion : ${contrato.funciones()}">
-                        <span class="vineta">&#9679;</span><span th:text="${funcion}"></span>
+                        <img class="vineta-check" th:src="${checkImage}" th:if="${checkImage != null and !checkImage.isEmpty()}" alt=""/><span th:text="${funcion}"></span>
                     </li>
                     <li th:if="${#lists.isEmpty(contrato.funciones())}" class="relleno">&#160;</li>
                 </ul>
