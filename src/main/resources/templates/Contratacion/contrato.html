@@ -62,14 +62,14 @@
     <style type="text/css">
         @page {
             size: 8.5in 14in;                 /* US Legal / Oficio, vertical */
-            margin: 12mm 18mm 15mm 18mm;
+            margin: 16mm 18mm 15mm 18mm;
             @top-right {
                 content: "Página " counter(page) " de " counter(pages);
                 font-family: Helvetica, Arial, "Liberation Sans", sans-serif;
                 font-size: 11pt;
                 color: #000000;
                 vertical-align: bottom;
-                padding-bottom: 3px;
+                padding-bottom: 25pt;         /* separa el paginador del contenido */
             }
         }
 
@@ -255,6 +255,11 @@
             font-size: 8pt;
             text-transform: uppercase;
             margin: 0 0 30px 0;
+        }
+
+        /* Modificador opt-in: mismo cargo sin negrita. */
+        .firma-cargo.sin-negrita {
+            font-weight: normal;
         }
 
         .firma-nombre {
@@ -711,7 +716,7 @@
         
             <span class="rotulo">DÉCIMA QUINTA. - REQUISITOS DOCUMENTALES.</span>
             A la firma del presente anexo el personal académico aportó los documentos exigidos por la
-            Universidad para la formalización de la vinculación. PARÁGRAFO. - Si en el trámite de
+            Universidad para la formalización de la vinculación. <strong>PARÁGRAFO. -</strong> Si en el trámite de
             verificación documental se detecta el incumplimiento en la entrega de cualquiera de los
             documentos exigidos se dará lugar a la terminación de la vinculación.
 
@@ -790,7 +795,7 @@
     <table class="firmas">
         <tr>
             <td>
-                <div class="firma-cargo">DECANO(A) DE FACULTAD</div>
+                <div class="firma-cargo sin-negrita">DECANO(A) DE FACULTAD</div>
                 <!-- Espacio reservado para la firma manuscrita / sello -->
                 <div class="firma-nombre"
                      th:text="${fmt.text(contrato.firmas().decano().nombre())}"></div>
@@ -804,7 +809,7 @@
         </tr>
         <tr>
             <td>
-                <div class="firma-cargo">DOCENTE CON FUNCIONES ADMINISTRATIVAS</div>
+                <div class="firma-cargo sin-negrita">DOCENTE CON FUNCIONES ADMINISTRATIVAS</div>
                 <div class="firma-nombre"
                      th:text="${fmt.text(contrato.firmas().docente().nombre())}"></div>
                 <div class="firma-linea">
