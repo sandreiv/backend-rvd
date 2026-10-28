@@ -81,6 +81,7 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             INNER JOIN RVD.FECHASCONVOCATORIA FECO
                 ON FECO.CONV_ID = CONV.CONV_ID
             WHERE FECO.FECO_CODIGO = 'CNV'
+                AND CONV.CONV_ESTADO = '1'
                 AND CONV.PEUN_ID = :idPeriodoUniversidad
                 AND CONV.CONV_CONTRATACION = '1'
             ORDER BY CONV.CONV_ID
@@ -326,6 +327,7 @@ public interface ConvocatoriaRepository extends JpaRepository<ConvocatoriaEntity
             FROM RVD.CONVOCATORIA CONV
             WHERE CONV.CONV_ESTADO = '1'
             AND CONV.PEUN_ID = :idPeriodoUniversidad
+            AND NVL(CONV.CONV_CONTRATACION, '0') = '0'
             AND NOT EXISTS (
                 SELECT 1
                 FROM RVD.RESTRICCIONXCOORDINACION REXC
