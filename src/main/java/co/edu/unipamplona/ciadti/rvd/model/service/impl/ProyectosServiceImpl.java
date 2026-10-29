@@ -7,6 +7,7 @@
  * Modificaciones:
  * 27/07/2026 - Sebastian Jaimes - Creación inicial
  * 27/08/2026 - Andrés Hernández - Corrección formato Excel de la preasignación
+ * 29/10/2026 - Andrés Hernández - Control de creación de proyectos según las fechas de la convocatoria de precarga relacionada
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -49,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.RelacionConvocatoriasRepos
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoActividadesRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoProyectoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ConvocatoriaProyectosListaProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PeriodoCargaProyectoProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PersonaProyectoListaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ProyectosListaProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.ProyectosService;
@@ -737,15 +739,19 @@ public class ProyectosServiceImpl implements ProyectosService {
             validateProjectConfiguration(dto);
         }
 
-        LocalDate fechaInicio =
-                parent != null
-                        ? parent.getFechaInicio()
-                        : dto.fechaInicio();
+        Long idConvocatoriaProyectos = parent != null
+            ? parent.getIdConvocatoriaProyectos()
+            : dto.idConvocatoriaProyectos();
 
-        LocalDate fechaFin =
-                parent != null
-                        ? parent.getFechaFin()
-                        : dto.fechaFin();
+        validateProjectCallPeriod(idConvocatoriaProyectos);
+
+        LocalDate fechaInicio = parent != null
+            ? parent.getFechaInicio()
+            : dto.fechaInicio();
+
+        LocalDate fechaFin = parent != null
+            ? parent.getFechaFin()
+            : dto.fechaFin();
 
         if (
             fechaInicio != null
@@ -837,6 +843,33 @@ public class ProyectosServiceImpl implements ProyectosService {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "El proyecto padre no tiene una coordinación asociada"
+            );
+        }
+    }
+
+    private void validateProjectCallPeriod(Long idConvocatoriaProyectos) {
+        PeriodoCargaProyectoProjection periodo = convocatoriaProyectosRepository.findProjectCallPeriodById(idConvocatoriaProyectos)
+            .orElseThrow(() -> new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe la convocatoria de proyectos con id " + idConvocatoriaProyectos
+            ));
+
+        LocalDate fechaInicio = periodo.getFechaInicio();
+        LocalDate fechaFin = periodo.getFechaFin();
+
+        if (fechaInicio == null || fechaFin == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria no tiene fechas definidas para gestionar proyectos"
+            );
+        }
+
+        LocalDate hoy = LocalDate.now();
+
+        if (hoy.isBefore(fechaInicio) || hoy.isAfter(fechaFin)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La convocatoria no está habilitada para gestionar proyectos."
             );
         }
     }
