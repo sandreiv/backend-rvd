@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.PaisGeneralDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicLevelDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicTitleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicTrainingDTO;
@@ -99,4 +100,6 @@ public interface PublicWorkPlanService {
             String nuevoEstado
     );
 
+    PtdObservationDTO getObservationByTh(Long idCargaDocente);
+    
 }

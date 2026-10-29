@@ -25,13 +25,13 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PublicActivitiesDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActivityWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicAcademicTrainingProjection;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaNaturalGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
@@ -59,6 +59,7 @@ public class PublicWorkPlanServiceImpl
 
         private static final ZoneId ZONA = ZoneId.of("America/Bogota");
         private static final String ROL_COORDINADOR = "Coordinador";
+        private static final String ROL_TALENTO = "Talento humano";
 
         private final PersonaGeneralRepository personaGeneralRepository;
 
@@ -901,7 +902,21 @@ public class PublicWorkPlanServiceImpl
                         idTipoDocumento,
                         archivos
                 );
-        }        
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public PtdObservationDTO getObservationByTh(Long idCargaDocente) {
+                log.info("getObservationByTh ===> Obteniendo observación de rechazo del PTD. idCargaDocente={}", idCargaDocente);
+
+                ObservacionPtdEntity observacionEntity = observacionPtdRepository.findByIdCargaDocenteAndPegeRole(idCargaDocente, ROL_TALENTO);
+                if (observacionEntity == null) {
+                        return null;
+                }
+
+                log.info("getObservationByTh ===> Observación del PTD obtenida. idCargaDocente={}", idCargaDocente);
+                return new PtdObservationDTO(observacionEntity.getTexto(), observacionEntity.getIdCargaDocente());
+        }
 
         private LocalDate toLocalDate(Date value) {
 

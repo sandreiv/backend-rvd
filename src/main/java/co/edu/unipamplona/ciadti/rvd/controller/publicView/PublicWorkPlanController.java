@@ -26,13 +26,13 @@ import jakarta.validation.Valid;
 
 import co.edu.unipamplona.ciadti.rvd.config.security.docente.DocenteSecurity;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PaisGeneralDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicLevelDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicTitleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicTrainingDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicAcademicTrainingSaveDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicBasicInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicHiringRecordDTO;
-import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicActivitiesDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
@@ -672,6 +672,16 @@ public class PublicWorkPlanController {
         return ResponseEntity.ok(
                 resultado
         );
-        }        
+        }  
+        
+        @Operation(
+                summary = "Objeto con la información de la última observación realizada por Talento humano en caso de rechazo",
+                description = "Objeto con la información de la última observación realizada por Talento humano en caso de rechazo del PTD"
+        )
+        @GetMapping("/observation-by-th/{idCargaDocente}")
+        public ResponseEntity<PtdObservationDTO> getObservationByTh(@PathVariable Long idCargaDocente) {
+                PtdObservationDTO observacion = publicWorkPlanService.getObservationByTh(idCargaDocente);
+                return new ResponseEntity<>(observacion, HttpStatus.OK);
+        }
 
 }
