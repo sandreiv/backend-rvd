@@ -5,6 +5,9 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -12,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler;
+
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicBasicInformationDTO;
@@ -741,6 +746,170 @@ public class PublicWorkPlanServiceImpl
                                         HttpStatus.CONFLICT,
                                         "El Plan de Trabajo Digital ya tiene una decisión registrada o presenta estados inconsistentes");
                 }
+
+                List<PtdiDocumentoCategoriaDTO> tiposObligatorios =
+                        ptdiDocumentoService
+                                .getAvailableCategories()
+                                .stream()
+                                .filter(tipo ->
+                                        Boolean.TRUE.equals(
+                                                tipo.obligatorio()
+                                        )
+                                )
+                                .toList();
+
+                if (!tiposObligatorios.isEmpty()) {
+
+                List<String> faltantesPorContratacion =
+                        new ArrayList<>();
+
+                Set<Long> contratacionesRevisadas =
+                        new HashSet<>();
+
+                var contrataciones =
+                        cargaDocenteRepository
+                                .findPublicHiringRecordsByProfessor(
+                                        idPersonaGeneral
+                                );
+
+                for (var registroContratacion : contrataciones) {
+
+                        if (!Objects.equals(
+                                registroContratacion.getIdPeriodoUniversitario(),
+                                idPeriodoUniversitario
+                        )) {
+                        continue;
+                        }
+
+                        Long idContratacion =
+                                registroContratacion.getIdCargaDocente();
+
+                        if (
+                                idContratacion == null ||
+                                !contratacionesRevisadas.add(idContratacion)
+                        ) {
+                        continue;
+                        }
+
+                        boolean exentoDocumentos =
+                                OnceMesesReporteFilter
+                                        .excludeInheritedInSecondPeriod(
+                                                registroContratacion.getOnceMeses(),
+                                                registroContratacion.getPeriodoUniversidad()
+                                        );
+
+                        if (exentoDocumentos) {
+
+                        log.debug(
+                                "Contratación {} exenta de documentos "
+                                        + "por corresponder a 11 meses "
+                                        + "en el segundo semestre",
+                                idContratacion
+                        );
+
+                        continue;
+                        }
+
+                        Long idPtdContratacion =
+                                Objects.equals(
+                                        idContratacion,
+                                        idCargaDocente
+                                )
+                                        ? idPtdReferencia
+                                        : planTrabajoDigitalRepository
+                                                .findReferencePtdIdByHiringAndProfessor(
+                                                        idContratacion,
+                                                        idPersonaGeneral,
+                                                        idPeriodoUniversitario
+                                                );
+
+                        if (idPtdContratacion == null) {
+                        continue;
+                        }
+
+                        boolean ptdIncluido =
+                                registros.stream()
+                                        .anyMatch(ptd ->
+                                                Objects.equals(
+                                                        ptd.getId(),
+                                                        idPtdContratacion
+                                                )
+                                        );
+
+                        if (!ptdIncluido) {
+
+                        throw new ApiException(
+                                HttpStatus.CONFLICT,
+                                "Se encontró una inconsistencia "
+                                        + "entre la contratación y "
+                                        + "el Plan de Trabajo Digital"
+                        );
+                        }
+
+                        PtdiDocumentoContenidoDTO contenido =
+                                ptdiDocumentoService.getContent(
+                                        idPtdContratacion
+                                );
+
+                        List<PtdiDocumentoCategoriaDTO> categoriasRegistradas =
+                                contenido.categorias() == null
+                                        ? List.of()
+                                        : contenido.categorias();
+
+                        List<String> documentosFaltantes =
+                                tiposObligatorios
+                                        .stream()
+                                        .filter(tipoObligatorio ->
+
+                                                categoriasRegistradas
+                                                        .stream()
+                                                        .noneMatch(categoria ->
+
+                                                                tipoObligatorio.idTipoDocumento() != null
+
+                                                                && Objects.equals(
+                                                                        tipoObligatorio.idTipoDocumento(),
+                                                                        categoria.idTipoDocumento()
+                                                                )
+
+                                                                && categoria.archivos() != null
+
+                                                                && !categoria.archivos().isEmpty()
+                                                        )
+                                        )
+                                        .map(PtdiDocumentoCategoriaDTO::nombre)
+                                        .toList();
+
+                        if (!documentosFaltantes.isEmpty()) {
+
+                        faltantesPorContratacion.add(
+                                "Contratación "
+                                        + idContratacion
+                                        + ": "
+                                        + String.join(
+                                                ", ",
+                                                documentosFaltantes
+                                        )
+                        );
+                        }
+                }
+
+                if (!faltantesPorContratacion.isEmpty()) {
+
+                        throw new ApiException(
+                                HttpStatus.CONFLICT,
+                                "No es posible aprobar ni rechazar "
+                                        + "el Plan de Trabajo Digital. "
+                                        + "Debe adjuntar al menos un archivo "
+                                        + "en cada tipo documental obligatorio. "
+                                        + "Documentos pendientes: "
+                                        + String.join(
+                                                " | ",
+                                                faltantesPorContratacion
+                                        )
+                        );
+                }
+                }            
 
                 Date fechaActual = new Date();
 

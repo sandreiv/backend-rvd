@@ -63,10 +63,5 @@ public class PtdiDocumentoEntity {
     
     private TipoDocumentoContratacionEntity tipoDocumentoContratacion;
 
-    @Column(
-        name = "PTDI_ESTADO",
-        length = 30
-    )
-    private String estado;
-    
+
 }
