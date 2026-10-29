@@ -42,6 +42,10 @@ public interface InformacionDocenteContratacionMapper {
                 base.modalidadContratacion(),
                 base.fechaInicio(),
                 base.fechaFin(),
+                base.formaPago(),
+                base.estadoCategorizacion(),
+                base.asignacionSalarial(),
+                base.horas(),
                 base.categoriaDocente(),
                 base.puntos(),
                 horasActividades == null ? List.of() : horasActividades);

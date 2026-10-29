@@ -10,6 +10,7 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -23,6 +24,10 @@ public record InformacionDocenteContratacionDTO(
     String modalidadContratacion,
     Date fechaInicio,
     Date fechaFin,
+    String formaPago,
+    String estadoCategorizacion,
+    BigDecimal asignacionSalarial,
+    String horas,
     String categoriaDocente,
     String puntos,
     List<ActividadHorasResumenDTO> horasActividades
