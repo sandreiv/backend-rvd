@@ -1344,6 +1344,20 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 TRIM(CR.CADO_ONCEMESES)
                     AS onceMeses,
 
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM TALENTOV3.TRABAJADORLABOR TRLA
+                        WHERE TRLA.PEGE_ID = CR.PEGE_ID
+                        AND (
+                            TRLA.TRLA_FECHAFINAL IS NULL
+                            OR TRLA.TRLA_FECHAFINAL >= CURRENT_DATE
+                        )
+                    )
+                    THEN '1'
+                    ELSE '0'
+                END AS esDocentePlanta,
+
                 CONV.CONV_ID
                     AS idConvocatoriaPreasignacion,
 

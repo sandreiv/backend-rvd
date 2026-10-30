@@ -40,6 +40,9 @@ public record PublicHiringRecordDTO(
 
     String periodoUniversidad,
 
-    String onceMeses
+    String onceMeses,
+
+    String esDocentePlanta
+
 
 ) {}
