@@ -360,8 +360,10 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                                     detalle.programa(),
                                     detalle.materia(),
                                     detalle.grupo(),
-                                    null,
-                                    null,
+                                    aDecimal(detalle.ponderacionAcademica()),
+                                    totalHorasTeoricasPracticas(
+                                            detalle.horasTeoricas(),
+                                            detalle.horasPracticas()),
                                     detalle.horas()));
                         }
                     }
@@ -435,6 +437,27 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 ? documento.trim().replaceAll("[^0-9A-Za-z]", "")
                 : "docente";
         return base + "-" + sufijo + ".pdf";
+    }
+
+    /**
+     * Créditos de la materia: la ponderación académica que trae el detalle de la
+     * carga docente (DetalleCargaDocenteListadoProjection.getPonderacionAcademica).
+     */
+    private BigDecimal aDecimal(Long valor) {
+        return valor == null ? null : BigDecimal.valueOf(valor);
+    }
+
+    /**
+     * HTP de la materia: horas teóricas + horas prácticas del detalle de la carga
+     * docente (getHorasTeoricas + getHorasPracticas).
+     */
+    private BigDecimal totalHorasTeoricasPracticas(Long horasTeoricas, Long horasPracticas) {
+        if (horasTeoricas == null && horasPracticas == null) {
+            return null;
+        }
+        long total = (horasTeoricas != null ? horasTeoricas : 0L)
+                + (horasPracticas != null ? horasPracticas : 0L);
+        return BigDecimal.valueOf(total);
     }
 
     private BigDecimal parseDecimal(String value) {
