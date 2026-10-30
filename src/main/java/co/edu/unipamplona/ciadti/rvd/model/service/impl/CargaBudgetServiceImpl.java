@@ -37,9 +37,11 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CargaBudgetOverlay;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
@@ -48,6 +50,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocente
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import co.edu.unipamplona.ciadti.rvd.util.ValorContratacionCalculator;
@@ -282,16 +285,22 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
     }
 
     private BigDecimal sumPreassignment(Long idCarga) {
+        CargaEntity carga = findCarga(idCarga);
+        String periodo = findPeriodoUniversidad(carga);
+        
         BigDecimal total = BigDecimal.ZERO;
         // Aca no se necesitan a los profesores de la cargaDocente que vienen creados de novedad
         List<CargaDocenteEntity> rows =
                 cargaDocenteRepository.findByIdCargaWithoutNoveltyProfessors(idCarga);
         int index = 0;
         while (index < rows.size()) {
-            total = total.add(
+            CargaDocenteEntity docente = rows.get(index);
+            if (shouldIncludeInBudget(docente, periodo)) {
+                total = total.add(
                     calculateInclusive(
-                            fromCargaDocente(rows.get(index)))
-                            .totalContrato());
+                        fromCargaDocente(rows.get(index)))
+                        .totalContrato());
+            }
             index++;
         }
         return total;
@@ -607,5 +616,19 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
             return BigDecimal.ZERO.setScale(ESCALA_MONETARIA);
         }
         return value.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+    }
+
+    public String findPeriodoUniversidad(CargaEntity carga) {
+        return Optional.ofNullable(carga.getConvocatoria())
+                .map(ConvocatoriaEntity::getPeriodoUniversidad)
+                .map(PeriodoUniversidadEntity::getPeriodo)
+                .orElse(null);
+    }
+
+    private boolean shouldIncludeInBudget(CargaDocenteEntity docente, String periodoUniversidad) {
+        return !OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
+                docente.getOnceMeses(),
+                periodoUniversidad
+        );
     }
 }
