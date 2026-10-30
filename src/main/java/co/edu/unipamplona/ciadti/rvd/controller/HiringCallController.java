@@ -41,6 +41,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HiringCdpInformationDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HiringValuesInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
@@ -50,6 +52,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -68,6 +71,7 @@ public class HiringCallController {
     private final CoordinacionService coordinacionService;
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
     private final PtdiDocumentoService ptdiDocumentoService;
+    private final ContratacionService contratacionService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -158,6 +162,35 @@ public class HiringCallController {
     public ResponseEntity<List<ActividadPtdDTO>> listPtdActivities(@RequestParam Long idCargaDocente) {
         List<ActividadPtdDTO> actividades = coordinacionService.listPtdActivities(idCargaDocente);
         return new ResponseEntity<>(actividades, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene la información del CDP para generar el contrato",
+        description = """
+            Obtiene la información del CDP de TESORERIAV3 para la contratación de un docente. Contiene un resumen
+            de la información almacenada allí dependiendo del idCdp guardado en RVD.SOLICITUDCDP para la facultad
+            a la que pertenece la coordinación
+            """
+    )
+    @GetMapping("/hiring-cdp-information")
+    public ResponseEntity<HiringCdpInformationDTO> hiringCdpInformation(@RequestParam Long idPeriodoUniversitario, @RequestParam Long idCoordinacionHija) {
+        HiringCdpInformationDTO cdp = contratacionService.hiringCdpInformation(idPeriodoUniversitario, idCoordinacionHija);
+        return new ResponseEntity<>(cdp, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene los valores de contratación para generar el contrato",
+        description = """
+            Obtiene la información de los centros de costos y calculos salariales.
+            Esta consulta funciona bajo la misma logica del Resumen de novedades, trayendo la
+            información relevante de la novedad o de la carga original y entregando solamente
+            los valores de contratación
+            """
+    )
+    @GetMapping("/hiring-values-information")
+    public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente) {
+        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente);
+        return new ResponseEntity<>(valores, HttpStatus.OK);
     }
 
     @Operation(
