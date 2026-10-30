@@ -75,6 +75,9 @@ public interface DetalleNovedadCargaDocenteRepository
                     prog.PROG_NOMBRE AS nombrePrograma,
                     grup.GRUP_NOMBRE AS nombreGrupo,
                     mate.MATE_NOMBRE AS nombreMateria,
+                    mate.MATE_HORASPRACTICAS AS horasPracticas,
+                    mate.MATE_HORASTEORICAS AS horasTeoricas,
+                    mate.MATE_PONDERACIONACADEMICA AS ponderacionAcademica,
                     ceco.CECO_ID AS idCentroCosto,
                     ceco.CECO_DESCRIPCION AS descripcionCentroCosto,
 
@@ -139,6 +142,9 @@ public interface DetalleNovedadCargaDocenteRepository
                     prog.PROG_NOMBRE AS nombrePrograma,
                     grup.GRUP_NOMBRE AS nombreGrupo,
                     mate.MATE_NOMBRE AS nombreMateria,
+                    mate.MATE_HORASPRACTICAS AS horasPracticas,
+                    mate.MATE_HORASTEORICAS AS horasTeoricas,
+                    mate.MATE_PONDERACIONACADEMICA AS ponderacionAcademica,
                     ceco.CECO_ID AS idCentroCosto,
                     ceco.CECO_DESCRIPCION AS descripcionCentroCosto,
 
