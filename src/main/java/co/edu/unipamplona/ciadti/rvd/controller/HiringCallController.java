@@ -18,6 +18,8 @@ package co.edu.unipamplona.ciadti.rvd.controller;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
 import org.springframework.core.io.Resource;
@@ -205,20 +207,40 @@ public class HiringCallController {
             Si el docente es el coordinador del programa de la carga se usa el anexo
             con funciones administrativas; en caso contrario el anexo de 4 meses.
             El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
-            permite forzar cualquiera de los dos.
+            permite forzar cualquiera de los dos. numeroAnexo y fechaIngreso son los
+            datos que el usuario diligencia en el modal antes de descargar el anexo.
             """
     )
     @GetMapping("/contract-pdf-report/{idCargaDocente}")
     public ResponseEntity<byte[]> generateContractPdf(
             @PathVariable Long idCargaDocente,
-            @RequestParam(required = false) String tipo) {
-        FileDTO file = contratoReporteService.generateContractPdf(idCargaDocente, parseTipoContrato(tipo));
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String numeroAnexo,
+            @RequestParam(required = false) String fechaIngreso) {
+        FileDTO file = contratoReporteService.generateContractPdf(
+                idCargaDocente,
+                parseTipoContrato(tipo),
+                numeroAnexo,
+                parseFechaIngreso(fechaIngreso));
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
+    }
+
+    private LocalDate parseFechaIngreso(String fechaIngreso) {
+        if (fechaIngreso == null || fechaIngreso.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(fechaIngreso.trim());
+        } catch (DateTimeParseException ex) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Fecha de ingreso no válida: " + fechaIngreso + ". Use el formato AAAA-MM-DD");
+        }
     }
 
     private TipoContratoDocente parseTipoContrato(String tipo) {

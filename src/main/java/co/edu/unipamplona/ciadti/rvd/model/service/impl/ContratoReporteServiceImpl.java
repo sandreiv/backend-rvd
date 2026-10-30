@@ -104,7 +104,11 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
 
     @Override
     @Transactional(readOnly = true)
-    public FileDTO generateContractPdf(Long idCargaDocente, TipoContratoDocente tipoForzado) {
+    public FileDTO generateContractPdf(
+            Long idCargaDocente,
+            TipoContratoDocente tipoForzado,
+            String numeroAnexo,
+            LocalDate fechaIngreso) {
         log.debug("generateContractPdf ===> idCargaDocente={}, tipoForzado={}", idCargaDocente, tipoForzado);
 
         if (idCargaDocente == null) {
@@ -132,8 +136,8 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 : resolveTipoContrato(informacion);
 
         ContratoDocenteReporteDTO reporte = new ContratoDocenteReporteDTO(
-                buildAnexo(informacion),
-                buildDocente(informacion),
+                buildAnexo(informacion, numeroAnexo),
+                buildDocente(informacion, fechaIngreso),
                 buildAcademico(informacion, formacion),
                 buildRemuneracion(informacion, valores),
                 buildDiscriminado(valores),
@@ -236,7 +240,9 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         }
     }
 
-    private ContratoAnexoDTO buildAnexo(InformacionDocenteContratacionDTO informacion) {
+    private ContratoAnexoDTO buildAnexo(
+            InformacionDocenteContratacionDTO informacion,
+            String numeroAnexo) {
         String programa = StringUtils.hasText(informacion.programa())
                 ? informacion.programa()
                 : informacion.coordinacion();
@@ -244,17 +250,19 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 informacion.modalidadContratacion(),
                 informacion.unidadRegional(),
                 programa,
-                null,
+                StringUtils.hasText(numeroAnexo) ? numeroAnexo.trim() : null,
                 toLocalDate(informacion.fechaInicio()),
                 toLocalDate(informacion.fechaFin()));
     }
 
-    private ContratoDocenteDTO buildDocente(InformacionDocenteContratacionDTO informacion) {
+    private ContratoDocenteDTO buildDocente(
+            InformacionDocenteContratacionDTO informacion,
+            LocalDate fechaIngreso) {
         return new ContratoDocenteDTO(
                 informacion.nombreCompleto(),
                 informacion.documentoIdentidad(),
                 informacion.expedidoEn(),
-                null,
+                fechaIngreso,
                 informacion.genero(),
                 toLocalDate(informacion.fechaNacimiento()),
                 informacion.ciudadNacimiento(),
