@@ -56,5 +56,6 @@ public interface NovedadCargaDocenteService {
         );        
 
     ResumenNovedadCargaDocenteDTO getProfessorNoveltySummary(
-            Long idCargaDocente);
+            Long idCargaDocente,
+            String numeroPeriodo);
 }

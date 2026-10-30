@@ -188,8 +188,8 @@ public class HiringCallController {
             """
     )
     @GetMapping("/hiring-values-information")
-    public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente) {
-        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente);
+    public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente, @RequestParam String numeroPeriodo) {
+        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente, numeroPeriodo);
         return new ResponseEntity<>(valores, HttpStatus.OK);
     }
 

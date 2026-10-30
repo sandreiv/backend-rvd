@@ -211,6 +211,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HistorialCargaD
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ConvocatoriaRepository;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler;
@@ -3365,7 +3366,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     // Validar que docente sea de docentePlantaCoordinacion.
     @Override
     @Transactional(readOnly = true)
-    public ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente) {
+    public ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente, String numeroPeriodo) {
         log.debug(
                 "getProfessorLoadSummary ===> idCargaDocente={}",
                 idCargaDocente
@@ -3376,8 +3377,10 @@ public class CoordinacionServiceImpl implements CoordinacionService {
 
         boolean docentePlanta = isDocentePlanta(cargaDocente);
 
+        boolean heredadoOnceMeses = OnceMesesReporteFilter.excludeInheritedInSecondPeriod(cargaDocente.getOnceMeses(), numeroPeriodo);
+
         ValorContratacionDTO valorContratacion =
-                docentePlanta
+                (docentePlanta || heredadoOnceMeses)
                         ? null
                         : calculateInclusiveContractValue(cargaDocente);
 

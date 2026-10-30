@@ -127,9 +127,9 @@ public class VerifyProfessorController {
         summary = "Obtiene el resumen completo de una carga docente",
         description = "Agrupa valor de contratación, horas de actividades y distribución por centros de costo."
     )
-    @GetMapping("/professor-load-summary/{idCargaDocente}")
-    public ResponseEntity<ResumenCargaDocenteDTO> getProfessorLoadSummary(@PathVariable Long idCargaDocente) {
-        return new ResponseEntity<>(coordinacionService.getProfessorLoadSummary(idCargaDocente), HttpStatus.OK);
+    @GetMapping("/professor-load-summary/{idCargaDocente}/{numeroPeriodo}")
+    public ResponseEntity<ResumenCargaDocenteDTO> getProfessorLoadSummary(@PathVariable Long idCargaDocente, @PathVariable String numeroPeriodo) {
+        return new ResponseEntity<>(coordinacionService.getProfessorLoadSummary(idCargaDocente, numeroPeriodo), HttpStatus.OK);
     }
 
     @Operation(

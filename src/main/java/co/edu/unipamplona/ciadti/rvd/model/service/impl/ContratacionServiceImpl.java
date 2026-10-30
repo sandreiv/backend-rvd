@@ -50,13 +50,13 @@ public class ContratacionServiceImpl implements ContratacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public HiringValuesInformationDTO hiringValuesInformation(Long idCargaDocente) {
+    public HiringValuesInformationDTO hiringValuesInformation(Long idCargaDocente, String numeroPeriodo) {
         log.info("hiringValuesInformation ===> Obteniendo valores de contratación. idCargaDocente={}", idCargaDocente);
 
         if (idCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "La carga docente es obligatoria");
         }
-        ResumenNovedadCargaDocenteDTO resumen = novedadCargaDocenteService.getProfessorNoveltySummary(idCargaDocente);
+        ResumenNovedadCargaDocenteDTO resumen = novedadCargaDocenteService.getProfessorNoveltySummary(idCargaDocente, numeroPeriodo);
 
         log.info("hiringValuesInformation ===> Valores de contratación obtenidos. idCargaDocente={}", idCargaDocente);
         return new HiringValuesInformationDTO(resumen.valorContratacion(), resumen.centrosCosto());
