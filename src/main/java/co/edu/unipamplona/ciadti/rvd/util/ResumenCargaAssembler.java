@@ -49,6 +49,10 @@ public final class ResumenCargaAssembler {
             String nombrePrograma,
             String nombreMateria,
             String nombreGrupo,
+            Long horasPracticas,
+            Long horasTeoricas,
+            Long ponderacionAcademica,
+
             Long idCentroCosto,
             String descripcionCentroCosto) {
     }
@@ -67,6 +71,9 @@ public final class ResumenCargaAssembler {
                 detalle.getNombrePrograma(),
                 detalle.getNombreMateria(),
                 detalle.getNombreGrupo(),
+                detalle.getHorasPracticas(),
+                detalle.getHorasTeoricas(),
+                detalle.getPonderacionAcademica(),
                 detalle.getIdCentroCosto(),
                 detalle.getDescripcionCentroCosto());
     }
@@ -85,6 +92,9 @@ public final class ResumenCargaAssembler {
                 detalle.getNombrePrograma(),
                 detalle.getNombreMateria(),
                 detalle.getNombreGrupo(),
+                detalle.getHorasPracticas(),
+                detalle.getHorasTeoricas(),
+                detalle.getPonderacionAcademica(),
                 detalle.getIdCentroCosto(),
                 detalle.getDescripcionCentroCosto());
     }
@@ -311,7 +321,10 @@ public final class ResumenCargaAssembler {
                 detalle.nombrePrograma(),
                 detalle.nombreMateria(),
                 detalle.nombreGrupo(),
-                horas);
+                horas,
+                detalle.horasTeoricas(),
+                detalle.horasPracticas(),
+                detalle.ponderacionAcademica());
     }
 
     private static String resolveNombreCentro(DetalleResumen detalle) {

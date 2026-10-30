@@ -16,5 +16,8 @@ public record ActividadDirectaDetalleDTO(
     String programa,
     String materia,
     String grupo,
-    BigDecimal horas
+    BigDecimal horas,
+    Long horasTeoricas,
+    Long horasPracticas,
+    Long ponderacionAcademica
 ) {}

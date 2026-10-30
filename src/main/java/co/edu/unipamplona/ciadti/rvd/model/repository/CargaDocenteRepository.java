@@ -1469,6 +1469,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     WHEN '0' THEN 'Estipulado'
                     WHEN '1' THEN 'Aceptado'
                     WHEN '2' THEN 'Rechazado'
+                    WHEN '3' THEN 'Aprobado TH'
                     ELSE NULL
                 END AS estadoPlanTrabajo
 

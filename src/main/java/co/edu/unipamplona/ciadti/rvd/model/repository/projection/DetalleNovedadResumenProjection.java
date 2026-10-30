@@ -24,6 +24,12 @@ public interface DetalleNovedadResumenProjection {
 
     String getNombreMateria();
 
+    Long getHorasPracticas();
+
+    Long getHorasTeoricas();
+    
+    Long getPonderacionAcademica();
+
     Long getIdCentroCosto();
 
     String getDescripcionCentroCosto();
