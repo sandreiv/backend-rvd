@@ -31,6 +31,10 @@ public interface DetalleCargaDocenteListadoProjection {
     Long getCapacidadGrupo();
     String getCodigoMateria();
     String getNombreMateria();
+    Long getHorasPracticas();
+    Long getHorasTeoricas();
+    Long getPonderacionAcademica();
+
     Long getIdCentroCosto();
     String getDescripcionCentroCosto();
 
