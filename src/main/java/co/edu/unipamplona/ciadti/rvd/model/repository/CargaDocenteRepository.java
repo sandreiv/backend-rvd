@@ -1110,6 +1110,25 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 WHERE NOCD.CADO_ID = :idCargaDocente
                     AND NOCD.NOCD_ESTADONOVEDAD <> '2'
                     AND NVL(NOCD.NOCD_ESTADOELIMINADO, '0') = '0'
+            ),
+            ESCALAFON_ACTUAL AS (
+                SELECT
+                    ESC.ESCA_ID,
+                    ESC.PEGE_ID,
+                    ESC.MOCO_ID,
+                    ESC.CACA_ID,
+                    ESC.ESCA_PUNTOS,
+
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            ESC.PEGE_ID,
+                            ESC.MOCO_ID
+                        ORDER BY
+                            ESC.ESCA_FECHACAMBIO DESC NULLS LAST,
+                            ESC.ESCA_ID DESC
+                    ) AS RN
+
+                FROM COMITES.ESCALAFON ESC
             )
             SELECT
                 COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID) AS idPersonaGeneral,
@@ -1125,6 +1144,14 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 MOCO.MOCO_NOMBRE AS modalidadContratacion,
                 COALESCE(DATOS.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS fechaInicio,
                 COALESCE(DATOS.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS fechaFin,
+                RECA.RECA_FORMAPAGO AS formaPago,
+                CASE
+                    WHEN ESC.CACA_ID IS NOT NULL
+                        THEN 'Categorizado'
+                    ELSE 'No categorizado'
+                END AS estadoCategorizacion,
+                COALESCE(DATOS.NOCD_SALARIO, CADO.CADO_SALARIO) AS asignacionSalarial,
+                COALESCE(DATOS.NOCD_HORAS, CADO.CADO_HORAS) AS horas,
                 CACA.CACA_DESCRIPCION AS categoriaDocente,
                 CASE
                     WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_PUNTOS
@@ -1142,6 +1169,12 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 ON MOCO.MOCO_ID = COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID)
             LEFT JOIN TALENTOV3.CATEGORIACATEDRATICO CACA
                 ON CACA.CACA_ID = COALESCE(DATOS.CACA_ID, CADO.CACA_ID)
+            LEFT JOIN RVD.RESTRICCIONCARGA RECA
+                ON RECA.MOCO_ID = COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID)
+            LEFT JOIN ESCALAFON_ACTUAL ESC
+                ON ESC.PEGE_ID = COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID)
+                AND ESC.MOCO_ID = COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID)
+                AND ESC.RN = 1
             WHERE CADO.CADO_ID = :idCargaDocente
             """, nativeQuery = true)
     Optional<InformacionDocenteContratacionProjection> findProfessorInformationByCargaDocente(
@@ -1193,7 +1226,12 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     COALESCE(
                         DATOS.NOCD_FECHAFIN,
                         CADO.CADO_FECHAFIN
-                    ) AS CADO_FECHAFIN
+                    ) AS CADO_FECHAFIN,
+
+                    COALESCE(
+                        DATOS.NOCD_ONCEMESES,
+                        CADO.CADO_ONCEMESES
+                    ) AS CADO_ONCEMESES
 
                 FROM RVD.CARGADOCENTE CADO
 
@@ -1298,7 +1336,13 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     AS idCargaDocente,
 
                 CONV.PEUN_ID
-                    AS idPeriodoUniversitario,    
+                    AS idPeriodoUniversitario,
+
+                TRIM(PEUN.PEUN_PERIODO)
+                    AS periodoUniversidad,
+
+                TRIM(CR.CADO_ONCEMESES)
+                    AS onceMeses,
 
                 CONV.CONV_ID
                     AS idConvocatoriaPreasignacion,
@@ -1338,7 +1382,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     FECO.FECO_FECHAINICIO
                 ) AS fechaInicio,
 
-                COALESCE(
+               COALESCE(
                     CR.CADO_FECHAFIN,
                     FECO.FECO_FECHAFIN
                 ) AS fechaFin,
@@ -1363,6 +1407,9 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
 
             INNER JOIN RVD.CONVOCATORIA CONV
                 ON CONV.CONV_ID = CARG.CONV_ID
+
+            LEFT JOIN ACADEMICO.PERIODOUNIVERSIDAD PEUN
+                ON PEUN.PEUN_ID = CONV.PEUN_ID
 
             INNER JOIN RVD.CONVOCATORIA CONTR
                 ON CONTR.CONV_IDRELACION = CONV.CONV_ID

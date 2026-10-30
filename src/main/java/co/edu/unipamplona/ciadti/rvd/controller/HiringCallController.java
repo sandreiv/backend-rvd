@@ -12,34 +12,52 @@
  * 07/10/2026 - Andrés Hernández - Información del docente para contratación
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD
+ * 26/10/2026 - Andrés Hernández - Gestión del PTD por Talento humano
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HiringCdpInformationDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HiringValuesInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdSaveRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
-
+import co.edu.unipamplona.ciadti.rvd.model.service.PtdiDocumentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -52,6 +70,8 @@ public class HiringCallController {
     private final ConvocatoriaPrecargaService convocatoriaPrecargaService;
     private final CoordinacionService coordinacionService;
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
+    private final PtdiDocumentoService ptdiDocumentoService;
+    private final ContratacionService contratacionService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -145,6 +165,35 @@ public class HiringCallController {
     }
 
     @Operation(
+        summary = "Obtiene la información del CDP para generar el contrato",
+        description = """
+            Obtiene la información del CDP de TESORERIAV3 para la contratación de un docente. Contiene un resumen
+            de la información almacenada allí dependiendo del idCdp guardado en RVD.SOLICITUDCDP para la facultad
+            a la que pertenece la coordinación
+            """
+    )
+    @GetMapping("/hiring-cdp-information")
+    public ResponseEntity<HiringCdpInformationDTO> hiringCdpInformation(@RequestParam Long idPeriodoUniversitario, @RequestParam Long idCoordinacionHija) {
+        HiringCdpInformationDTO cdp = contratacionService.hiringCdpInformation(idPeriodoUniversitario, idCoordinacionHija);
+        return new ResponseEntity<>(cdp, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Obtiene los valores de contratación para generar el contrato",
+        description = """
+            Obtiene la información de los centros de costos y calculos salariales.
+            Esta consulta funciona bajo la misma logica del Resumen de novedades, trayendo la
+            información relevante de la novedad o de la carga original y entregando solamente
+            los valores de contratación
+            """
+    )
+    @GetMapping("/hiring-values-information")
+    public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente) {
+        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente);
+        return new ResponseEntity<>(valores, HttpStatus.OK);
+    }
+
+    @Operation(
         summary = "Guarda los detalles de las actividades del PTD",
         description = "Guarda los detalles de las actividades relacionadas al PTD de una persona"
     )
@@ -172,5 +221,98 @@ public class HiringCallController {
     public ResponseEntity<List<PtdStatesProfessorsDTO>> getPtdStatesProfessors(@RequestParam Long idPeriodoUniversitario) {
         List<PtdStatesProfessorsDTO> states = planTrabajoDigitalService.getPtdStatesProfessors(idPeriodoUniversitario);
         return new ResponseEntity<>(states, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Objeto con los adjuntos pertenecientes al PTD",
+        description = "Objeto con los adjuntos cargados por el docente para el PTD"
+    )
+    @GetMapping("/get-ptd-attachments")
+    public ResponseEntity<PtdiDocumentoContenidoDTO> getPtdAttachments(@RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente, @RequestParam Long idPeriodoUniversitario) {
+        PtdiDocumentoContenidoDTO adjuntos = planTrabajoDigitalService.getPtdAttachments(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario);
+        return new ResponseEntity<>(adjuntos, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Objeto con los adjuntos pertenecientes al PTD",
+        description = "Objeto con los adjuntos cargados por el docente para el PTD"
+    )
+    @GetMapping("/get-ptd-attachment-categories")
+    public ResponseEntity<List<PtdiDocumentoCategoriaDTO>> getPtdAttachmentCategories() {
+        List<PtdiDocumentoCategoriaDTO> categorias = ptdiDocumentoService.getAvailableCategories();
+        return new ResponseEntity<>(categorias, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Visualiza o descarga un documento de soporte fuera de la vista pública",
+        description = """
+            Recupera un documento registrado en el paquete documental de la contratación.
+            El PTDI_ID se resuelve internamente.
+            El archivo se identifica mediante su UUID registrado en PTDI_ADJUNTO.
+            No se reciben rutas físicas desde el cliente.
+            """
+        )
+        @GetMapping("/get-ptd-document-file/{fileId}/file")
+        public ResponseEntity<Resource> getPtdDocumentFile(@PathVariable String fileId, @RequestParam Long idPersonaGeneral, @RequestParam Long idCargaDocente, @RequestParam Long idPeriodoUniversitario) {
+        
+        PtdiDocumentoArchivoDescargaDTO documento =
+            planTrabajoDigitalService.getPtdDocumentFile(idPersonaGeneral, idCargaDocente, idPeriodoUniversitario, fileId);
+
+        String nombreOriginal = documento.nombre();
+        String nombreMinusculas = nombreOriginal.toLowerCase(Locale.ROOT);
+        MediaType contentType;
+
+        if (nombreMinusculas.endsWith(".pdf")) {
+            contentType = MediaType.APPLICATION_PDF;
+        } else if (nombreMinusculas.endsWith(".png")) {
+            contentType = MediaType.IMAGE_PNG;
+        } else if (nombreMinusculas.endsWith(".jpg") || nombreMinusculas.endsWith(".jpeg")) {
+            contentType = MediaType.IMAGE_JPEG;
+        } else {
+            contentType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        boolean visualizar = !MediaType.APPLICATION_OCTET_STREAM.equals(contentType);
+        ContentDisposition disposition =(visualizar ? ContentDisposition.inline() : ContentDisposition.attachment())
+            .filename(nombreOriginal, StandardCharsets.UTF_8)
+            .build();
+
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())
+            .header(
+                "X-Content-Type-Options",
+                "nosniff"
+            )
+            .header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                disposition.toString()
+            )
+            .contentType(contentType)
+            .body(documento.resource());
+        }
+
+    @Operation(
+        summary = "Actualiza el estado del PTD y sus adjuntos",
+        description = """
+                Actualiza el estado del PTD a 'Aprobado por Talento' y marca los documentos adjuntos enviados como validos
+                """
+    )
+    @PutMapping("/approve-ptd-th")
+    public ResponseEntity<Void> approvePtdByTh(@RequestBody ApprovePtdRequestDTO dto) {
+        planTrabajoDigitalService.approvePtdByTh(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Actualiza el estado del PTD y sus adjuntos validados por TH. Ademas de una observación que indica las correcciones",
+        description = """
+                Actualiza el estado del PTD a 'Estipulado', marca los documentos adjuntos enviados como validos y registra
+                la observación para corregir los adjuntos invalidos
+                """
+    )
+    @PutMapping("/decline-ptd-th")
+    public ResponseEntity<Void> declinePtdByTh(@RequestBody RejectPtdRequestDTO dto) {
+        planTrabajoDigitalService.declinePtdByTh(dto);
+        return ResponseEntity.ok().build();
     }
 }

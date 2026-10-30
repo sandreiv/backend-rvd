@@ -16,6 +16,7 @@ import java.util.Optional;
 import jakarta.persistence.LockModeType;
 
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
@@ -65,6 +66,23 @@ public interface PlanTrabajoDigitalRepository extends JpaRepository<PlanTrabajoD
             WHERE rn = 1
             """, nativeQuery = true)
     List<PlanTrabajoDigitalEntity> findPtdStatesByPeriod(@Param("idPeriodoUniversitario") Long idPeriodoUniversitario);
+
+    @Modifying
+    @Query(value = """
+            UPDATE RVD.PLANTRABAJODIGITAL PTDI
+            SET PTDI.PTDI_ESTADO = :estadoDestino,
+                PTDI.PTDI_REGISTRADOPOR = :registradoPor,
+                PTDI.PTDI_FECHACAMBIO = SYSDATE
+            WHERE PTDI.PEGE_ID = :idPersonaGeneral
+                AND PTDI.PEUN_ID = :idPeriodoUniversitario
+                AND PTDI.PTDI_ESTADO = '1'
+            """, nativeQuery = true)
+    int updateStateAllPtdActivities(
+        @Param("idPersonaGeneral") Long idPersonaGeneral,
+        @Param("idPeriodoUniversitario") Long idPeriodoUniversitario,
+        @Param("estadoDestino") String estadoDestino,
+        @Param("registradoPor") String registradoPor
+    );
 
     boolean existsByIdPersonaGeneralAndIdPeriodoUniversitario(
         Long idPersonaGeneral,

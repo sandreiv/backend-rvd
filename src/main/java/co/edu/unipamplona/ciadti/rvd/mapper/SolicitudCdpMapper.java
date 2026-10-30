@@ -7,6 +7,7 @@
  * Modificaciones:
  * 03/09/2026 - Andrés Hernández - Creación inicial
  * 23/10/2026 - Andrés Hernández - Mapeo de información del CDP asociada desde TESORERIA
+ * 29/10/2026 - Andrés Hernández - Mapeo de información del CDP para la contratación
  */
 package co.edu.unipamplona.ciadti.rvd.mapper;
 
@@ -22,12 +23,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.AnexosSolicitudCdpDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CdpSearchDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.HiringCdpInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.MetodologiaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ModalidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PeriodoUniversidadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ResumenSolicitudCdpDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.SolicitudCdpListadoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.UnidadDTO;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HiringCdpInformationProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.ResumenSolicitudCdpProjection;
 
 @Mapper(componentModel = "spring")
@@ -44,6 +47,14 @@ public interface SolicitudCdpMapper {
     @Mapping(target = "cdpTesoreria", source = ".", qualifiedByName = "toCdpTesoreria")
     @Mapping(target = "periodoUniversidad", source = ".", qualifiedByName = "toPeriodo")
     ResumenSolicitudCdpDTO toDto(ResumenSolicitudCdpProjection projection);
+
+    @Mapping(target = "idCdp", source = "idCdpTesoreria")
+    @Mapping(target = "numero", source = "numeroCdpTesoreria")
+    @Mapping(target = "fecha", source = "fechaCdpTesoreria")
+    @Mapping(target = "vigencia", source = "vigenciaCdpTesoreria")
+    @Mapping(target = "rubros", source = "rubrosCdpTesoreria")
+    @Mapping(target = "idSolicitudRvd", source = "idSolicitudCdpRvd")
+    HiringCdpInformationDTO toHiringCdpInfoDto(HiringCdpInformationProjection projection);
 
     List<ResumenSolicitudCdpDTO> toDtoList(List<ResumenSolicitudCdpProjection> projections);
 

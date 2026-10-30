@@ -9,6 +9,7 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository.projection;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public interface InformacionDocenteContratacionProjection {
@@ -30,6 +31,14 @@ public interface InformacionDocenteContratacionProjection {
     Date getFechaInicio();
 
     Date getFechaFin();
+
+    String getFormaPago();
+
+    String getEstadoCategorizacion();
+    
+    BigDecimal getAsignacionSalarial();
+    
+    String getHoras();
 
     String getCategoriaDocente();
 

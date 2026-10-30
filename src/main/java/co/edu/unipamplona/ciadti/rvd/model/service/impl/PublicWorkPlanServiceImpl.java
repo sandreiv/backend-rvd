@@ -5,6 +5,9 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -12,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler;
+
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicBasicInformationDTO;
@@ -25,12 +30,13 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PublicActivitiesDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActivityWeightsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdInfoWithWeightsDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.PtdObservationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PublicDigitalWorkPlanItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
-import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicAcademicTrainingProjection;
+import co.edu.unipamplona.ciadti.rvd.model.dto.TipoDocumentoContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PersonaNaturalGeneralEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
@@ -58,6 +64,7 @@ public class PublicWorkPlanServiceImpl
 
         private static final ZoneId ZONA = ZoneId.of("America/Bogota");
         private static final String ROL_COORDINADOR = "Coordinador";
+        private static final String ROL_TALENTO = "Talento humano";
 
         private final PersonaGeneralRepository personaGeneralRepository;
 
@@ -740,6 +747,170 @@ public class PublicWorkPlanServiceImpl
                                         "El Plan de Trabajo Digital ya tiene una decisión registrada o presenta estados inconsistentes");
                 }
 
+                List<PtdiDocumentoCategoriaDTO> tiposObligatorios =
+                        ptdiDocumentoService
+                                .getAvailableCategories()
+                                .stream()
+                                .filter(tipo ->
+                                        Boolean.TRUE.equals(
+                                                tipo.obligatorio()
+                                        )
+                                )
+                                .toList();
+
+                if (!tiposObligatorios.isEmpty()) {
+
+                List<String> faltantesPorContratacion =
+                        new ArrayList<>();
+
+                Set<Long> contratacionesRevisadas =
+                        new HashSet<>();
+
+                var contrataciones =
+                        cargaDocenteRepository
+                                .findPublicHiringRecordsByProfessor(
+                                        idPersonaGeneral
+                                );
+
+                for (var registroContratacion : contrataciones) {
+
+                        if (!Objects.equals(
+                                registroContratacion.getIdPeriodoUniversitario(),
+                                idPeriodoUniversitario
+                        )) {
+                        continue;
+                        }
+
+                        Long idContratacion =
+                                registroContratacion.getIdCargaDocente();
+
+                        if (
+                                idContratacion == null ||
+                                !contratacionesRevisadas.add(idContratacion)
+                        ) {
+                        continue;
+                        }
+
+                        boolean exentoDocumentos =
+                                OnceMesesReporteFilter
+                                        .excludeInheritedInSecondPeriod(
+                                                registroContratacion.getOnceMeses(),
+                                                registroContratacion.getPeriodoUniversidad()
+                                        );
+
+                        if (exentoDocumentos) {
+
+                        log.debug(
+                                "Contratación {} exenta de documentos "
+                                        + "por corresponder a 11 meses "
+                                        + "en el segundo semestre",
+                                idContratacion
+                        );
+
+                        continue;
+                        }
+
+                        Long idPtdContratacion =
+                                Objects.equals(
+                                        idContratacion,
+                                        idCargaDocente
+                                )
+                                        ? idPtdReferencia
+                                        : planTrabajoDigitalRepository
+                                                .findReferencePtdIdByHiringAndProfessor(
+                                                        idContratacion,
+                                                        idPersonaGeneral,
+                                                        idPeriodoUniversitario
+                                                );
+
+                        if (idPtdContratacion == null) {
+                        continue;
+                        }
+
+                        boolean ptdIncluido =
+                                registros.stream()
+                                        .anyMatch(ptd ->
+                                                Objects.equals(
+                                                        ptd.getId(),
+                                                        idPtdContratacion
+                                                )
+                                        );
+
+                        if (!ptdIncluido) {
+
+                        throw new ApiException(
+                                HttpStatus.CONFLICT,
+                                "Se encontró una inconsistencia "
+                                        + "entre la contratación y "
+                                        + "el Plan de Trabajo Digital"
+                        );
+                        }
+
+                        PtdiDocumentoContenidoDTO contenido =
+                                ptdiDocumentoService.getContent(
+                                        idPtdContratacion
+                                );
+
+                        List<PtdiDocumentoCategoriaDTO> categoriasRegistradas =
+                                contenido.categorias() == null
+                                        ? List.of()
+                                        : contenido.categorias();
+
+                        List<String> documentosFaltantes =
+                                tiposObligatorios
+                                        .stream()
+                                        .filter(tipoObligatorio ->
+
+                                                categoriasRegistradas
+                                                        .stream()
+                                                        .noneMatch(categoria ->
+
+                                                                tipoObligatorio.idTipoDocumento() != null
+
+                                                                && Objects.equals(
+                                                                        tipoObligatorio.idTipoDocumento(),
+                                                                        categoria.idTipoDocumento()
+                                                                )
+
+                                                                && categoria.archivos() != null
+
+                                                                && !categoria.archivos().isEmpty()
+                                                        )
+                                        )
+                                        .map(PtdiDocumentoCategoriaDTO::nombre)
+                                        .toList();
+
+                        if (!documentosFaltantes.isEmpty()) {
+
+                        faltantesPorContratacion.add(
+                                "Contratación "
+                                        + idContratacion
+                                        + ": "
+                                        + String.join(
+                                                ", ",
+                                                documentosFaltantes
+                                        )
+                        );
+                        }
+                }
+
+                if (!faltantesPorContratacion.isEmpty()) {
+
+                        throw new ApiException(
+                                HttpStatus.CONFLICT,
+                                "No es posible aprobar ni rechazar "
+                                        + "el Plan de Trabajo Digital. "
+                                        + "Debe adjuntar al menos un archivo "
+                                        + "en cada tipo documental obligatorio. "
+                                        + "Documentos pendientes: "
+                                        + String.join(
+                                                " | ",
+                                                faltantesPorContratacion
+                                        )
+                        );
+                }
+                }            
+
                 Date fechaActual = new Date();
 
                 String registradoPor = "idPersona:"
@@ -783,6 +954,14 @@ public class PublicWorkPlanServiceImpl
 
                 return ptdiDocumentoService
                                 .getAvailableCategories();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<TipoDocumentoContratacionDTO> getSupportDocumentTypes() {
+
+        return ptdiDocumentoService
+                .getDocumentTypes();
         }
 
         @Override
@@ -866,6 +1045,46 @@ public class PublicWorkPlanServiceImpl
                                                 codigoCategoria,
                                                 nombreCategoria,
                                                 archivos);
+        }
+
+        @Override
+        @Transactional
+        public PtdiDocumentoContenidoDTO addSupportDocumentsByType(
+                        Long idCargaDocente,
+                        Long idPersonaGeneral,
+                        Long idTipoDocumento,
+                        List<MultipartFile> archivos) {
+
+                requireEditableDigitalWorkPlan(
+                        idCargaDocente,
+                        idPersonaGeneral
+                );
+
+                Long idPlanTrabajoDigital = resolveDocumentPtdId(
+                        idCargaDocente,
+                        idPersonaGeneral
+                );
+
+                return ptdiDocumentoService.addFilesByType(
+                        idCargaDocente,
+                        idPlanTrabajoDigital,
+                        idTipoDocumento,
+                        archivos
+                );
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public PtdObservationDTO getObservationByTh(Long idCargaDocente) {
+                log.info("getObservationByTh ===> Obteniendo observación de rechazo del PTD. idCargaDocente={}", idCargaDocente);
+
+                ObservacionPtdEntity observacionEntity = observacionPtdRepository.findByIdCargaDocenteAndPegeRole(idCargaDocente, ROL_TALENTO);
+                if (observacionEntity == null) {
+                        return null;
+                }
+
+                log.info("getObservationByTh ===> Observación del PTD obtenida. idCargaDocente={}", idCargaDocente);
+                return new PtdObservationDTO(observacionEntity.getTexto(), observacionEntity.getIdCargaDocente());
         }
 
         private LocalDate toLocalDate(Date value) {

@@ -231,7 +231,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private static final String ROL_DECANO = "Decano";
     private static final String ROL_DESARROLLO = "Desarrollo academico";
     private static final String ROL_VICERRECTORIA = "Vicerrectoria academica";
-    private static final String ROL_TALENTO = "Talento Humano";
+    private static final String ROL_TALENTO = "Talento humano";
 
     private static final int ESCALA_MONETARIA = 2;
     private static final BigDecimal PUNTOS_DOCENTE_DEFAULT = new BigDecimal("100");
@@ -352,7 +352,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
         if (!coordinador && !talento) {
             throw new ApiException(
                     HttpStatus.FORBIDDEN,
-                    "El listado de coordinaciones de contratación requiere rol Coordinador o Talento Humano");
+                    "El listado de coordinaciones de contratación requiere rol Coordinador o Talento humano");
         }
 
         Long idPersona = user.getIdPersonaGeneral();
@@ -426,7 +426,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             throw new ApiException(HttpStatus.FORBIDDEN, "El token no trae idPersona");
         }
         if (!hasRole(user, ROL_COORDINADOR) && !hasRole(user, ROL_DECANO) && !hasRole(user, ROL_DESARROLLO) && !hasRole(user, ROL_VICERRECTORIA) && !hasRole(user, ROL_TALENTO)) {
-            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano, Desarrollo academico, Vicerrectoria academica o Talento Humano");
+            throw new ApiException(HttpStatus.FORBIDDEN,"El listado de coordinaciones requiere rol Coordinador, Decano, Desarrollo academico, Vicerrectoria academica o Talento humano");
         }
         return user;
     }
