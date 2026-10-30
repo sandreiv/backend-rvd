@@ -43,4 +43,44 @@ public interface InformacionDocenteContratacionProjection {
     String getCategoriaDocente();
 
     String getPuntos();
+
+    String getExpedidoEn();
+
+    String getTelefono();
+
+    String getCelular();
+
+    String getGenero();
+
+    Date getFechaNacimiento();
+
+    String getCiudadNacimiento();
+
+    String getDepartamentoNacimiento();
+
+    Long getIdCoordinacion();
+
+    String getCoordinacion();
+
+    String getUnidadRegional();
+
+    String getFacultad();
+
+    Long getIdPeriodoUniversidad();
+
+    String getPrograma();
+
+    Long getEsCoordinador();
+
+    String getTituloMasculino();
+
+    String getTituloFemenino();
+
+    String getEstablecimiento();
+
+    String getOtraInstitucion();
+
+    Date getFechaObtencionTitulo();
+
+    String getPaisTitulo();
 }

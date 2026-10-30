@@ -36,7 +36,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadPtdDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
@@ -53,6 +56,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ContratoReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -72,6 +76,7 @@ public class HiringCallController {
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
     private final PtdiDocumentoService ptdiDocumentoService;
     private final ContratacionService contratacionService;
+    private final ContratoReporteService contratoReporteService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -191,6 +196,43 @@ public class HiringCallController {
     public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente) {
         HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente);
         return new ResponseEntity<>(valores, HttpStatus.OK);
+    }
+
+    @Operation(
+        summary = "Genera el anexo de contratación de un docente",
+        description = """
+            Genera el PDF del anexo de contratación a partir de la carga docente.
+            Si el docente es el coordinador del programa de la carga se usa el anexo
+            con funciones administrativas; en caso contrario el anexo de 4 meses.
+            El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
+            permite forzar cualquiera de los dos.
+            """
+    )
+    @GetMapping("/contract-pdf-report/{idCargaDocente}")
+    public ResponseEntity<byte[]> generateContractPdf(
+            @PathVariable Long idCargaDocente,
+            @RequestParam(required = false) String tipo) {
+        FileDTO file = contratoReporteService.generateContractPdf(idCargaDocente, parseTipoContrato(tipo));
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + file.fileName() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file.content());
+    }
+
+    private TipoContratoDocente parseTipoContrato(String tipo) {
+        if (tipo == null || tipo.isBlank()) {
+            return null;
+        }
+        try {
+            return TipoContratoDocente.valueOf(tipo.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Tipo de contrato no válido: " + tipo
+                            + ". Use CUATRO_MESES o CON_FUNCIONES_ADMINISTRATIVAS");
+        }
     }
 
     @Operation(

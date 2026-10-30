@@ -641,8 +641,9 @@
             Conocimiento
             <strong th:text="${fmt.text(contrato.docente().nombreCompleto())}"></strong>,
             identificado(a) con la CÉDULA DE CIUDADANÍA No.
-            <strong th:text="${fmt.text(contrato.docente().documento())}"></strong>
-            de <strong th:text="${fmt.text(contrato.docente().expedidoEn())}"></strong>,
+            <strong th:text="${fmt.text(contrato.docente().documento())}"></strong><span
+                th:if="${!#strings.isEmpty(contrato.docente().expedidoEn())}"> de
+                <strong th:text="${fmt.text(contrato.docente().expedidoEn())}"></strong>,</span>
             se vincula a la Universidad de Cundinamarca, teniendo en cuenta las siguientes cláusulas:
 
             <span class="rotulo">PRIMERA. - OBJETO.</span>

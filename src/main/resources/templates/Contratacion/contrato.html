@@ -181,6 +181,13 @@
             height: 12px;
         }
 
+        .fila-total {
+            background-color: #ffffff;
+            font-weight: bold;
+            font-size: 7.5pt;
+            text-align: center;
+        }
+
         .vacio {
             background-color: #ffffff;
             text-align: center;
@@ -449,157 +456,143 @@
         </tr>
     </table>
 
-    <!-- 6. ACTIVIDADES DE FORMACIÓN - APRENDIZAJE DIRECTO -->
+<!-- 6. ACTIVIDADES DE FORMACIÓN - APRENDIZAJE DIRECTO -->
     <table class="form">
         <colgroup>
-            <col style="width:12%"/><col style="width:22%"/><col style="width:28%"/>
-            <col style="width:8%"/><col style="width:8%"/><col style="width:6%"/>
-            <col style="width:5%"/><col style="width:6%"/><col style="width:5%"/>
+            <col style="width:22%"/><col style="width:22%"/><col style="width:28%"/><col style="width:10%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/>
         </colgroup>
         <tr>
-            <td class="titulo-seccion" colspan="9">
-                Actividades de formación - Aprendizaje directo
-            </td>
+            <td class="titulo-seccion" colspan="302">ACTIVIDADES DE FORMACIÓN - APRENDIZAJE DIRECTO</td>
         </tr>
         <tr>
-            <td class="subtitulo-seccion" colspan="9">Por créditos</td>
-        </tr>
-        <tr>
-            <td class="etiqueta">Sede</td>
+            <td class="etiqueta">Unidad</td>
             <td class="etiqueta">Programa</td>
-            <td class="etiqueta">Núcleo Temático</td>
-            <td class="etiqueta">Semestre</td>
+            <td class="etiqueta">Materia</td>
             <td class="etiqueta">Grupo</td>
-            <td class="etiqueta">Cred</td>
+            <td class="etiqueta">Créditos</td>
             <td class="etiqueta">HTP</td>
-            <td class="etiqueta">HTA</td>
             <td class="etiqueta">Total</td>
         </tr>
-        <tr th:each="credito : ${contrato.formacionDirectaCreditos()}">
-            <td class="dato" th:text="${fmt.text(credito.sede())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.programa())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.nucleoTematico())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.semestre())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.grupo())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.creditos())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.htp())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.hta())}"></td>
-            <td class="dato" th:text="${fmt.text(credito.total())}"></td>
+        <tr th:each="materia : ${contrato.planTrabajo().directo()}">
+            <td class="dato" th:text="${fmt.text(materia.unidad())}"></td>
+            <td class="dato" th:text="${fmt.text(materia.programa())}"></td>
+            <td class="dato" th:text="${fmt.text(materia.materia())}"></td>
+            <td class="dato" th:text="${fmt.text(materia.grupo())}"></td>
+            <td class="dato" th:text="${fmt.numero(materia.creditos())}"></td>
+            <td class="dato" th:text="${fmt.numero(materia.htp())}"></td>
+            <td class="dato" th:text="${fmt.numero(materia.totalHoras())}"></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(contrato.formacionDirectaCreditos())}" class="fila-vacia"><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td></tr>
-        <tr>
-            <td class="subtitulo-seccion" colspan="9">Por asignaturas</td>
+        <tr th:if="${#lists.isEmpty(contrato.planTrabajo().directo())}" class="fila-vacia">
+            <td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td>
+            <td class="dato"></td><td class="dato"></td><td class="dato"></td>
         </tr>
         <tr>
-            <td class="etiqueta">Sede</td>
-            <td class="etiqueta">Programa</td>
-            <td class="etiqueta">Asignatura</td>
-            <td class="etiqueta">Semestre</td>
-            <td class="etiqueta">Grupo</td>
-            <td class="etiqueta" colspan="4">Horas Semana</td>
+            <td class="fila-total" colspan="302" th:text="${'Total horas : ' + fmt.numero(contrato.planTrabajo().totalHorasDirecto())}">Total horas :</td>
         </tr>
-        <tr th:each="asignatura : ${contrato.formacionDirectaAsignaturas()}">
-            <td class="dato" th:text="${fmt.text(asignatura.sede())}"></td>
-            <td class="dato" th:text="${fmt.text(asignatura.programa())}"></td>
-            <td class="dato" th:text="${fmt.text(asignatura.asignatura())}"></td>
-            <td class="dato" th:text="${fmt.text(asignatura.semestre())}"></td>
-            <td class="dato" th:text="${fmt.text(asignatura.grupo())}"></td>
-            <td class="dato" colspan="4" th:text="${fmt.text(asignatura.horasSemana())}"></td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(contrato.formacionDirectaAsignaturas())}" class="fila-vacia"><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato" colspan="4"></td></tr>
     </table>
 
     <!-- 7. ACTIVIDADES DE FORMACIÓN - APRENDIZAJE INDIRECTO -->
     <table class="form evitar-corte">
         <colgroup>
-            <col style="width:85%"/><col style="width:15%"/>
+            <col style="width:5%"/><col style="width:85%"/><col style="width:10%"/>
         </colgroup>
         <tr>
-            <td class="titulo-seccion" colspan="2">
-                Actividades de formación - Aprendizaje indirecto
-            </td>
+            <td class="titulo-seccion" colspan="3">ACTIVIDADES DE FORMACIÓN - APRENDIZAJE INDIRECTO</td>
         </tr>
         <tr>
-            <td class="etiqueta">Actividades de Formación - Indirecto</td>
-            <td class="etiqueta">Horas Semana</td>
+            <td class="etiqueta">#</td>
+            <td class="etiqueta">Actividades de Dedicación Docente</td>
+            <td class="etiqueta">Horas</td>
         </tr>
-        <tr th:each="indirecta : ${contrato.formacionIndirecta()}">
-            <td class="dato-izq" th:text="${fmt.text(indirecta.actividad())}"></td>
-            <td class="dato" th:text="${fmt.numero(indirecta.horasSemana())}"></td>
+        <tr th:each="actividad, i : ${contrato.planTrabajo().indirecto()}">
+            <td class="dato" th:text="${i.count}"></td>
+            <td class="dato-izq" th:text="${fmt.text(actividad.actividad())}"></td>
+            <td class="dato" th:text="${fmt.numero(actividad.horas())}"></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(contrato.formacionIndirecta())}" class="fila-vacia"><td class="dato-izq"></td><td class="dato"></td></tr>
+        <tr th:if="${#lists.isEmpty(contrato.planTrabajo().indirecto())}" class="fila-vacia">
+            <td class="dato"></td><td class="dato-izq"></td><td class="dato"></td>
+        </tr>
+        <tr>
+            <td class="fila-total" colspan="3" th:text="${'Total horas : ' + fmt.numero(contrato.planTrabajo().totalHorasIndirecto())}">Total horas :</td>
+        </tr>
     </table>
 
     <!-- 8. ACTIVIDADES DE CIENCIA, TECNOLOGÍA E INNOVACIÓN -->
     <table class="form evitar-corte">
         <colgroup>
-            <col style="width:20%"/><col style="width:20%"/><col style="width:28%"/>
-            <col style="width:22%"/><col style="width:10%"/>
+            <col style="width:5%"/><col style="width:85%"/><col style="width:10%"/>
         </colgroup>
         <tr>
-            <td class="titulo-seccion" colspan="5">
-                Actividades de ciencia, tecnología e innovación
-            </td>
+            <td class="titulo-seccion" colspan="3">ACTIVIDADES DE CIENCIA, TECNOLOGÍA E INNOVACIÓN</td>
         </tr>
         <tr>
-            <td class="etiqueta">Grupo</td>
-            <td class="etiqueta">Línea</td>
-            <td class="etiqueta">Actividad</td>
-            <td class="etiqueta">Proyecto</td>
-            <td class="etiqueta">Horas Semanales</td>
+            <td class="etiqueta">#</td>
+            <td class="etiqueta">Actividades de Dedicación Docente</td>
+            <td class="etiqueta">Horas</td>
         </tr>
-        <tr th:each="actividadCtei : ${contrato.ctei()}">
-            <td class="dato" th:text="${fmt.text(actividadCtei.grupo())}"></td>
-            <td class="dato" th:text="${fmt.text(actividadCtei.linea())}"></td>
-            <td class="dato" th:text="${fmt.text(actividadCtei.actividad())}"></td>
-            <td class="dato" th:text="${fmt.text(actividadCtei.proyecto())}"></td>
-            <td class="dato" th:text="${fmt.numero(actividadCtei.horasSemanales())}"></td>
+        <tr th:each="actividad, i : ${contrato.planTrabajo().ctei().dedicacion()}">
+            <td class="dato" th:text="${i.count}"></td>
+            <td class="dato-izq" th:text="${fmt.text(actividad.actividad())}"></td>
+            <td class="dato" th:text="${fmt.numero(actividad.horas())}"></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(contrato.ctei())}" class="fila-vacia"><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td><td class="dato"></td></tr>
+        <tr th:if="${#lists.isEmpty(contrato.planTrabajo().ctei().dedicacion())}" class="fila-vacia">
+            <td class="dato"></td><td class="dato-izq"></td><td class="dato"></td>
+        </tr>
+        <tr>
+            <td class="fila-total" colspan="3" th:text="${'Total horas : ' + fmt.numero(contrato.planTrabajo().ctei().totalHoras())}">Total horas :</td>
+        </tr>
     </table>
 
     <!-- 9. ACTIVIDADES DE INTERACCIÓN SOCIAL UNIVERSITARIA -->
     <table class="form evitar-corte">
         <colgroup>
-            <col style="width:40%"/><col style="width:45%"/><col style="width:15%"/>
+            <col style="width:5%"/><col style="width:85%"/><col style="width:10%"/>
         </colgroup>
         <tr>
-            <td class="titulo-seccion" colspan="3">
-                Actividades de interacción social universitaria
-            </td>
+            <td class="titulo-seccion" colspan="3">ACTIVIDADES DE INTERACCIÓN SOCIAL UNIVERSITARIA</td>
         </tr>
         <tr>
-            <td class="etiqueta">Actividades</td>
-            <td class="etiqueta">Proyecto</td>
-            <td class="etiqueta">Horas Semanales</td>
+            <td class="etiqueta">#</td>
+            <td class="etiqueta">Actividades de Dedicación Docente</td>
+            <td class="etiqueta">Horas</td>
         </tr>
-        <tr th:each="actividadIsu : ${contrato.isu()}">
-            <td class="dato-izq" th:text="${fmt.text(actividadIsu.actividad())}"></td>
-            <td class="dato" th:text="${fmt.text(actividadIsu.proyecto())}"></td>
-            <td class="dato" th:text="${fmt.numero(actividadIsu.horasSemanales())}"></td>
+        <tr th:each="actividad, i : ${contrato.planTrabajo().isu()}">
+            <td class="dato" th:text="${i.count}"></td>
+            <td class="dato-izq" th:text="${fmt.text(actividad.actividad())}"></td>
+            <td class="dato" th:text="${fmt.numero(actividad.horas())}"></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(contrato.isu())}" class="fila-vacia"><td class="dato-izq"></td><td class="dato"></td><td class="dato"></td></tr>
+        <tr th:if="${#lists.isEmpty(contrato.planTrabajo().isu())}" class="fila-vacia">
+            <td class="dato"></td><td class="dato-izq"></td><td class="dato"></td>
+        </tr>
+        <tr>
+            <td class="fila-total" colspan="3" th:text="${'Total horas : ' + fmt.numero(contrato.planTrabajo().totalHorasIsu())}">Total horas :</td>
+        </tr>
     </table>
 
     <!-- 10. ACTIVIDADES DE ADMINISTRACIÓN ACADÉMICA -->
     <table class="form evitar-corte">
         <colgroup>
-            <col style="width:85%"/><col style="width:15%"/>
+            <col style="width:5%"/><col style="width:85%"/><col style="width:10%"/>
         </colgroup>
         <tr>
-            <td class="titulo-seccion" colspan="2">
-                Actividades de administración académica
-            </td>
+            <td class="titulo-seccion" colspan="3">ACTIVIDADES DE ADMINISTRACIÓN ACADÉMICA</td>
         </tr>
         <tr>
-            <td class="etiqueta">Proyecto</td>
-            <td class="etiqueta">Horas Semanales</td>
+            <td class="etiqueta">#</td>
+            <td class="etiqueta">Actividades de Dedicación Docente</td>
+            <td class="etiqueta">Horas</td>
         </tr>
-        <tr th:each="administracion : ${contrato.administracion()}">
-            <td class="dato-izq" th:text="${fmt.text(administracion.proyecto())}"></td>
-            <td class="dato" th:text="${fmt.numero(administracion.horasSemanales())}"></td>
+        <tr th:each="actividad, i : ${contrato.planTrabajo().administracion()}">
+            <td class="dato" th:text="${i.count}"></td>
+            <td class="dato-izq" th:text="${fmt.text(actividad.actividad())}"></td>
+            <td class="dato" th:text="${fmt.numero(actividad.horas())}"></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(contrato.administracion())}" class="fila-vacia"><td class="dato-izq"></td><td class="dato"></td></tr>
+        <tr th:if="${#lists.isEmpty(contrato.planTrabajo().administracion())}" class="fila-vacia">
+            <td class="dato"></td><td class="dato-izq"></td><td class="dato"></td>
+        </tr>
+        <tr>
+            <td class="fila-total" colspan="3" th:text="${'Total horas : ' + fmt.numero(contrato.planTrabajo().totalHorasAdministracion())}">Total horas :</td>
+        </tr>
     </table>
 
 </div>
@@ -617,8 +610,9 @@
             trata el Acuerdo 021 de 2025, el (la) docente con funciones administrativas
             <strong th:text="${fmt.text(contrato.docente().nombreCompleto())}"></strong>
             identificado(a) con CÉDULA DE CIUDADANÍA No.
-            <strong th:text="${fmt.text(contrato.docente().documento())}"></strong>
-            de <strong th:text="${fmt.text(contrato.docente().expedidoEn())}"></strong>
+            <strong th:text="${fmt.text(contrato.docente().documento())}"></strong><span
+                th:if="${!#strings.isEmpty(contrato.docente().expedidoEn())}"> de
+                <strong th:text="${fmt.text(contrato.docente().expedidoEn())}"></strong></span>
             se vincula a la Universidad de Cundinamarca teniendo en cuenta las siguientes cláusulas.
 
         
@@ -804,7 +798,7 @@
                 <div class="firma-cargo sin-negrita">DECANO(A) DE FACULTAD</div>
                 <!-- Espacio reservado para la firma manuscrita / sello -->
                 <div class="firma-nombre"
-                     th:text="${fmt.text(contrato.firmas().decano().nombre())}"></div>
+                     th:text="${fmt.text(contrato.firmas().decanoNombre())}"></div>
                 <div class="firma-linea">
                     Nombre: ____________________________________________
                 </div>
@@ -817,7 +811,7 @@
             <td>
                 <div class="firma-cargo sin-negrita">DOCENTE CON FUNCIONES ADMINISTRATIVAS</div>
                 <div class="firma-nombre"
-                     th:text="${fmt.text(contrato.firmas().docente().nombre())}"></div>
+                     th:text="${fmt.text(contrato.firmas().personalAcademicoNombre())}"></div>
                 <div class="firma-linea">
                     Nombre: ____________________________________________
                 </div>

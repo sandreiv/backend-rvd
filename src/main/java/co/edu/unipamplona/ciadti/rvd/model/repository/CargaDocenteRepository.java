@@ -1129,6 +1129,25 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     ) AS RN
 
                 FROM COMITES.ESCALAFON ESC
+            ),
+            TITULO_ACTUAL AS (
+                SELECT
+                    TITU.PEGE_ID,
+                    TG.TITU_DESCRIPCIONMASCULINA,
+                    TG.TITU_DESCRIPCIONFEMENINA,
+                    TITU.TIPN_ESTABLECIMIENTO,
+                    TITU.TIPN_OTRAINSTITUCION,
+                    TITU.TIPN_FECHAOBTENCION,
+                    PAIS.PAGE_NOMBRE AS PAIS,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY TITU.PEGE_ID
+                        ORDER BY TITU.TIPN_FECHAOBTENCION DESC NULLS LAST, TITU.TIPN_FECHACAMBIO DESC
+                    ) AS RN
+                FROM GENERAL.TITULOPERSONANATURALGENERAL TITU
+                LEFT JOIN GENERAL.TITULOGENERAL TG
+                    ON TG.TITU_ID = TITU.TITU_ID
+                LEFT JOIN GENERAL.PAISGENERAL PAIS
+                    ON PAIS.PAGE_ID = TITU.PAGE_ID
             )
             SELECT
                 COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID) AS idPersonaGeneral,
@@ -1156,7 +1175,33 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 CASE
                     WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_PUNTOS
                     ELSE CADO.CADO_PUNTOS
-                END AS puntos
+                END AS puntos,
+                PEGE.PEGE_LUGAREXPEDICION AS expedidoEn,
+                PEGE.PEGE_TELEFONO AS telefono,
+                PEGE.PEGE_TELEFONOCELULAR AS celular,
+                PENG.PENG_SEXO AS genero,
+                PENG.PENG_FECHANACIMIENTO AS fechaNacimiento,
+                CIU.CIGE_NOMBRE AS ciudadNacimiento,
+                DEP.DEGE_NOMBRE AS departamentoNacimiento,
+                CARG.COOR_ID AS idCoordinacion,
+                COOR.COOR_NOMBRE AS coordinacion,
+                UNID_REG.UNID_NOMBRE AS unidadRegional,
+                UNID_AREA.UNID_NOMBRE AS facultad,
+                CONV.PEUN_ID AS idPeriodoUniversidad,
+                PROG_CADO.PROGRAMA AS programa,
+                (
+                    SELECT COUNT(1)
+                    FROM RVD.PERSONACOORDINACION PECO
+                    WHERE PECO.PEGE_ID = COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID)
+                        AND PECO.COOR_ID = CARG.COOR_ID
+                        AND NVL(TRIM(PECO.PECO_ESTADO), '1') = '1'
+                ) AS esCoordinador,
+                TIT.TITU_DESCRIPCIONMASCULINA AS tituloMasculino,
+                TIT.TITU_DESCRIPCIONFEMENINA AS tituloFemenino,
+                TIT.TIPN_ESTABLECIMIENTO AS establecimiento,
+                TIT.TIPN_OTRAINSTITUCION AS otraInstitucion,
+                TIT.TIPN_FECHAOBTENCION AS fechaObtencionTitulo,
+                TIT.PAIS AS paisTitulo
             FROM RVD.CARGADOCENTE CADO
             LEFT JOIN NOVEDADES_VALIDAS DATOS
                 ON DATOS.CADO_ID = CADO.CADO_ID
@@ -1175,6 +1220,33 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 ON ESC.PEGE_ID = COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID)
                 AND ESC.MOCO_ID = COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID)
                 AND ESC.RN = 1
+            LEFT JOIN GENERAL.CIUDADGENERAL CIU
+                ON CIU.CIGE_ID = PENG.CIGE_IDLUGARNACIMIENTO
+            LEFT JOIN GENERAL.DEPARTAMENTOGENERAL DEP
+                ON DEP.DEGE_ID = CIU.DEGE_ID
+            LEFT JOIN RVD.CARGA CARG
+                ON CARG.CARG_ID = COALESCE(DATOS.CARG_ID, CADO.CARG_ID)
+            LEFT JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+            LEFT JOIN ACADEMICO.UNIDAD UNID_REG
+                ON UNID_REG.UNID_ID = COOR.UNID_IDREGIONAL
+            LEFT JOIN ACADEMICO.UNIDAD UNID_AREA
+                ON UNID_AREA.UNID_ID = COOR.UNID_IDAREA
+            LEFT JOIN RVD.CONVOCATORIA CONV
+                ON CONV.CONV_ID = CARG.CONV_ID
+            LEFT JOIN (
+                SELECT
+                    D.CADO_ID,
+                    MIN(PROG.PROG_NOMBRE) AS PROGRAMA
+                FROM RVD.DETALLECARGADOCENTE D
+                INNER JOIN ACADEMICO.PROGRAMA PROG
+                    ON PROG.PROG_ID = D.PROG_ID
+                GROUP BY D.CADO_ID
+            ) PROG_CADO
+                ON PROG_CADO.CADO_ID = CADO.CADO_ID
+            LEFT JOIN TITULO_ACTUAL TIT
+                ON TIT.PEGE_ID = COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID)
+                AND TIT.RN = 1
             WHERE CADO.CADO_ID = :idCargaDocente
             """, nativeQuery = true)
     Optional<InformacionDocenteContratacionProjection> findProfessorInformationByCargaDocente(
