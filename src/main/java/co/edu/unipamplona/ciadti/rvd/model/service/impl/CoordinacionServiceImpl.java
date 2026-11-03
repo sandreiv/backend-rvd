@@ -164,6 +164,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.HistorialCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionCargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
@@ -3870,11 +3871,18 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     private TotalesContratoCarga sumInclusiveContractValues(Long idCarga) {
+        CargaEntity carga = findCarga(idCarga);
+        String periodo = findPeriodoUniversidad(carga);
+
         BigDecimal totalPrestaciones = BigDecimal.ZERO;
         BigDecimal totalContratos = BigDecimal.ZERO;
         List<CargaDocenteEntity> docentes =
                 cargaDocenteRepository.findByIdCargaWithoutNoveltyProfessors(idCarga);
         for (CargaDocenteEntity docente : docentes) {
+            if (!shouldIncludeInBudget(docente, periodo)) {
+                continue;
+            }
+
             ValorContratacionDTO valor =
                     calculateInclusiveContractValue(docente);
             if (valor == null) {
@@ -4120,5 +4128,31 @@ public class CoordinacionServiceImpl implements CoordinacionService {
                 );
             })
         .toList();
+    }
+
+    private CargaEntity findCarga(Long idCarga) {
+        if (idCarga == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga es obligatoria");
+        }
+        return cargaRepository.findById(idCarga)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga con id " + idCarga));
+    }
+
+    private String findPeriodoUniversidad(CargaEntity carga) {
+        return Optional.ofNullable(carga.getConvocatoria())
+                .map(ConvocatoriaEntity::getPeriodoUniversidad)
+                .map(PeriodoUniversidadEntity::getPeriodo)
+                .orElse(null);
+    }
+
+    private boolean shouldIncludeInBudget(CargaDocenteEntity docente, String periodoUniversidad) {
+        return !OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
+                docente.getOnceMeses(),
+                periodoUniversidad
+        );
     }
 }

@@ -295,12 +295,14 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         int index = 0;
         while (index < rows.size()) {
             CargaDocenteEntity docente = rows.get(index);
-            if (shouldIncludeInBudget(docente, periodo)) {
-                total = total.add(
-                    calculateInclusive(
-                        fromCargaDocente(rows.get(index)))
-                        .totalContrato());
+            if (!shouldIncludeInBudget(docente, periodo)) {
+                continue;
             }
+
+            total = total.add(
+                calculateInclusive(
+                    fromCargaDocente(rows.get(index)))
+                    .totalContrato());
             index++;
         }
         return total;
@@ -618,7 +620,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         return value.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
     }
 
-    public String findPeriodoUniversidad(CargaEntity carga) {
+    private String findPeriodoUniversidad(CargaEntity carga) {
         return Optional.ofNullable(carga.getConvocatoria())
                 .map(ConvocatoriaEntity::getPeriodoUniversidad)
                 .map(PeriodoUniversidadEntity::getPeriodo)
