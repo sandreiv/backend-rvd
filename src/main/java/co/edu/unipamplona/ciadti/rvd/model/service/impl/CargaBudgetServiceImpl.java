@@ -14,6 +14,7 @@
  * autorizado solo en preasignación
  * 25/09/2026 - Andrés Hernández - Correción en los calculos de presupuesto
  * 30/09/2026 - Andrés Hernández - Correción para no contar en el presupuesto docentes agregados como novedad
+ * 03/11/2026 - Andrés Hernández - Corrección en el calculo de valores de contratación para docentes heredados
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -80,7 +81,8 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
             BigDecimal semanas,
             BigDecimal horasActividades,
             String puntos,
-            BigDecimal valorPunto) {
+            BigDecimal valorPunto,
+            boolean heredadoOnceMeses) {
     }
 
     private final CargaRepository cargaRepository;
@@ -125,7 +127,13 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         if (overlay == null) {
             return ValorContratacionCalculator.zero();
         }
-        return calculate(toSnapshot(overlay));
+
+        CargaDocenteEntity cargaDocente = findCargaDocente(overlay.idCargaDocente());
+        CargaEntity carga = findCarga(cargaDocente.getIdCarga());
+        String periodo = findPeriodoUniversidad(carga);
+        boolean esHeredado = isDocenteHereadado(cargaDocente.getOnceMeses(), periodo);
+
+        return calculate(toSnapshot(overlay, esHeredado));
     }
 
     @Override
@@ -134,7 +142,13 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         if (overlay == null) {
             return ValorContratacionCalculator.zero();
         }
-        return calculateInclusive(toSnapshot(overlay));
+
+        CargaDocenteEntity cargaDocente = findCargaDocente(overlay.idCargaDocente());
+        CargaEntity carga = findCarga(cargaDocente.getIdCarga());
+        String periodo = findPeriodoUniversidad(carga);
+        boolean esHeredado = isDocenteHereadado(cargaDocente.getOnceMeses(), periodo);
+
+        return calculateInclusive(toSnapshot(overlay, esHeredado));
     }
 
     @Override
@@ -285,20 +299,12 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
     }
 
     private BigDecimal sumPreassignment(Long idCarga) {
-        CargaEntity carga = findCarga(idCarga);
-        String periodo = findPeriodoUniversidad(carga);
-        
         BigDecimal total = BigDecimal.ZERO;
         // Aca no se necesitan a los profesores de la cargaDocente que vienen creados de novedad
         List<CargaDocenteEntity> rows =
                 cargaDocenteRepository.findByIdCargaWithoutNoveltyProfessors(idCarga);
         int index = 0;
         while (index < rows.size()) {
-            CargaDocenteEntity docente = rows.get(index);
-            if (!shouldIncludeInBudget(docente, periodo)) {
-                continue;
-            }
-
             total = total.add(
                 calculateInclusive(
                     fromCargaDocente(rows.get(index)))
@@ -415,6 +421,11 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         if (horas == null || horas.compareTo(BigDecimal.ZERO) <= 0) {
             horas = sumNovedadHours(novelty.getIdCargaDocente());
         }
+
+        CargaEntity carga = findCarga(novelty.getIdCarga());
+        String periodo = findPeriodoUniversidad(carga);
+        boolean esHeredado = isDocenteHereadado(novelty.getOnceMeses(), periodo);
+
         return new BudgetSnapshot(
                 novelty.getIdModalidadContratacion(),
                 novelty.getFechaInicio(),
@@ -424,7 +435,8 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                 parseDecimal(novelty.getSemanas()),
                 horas,
                 novelty.getPuntos(),
-                novelty.getValorPunto());
+                novelty.getValorPunto(),
+                esHeredado);
     }
 
     private BudgetSnapshot fromCargaDocente(CargaDocenteEntity docente) {
@@ -432,6 +444,11 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
         if (horas == null || horas.compareTo(BigDecimal.ZERO) <= 0) {
             horas = sumCargaHours(docente.getId());
         }
+
+        CargaEntity carga = findCarga(docente.getIdCarga());
+        String periodo = findPeriodoUniversidad(carga);
+        boolean esHeredado = isDocenteHereadado(docente.getOnceMeses(), periodo);
+
         return new BudgetSnapshot(
                 docente.getIdModalidadContratacion(),
                 docente.getFechaInicio(),
@@ -441,10 +458,11 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                 parseDecimal(docente.getSemanas()),
                 horas,
                 docente.getPuntos(),
-                docente.getValorPunto());
+                docente.getValorPunto(),
+                esHeredado);
     }
 
-    private BudgetSnapshot toSnapshot(CargaBudgetOverlay overlay) {
+    private BudgetSnapshot toSnapshot(CargaBudgetOverlay overlay, boolean esHeredado) {
         return new BudgetSnapshot(
                 overlay.idModalidadContratacion(),
                 overlay.fechaInicio(),
@@ -454,12 +472,13 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                 overlay.semanas(),
                 overlay.horasActividades(),
                 overlay.puntos(),
-                overlay.valorPunto());
+                overlay.valorPunto(),
+                esHeredado);
     }
 
     private ValorContratacionDTO calculate(BudgetSnapshot snapshot) {
         BudgetKind kind = resolveKind(snapshot.idModalidadContratacion());
-        if (kind == BudgetKind.PLANTA) {
+        if (kind == BudgetKind.PLANTA || snapshot.heredadoOnceMeses()) {
             return ValorContratacionCalculator.zero();
         }
         if (kind == BudgetKind.CATEDRA) {
@@ -470,7 +489,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
 
     private ValorContratacionDTO calculateInclusive(BudgetSnapshot snapshot) {
         BudgetKind kind = resolveKind(snapshot.idModalidadContratacion());
-        if (kind == BudgetKind.PLANTA) {
+        if (kind == BudgetKind.PLANTA || snapshot.heredadoOnceMeses()) {
             return ValorContratacionCalculator.zero();
         }
         if (kind == BudgetKind.CATEDRA) {
@@ -597,6 +616,18 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                         "No existe la carga con id " + idCarga));
     }
 
+    private CargaDocenteEntity findCargaDocente(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente es obligatoria");
+        }
+        return cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+    }
+
     private BigDecimal parseDecimal(String value) {
         if (!StringUtils.hasText(value)) {
             return null;
@@ -627,9 +658,9 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                 .orElse(null);
     }
 
-    private boolean shouldIncludeInBudget(CargaDocenteEntity docente, String periodoUniversidad) {
-        return !OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
-                docente.getOnceMeses(),
+    private boolean isDocenteHereadado(String onceMeses , String periodoUniversidad) {
+        return OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
+                onceMeses,
                 periodoUniversidad
         );
     }
