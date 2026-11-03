@@ -68,6 +68,7 @@ public interface InformacionDocenteContratacionMapper {
                 base.otraInstitucion(),
                 base.fechaObtencionTitulo(),
                 base.paisTitulo(),
+                base.onceMeses(),
                 horasActividades == null ? List.of() : horasActividades);
     }
 }

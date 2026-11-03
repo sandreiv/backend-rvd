@@ -83,4 +83,6 @@ public interface InformacionDocenteContratacionProjection {
     Date getFechaObtencionTitulo();
 
     String getPaisTitulo();
+
+    String getOnceMeses();
 }

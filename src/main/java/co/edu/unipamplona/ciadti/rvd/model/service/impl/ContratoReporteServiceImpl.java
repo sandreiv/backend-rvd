@@ -166,21 +166,38 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     }
 
     /**
-     * Regla de negocio del anexo: si el docente es el coordinador del programa
-     * de la carga se firma el anexo con funciones administrativas; en caso
-     * contrario se usa el anexo de 4 meses (docencia de pregrado).
+     * Regla de negocio del anexo, según la duración del contrato cargado:
+     * <ul>
+     *   <li>contrato de 11 meses ({@code CADO_ONCEMESES = '1'}) → anexo de docente
+     *       ocasional tiempo completo con funciones administrativas
+     *       ({@code contrato.html});</li>
+     *   <li>contrato de 4 meses → anexo de pregrado
+     *       ({@code contrato-4-meses.html}).</li>
+     * </ul>
+     * Se conserva además el criterio de coordinador del programa de la carga: un
+     * coordinador firma el anexo con funciones administrativas aunque su carga sea corta.
      */
     private TipoContratoDocente resolveTipoContrato(InformacionDocenteContratacionDTO informacion) {
-        Long total = informacion.esCoordinador();
-        boolean esCoordinador = total != null && total > 0;
+        boolean onceMeses = esOnceMeses(informacion.onceMeses());
+        boolean esCoordinador = informacion.esCoordinador() != null && informacion.esCoordinador() > 0;
+        boolean anexoAdministrativo = onceMeses || esCoordinador;
         log.debug(
-                "resolveTipoContrato ===> idPersonaGeneral={}, idCoordinacion={}, esCoordinador={}",
+                "resolveTipoContrato ===> idPersonaGeneral={}, idCoordinacion={}, onceMeses={}, esCoordinador={}",
                 informacion.idPersonaGeneral(),
                 informacion.idCoordinacion(),
+                onceMeses,
                 esCoordinador);
-        return esCoordinador
+        return anexoAdministrativo
                 ? TipoContratoDocente.CON_FUNCIONES_ADMINISTRATIVAS
                 : TipoContratoDocente.CUATRO_MESES;
+    }
+
+    /**
+     * Bandera {@code CADO_ONCEMESES} de la carga docente (contrato de 11 meses).
+     * La columna es VARCHAR2 y viene NULL o vacía en los contratos de 4 meses.
+     */
+    private boolean esOnceMeses(String onceMeses) {
+        return onceMeses != null && "1".equals(onceMeses.trim());
     }
 
     private HiringCdpInformationDTO resolveCdp(InformacionDocenteContratacionDTO informacion) {

@@ -50,5 +50,6 @@ public record InformacionDocenteContratacionDTO(
     String otraInstitucion,
     Date fechaObtencionTitulo,
     String paisTitulo,
+    String onceMeses,
     List<ActividadHorasResumenDTO> horasActividades
 ) {}

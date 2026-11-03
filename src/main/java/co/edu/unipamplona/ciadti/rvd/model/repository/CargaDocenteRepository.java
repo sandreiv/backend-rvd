@@ -1201,7 +1201,8 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 TIT.TIPN_ESTABLECIMIENTO AS establecimiento,
                 TIT.TIPN_OTRAINSTITUCION AS otraInstitucion,
                 TIT.TIPN_FECHAOBTENCION AS fechaObtencionTitulo,
-                TIT.PAIS AS paisTitulo
+                TIT.PAIS AS paisTitulo,
+                COALESCE(DATOS.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS onceMeses
             FROM RVD.CARGADOCENTE CADO
             LEFT JOIN NOVEDADES_VALIDAS DATOS
                 ON DATOS.CADO_ID = CADO.CADO_ID

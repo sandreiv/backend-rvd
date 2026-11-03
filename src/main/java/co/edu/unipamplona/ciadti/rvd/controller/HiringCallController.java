@@ -204,8 +204,9 @@ public class HiringCallController {
         summary = "Genera el anexo de contratación de un docente",
         description = """
             Genera el PDF del anexo de contratación a partir de la carga docente.
-            Si el docente es el coordinador del programa de la carga se usa el anexo
-            con funciones administrativas; en caso contrario el anexo de 4 meses.
+            Si la carga es un contrato de 11 meses (o el docente es coordinador del
+            programa) se usa el anexo con funciones administrativas; si es de 4 meses
+            se usa el anexo de pregrado.
             El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
             permite forzar cualquiera de los dos. numeroAnexo y fechaIngreso son los
             datos que el usuario diligencia en el modal antes de descargar el anexo.
