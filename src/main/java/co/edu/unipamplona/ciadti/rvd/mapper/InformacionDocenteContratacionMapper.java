@@ -48,6 +48,27 @@ public interface InformacionDocenteContratacionMapper {
                 base.horas(),
                 base.categoriaDocente(),
                 base.puntos(),
-                horasActividades == null ? List.of() : horasActividades);
+                base.expedidoEn(),
+                base.telefono(),
+                base.celular(),
+                base.genero(),
+                base.fechaNacimiento(),
+                base.ciudadNacimiento(),
+                base.departamentoNacimiento(),
+                base.idCoordinacion(),
+                base.coordinacion(),
+                base.unidadRegional(),
+                base.facultad(),
+                base.idPeriodoUniversidad(),
+                base.programa(),
+                base.esCoordinador(),
+                base.tituloMasculino(),
+                base.tituloFemenino(),
+                base.establecimiento(),
+                base.otraInstitucion(),
+                base.fechaObtencionTitulo(),
+                base.paisTitulo(),
+                base.onceMeses(),
+                horasActividades == null ? List.of() : horasActividades);
     }
 }
