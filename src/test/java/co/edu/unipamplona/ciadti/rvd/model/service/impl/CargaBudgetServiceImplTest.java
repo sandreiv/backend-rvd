@@ -174,8 +174,11 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeKeepsCatedraBudgetWithoutBenefits() {
+        stubCarga(new BigDecimal("30000000"));
+        stubCargaDocente(catedraDocente());
+
         ValorContratacionDTO valor = service.compute(
-                overlayCatedra(CADO_TCO, "8"));
+                overlayCatedra(CADO_CATEDRA, "8"));
 
         assertMoney("6400000.00", valor.valorContrato());
         assertMoney("0.00", valor.totalPrestaciones());
@@ -185,8 +188,11 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeInclusiveCatedraIncludesBenefitsAndPsm() {
+        stubCarga(new BigDecimal("30000000"));
+        stubCargaDocente(catedraDocente());
+
         ValorContratacionDTO valor = service.computeInclusive(
-                overlayCatedra(CADO_TCO, "8"));
+                overlayCatedra(CADO_CATEDRA, "8"));
 
         assertMoney("6400000.00", valor.valorContrato());
         assertMoney("1361066.66", valor.totalPrestaciones());
@@ -196,6 +202,9 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeInclusiveTcoUsesInclusiveDaysAndSalary() {
+        stubCarga(new BigDecimal("30000000"));
+        stubCargaDocente(tcoDocente());
+
         ValorContratacionDTO valor = service.computeInclusive(
                 overlayTco(CADO_TCO));
 
@@ -207,6 +216,9 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeInclusivePlantaIsZero() {
+        stubCarga(new BigDecimal("30000000"));
+        stubCargaDocente(plantaDocente());
+
         ValorContratacionDTO valor = service.computeInclusive(
                 overlayPlanta(CADO_PLANTA));
 
@@ -218,12 +230,20 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void overlayFromTcoToCatedraLowersProjectedTotal() {
+        stubCarga(new BigDecimal("30000000"));
+
         when(cargaDocenteRepository.findByIdCarga(ID_CARGA))
-                .thenReturn(List.of(tcoDocente()));
+            .thenReturn(List.of(tcoDocente()));
+
+        stubCargaDocente(tcoDocente());
+
+        when(novedadCargaDocenteRepository
+            .findProfessorRecordToDuplicateNovelty(CADO_TCO))
+            .thenReturn(Optional.empty());
 
         BigDecimal preview = service.preview(
-                ID_CARGA,
-                overlayCatedra(CADO_TCO, "8"));
+            ID_CARGA,
+            overlayCatedra(CADO_TCO, "8"));
 
         assertMoney("7761066.66", preview);
     }
@@ -233,6 +253,12 @@ class CargaBudgetServiceImplTest {
         stubCarga(new BigDecimal("1000000"));
         when(cargaDocenteRepository.findByIdCarga(ID_CARGA))
                 .thenReturn(List.of(tcoDocente()));
+        
+        stubCargaDocente(tcoDocente());
+
+        when(novedadCargaDocenteRepository
+            .findProfessorRecordToDuplicateNovelty(CADO_TCO))
+            .thenReturn(Optional.empty());
 
         ApiException ex = assertThrows(
                 ApiException.class,
@@ -301,6 +327,12 @@ class CargaBudgetServiceImplTest {
         return carga;
     }
 
+    private CargaDocenteEntity stubCargaDocente(CargaDocenteEntity docente) {
+        when(cargaDocenteRepository.findById(docente.getId()))
+            .thenReturn(Optional.of(docente));
+        return docente;
+    }
+
     private CargaDocenteEntity tcoDocente() {
         CargaDocenteEntity entity = new CargaDocenteEntity();
         entity.setId(CADO_TCO);
@@ -324,9 +356,21 @@ class CargaBudgetServiceImplTest {
         return entity;
     }
 
+    private CargaDocenteEntity plantaDocente() {
+        CargaDocenteEntity entity = new CargaDocenteEntity();
+        entity.setId(CADO_PLANTA);
+        entity.setIdCarga(ID_CARGA);
+        entity.setIdModalidadContratacion(null);
+        entity.setSalario(SALARIO_TCO);
+        entity.setFechaInicio(INICIO);
+        entity.setFechaFin(FIN);
+        return entity;
+    }
+
     private NovedadCargaDocenteEntity catedraNovelty() {
         NovedadCargaDocenteEntity entity = new NovedadCargaDocenteEntity();
         entity.setIdCargaDocente(CADO_CATEDRA);
+        entity.setIdCarga(ID_CARGA);
         entity.setIdModalidadContratacion(ID_CATEDRA);
         entity.setValorHora(new BigDecimal("50000"));
         entity.setSemanas("16");

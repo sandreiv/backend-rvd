@@ -195,7 +195,7 @@ public interface CoordinacionService {
 
     void markSeenObservationsByPreload(Long idCarga);
 
-    ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente);
+    ResumenCargaDocenteDTO getProfessorLoadSummary(Long idCargaDocente, String numeroPeriodo);
 
     List<RestriccionProgramaHorasDTO> listProgramHourRestrictions(
             Long idModalidadContratacion,

@@ -112,6 +112,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.CargaBudgetService;
 import co.edu.unipamplona.ciadti.rvd.model.service.NovedadCargaDocenteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.util.FechasConvocatoriaCalculator;
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import co.edu.unipamplona.ciadti.rvd.util.ResumenCargaAssembler;
@@ -2142,7 +2143,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     @Override
     @Transactional(readOnly = true)
     public ResumenNovedadCargaDocenteDTO getProfessorNoveltySummary(
-            Long idCargaDocente) {
+            Long idCargaDocente, String numeroPeriodo) {
         log.debug(
                 "getProfessorNoveltySummary ===> idCargaDocente={}",
                 idCargaDocente);
@@ -2159,11 +2160,11 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
         if (actual.isEmpty()) {
             return fromCargaDocenteSummary(
-                    idCargaDocente, observaciones, novedades);
+                    idCargaDocente, numeroPeriodo, observaciones, novedades);
         }
 
         return fromNovedadSummary(
-                actual.get(), observaciones, novedades);
+                actual.get(), numeroPeriodo, observaciones, novedades);
     }
 
     private List<DetalleNovedadResumenProjection> loadActivityDetails(Long idCargaDocente, Long idNovedadCargaDocente) {
@@ -2177,10 +2178,11 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private ResumenNovedadCargaDocenteDTO fromCargaDocenteSummary(
             Long idCargaDocente,
+            String numeroPeriodo,
             List<ObservacionResumenNovedadDTO> observaciones,
             List<HistorialNovedadResumenDTO> novedades) {
         
-        ResumenCargaDocenteDTO base = coordinacionService.getProfessorLoadSummary(idCargaDocente);
+        ResumenCargaDocenteDTO base = coordinacionService.getProfessorLoadSummary(idCargaDocente, numeroPeriodo);
 
         log.info(
                 "getProfessorNoveltySummary ===> sin novedad no rechazada. id={}",
@@ -2197,6 +2199,7 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private ResumenNovedadCargaDocenteDTO fromNovedadSummary(
             NovedadCargaDocenteEntity novedad,
+            String numeroPeriodo,
             List<ObservacionResumenNovedadDTO> observaciones,
             List<HistorialNovedadResumenDTO> novedades) {
         
@@ -2206,7 +2209,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 && trabajadorLaborRepository.existsVigenteByIdPersonaGeneral(
                         novedad.getIdPersonaGeneral());
         
-        ValorContratacionDTO valor = planta
+        boolean heredadoOnceMeses = OnceMesesReporteFilter.excludeInheritedInSecondPeriod(novedad.getOnceMeses(), numeroPeriodo);
+
+        ValorContratacionDTO valor = (planta || heredadoOnceMeses)
                 ? null
                 : calculateNoveltyContract(novedad, detalles);
         BigDecimal totalContrato = valor != null
@@ -2388,22 +2393,4 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
             );
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

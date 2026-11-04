@@ -577,9 +577,9 @@ public class CoordinationController {
         summary = "Obtiene el resumen completo de una carga docente",
         description = "Agrupa valor de contratación, horas de actividades y distribución por centros de costo."
     )
-    @GetMapping("/professor-load-summary/{idCargaDocente}")
-    public ResponseEntity<ResumenCargaDocenteDTO> getProfessorLoadSummary(@PathVariable Long idCargaDocente) {
-        return new ResponseEntity<>(coordinacionService.getProfessorLoadSummary(idCargaDocente), HttpStatus.OK);
+    @GetMapping("/professor-load-summary/{idCargaDocente}/{numeroPeriodo}")
+    public ResponseEntity<ResumenCargaDocenteDTO> getProfessorLoadSummary(@PathVariable Long idCargaDocente, @PathVariable String numeroPeriodo) {
+        return new ResponseEntity<>(coordinacionService.getProfessorLoadSummary(idCargaDocente, numeroPeriodo), HttpStatus.OK);
     }
 
     @Operation(
@@ -886,9 +886,9 @@ public class CoordinationController {
             NOVE_ID, de la más vieja a la más nueva.
             """
     )
-    @GetMapping("/professor-novelty-summary/{idCargaDocente}")
-    public ResponseEntity<ResumenNovedadCargaDocenteDTO>getProfessorNoveltySummary(@PathVariable Long idCargaDocente) {
-        return new ResponseEntity<>(novedadCargaDocenteService.getProfessorNoveltySummary(idCargaDocente), HttpStatus.OK);
+    @GetMapping("/professor-novelty-summary/{idCargaDocente}/{numeroPeriodo}")
+    public ResponseEntity<ResumenNovedadCargaDocenteDTO>getProfessorNoveltySummary(@PathVariable Long idCargaDocente, @PathVariable String numeroPeriodo) {
+        return new ResponseEntity<>(novedadCargaDocenteService.getProfessorNoveltySummary(idCargaDocente, numeroPeriodo), HttpStatus.OK);
     }
 
     @Operation(
