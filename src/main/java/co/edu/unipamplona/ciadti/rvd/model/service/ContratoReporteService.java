@@ -27,6 +27,7 @@ public interface ContratoReporteService {
      */
     FileDTO generateContractPdf(
             Long idCargaDocente,
+            String numeroPeriodo,
             TipoContratoDocente tipoForzado,
             String numeroAnexo,
             LocalDate fechaIngreso);

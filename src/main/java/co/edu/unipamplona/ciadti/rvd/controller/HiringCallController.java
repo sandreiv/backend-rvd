@@ -212,14 +212,16 @@ public class HiringCallController {
             datos que el usuario diligencia en el modal antes de descargar el anexo.
             """
     )
-    @GetMapping("/contract-pdf-report/{idCargaDocente}")
+    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}")
     public ResponseEntity<byte[]> generateContractPdf(
             @PathVariable Long idCargaDocente,
+            @PathVariable String numeroPeriodo,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
             @RequestParam(required = false) String fechaIngreso) {
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
+                numeroPeriodo,
                 parseTipoContrato(tipo),
                 numeroAnexo,
                 parseFechaIngreso(fechaIngreso));
