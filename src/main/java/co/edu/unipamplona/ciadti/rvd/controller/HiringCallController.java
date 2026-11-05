@@ -44,6 +44,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HiringCdpInformationDTO;
@@ -57,6 +58,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
@@ -79,6 +81,7 @@ public class HiringCallController {
     private final PtdiDocumentoService ptdiDocumentoService;
     private final ContratacionService contratacionService;
     private final ContratoReporteService contratoReporteService;
+    private final CatalogoContratoService catalogoContratoService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -229,6 +232,22 @@ public class HiringCallController {
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
+    }
+
+    @Operation(
+        summary = "Catálogos del panel de datos del anexo",
+        description = """
+            Devuelve en una sola petición los dos catálogos que el usuario
+            selecciona antes de generar el anexo de contratación: las formas de
+            pago (BIENESV3.FORMAPAGO, FOPA_DESCRIPCION) y los tipos de objeto
+            contractual (CONTRATOS.TIPOOBJETO, TIOB_DESCRIPCION), ambos
+            ordenados por descripción.
+            """
+    )
+    @GetMapping("/contract-catalogs")
+    public ResponseEntity<ContratoCatalogosDTO> contractCatalogs() {
+        ContratoCatalogosDTO catalogs = catalogoContratoService.findContractCatalogs();
+        return new ResponseEntity<>(catalogs, HttpStatus.OK);
     }
 
     private LocalDate parseFechaIngreso(String fechaIngreso) {
