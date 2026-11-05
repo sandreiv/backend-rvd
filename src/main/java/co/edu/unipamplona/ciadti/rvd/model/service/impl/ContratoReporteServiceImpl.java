@@ -26,6 +26,7 @@ import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadDirectaDetalleDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ActividadHorasResumenDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HiringCdpInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HiringValuesInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
@@ -48,6 +49,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TituloPersonaNaturalGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicAcademicTrainingProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoReporteService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
@@ -101,15 +103,23 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
     private final TituloPersonaNaturalGeneralRepository tituloPersonaNaturalGeneralRepository;
     private final ContratoPdfExporter contratoPdfExporter;
+    private final ContratoRegistroService contratoRegistroService;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public FileDTO generateContractPdf(
             Long idCargaDocente,
             TipoContratoDocente tipoForzado,
             String numeroAnexo,
-            LocalDate fechaIngreso) {
-        log.debug("generateContractPdf ===> idCargaDocente={}, tipoForzado={}", idCargaDocente, tipoForzado);
+            LocalDate fechaIngreso,
+            Long idFormaPago,
+            Long idTipoObjeto) {
+        log.debug(
+                "generateContractPdf ===> idCargaDocente={}, tipoForzado={}, formaPago={}, tipoObjeto={}",
+                idCargaDocente,
+                tipoForzado,
+                idFormaPago,
+                idTipoObjeto);
 
         if (idCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
@@ -155,6 +165,8 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                         ? FUNCIONES_COORDINADOR
                         : List.of());
 
+        registrarContrato(informacion, valores, cdp, numeroAnexo, fechaIngreso, idFormaPago, idTipoObjeto);
+
         byte[] content = contratoPdfExporter.export(reporte, tipo);
         String fileName = buildFileName(tipo, informacion.documentoIdentidad());
         log.info(
@@ -163,6 +175,29 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 tipo,
                 content.length);
         return new FileDTO(fileName, content);
+    }
+
+    /**
+     * Guarda el contrato en CONTRATOS.CONTRATO con los datos del anexo. No
+     * tumba la descarga del PDF si el registro falla: se deja traza y se
+     * propaga la excepción solo cuando el dato es obligatorio y no existe.
+     */
+    private void registrarContrato(
+            InformacionDocenteContratacionDTO informacion,
+            HiringValuesInformationDTO valores,
+            HiringCdpInformationDTO cdp,
+            String numeroAnexo,
+            LocalDate fechaIngreso,
+            Long idFormaPago,
+            Long idTipoObjeto) {
+        BigDecimal valorTotal = valores != null && valores.valorContratacion() != null
+                ? valores.valorContratacion().totalContrato()
+                : null;
+        contratoRegistroService.registrarContrato(
+                informacion,
+                valorTotal,
+                cdp != null ? cdp.idCdp() : null,
+                new DatosAnexoDTO(numeroAnexo, fechaIngreso, idFormaPago, idTipoObjeto));
     }
 
     /**

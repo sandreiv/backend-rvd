@@ -211,8 +211,9 @@ public class HiringCallController {
             programa) se usa el anexo con funciones administrativas; si es de 4 meses
             se usa el anexo de pregrado.
             El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
-            permite forzar cualquiera de los dos. numeroAnexo y fechaIngreso son los
-            datos que el usuario diligencia en el modal antes de descargar el anexo.
+            permite forzar cualquiera de los dos. numeroAnexo, fechaIngreso, formaPago
+            y tipoObjeto son los datos que el usuario diligencia en el modal; con ellos
+            se registra el contrato en CONTRATOS.CONTRATO antes de devolver el PDF.
             """
     )
     @GetMapping("/contract-pdf-report/{idCargaDocente}")
@@ -220,12 +221,16 @@ public class HiringCallController {
             @PathVariable Long idCargaDocente,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
-            @RequestParam(required = false) String fechaIngreso) {
+            @RequestParam(required = false) String fechaIngreso,
+            @RequestParam(required = false) Long formaPago,
+            @RequestParam(required = false) Long tipoObjeto) {
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
                 parseTipoContrato(tipo),
                 numeroAnexo,
-                parseFechaIngreso(fechaIngreso));
+                parseFechaIngreso(fechaIngreso),
+                formaPago,
+                tipoObjeto);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,

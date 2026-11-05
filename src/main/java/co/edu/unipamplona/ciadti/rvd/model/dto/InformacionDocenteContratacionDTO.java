@@ -51,5 +51,10 @@ public record InformacionDocenteContratacionDTO(
     Date fechaObtencionTitulo,
     String paisTitulo,
     String onceMeses,
+    Long idModalidadContratacion,
+    Long idUnidadRegional,
+    Long idCiudadUnidadRegional,
+    BigDecimal valorContratoTotal,
+    Long idConvocatoriaContratacion,
     List<ActividadHorasResumenDTO> horasActividades
 ) {}

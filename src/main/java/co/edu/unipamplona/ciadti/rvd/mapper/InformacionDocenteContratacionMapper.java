@@ -69,6 +69,11 @@ public interface InformacionDocenteContratacionMapper {
                 base.fechaObtencionTitulo(),
                 base.paisTitulo(),
                 base.onceMeses(),
+                base.idModalidadContratacion(),
+                base.idUnidadRegional(),
+                base.idCiudadUnidadRegional(),
+                base.valorContratoTotal(),
+                base.idConvocatoriaContratacion(),
                 horasActividades == null ? List.of() : horasActividades);
     }
 }

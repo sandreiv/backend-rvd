@@ -24,10 +24,14 @@ public interface ContratoReporteService {
      *                       la regla de negocio (coordinador del programa)
      * @param numeroAnexo    número de anexo diligenciado por el usuario; puede ser nulo
      * @param fechaIngreso   fecha de ingreso diligenciada por el usuario; puede ser nula
+     * @param idFormaPago    forma de pago seleccionada (BIENESV3.FORMAPAGO)
+     * @param idTipoObjeto   tipo de objeto seleccionado (CONTRATOS.TIPOOBJETO)
      */
     FileDTO generateContractPdf(
             Long idCargaDocente,
             TipoContratoDocente tipoForzado,
             String numeroAnexo,
-            LocalDate fechaIngreso);
+            LocalDate fechaIngreso,
+            Long idFormaPago,
+            Long idTipoObjeto);
 }

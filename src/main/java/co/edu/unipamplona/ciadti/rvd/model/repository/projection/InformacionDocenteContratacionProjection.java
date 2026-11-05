@@ -85,4 +85,14 @@ public interface InformacionDocenteContratacionProjection {
     String getPaisTitulo();
 
     String getOnceMeses();
+
+    Long getIdModalidadContratacion();
+
+    Long getIdUnidadRegional();
+
+    Long getIdCiudadUnidadRegional();
+
+    BigDecimal getValorContratoTotal();
+
+    Long getIdConvocatoriaContratacion();
 }
