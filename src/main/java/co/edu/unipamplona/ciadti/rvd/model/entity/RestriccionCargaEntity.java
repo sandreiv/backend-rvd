@@ -6,23 +6,20 @@
  * Fecha de creación: 02/06/2026
  * Modificaciones:
  * 02/06/2026 - Sebastian Jaimes - Creación inicial
+ * 05/11/2026 - Andrés Hernández - Adición de relaciones DEDO y CLDO
  */
 package co.edu.unipamplona.ciadti.rvd.model.entity;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Lob;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,6 +33,12 @@ public class RestriccionCargaEntity implements Serializable, Cloneable{
     @Id
     @Column(name = "MOCO_ID", nullable = false)
     private Long idModalidadContratacion;
+
+    @Column(name = "DEDO_ID")
+    private Long idDedicacionDocente;
+
+    @Column(name = "CLDO_ID")
+    private Long idClasificacionDocente;
 
     @Column(name = "RECA_MAXIMO")
     private String maximo;
@@ -69,6 +72,14 @@ public class RestriccionCargaEntity implements Serializable, Cloneable{
     @JoinColumn(name = "MOCO_ID", insertable = false, updatable = false)
     private ModalidadContratacionEntity modalidadContratacion;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DEDO_ID", insertable = false, updatable = false)
+    private DedicacionDocenteEntity dedicacionDocente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CLDO_ID", insertable = false, updatable = false)
+    private ClasificacionDocenteEntity clasificacionDocente;
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -78,6 +89,8 @@ public class RestriccionCargaEntity implements Serializable, Cloneable{
     public String toString() {
         return "RestriccionCargaEntity{" +
                 "idModalidadContratacion=" + idModalidadContratacion +
+                ", idDedicacionDocente=" + idDedicacionDocente +
+                ", idClasificacionDocente=" + idClasificacionDocente +
                 ", maximo=" + maximo +
                 ", minimo=" + minimo +
                 ", investigacion=" + investigacion +
