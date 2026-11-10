@@ -23,6 +23,7 @@
  * 29/09/2026 - Historial de novedades y fuente no rechazada
  * 30/09/2026 - Andrés Hernández - Traer detalles de la carga docente para las novedades
  * 05/10/2026 - Andrés Hernández - Consulta que trae los detalles para mostrar a desarrollo académico
+ * 10/11/2026 - Andrés Hernández - Manejo del estado docente heredado desde el overlay
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -78,12 +79,14 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.HistorialGeneralNovedadDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EscalafonEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleNovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.FechasConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionesEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EscalafonRepository;
@@ -212,7 +215,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 parseDecimal(previousEntity.getSemanas()),
                 parseDecimal(previousEntity.getHoras()),
                 escalafon.getPuntos(),
-                previousEntity.getValorPunto()
+                previousEntity.getValorPunto(),
+                isDocenteHereadado(previousEntity.getOnceMeses(), previousEntity.getIdCarga())
             );
 
             valores = cargaBudgetService.computeInclusive(overlay);
@@ -239,7 +243,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 parseDecimal(cargaOriginal.getSemanas()),
                 parseDecimal(cargaOriginal.getHoras()),
                 escalafon.getPuntos(),
-                cargaOriginal.getValorPunto()
+                cargaOriginal.getValorPunto(),
+                isDocenteHereadado(cargaOriginal.getOnceMeses(), cargaOriginal.getIdCarga())
             );
 
             valores = cargaBudgetService.computeInclusive(overlay);
@@ -866,7 +871,9 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
     public void addNoveltyProfessor(CargaDocenteFormularioDTO dto, Long idNovedad) {
         log.info("addNoveltyProfessor ===> Agregando docente mediante novedad. idCarga={}, idNovedad={}", dto.idCarga(), idNovedad);
         
-        Long idNewCargaDocente = coordinacionServiceImpl.auxAddProfessorForNovelty(dto);
+        String onceMeses = FechasConvocatoriaCalculator.calcularOnceMesesPorSemanas(dto.semanas());
+        Boolean heredado = isDocenteHereadado(onceMeses, dto.idCarga());
+        Long idNewCargaDocente = coordinacionServiceImpl.auxAddProfessorForNovelty(dto, heredado);
 
         NovedadEntity novedad = novedadRepository.findById(idNovedad)
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la novedad seleccionada"));
@@ -927,7 +934,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 parseDecimal(previousEntity.getSemanas()),
                 horasActividades,
                 previousEntity.getPuntos(),
-                previousEntity.getValorPunto()
+                previousEntity.getValorPunto(),
+                isDocenteHereadado(previousEntity.getOnceMeses(), previousEntity.getIdCarga())
             );
 
             valores = cargaBudgetService.computeInclusive(overlay);
@@ -946,7 +954,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 parseDecimal(cargaOriginal.getSemanas()),
                 horasActividades,
                 cargaOriginal.getPuntos(),
-                cargaOriginal.getValorPunto()
+                cargaOriginal.getValorPunto(),
+                isDocenteHereadado(cargaOriginal.getOnceMeses(), cargaOriginal.getIdCarga())
             );
 
             valores = cargaBudgetService.computeInclusive(overlay);
@@ -1395,7 +1404,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 parseDecimal(dto.semanas()),
                 resolveHorasCatedra(dto),
                 dto.puntos(),
-                dto.valorPunto());
+                dto.valorPunto(),
+                isDocenteHereadado(resolveOnceMeses(dto), dto.idCarga()));
     }
 
     private String resolveHorasString(CambioModalidadHoraCatedraticoDTO dto) {
@@ -2026,7 +2036,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                     parseDecimal(origen.getHoras()),
                     decimalToString(
                             valoresPuntos.puntosDocente()),
-                    valoresPuntos.valorPunto()
+                    valoresPuntos.valorPunto(),
+                    isDocenteHereadado(origen.getOnceMeses(), origen.getIdCarga())
             );
         }
 
@@ -2041,7 +2052,8 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                 parseDecimal(cargaDocente.getHoras()),
                 decimalToString(
                         valoresPuntos.puntosDocente()),
-                valoresPuntos.valorPunto()
+                valoresPuntos.valorPunto(),
+                isDocenteHereadado(cargaDocente.getOnceMeses(), cargaDocente.getIdCarga())
         );
     }
 
@@ -2392,5 +2404,23 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
                     "El docente ya fue eliminado de la carga y no admite nuevas novedades"
             );
         }
+    }
+
+    private boolean isDocenteHereadado(String onceMeses , Long idCarga) {
+        CargaEntity carga = cargaRepository.findById(idCarga)
+            .orElseThrow(() -> new ApiException(
+                HttpStatus.NOT_FOUND,
+                "No existe la carga seleccionada"
+            ));
+        
+        String periodo = Optional.ofNullable(carga.getConvocatoria())
+                .map(ConvocatoriaEntity::getPeriodoUniversidad)
+                .map(PeriodoUniversidadEntity::getPeriodo)
+                .orElse(null);
+        
+        return OnceMesesReporteFilter.excludeInheritedInSecondPeriod(
+                onceMeses,
+                periodo
+        );
     }
 }

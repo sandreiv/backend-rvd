@@ -15,6 +15,7 @@
  * 25/09/2026 - Andrés Hernández - Correción en los calculos de presupuesto
  * 30/09/2026 - Andrés Hernández - Correción para no contar en el presupuesto docentes agregados como novedad
  * 03/11/2026 - Andrés Hernández - Corrección en el calculo de valores de contratación para docentes heredados
+ * 10/11/2026 - Andrés Hernández - Manejo del estado docente heredado desde el overlay
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -128,12 +129,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
             return ValorContratacionCalculator.zero();
         }
 
-        CargaDocenteEntity cargaDocente = findCargaDocente(overlay.idCargaDocente());
-        CargaEntity carga = findCarga(cargaDocente.getIdCarga());
-        String periodo = findPeriodoUniversidad(carga);
-        boolean esHeredado = isDocenteHereadado(cargaDocente.getOnceMeses(), periodo);
-
-        return calculate(toSnapshot(overlay, esHeredado));
+        return calculate(toSnapshot(overlay));
     }
 
     @Override
@@ -143,12 +139,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
             return ValorContratacionCalculator.zero();
         }
 
-        CargaDocenteEntity cargaDocente = findCargaDocente(overlay.idCargaDocente());
-        CargaEntity carga = findCarga(cargaDocente.getIdCarga());
-        String periodo = findPeriodoUniversidad(carga);
-        boolean esHeredado = isDocenteHereadado(cargaDocente.getOnceMeses(), periodo);
-
-        return calculateInclusive(toSnapshot(overlay, esHeredado));
+        return calculateInclusive(toSnapshot(overlay));
     }
 
     @Override
@@ -462,7 +453,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                 esHeredado);
     }
 
-    private BudgetSnapshot toSnapshot(CargaBudgetOverlay overlay, boolean esHeredado) {
+    private BudgetSnapshot toSnapshot(CargaBudgetOverlay overlay) {
         return new BudgetSnapshot(
                 overlay.idModalidadContratacion(),
                 overlay.fechaInicio(),
@@ -473,7 +464,7 @@ public class CargaBudgetServiceImpl implements CargaBudgetService {
                 overlay.horasActividades(),
                 overlay.puntos(),
                 overlay.valorPunto(),
-                esHeredado);
+                overlay.heredadoOnceMeses());
     }
 
     private ValorContratacionDTO calculate(BudgetSnapshot snapshot) {

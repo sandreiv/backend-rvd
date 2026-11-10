@@ -17,6 +17,8 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -174,9 +176,6 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeKeepsCatedraBudgetWithoutBenefits() {
-        stubCarga(new BigDecimal("30000000"));
-        stubCargaDocente(catedraDocente());
-
         ValorContratacionDTO valor = service.compute(
                 overlayCatedra(CADO_CATEDRA, "8"));
 
@@ -188,9 +187,6 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeInclusiveCatedraIncludesBenefitsAndPsm() {
-        stubCarga(new BigDecimal("30000000"));
-        stubCargaDocente(catedraDocente());
-
         ValorContratacionDTO valor = service.computeInclusive(
                 overlayCatedra(CADO_CATEDRA, "8"));
 
@@ -202,9 +198,6 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeInclusiveTcoUsesInclusiveDaysAndSalary() {
-        stubCarga(new BigDecimal("30000000"));
-        stubCargaDocente(tcoDocente());
-
         ValorContratacionDTO valor = service.computeInclusive(
                 overlayTco(CADO_TCO));
 
@@ -216,9 +209,6 @@ class CargaBudgetServiceImplTest {
 
     @Test
     void computeInclusivePlantaIsZero() {
-        stubCarga(new BigDecimal("30000000"));
-        stubCargaDocente(plantaDocente());
-
         ValorContratacionDTO valor = service.computeInclusive(
                 overlayPlanta(CADO_PLANTA));
 
@@ -229,17 +219,61 @@ class CargaBudgetServiceImplTest {
     }
 
     @Test
-    void overlayFromTcoToCatedraLowersProjectedTotal() {
-        stubCarga(new BigDecimal("30000000"));
+    void computeInclusiveInheritedTcoReturnsZeroWithoutLookingUpCargaDocente() {
+        CargaBudgetOverlay overlay = new CargaBudgetOverlay(
+            CADO_TCO,
+            ID_TCO,
+            INICIO,
+            FIN,
+            SALARIO_TCO,
+            null,
+            null,
+            null,
+            null,
+            null,
+            true
+        );
 
+        ValorContratacionDTO valor = service.computeInclusive(overlay);
+
+        assertMoney("0.00", valor.valorContrato());
+        assertMoney("0.00", valor.totalPrestaciones());
+        assertMoney("0.00", valor.totalContrato());
+        assertMoney("0.00", valor.salario());
+
+        verify(cargaDocenteRepository, never()).findById(CADO_TCO);
+    }
+
+    @Test
+    void computeInheritedTcoReturnsZeroWithoutLookingUpCargaDocente() {
+        CargaBudgetOverlay overlay = new CargaBudgetOverlay(
+            CADO_TCO,
+            ID_TCO,
+            INICIO,
+            FIN,
+            SALARIO_TCO,
+            null,
+            null,
+            null,
+            null,
+            null,
+            true
+        );
+
+        ValorContratacionDTO valor = service.compute(overlay);
+
+        assertMoney("0.00", valor.valorContrato());
+        assertMoney("0.00", valor.totalPrestaciones());
+        assertMoney("0.00", valor.totalContrato());
+        assertMoney("0.00", valor.salario());
+
+        verify(cargaDocenteRepository, never()).findById(CADO_TCO);
+    }
+
+    @Test
+    void overlayFromTcoToCatedraLowersProjectedTotal() {
         when(cargaDocenteRepository.findByIdCarga(ID_CARGA))
             .thenReturn(List.of(tcoDocente()));
-
-        stubCargaDocente(tcoDocente());
-
-        when(novedadCargaDocenteRepository
-            .findProfessorRecordToDuplicateNovelty(CADO_TCO))
-            .thenReturn(Optional.empty());
 
         BigDecimal preview = service.preview(
             ID_CARGA,
@@ -253,12 +287,6 @@ class CargaBudgetServiceImplTest {
         stubCarga(new BigDecimal("1000000"));
         when(cargaDocenteRepository.findByIdCarga(ID_CARGA))
                 .thenReturn(List.of(tcoDocente()));
-        
-        stubCargaDocente(tcoDocente());
-
-        when(novedadCargaDocenteRepository
-            .findProfessorRecordToDuplicateNovelty(CADO_TCO))
-            .thenReturn(Optional.empty());
 
         ApiException ex = assertThrows(
                 ApiException.class,
@@ -325,12 +353,6 @@ class CargaBudgetServiceImplTest {
         when(cargaRepository.findById(ID_CARGA))
                 .thenReturn(Optional.of(carga));
         return carga;
-    }
-
-    private CargaDocenteEntity stubCargaDocente(CargaDocenteEntity docente) {
-        when(cargaDocenteRepository.findById(docente.getId()))
-            .thenReturn(Optional.of(docente));
-        return docente;
     }
 
     private CargaDocenteEntity tcoDocente() {
@@ -400,7 +422,8 @@ class CargaBudgetServiceImplTest {
                 new BigDecimal("16"),
                 new BigDecimal(horas),
                 null,
-                null);
+                null,
+                false);
     }
 
     private CargaBudgetOverlay overlayTco(Long idCargaDocente) {
@@ -414,7 +437,8 @@ class CargaBudgetServiceImplTest {
                 null,
                 null,
                 null,
-                null);
+                null,
+                false);
     }
 
     private CargaBudgetOverlay overlayPlanta(Long idCargaDocente) {
@@ -428,7 +452,8 @@ class CargaBudgetServiceImplTest {
                 null,
                 null,
                 null,
-                null);
+                null,
+                false);
     }
 
     private ModalidadContratacionEntity modality(
