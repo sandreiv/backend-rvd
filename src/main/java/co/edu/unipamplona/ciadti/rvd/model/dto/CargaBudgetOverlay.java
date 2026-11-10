@@ -22,5 +22,6 @@ public record CargaBudgetOverlay(
         BigDecimal semanas,
         BigDecimal horasActividades,
         String puntos,
-        BigDecimal valorPunto
+        BigDecimal valorPunto,
+        Boolean heredadoOnceMeses
 ) {}

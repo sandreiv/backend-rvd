@@ -44,9 +44,11 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FechasConvocatoriaFormularioDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.GuardarNovedadesDetallesProyectosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DetalleNovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadRepository;
@@ -65,6 +67,9 @@ class NovedadCargaDocenteServiceImplTest {
     private static final LocalDate INICIO = LocalDate.of(2026, 9, 8);
     private static final LocalDate FIN = LocalDate.of(2026, 11, 13);
 
+    @Mock
+    private CargaRepository cargaRepository;
+    
     @Mock
     private CargaDocenteRepository cargaDocenteRepository;
 
@@ -87,6 +92,8 @@ class NovedadCargaDocenteServiceImplTest {
     @Test
     void persistsInclusiveCatedraAmountsOnNewPhotograph() {
         stubCargaAndCatalog();
+        stubCarga();
+
         when(novedadCargaDocenteRepository.countNoveltyInReview(CADO_ID))
                 .thenReturn(0L);
         when(novedadCargaDocenteRepository
@@ -437,8 +444,17 @@ class NovedadCargaDocenteServiceImplTest {
                 List.of());
     }
 
+    private void stubCarga() {
+        CargaEntity carga = new CargaEntity();
+
+        when(cargaRepository.findById(CARG_ID))
+                .thenReturn(Optional.of(carga));
+    }
+    
     private void stubHappyPath() {
         stubCargaAndCatalog();
+        stubCarga();
+
         when(cargaBudgetService.computeInclusive(any()))
                 .thenReturn(inclusiveCatedraValue());
     }

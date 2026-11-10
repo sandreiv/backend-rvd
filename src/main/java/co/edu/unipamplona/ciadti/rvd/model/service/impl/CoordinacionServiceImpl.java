@@ -1194,7 +1194,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     // Solo debe ser usado para la novedad de agregar docente
     @Override
     @Transactional
-    public Long auxAddProfessorForNovelty(CargaDocenteFormularioDTO dto) {
+    public Long auxAddProfessorForNovelty(CargaDocenteFormularioDTO dto, Boolean isDocenteHeredado) {
         log.info("auxAddProfessorForNovelty ===> Agregando docente para novedad. idCarga={}, idModalidad={}", dto.idCarga(), dto.idModalidadContratacion());
         
         validatePreassignmentWriteAllowedByCarga(dto.idCarga());
@@ -1227,7 +1227,8 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             parseDecimal(entity.getSemanas()),
             parseDecimal(entity.getHoras()),
             entity.getPuntos(),
-            entity.getValorPunto()
+            entity.getValorPunto(),
+            isDocenteHeredado
         );
         cargaBudgetService.assertAdditionNotExceedsAuthorized(dto.idCarga(), overlay);
 

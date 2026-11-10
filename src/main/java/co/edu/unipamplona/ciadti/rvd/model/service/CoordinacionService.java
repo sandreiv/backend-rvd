@@ -108,7 +108,7 @@ public interface CoordinacionService {
 
     void addProfessor(CargaDocenteFormularioDTO dto);
 
-    Long auxAddProfessorForNovelty(CargaDocenteFormularioDTO dto);
+    Long auxAddProfessorForNovelty(CargaDocenteFormularioDTO dto, Boolean isDocenteHeredado);
 
     List<DocenteCoordinacionDTO> listProfessors(Long idCarga, Long idModalidadContratacion);
 
