@@ -12,6 +12,7 @@
  * 23/10/2026 - Andrés Hernández - Guardar el PTD y ver su info trae las observaciones hechas por el Coordinador
  * 26/10/2026 - Andrés Hernández - Gestión del PTD por Talento humano (Rechazo y Aprobación)
  * 27/10/2026 - Andrés Hernández - Listado, visualización y descarga de adjuntos del PTD
+ * 03/11/2026 - Andrés Hernández - No aprobar ni rechazar documentos del PTD por TH cuando son docentes excluidos
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -21,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
@@ -40,14 +42,20 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdStatesProfessorsDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ConvocatoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ObservacionPtdEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.PeriodoUniversidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PlanTrabajoDigitalEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PtdiDocumentoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ObservacionPtdRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PlanTrabajoDigitalRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PtdiDocumentoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PtdiDocumentoService;
+import co.edu.unipamplona.ciadti.rvd.util.OnceMesesReporteFilter;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +76,7 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
     private final PlanTrabajoDigitalRepository planTrabajoDigitalRepository;
     private final ObservacionPtdRepository observacionPtdRepository;
     private final PtdiDocumentoRepository ptdiDocumentoRepository;
+    private final CargaDocenteRepository cargaDocenteRepository;
 
     private final PtdiDocumentoService ptdiDocumentoService;
     
@@ -225,6 +234,7 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
         validatePtdApproveDto(dto);
         validateUpdate(dto.idPersonaGeneral(), dto.idPeriodoUniversitario());
+        validateDocenteExcluidoContrato(dto.idCargaDocente());
 
         // Cambiar estado del PTD
         planTrabajoDigitalRepository.updateStateAllPtdActivities(dto.idPersonaGeneral(), dto.idPeriodoUniversitario(), ESTADO_PTD_APROBADO_TH, registradoPor);
@@ -267,6 +277,7 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
         validatePtdRejectDto(dto);
         validateUpdate(dto.idPersonaGeneral(), dto.idPeriodoUniversitario());
+        validateDocenteExcluidoContrato(dto.idCargaDocente());
 
         // Cambiar estado del PTD
         planTrabajoDigitalRepository.updateStateAllPtdActivities(dto.idPersonaGeneral(), dto.idPeriodoUniversitario(), ESTADO_PTD_ESTIPULADO, registradoPor);
@@ -299,6 +310,19 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
     private void validateUpdate(Long idPersonaGeneral, Long idPeriodoUniversitario) {
         if (!planTrabajoDigitalRepository.existsByIdPersonaGeneralAndIdPeriodoUniversitario(idPersonaGeneral, idPeriodoUniversitario)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El docente no cuenta con actividades en el PTD para este periodo");
+        }
+    }
+
+    // No permitir rechazar ni aprobar documentos PTD cuando es docente 11 meses en 2 periodo o modalidad planta
+    private void validateDocenteExcluidoContrato(Long idCargaDocente) {
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe la carga docente con id " + idCargaDocente));
+        
+        String numeroPeriodoUniversitario = findPeriodoUniversidad(cargaDocente);
+        boolean esProfesorHeredado = OnceMesesReporteFilter.excludeInheritedInSecondPeriod(cargaDocente.getOnceMeses(), numeroPeriodoUniversitario);
+        boolean esDocentePlanta = cargaDocente.getIdModalidadContratacion() == null;
+        if (esProfesorHeredado || esDocentePlanta) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "El docente no puede avanzar en el proceso de revisión de documentos del PTD");
         }
     }
     
@@ -434,5 +458,13 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
         return user.getRoles().stream()
             .filter(Objects::nonNull)
             .anyMatch(item -> role.equalsIgnoreCase(item.trim()));
+    }
+
+    private String findPeriodoUniversidad(CargaDocenteEntity cargaDocente) {
+        return Optional.ofNullable(cargaDocente.getCarga())
+                .map(CargaEntity::getConvocatoria)
+                .map(ConvocatoriaEntity::getPeriodoUniversidad)
+                .map(PeriodoUniversidadEntity::getPeriodo)
+                .orElse(null);
     }
 }

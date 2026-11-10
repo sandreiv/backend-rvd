@@ -198,8 +198,8 @@ public class HiringCallController {
             """
     )
     @GetMapping("/hiring-values-information")
-    public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente) {
-        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente);
+    public ResponseEntity<HiringValuesInformationDTO> hiringValuesInformation(@RequestParam Long idCargaDocente, @RequestParam String numeroPeriodo) {
+        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente, numeroPeriodo);
         return new ResponseEntity<>(valores, HttpStatus.OK);
     }
 
@@ -216,9 +216,10 @@ public class HiringCallController {
             se registra el contrato en CONTRATOS.CONTRATO antes de devolver el PDF.
             """
     )
-    @GetMapping("/contract-pdf-report/{idCargaDocente}")
+    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}")
     public ResponseEntity<byte[]> generateContractPdf(
             @PathVariable Long idCargaDocente,
+            @PathVariable String numeroPeriodo,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
             @RequestParam(required = false) String fechaIngreso,
@@ -226,6 +227,7 @@ public class HiringCallController {
             @RequestParam(required = false) Long tipoObjeto) {
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
+                numeroPeriodo,
                 parseTipoContrato(tipo),
                 numeroAnexo,
                 parseFechaIngreso(fechaIngreso),

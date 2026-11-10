@@ -16,5 +16,5 @@ public interface ContratacionService {
     
     HiringCdpInformationDTO hiringCdpInformation(Long idPeriodoUniversitario, Long idCoordinacionHija);
 
-    HiringValuesInformationDTO hiringValuesInformation(Long idCargaDocente);
+    HiringValuesInformationDTO hiringValuesInformation(Long idCargaDocente, String numeroPeriodo);
 }

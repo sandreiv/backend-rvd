@@ -791,20 +791,31 @@ public class PublicWorkPlanServiceImpl
                         continue;
                         }
 
-                        boolean exentoDocumentos =
+                        boolean esDocentePlanta =
+                                "1".equals(
+                                        registroContratacion.getEsDocentePlanta()
+                                );
+
+                        boolean onceMesesSegundoSemestre =
                                 OnceMesesReporteFilter
                                         .excludeInheritedInSecondPeriod(
                                                 registroContratacion.getOnceMeses(),
                                                 registroContratacion.getPeriodoUniversidad()
                                         );
 
+                        boolean exentoDocumentos =
+                                esDocentePlanta
+                                || onceMesesSegundoSemestre;
+
                         if (exentoDocumentos) {
 
                         log.debug(
-                                "Contratación {} exenta de documentos "
-                                        + "por corresponder a 11 meses "
-                                        + "en el segundo semestre",
-                                idContratacion
+                                "Contratación {} exenta de documentos. "
+                                        + "Docente de planta: {}. "
+                                        + "Once meses segundo semestre: {}",
+                                idContratacion,
+                                esDocentePlanta,
+                                onceMesesSegundoSemestre
                         );
 
                         continue;

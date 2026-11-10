@@ -109,6 +109,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     @Transactional
     public FileDTO generateContractPdf(
             Long idCargaDocente,
+            String numeroPeriodo,
             TipoContratoDocente tipoForzado,
             String numeroAnexo,
             LocalDate fechaIngreso,
@@ -138,7 +139,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         PublicAcademicTrainingProjection formacion = resolveFormacionAcademica(idPersonaGeneral);
 
         HiringCdpInformationDTO cdp = resolveCdp(informacion);
-        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente);
+        HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente, numeroPeriodo);
         String observaciones = resolveObservaciones(idPersonaGeneral, idCargaDocente, informacion);
 
         TipoContratoDocente tipo = tipoForzado != null

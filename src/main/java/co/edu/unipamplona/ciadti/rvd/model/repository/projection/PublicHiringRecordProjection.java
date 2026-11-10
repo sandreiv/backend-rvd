@@ -12,7 +12,9 @@ public interface PublicHiringRecordProjection {
 
     String getPeriodoUniversidad();
 
-    String getOnceMeses();    
+    String getOnceMeses();
+    
+    String getEsDocentePlanta();
 
     Long getIdConvocatoriaPreasignacion();
 
