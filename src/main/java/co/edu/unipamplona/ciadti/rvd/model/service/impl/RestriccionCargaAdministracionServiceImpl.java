@@ -7,6 +7,7 @@
  * Modificaciones:
  * 22/07/2026 - Joel Daniel Arias Duarte - Creación inicial para administrar restricciones de carga por modalidad.
  * 06/08/2026 - Excepciones de programa con máximo de horas (idPrograma + maximoHoras).
+ * 05/11/2026 - Andrés Hernández - Consulta y guardado de la dedicación y clasificación del docente
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -42,6 +43,8 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TipoActividadModalidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaCatedraticoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CategoriaModalidadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ClasificacionDocenteRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.DedicacionDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ModalidadContratacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.PersonaGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ProgramaRepository;
@@ -71,6 +74,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
     private final TipoActividadModalidadRepository tipoActividadModalidadRepository;
     private final ProgramaRepository programaRepository;
     private final PersonaGeneralRepository personaGeneralRepository;
+    private final DedicacionDocenteRepository dedicacionDocenteRepository;
+    private final ClasificacionDocenteRepository clasificacionDocenteRepository;
     private final ObjectMapper objectMapper;
 
     /**
@@ -104,6 +109,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         log.debug("getCatalogs ===> Consultando catálogos de restricción de carga");
 
         RestriccionCargaCatalogosDTO result = new RestriccionCargaCatalogosDTO(
+                mapCatalog(dedicacionDocenteRepository.findAdministrationOptions()),
+                mapCatalog(clasificacionDocenteRepository.findAdministrationOptions()),
                 categoriaCatedraticoRepository.findAllForLoadRestriction()
                         .stream()
                         .map(item -> new CatalogoAdministracionDTO(
@@ -164,6 +171,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         RestriccionCargaDetalleDTO result = new RestriccionCargaDetalleDTO(
                 idModalidadContratacion,
+                restriction != null ? restriction.getIdDedicacionDocente() : null,
+                restriction != null ? restriction.getIdClasificacionDocente() : null,
                 restriction != null ? restriction.getMinimo() : null,
                 restriction != null ? restriction.getMaximo() : null,
                 restriction != null ? restriction.getInvestigacion() : null,
@@ -226,6 +235,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
                     return created;
                 });
 
+        entity.setIdDedicacionDocente(dto.idDedicacionDocente());
+        entity.setIdClasificacionDocente(dto.idClasificacionDocente());
         entity.setMinimo(clean(dto.minimo()));
         entity.setMaximo(clean(dto.maximo()));
         entity.setInvestigacion(isMarked(dto.investigacion()) ? "1" : "0");
@@ -284,6 +295,8 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
         }
 
         validateModalityExists(dto.idModalidadContratacion());
+        validateDedicacionExists(dto.idDedicacionDocente());
+        validateClasificacionExists(dto.idClasificacionDocente());
         validateHours(dto.minimo(), dto.maximo());
         validateInvestigacion(dto.investigacion());
         validateFormaPago(dto.formaPago());
@@ -301,6 +314,18 @@ public class RestriccionCargaAdministracionServiceImpl implements RestriccionCar
 
         if (!modalidadContratacionRepository.existsById(idModalidadContratacion)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No existe la modalidad de contratación");
+        }
+    }
+
+    private void validateDedicacionExists(Long idDedicacionDocente) {
+        if ((idDedicacionDocente != null) && (!dedicacionDocenteRepository.existsById(idDedicacionDocente))) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la dedicación del docente");
+        }
+    }
+
+    private void validateClasificacionExists(Long idClasificacionDocente) {
+        if ((idClasificacionDocente != null) && (!clasificacionDocenteRepository.existsById(idClasificacionDocente))) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No existe la clasificación del docente");
         }
     }
 

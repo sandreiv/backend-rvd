@@ -7,6 +7,7 @@
  * Modificaciones:
  * 22/07/2026 - Joel Daniel Arias Duarte - Creación inicial
  * 06/08/2026 - Se agrega programasExcepcion con máximo de horas por programa.
+ * 05/11/2026 - Andrés Hernández - Adición de la dedicación y clasificación del docente
  */
 package co.edu.unipamplona.ciadti.rvd.model.dto;
 
@@ -14,6 +15,8 @@ import java.util.List;
 
 public record RestriccionCargaFormularioDTO(
         Long idModalidadContratacion,
+        Long idDedicacionDocente,
+        Long idClasificacionDocente,
         String minimo,
         String maximo,
         String investigacion,
