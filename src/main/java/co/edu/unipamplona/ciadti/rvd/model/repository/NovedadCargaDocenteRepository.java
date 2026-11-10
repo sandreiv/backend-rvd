@@ -192,6 +192,31 @@ public interface NovedadCargaDocenteRepository
     );
 
     @Query(value = """
+            SELECT NOCD.*
+            FROM RVD.NOVEDADCARGADOCENTE NOCD
+            INNER JOIN (
+                SELECT
+                    HIST.NOCD_ID,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY HIST.CADO_ID
+                        ORDER BY
+                            HIST.NOCD_FECHACAMBIO DESC NULLS LAST,
+                            HIST.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE HIST
+                INNER JOIN RVD.CARGADOCENTE CADO
+                    ON CADO.CADO_ID = HIST.CADO_ID
+                WHERE CADO.CARG_ID = :idCargaOrigen
+                AND HIST.NOCD_ESTADONOVEDAD = '1'
+            ) ULTIMA
+                ON ULTIMA.NOCD_ID = NOCD.NOCD_ID
+            AND ULTIMA.RN = 1
+            """, nativeQuery = true)
+    List<NovedadCargaDocenteEntity> findLastApprovedByCarga(
+            @Param("idCargaOrigen") Long idCargaOrigen
+    );
+
+    @Query(value = """
             SELECT COUNT(1)
             FROM RVD.NOVEDADCARGADOCENTE NOCD
             WHERE NOCD.CADO_ID = :idCargaDocente

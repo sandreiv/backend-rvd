@@ -169,6 +169,8 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosCategoriaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.PuntosVigenciaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RelacionCargaProyectoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionPorCoordinacionEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.NovedadCargaDocenteEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.NovedadCargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsignarCentroCostoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.AsociacionCoordinacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
@@ -261,6 +263,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     private final FechasConvocatoriaMapper fechasConvocatoriaMapper;
     private final CategoriaCatedraticoMapper categoriaCatedraticoMapper;
     private final CargaDocenteRepository cargaDocenteRepository;
+    private final NovedadCargaDocenteRepository novedadCargaDocenteRepository;
     private final HistorialCargaDocenteRepository historialCargaDocenteRepository;
     private final ObservacionCargaRepository observacionCargaRepository;
     private final CargaDocenteMapper cargaDocenteMapper;
@@ -598,6 +601,7 @@ public class CoordinacionServiceImpl implements CoordinacionService {
     }
 
     private void inheritOnceMesesTeachers(CargaEntity cargaDestino) {
+
         if (cargaDestino == null
                 || cargaDestino.getId() == null
                 || cargaDestino.getIdConvocatoria() == null
@@ -605,94 +609,210 @@ public class CoordinacionServiceImpl implements CoordinacionService {
             return;
         }
 
-        ConvocatoriaEntity convocatoriaDestino = convocatoriaRepository
-                .findById(cargaDestino.getIdConvocatoria())
-                .orElse(null);
-        if (convocatoriaDestino == null || convocatoriaDestino.getIdRelacion() == null) {
+        ConvocatoriaEntity convocatoriaDestino =
+                convocatoriaRepository
+                        .findById(cargaDestino.getIdConvocatoria())
+                        .orElse(null);
+
+        if (convocatoriaDestino == null
+                || convocatoriaDestino.getIdRelacion() == null) {
+
             log.debug(
-                    "inheritOnceMesesTeachers ===> Sin relación de convocatoria. idCarga={}",
-                    cargaDestino.getId());
+                    "inheritOnceMesesTeachers ===> "
+                            + "Sin relación de convocatoria. idCarga={}",
+                    cargaDestino.getId()
+            );
+
             return;
         }
 
-        Optional<CargaEntity> cargaOrigenOpt = cargaRepository
-                .findFirstByIdCoordinacionAndIdConvocatoria(
-                        cargaDestino.getIdCoordinacion(),
-                        convocatoriaDestino.getIdRelacion());
+        Optional<CargaEntity> cargaOrigenOpt =
+                cargaRepository
+                        .findFirstByIdCoordinacionAndIdConvocatoria(
+                                cargaDestino.getIdCoordinacion(),
+                                convocatoriaDestino.getIdRelacion()
+                        );
+
         if (cargaOrigenOpt.isEmpty()) {
+
             log.debug(
-                    "inheritOnceMesesTeachers ===> No hay carga origen. idCoordinacion={}, idConvocatoriaRelacion={}",
+                    "inheritOnceMesesTeachers ===> "
+                            + "No hay carga origen. "
+                            + "idCoordinacion={}, idConvocatoriaRelacion={}",
                     cargaDestino.getIdCoordinacion(),
-                    convocatoriaDestino.getIdRelacion());
+                    convocatoriaDestino.getIdRelacion()
+            );
+
             return;
         }
 
-        List<CargaDocenteEntity> docentesOnceMeses = cargaDocenteRepository
-                .findByIdCargaAndOnceMeses(cargaOrigenOpt.get().getId(), "1");
-        if (docentesOnceMeses.isEmpty()) {
+        Long idCargaOrigen = cargaOrigenOpt.get().getId();
+
+        List<CargaDocenteEntity> docentesOrigen =
+                cargaDocenteRepository.findByIdCarga(idCargaOrigen);
+
+        if (docentesOrigen.isEmpty()) {
+
             log.debug(
-                    "inheritOnceMesesTeachers ===> Sin docentes once meses en origen. idCargaOrigen={}",
-                    cargaOrigenOpt.get().getId());
+                    "inheritOnceMesesTeachers ===> "
+                            + "Sin docentes en origen. idCargaOrigen={}",
+                    idCargaOrigen
+            );
+
             return;
+        }
+
+        Map<Long, NovedadCargaDocenteEntity> ultimaAprobadaPorDocente =
+                new LinkedHashMap<>();
+
+        List<NovedadCargaDocenteEntity> novedadesAprobadas =
+                novedadCargaDocenteRepository
+                        .findLastApprovedByCarga(idCargaOrigen);
+
+        for (NovedadCargaDocenteEntity novedad : novedadesAprobadas) {
+
+            ultimaAprobadaPorDocente.put(
+                    novedad.getIdCargaDocente(),
+                    novedad
+            );
         }
 
         int heredados = 0;
-        for (CargaDocenteEntity origen : docentesOnceMeses) {
-            if (origen.getIdPersonaGeneral() != null
-                    && cargaDocenteRepository
-                            .existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
-                                    origen.getIdPersonaGeneral(),
-                                    cargaDestino.getId(),
-                                    origen.getIdModalidadContratacion())) {
+
+        for (CargaDocenteEntity origen : docentesOrigen) {
+
+            NovedadCargaDocenteEntity aprobada =
+                    ultimaAprobadaPorDocente.get(origen.getId());
+
+            Optional<CargaDocenteEntity> efectivoOpt =
+                    OnceMesesInheritanceResolver.resolve(
+                            origen,
+                            aprobada
+                    );
+
+            if (efectivoOpt.isEmpty()) {
                 continue;
             }
 
-            FechasConvocatoriaEntity fechaDestino = fechasConvocatoriaRepository
-                    .findByConvocatoriaAndModalidad(
-                            cargaDestino.getIdConvocatoria(),
-                            origen.getIdModalidadContratacion())
-                    .orElseThrow(() -> new ApiException(
-                            HttpStatus.NOT_FOUND,
-                            "No existe fecha de convocatoria en la convocatoria destino"
-                                    + " para la modalidad " + origen.getIdModalidadContratacion()));
+            CargaDocenteEntity efectivo = efectivoOpt.get();
 
-            CargaDocenteEntity copia = cloneCargaDocenteForInheritance(origen, cargaDestino.getId(), fechaDestino);
+            if (efectivo.getIdPersonaGeneral() != null
+                    && cargaDocenteRepository
+                            .existsByIdPersonaGeneralAndIdCargaAndIdModalidadContratacion(
+                                    efectivo.getIdPersonaGeneral(),
+                                    cargaDestino.getId(),
+                                    efectivo.getIdModalidadContratacion()
+                            )) {
+
+                continue;
+            }
+
+            FechasConvocatoriaEntity fechaDestino =
+                    fechasConvocatoriaRepository
+                            .findByConvocatoriaAndModalidad(
+                                    cargaDestino.getIdConvocatoria(),
+                                    efectivo.getIdModalidadContratacion()
+                            )
+                            .orElseThrow(() -> new ApiException(
+                                    HttpStatus.NOT_FOUND,
+                                    "No existe fecha de convocatoria "
+                                            + "en la convocatoria destino"
+                                            + " para la modalidad "
+                                            + efectivo.getIdModalidadContratacion()
+                            ));
+
+            CargaDocenteEntity copia =
+                    cloneCargaDocenteForInheritance(
+                            efectivo,
+                            cargaDestino.getId(),
+                            fechaDestino
+                    );
+
             cargaDocenteRepository.save(copia);
+
             heredados++;
         }
 
         log.info(
-                "inheritOnceMesesTeachers ===> Docentes once meses heredados. idCargaDestino={}, total={}",
+                "inheritOnceMesesTeachers ===> "
+                        + "Docentes once meses heredados. "
+                        + "idCargaDestino={}, total={}",
                 cargaDestino.getId(),
-                heredados);
+                heredados
+        );
     }
 
-    private CargaDocenteEntity cloneCargaDocenteForInheritance(CargaDocenteEntity origen, Long idCargaDestino, FechasConvocatoriaEntity fechaDestino) {
+    private CargaDocenteEntity cloneCargaDocenteForInheritance(
+            CargaDocenteEntity origen,
+            Long idCargaDestino,
+            FechasConvocatoriaEntity fechaDestino) {
+
         CargaDocenteEntity copia = new CargaDocenteEntity();
-        
+
         copia.setIdCarga(idCargaDestino);
-        copia.setIdPersonaGeneral(origen.getIdPersonaGeneral());
-        copia.setIdModalidadContratacion(origen.getIdModalidadContratacion());
-        copia.setIdCategoriaCatedratico(origen.getIdCategoriaCatedratico());
-        copia.setIdFechasConvocatoria(fechaDestino.getId());
-        copia.setFechaInicio(origen.getFechaInicio());
-        copia.setFechaFin(origen.getFechaFin());
-        //copia.setValorContrato(origen.getValorContrato());
-        //copia.setValorPrestaciones(origen.getValorPrestaciones());
-        //copia.setSalario(origen.getSalario());
+        copia.setIdPersonaGeneral(
+                origen.getIdPersonaGeneral()
+        );
+        copia.setIdModalidadContratacion(
+                origen.getIdModalidadContratacion()
+        );
+        copia.setIdCategoriaCatedratico(
+                origen.getIdCategoriaCatedratico()
+        );
+        copia.setIdFechasConvocatoria(
+                fechaDestino.getId()
+        );
+        copia.setFechaInicio(
+                origen.getFechaInicio()
+        );
+
+        copia.setFechaFin(
+                origen.getFechaFin()
+        );
+        // copia.setValorContrato(origen.getValorContrato());
+        // copia.setValorPrestaciones(origen.getValorPrestaciones());
+        // copia.setTotalContrato(origen.getTotalContrato());
+        copia.setSalario(
+                origen.getSalario()
+        );
         copia.setEstado("0");
-        copia.setVigente(origen.getVigente());
-        copia.setHoras(origen.getHoras());
-        copia.setValorHora(origen.getValorHora());
-        copia.setPuntos(origen.getPuntos());
-        copia.setValorPunto(origen.getValorPunto());
-        //copia.setTotalContrato(origen.getTotalContrato());
-        copia.setSemanas(origen.getSemanas());
-        copia.setNivelFormacion(origen.getNivelFormacion());
-        copia.setMomento(origen.getMomento());
-        copia.setOnceMeses(origen.getOnceMeses());
-        copia.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
-        copia.setFechaCambio(new Date());
+        copia.setVigente(
+                origen.getVigente()
+        );
+        copia.setHoras(
+                origen.getHoras()
+        );
+        copia.setValorHora(
+                origen.getValorHora()
+        );
+        copia.setPuntos(
+                origen.getPuntos()
+        );
+        copia.setValorPunto(
+                origen.getValorPunto()
+        );
+        copia.setHorasDeExcepcion(
+                origen.getHorasDeExcepcion()
+        );
+        copia.setSemanas(
+                origen.getSemanas()
+        );
+        copia.setNivelFormacion(
+                origen.getNivelFormacion()
+        );
+        copia.setMomento(
+                origen.getMomento()
+        );
+        copia.setOnceMeses(
+                origen.getOnceMeses()
+        );
+        copia.setRegistradoPor(
+                RegistradoPorUtils.value(Accion.INSERT)
+        );
+        copia.setFechaCambio(
+                new Date()
+        );
+
         return copia;
     }
 
