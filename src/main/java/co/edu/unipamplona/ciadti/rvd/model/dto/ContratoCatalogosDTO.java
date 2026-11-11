@@ -19,5 +19,6 @@ import java.util.List;
  */
 public record ContratoCatalogosDTO(
     List<CatalogoItemDTO> formasPago,
-    List<CatalogoItemDTO> tiposObjeto
+    List<CatalogoItemDTO> tiposObjeto,
+    List<CatalogoItemDTO> formasInicioContrato
 ) {}

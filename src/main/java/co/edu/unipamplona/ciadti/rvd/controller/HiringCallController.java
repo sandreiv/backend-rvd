@@ -46,6 +46,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DocenteEfectivoCoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HiringCdpInformationDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.HiringValuesInformationDTO;
@@ -222,17 +223,19 @@ public class HiringCallController {
             @PathVariable String numeroPeriodo,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
-            @RequestParam(required = false) String fechaIngreso,
+            @RequestParam(required = false) String fechaFirma,
+            @RequestParam(required = false) String objeto,
+            @RequestParam(required = false) String descripcion,
             @RequestParam(required = false) Long formaPago,
-            @RequestParam(required = false) Long tipoObjeto) {
+            @RequestParam(required = false) Long tipoObjeto,
+            @RequestParam(required = false) Long formaInicioContrato) {
+        
+        DatosAnexoDTO body = new DatosAnexoDTO(numeroAnexo, parseFechaFirma(fechaFirma), objeto, descripcion, formaPago, tipoObjeto, formaInicioContrato);
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
                 numeroPeriodo,
                 parseTipoContrato(tipo),
-                numeroAnexo,
-                parseFechaIngreso(fechaIngreso),
-                formaPago,
-                tipoObjeto);
+                body);
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
@@ -257,16 +260,16 @@ public class HiringCallController {
         return new ResponseEntity<>(catalogs, HttpStatus.OK);
     }
 
-    private LocalDate parseFechaIngreso(String fechaIngreso) {
-        if (fechaIngreso == null || fechaIngreso.isBlank()) {
+    private LocalDate parseFechaFirma(String fechaFirma) {
+        if (fechaFirma == null || fechaFirma.isBlank()) {
             return null;
         }
         try {
-            return LocalDate.parse(fechaIngreso.trim());
+            return LocalDate.parse(fechaFirma.trim());
         } catch (DateTimeParseException ex) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
-                    "Fecha de ingreso no válida: " + fechaIngreso + ". Use el formato AAAA-MM-DD");
+                    "Fecha de firma no válida: " + fechaFirma + ". Use el formato AAAA-MM-DD");
         }
     }
 

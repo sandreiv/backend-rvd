@@ -6,6 +6,7 @@
  * Fecha de creación: 04/11/2026
  * Modificaciones:
  * 04/11/2026 - Creación inicial
+ * 10/11/2026 - Andrés Hernández - Ajuste inicial de los valores que se almacenan del contrato
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -24,6 +25,7 @@ import co.edu.unipamplona.ciadti.rvd.config.security.SecurityUtils;
 import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
@@ -61,13 +63,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ContratoRegistroServiceImpl implements ContratoRegistroService {
 
+    private static final ZoneId ZONA = ZoneId.of("America/Bogota");
     private static final String ORIGEN_RVD = "RVD";
     private static final String TIPO_DIAS_CALENDARIO = "CALENDARIO";
     private static final String NO = "0";
     private static final String SI = "1";
-
-    /** FORMAINICIOCONTRATO: 1 = FECHA INICIO. */
-    private static final Long FORMA_INICIO_FECHA_INICIO = 1L;
+    private static final BigDecimal CERO = BigDecimal.ZERO;
 
     /** Longitud real de CONTRATO.CONT_REGISTRADOPOR. */
     private static final int LONGITUD_REGISTRADOPOR = 30;
@@ -78,8 +79,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     @Transactional
     public Long registrarContrato(
             InformacionDocenteContratacionDTO informacion,
-            BigDecimal valorTotalContrato,
-            Long idCdp,
+            ValorContratacionDTO valorContratacion,
             DatosAnexoDTO datos) {
 
         validar(informacion, datos);
@@ -88,7 +88,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         ContratoEntity contrato = resolverContrato(numeroAnexo);
         boolean nuevo = contrato.getId() == null;
 
-        aplicarDatos(contrato, informacion, valorTotalContrato, idCdp, datos, numeroAnexo);
+        aplicarDatos(contrato, informacion, valorContratacion, datos, numeroAnexo);
         ContratoEntity guardado = contratoRepository.save(contrato);
 
         log.info(
@@ -143,42 +143,49 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private void aplicarDatos(
             ContratoEntity contrato,
             InformacionDocenteContratacionDTO informacion,
-            BigDecimal valorTotalContrato,
-            Long idCdp,
+            ValorContratacionDTO valorContratacion,
             DatosAnexoDTO datos,
             String numeroAnexo) {
 
         AuthUserDetails usuario = requireUsuario();
 
         contrato.setIdModalidadContratacion(informacion.idModalidadContratacion());
-        contrato.setIdConvocatoria(informacion.idConvocatoriaContratacion());
-        contrato.setIdCdp(idCdp);
+        // Que unidad se pone
         contrato.setIdUnidad(informacion.idUnidadRegional());
+        // Que ciudad se pone
         contrato.setIdCiudad(informacion.idCiudadUnidadRegional());
+
         contrato.setIdPersonaContratista(informacion.idPersonaGeneral());
         contrato.setIdPersonaContratante(usuario.getIdPersonaGeneral());
 
         contrato.setIdFormaPago(datos.idFormaPago());
         contrato.setIdTipoObjeto(datos.idTipoObjeto());
+        contrato.setIdFormaInicioContrato(datos.idFormaInicioContrato());
 
+        // Que numero se pone
         contrato.setNumero(numeroAnexo);
-        contrato.setFechaFirma(toDate(datos.fechaIngreso()));
+
+        contrato.setFechaFirma(toDate(datos.fechaFirma()));
         contrato.setFechaInicio(informacion.fechaInicio());
         contrato.setFechaFin(informacion.fechaFin());
 
-        contrato.setCuantia(resolverCuantia(valorTotalContrato, informacion.valorContratoTotal()));
+        contrato.setCuantia(resolverCuantia(valorContratacion.totalContrato(), informacion.valorContratoTotal()));
+        contrato.setValorSalario(resolverSalario(valorContratacion.salario(), informacion.valorContratoTotal()));
         contrato.setDuracionContrato(calcularDuracion(informacion.fechaInicio(), informacion.fechaFin()));
 
         contrato.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
         contrato.setFechaCambio(new Date());
 
-        contrato.setIdFormaInicioContrato(FORMA_INICIO_FECHA_INICIO);
         contrato.setTipoDias(TIPO_DIAS_CALENDARIO);
         contrato.setOrigen(ORIGEN_RVD);
         contrato.setAnulado(NO);
         contrato.setIniciado(NO);
         contrato.setEsAbierto(NO);
-        contrato.setRegistroAutomatico(SI);
+        contrato.setRegistroAutomatico(NO);
+
+        contrato.setAnticipo(CERO);
+        contrato.setObjeto(datos.objeto());
+        contrato.setDescripcion(datos.descripcion());
     }
 
     private BigDecimal resolverCuantia(BigDecimal valorContrato, BigDecimal valorCarga) {
@@ -191,21 +198,30 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         return cuantia;
     }
 
+    private String resolverSalario(BigDecimal valorSalario, BigDecimal valorCarga) {
+        BigDecimal salario = valorSalario != null ? valorSalario : valorCarga;
+        if (salario == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No hay valor de salario para registrar (CONT_VALORSALARIO es obligatorio)");
+        }
+        return salario.toPlainString();
+    }
+
     /**
-     * Duración en meses entre la fecha de inicio y la de fin, con el mismo
-     * criterio del anexo: 05/01/2026 → 09/12/2026 = 11 MESES.
+     * Duración en meses entre la fecha de inicio y la de fin, con el formato
+     * 'MES / DIA'; 05/01/2026 → 09/12/2026 = 11 / 09.
      */
     private String calcularDuracion(Date fechaInicio, Date fechaFin) {
-        if (fechaInicio == null || fechaFin == null) {
-            return null;
-        }
         LocalDate inicio = toLocalDate(fechaInicio);
         LocalDate fin = toLocalDate(fechaFin);
-        long meses = ChronoUnit.MONTHS.between(inicio, fin);
-        if (meses <= 0) {
-            return null;
-        }
-        return meses + (meses == 1 ? " MES" : " MESES");
+
+        long dias = ChronoUnit.DAYS.between(inicio, fin) + 1;
+
+        long meses = dias / 30;
+        long diasRestantes = dias % 30;
+
+        return meses + " / " + diasRestantes;
     }
 
     private AuthUserDetails requireUsuario() {
@@ -233,10 +249,10 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         if (fecha == null) {
             return null;
         }
-        return Date.from(fecha.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return Date.from(fecha.atStartOfDay(ZONA).toInstant());
     }
 
     private LocalDate toLocalDate(Date fecha) {
-        return fecha.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return fecha.toInstant().atZone(ZONA).toLocalDate();
     }
 }

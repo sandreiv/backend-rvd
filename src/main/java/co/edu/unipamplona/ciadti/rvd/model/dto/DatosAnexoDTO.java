@@ -16,13 +16,19 @@ import java.time.LocalDate;
  * guardan en CONTRATOS.CONTRATO junto con el anexo.
  *
  * @param numeroAnexo número de anexo (CONTRATO.CONT_NUMERO)
- * @param fechaIngreso fecha de ingreso (CONTRATO.CONT_FECHAFIRMA)
+ * @param fechaFirma fecha de firma del contrato (CONTRATO.CONT_FECHAFIRMA)
+ * @param objeto texto con el objeto del contrato (CONTRATO.CONT_OBJETO)
+ * @param descripcion descripción del objeto del contrato (CONTRATO.CONT_DESCRIPCION)
  * @param idFormaPago BIENESV3.FORMAPAGO (CONTRATO.FOPA_ID)
  * @param idTipoObjeto CONTRATOS.TIPOOBJETO (CONTRATO.TIOB_ID)
+ * @param idFormaInicioContrato CONTRATOS.FORMAINICIOCONTRATO (CONTRATO.FOIC_ID)
  */
 public record DatosAnexoDTO(
     String numeroAnexo,
-    LocalDate fechaIngreso,
+    LocalDate fechaFirma,
+    String objeto,
+    String descripcion,
     Long idFormaPago,
-    Long idTipoObjeto
+    Long idTipoObjeto,
+    Long idFormaInicioContrato
 ) {}

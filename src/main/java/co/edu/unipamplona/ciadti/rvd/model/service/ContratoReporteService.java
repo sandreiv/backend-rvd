@@ -9,8 +9,7 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
-import java.time.LocalDate;
-
+import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 
@@ -22,17 +21,12 @@ public interface ContratoReporteService {
      * @param idCargaDocente carga docente (CADO_ID)
      * @param tipoForzado    fuerza el tipo de anexo; si llega nulo se decide por
      *                       la regla de negocio (coordinador del programa)
-     * @param numeroAnexo    número de anexo diligenciado por el usuario; puede ser nulo
-     * @param fechaIngreso   fecha de ingreso diligenciada por el usuario; puede ser nula
-     * @param idFormaPago    forma de pago seleccionada (BIENESV3.FORMAPAGO)
-     * @param idTipoObjeto   tipo de objeto seleccionado (CONTRATOS.TIPOOBJETO)
+     * @param body           número de anexo, fecha de ingreso, objeto, descripción,
+     *                       forma de pago, tipo de objeto y forma de inicio de contrato
      */
     FileDTO generateContractPdf(
             Long idCargaDocente,
             String numeroPeriodo,
             TipoContratoDocente tipoForzado,
-            String numeroAnexo,
-            LocalDate fechaIngreso,
-            Long idFormaPago,
-            Long idTipoObjeto);
+            DatosAnexoDTO body);
 }

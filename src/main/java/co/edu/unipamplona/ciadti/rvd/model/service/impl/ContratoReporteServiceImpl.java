@@ -6,6 +6,7 @@
  * Fecha de creación: 30/10/2026
  * Modificaciones:
  * 30/10/2026 - Creación inicial (anexo de contratación en PDF: 4 meses y con funciones administrativas)
+ * 10/11/2026 - Andrés Hernández - Ajuste de datos en la construcción del PDF
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -46,6 +47,8 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.ContratoPresupuestoD
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.ContratoRemuneracionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.ContratoSuscripcionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
+import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TituloPersonaNaturalGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicAcademicTrainingProjection;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
@@ -62,6 +65,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ContratoReporteServiceImpl implements ContratoReporteService {
 
+    private static final ZoneId ZONA = ZoneId.of("America/Bogota");
     private static final String CODIGO_FAD = "FAD";
     private static final String CODIGO_FAI = "FAI";
     private static final String CODIGO_CTEI = "CTEI";
@@ -102,6 +106,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     private final ContratacionService contratacionService;
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
     private final TituloPersonaNaturalGeneralRepository tituloPersonaNaturalGeneralRepository;
+    private final ContratoRepository contratoRepository;
     private final ContratoPdfExporter contratoPdfExporter;
     private final ContratoRegistroService contratoRegistroService;
 
@@ -111,16 +116,13 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
             Long idCargaDocente,
             String numeroPeriodo,
             TipoContratoDocente tipoForzado,
-            String numeroAnexo,
-            LocalDate fechaIngreso,
-            Long idFormaPago,
-            Long idTipoObjeto) {
+            DatosAnexoDTO body) {
         log.debug(
                 "generateContractPdf ===> idCargaDocente={}, tipoForzado={}, formaPago={}, tipoObjeto={}",
                 idCargaDocente,
                 tipoForzado,
-                idFormaPago,
-                idTipoObjeto);
+                body.idFormaPago(),
+                body.idTipoObjeto());
 
         if (idCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
@@ -142,13 +144,18 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         HiringValuesInformationDTO valores = contratacionService.hiringValuesInformation(idCargaDocente, numeroPeriodo);
         String observaciones = resolveObservaciones(idPersonaGeneral, idCargaDocente, informacion);
 
+        LocalDate fechaIngresoDocente = contratoRepository.findFechaIngresoComoDocente(idPersonaGeneral)
+            .map(ContratoEntity::getFechaInicio)
+            .map(this::toLocalDate)
+            .orElse(null);
+
         TipoContratoDocente tipo = tipoForzado != null
                 ? tipoForzado
                 : resolveTipoContrato(informacion);
 
         ContratoDocenteReporteDTO reporte = new ContratoDocenteReporteDTO(
-                buildAnexo(informacion, numeroAnexo),
-                buildDocente(informacion, fechaIngreso),
+                buildAnexo(informacion, body.numeroAnexo()),
+                buildDocente(informacion, fechaIngresoDocente),
                 buildAcademico(informacion, formacion),
                 buildRemuneracion(informacion, valores),
                 buildDiscriminado(valores),
@@ -166,7 +173,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                         ? FUNCIONES_COORDINADOR
                         : List.of());
 
-        registrarContrato(informacion, valores, cdp, numeroAnexo, fechaIngreso, idFormaPago, idTipoObjeto);
+        registrarContrato(informacion, valores, body);
 
         byte[] content = contratoPdfExporter.export(reporte, tipo);
         String fileName = buildFileName(tipo, informacion.documentoIdentidad());
@@ -186,19 +193,14 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     private void registrarContrato(
             InformacionDocenteContratacionDTO informacion,
             HiringValuesInformationDTO valores,
-            HiringCdpInformationDTO cdp,
-            String numeroAnexo,
-            LocalDate fechaIngreso,
-            Long idFormaPago,
-            Long idTipoObjeto) {
-        BigDecimal valorTotal = valores != null && valores.valorContratacion() != null
-                ? valores.valorContratacion().totalContrato()
+            DatosAnexoDTO body) {
+        ValorContratacionDTO valorContratacion = valores != null && valores.valorContratacion() != null
+                ? valores.valorContratacion()
                 : null;
         contratoRegistroService.registrarContrato(
                 informacion,
-                valorTotal,
-                cdp != null ? cdp.idCdp() : null,
-                new DatosAnexoDTO(numeroAnexo, fechaIngreso, idFormaPago, idTipoObjeto));
+                valorContratacion,
+                body);
     }
 
     /**
@@ -539,6 +541,6 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         if (fecha instanceof java.sql.Date sqlDate) {
             return sqlDate.toLocalDate();
         }
-        return fecha.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return fecha.toInstant().atZone(ZONA).toLocalDate();
     }
 }

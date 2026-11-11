@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import co.edu.unipamplona.ciadti.rvd.model.dto.CatalogoItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoCatalogosDTO;
+import co.edu.unipamplona.ciadti.rvd.model.repository.FormaInicioContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FormaPagoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoObjetoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
@@ -28,6 +29,7 @@ public class CatalogoContratoServiceImpl implements CatalogoContratoService {
 
     private final FormaPagoRepository formaPagoRepository;
     private final TipoObjetoRepository tipoObjetoRepository;
+    private final FormaInicioContratoRepository formaInicioContratoRepository;
 
     @Override
     public ContratoCatalogosDTO findContractCatalogs() {
@@ -42,10 +44,16 @@ public class CatalogoContratoServiceImpl implements CatalogoContratoService {
                 .stream()
                 .map(tipoObjeto -> new CatalogoItemDTO(tipoObjeto.getId(), tipoObjeto.getDescripcion()))
                 .toList();
+        
+        List<CatalogoItemDTO> formasInicioContrato = formaInicioContratoRepository
+                .findAllByOrderByNombreAsc()
+                .stream()
+                .map(formaInicio -> new CatalogoItemDTO(formaInicio.getId(), formaInicio.getNombre()))
+                .toList();
 
-        log.debug("findContractCatalogs ===> formasPago={}, tiposObjeto={}",
-                formasPago.size(), tiposObjeto.size());
+        log.debug("findContractCatalogs ===> formasPago={}, tiposObjeto={}, formasInicioContrato={}",
+                formasPago.size(), tiposObjeto.size(), formasInicioContrato.size());
 
-        return new ContratoCatalogosDTO(formasPago, tiposObjeto);
+        return new ContratoCatalogosDTO(formasPago, tiposObjeto, formasInicioContrato);
     }
 }
