@@ -22,6 +22,7 @@ import java.time.LocalDate;
  * @param idFormaPago BIENESV3.FORMAPAGO (CONTRATO.FOPA_ID)
  * @param idTipoObjeto CONTRATOS.TIPOOBJETO (CONTRATO.TIOB_ID)
  * @param idFormaInicioContrato CONTRATOS.FORMAINICIOCONTRATO (CONTRATO.FOIC_ID)
+ * @param idLabor TALENTOV3.LABOR (LABOR.LABO_ID)
  */
 public record DatosAnexoDTO(
     String numeroAnexo,
@@ -30,5 +31,6 @@ public record DatosAnexoDTO(
     String descripcion,
     Long idFormaPago,
     Long idTipoObjeto,
-    Long idFormaInicioContrato
+    Long idFormaInicioContrato,
+    Long idLabor
 ) {}

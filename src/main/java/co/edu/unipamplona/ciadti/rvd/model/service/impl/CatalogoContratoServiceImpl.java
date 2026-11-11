@@ -17,6 +17,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.CatalogoItemDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FormaInicioContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.FormaPagoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.LaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TipoObjetoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class CatalogoContratoServiceImpl implements CatalogoContratoService {
     private final FormaPagoRepository formaPagoRepository;
     private final TipoObjetoRepository tipoObjetoRepository;
     private final FormaInicioContratoRepository formaInicioContratoRepository;
+    private final LaborRepository laborRepository;
 
     @Override
     public ContratoCatalogosDTO findContractCatalogs() {
@@ -51,9 +53,15 @@ public class CatalogoContratoServiceImpl implements CatalogoContratoService {
                 .map(formaInicio -> new CatalogoItemDTO(formaInicio.getId(), formaInicio.getNombre()))
                 .toList();
 
+        List<CatalogoItemDTO> labores = laborRepository
+                .findAllLaboresDocente()
+                .stream()
+                .map(labor -> new CatalogoItemDTO(labor.getId(), labor.getNombre()))
+                .toList();
+
         log.debug("findContractCatalogs ===> formasPago={}, tiposObjeto={}, formasInicioContrato={}",
                 formasPago.size(), tiposObjeto.size(), formasInicioContrato.size());
 
-        return new ContratoCatalogosDTO(formasPago, tiposObjeto, formasInicioContrato);
+        return new ContratoCatalogosDTO(formasPago, tiposObjeto, formasInicioContrato, labores);
     }
 }

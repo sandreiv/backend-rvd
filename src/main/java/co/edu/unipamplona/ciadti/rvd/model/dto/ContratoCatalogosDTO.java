@@ -16,9 +16,12 @@ import java.util.List;
  *
  * @param formasPago  BIENESV3.FORMAPAGO (FOPA_DESCRIPCION)
  * @param tiposObjeto CONTRATOS.TIPOOBJETO (TIOB_DESCRIPCION)
+ * @param formasInicioContrato CONTRATOS.FORMAINICIOCONTRATO (FOIC_NOMBRE)
+ * @param labores TALENTOV3.LABOR (LABO_NOMBRE)
  */
 public record ContratoCatalogosDTO(
     List<CatalogoItemDTO> formasPago,
     List<CatalogoItemDTO> tiposObjeto,
-    List<CatalogoItemDTO> formasInicioContrato
+    List<CatalogoItemDTO> formasInicioContrato,
+    List<CatalogoItemDTO> labores
 ) {}

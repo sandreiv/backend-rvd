@@ -228,9 +228,13 @@ public class HiringCallController {
             @RequestParam(required = false) String descripcion,
             @RequestParam(required = false) Long formaPago,
             @RequestParam(required = false) Long tipoObjeto,
-            @RequestParam(required = false) Long formaInicioContrato) {
+            @RequestParam(required = false) Long formaInicioContrato,
+            @RequestParam(required = false) Long labor) {
         
-        DatosAnexoDTO body = new DatosAnexoDTO(numeroAnexo, parseFechaFirma(fechaFirma), objeto, descripcion, formaPago, tipoObjeto, formaInicioContrato);
+        DatosAnexoDTO body = new DatosAnexoDTO(
+            numeroAnexo, parseFechaFirma(fechaFirma), objeto, descripcion,
+            formaPago, tipoObjeto, formaInicioContrato, labor
+        );
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
                 numeroPeriodo,
@@ -247,11 +251,14 @@ public class HiringCallController {
     @Operation(
         summary = "Catálogos del panel de datos del anexo",
         description = """
-            Devuelve en una sola petición los dos catálogos que el usuario
+            Devuelve en una sola petición los catálogos que el usuario
             selecciona antes de generar el anexo de contratación: las formas de
             pago (BIENESV3.FORMAPAGO, FOPA_DESCRIPCION) y los tipos de objeto
             contractual (CONTRATOS.TIPOOBJETO, TIOB_DESCRIPCION), ambos
             ordenados por descripción.
+            Ademas, las formas de inicio de contratación
+            (CONTRATOS.FORMAINICIOCONTRATO, FOIC_NOMBRE) y las labores de docencia
+            (TALENTOV3.LABOR, LABO_NOMBRE), ordenadas por nombre.
             """
     )
     @GetMapping("/contract-catalogs")
