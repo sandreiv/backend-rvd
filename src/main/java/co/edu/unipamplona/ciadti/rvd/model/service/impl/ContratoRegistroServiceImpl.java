@@ -7,6 +7,7 @@
  * Modificaciones:
  * 04/11/2026 - Creación inicial
  * 10/11/2026 - Andrés Hernández - Ajuste inicial de los valores que se almacenan del contrato
+ * 11/11/2026 - Andrés Hernández - Avance en el llenado de tablas relacionadas con la contratacion (DOVI, CDCO)
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -26,8 +27,12 @@ import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CdpContratoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DocumentoVinculacionEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CdpContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.DocumentoVinculacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,78 +79,52 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private static final int LONGITUD_REGISTRADOPOR = 30;
 
     private final ContratoRepository contratoRepository;
+    private final DocumentoVinculacionRepository documentoVinculacionRepository;
+    private final CdpContratoRepository cdpContratoRepository;
 
     @Override
     @Transactional
     public Long registrarContrato(
             InformacionDocenteContratacionDTO informacion,
             ValorContratacionDTO valorContratacion,
+            Long idCdp,
             DatosAnexoDTO datos) {
 
         validar(informacion, datos);
 
         String numeroAnexo = datos.numeroAnexo() == null ? null : datos.numeroAnexo().trim();
-        ContratoEntity contrato = resolverContrato(numeroAnexo);
-        boolean nuevo = contrato.getId() == null;
+        Date fechaActual = new Date();
 
-        aplicarDatos(contrato, informacion, valorContratacion, datos, numeroAnexo);
-        ContratoEntity guardado = contratoRepository.save(contrato);
+        ContratoEntity contrato = new ContratoEntity();
+
+        // Guardar en CONTRATOS.CONTRATO
+        aplicarDatosContrato(contrato, informacion, valorContratacion, datos, numeroAnexo, fechaActual);
+        ContratoEntity newContrato = contratoRepository.save(contrato);
+
+        // Guardar en CONTRATOS.CDPCONTRATO
+        guardarCdpContrato(newContrato.getId(), idCdp, fechaActual);
+
+        // Guardar en TALENTOV3.DOCUMENTOVINCULACION
+        guardarDocumentoVinculacion(newContrato.getId(), fechaActual);
+
 
         log.info(
-                "registrarContrato ===> {} CONT_ID={}, contratista={}, numero={}, cuantia={}, convocatoria={}, cdp={}",
-                nuevo ? "nuevo" : "actualizado",
-                guardado.getId(),
-                guardado.getIdPersonaContratista(),
-                guardado.getNumero(),
-                guardado.getCuantia(),
-                guardado.getIdConvocatoria(),
-                guardado.getIdCdp());
+                "registrarContrato ===> CONT_ID={}, contratista={}, numero={}, cuantia={}",
+                newContrato.getId(),
+                newContrato.getIdPersonaContratista(),
+                newContrato.getNumero(),
+                newContrato.getCuantia());
 
-        return guardado.getId();
+        return newContrato.getId();
     }
 
-    private void validar(InformacionDocenteContratacionDTO informacion, DatosAnexoDTO datos) {
-        if (informacion == null || informacion.idPersonaGeneral() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "No hay información del docente para registrar el contrato");
-        }
-        if (informacion.fechaInicio() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente no tiene fecha de inicio, no se puede registrar el contrato");
-        }
-        if (informacion.idModalidadContratacion() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente no tiene modalidad de contratación");
-        }
-        if (informacion.idUnidadRegional() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La carga docente no tiene unidad regional");
-        }
-        if (datos == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "Faltan los datos del anexo para registrar el contrato");
-        }
-    }
-
-    private ContratoEntity resolverContrato(String numeroAnexo) {
-        if (numeroAnexo == null || numeroAnexo.isBlank()) {
-            return new ContratoEntity();
-        }
-        return contratoRepository.findFirstByNumeroOrderByIdDesc(numeroAnexo)
-                .orElseGet(ContratoEntity::new);
-    }
-
-    private void aplicarDatos(
+    private void aplicarDatosContrato(
             ContratoEntity contrato,
             InformacionDocenteContratacionDTO informacion,
             ValorContratacionDTO valorContratacion,
             DatosAnexoDTO datos,
-            String numeroAnexo) {
+            String numeroAnexo,
+            Date fechaActual) {
 
         AuthUserDetails usuario = requireUsuario();
 
@@ -174,7 +153,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         contrato.setDuracionContrato(calcularDuracion(informacion.fechaInicio(), informacion.fechaFin()));
 
         contrato.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
-        contrato.setFechaCambio(new Date());
+        contrato.setFechaCambio(fechaActual);
 
         contrato.setTipoDias(TIPO_DIAS_CALENDARIO);
         contrato.setOrigen(ORIGEN_RVD);
@@ -186,6 +165,72 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         contrato.setAnticipo(CERO);
         contrato.setObjeto(datos.objeto());
         contrato.setDescripcion(datos.descripcion());
+    }
+
+    private void guardarDocumentoVinculacion(Long idContrato, Date fechaActual) {
+        AuthUserDetails usuario = requireUsuario();
+
+        if (documentoVinculacionRepository.existsByIdContrato(idContrato)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El contrato ya ha sido relacionado con un documento vinculacion"
+            );
+        }
+
+        DocumentoVinculacionEntity documentoVinculacion = new DocumentoVinculacionEntity();
+        documentoVinculacion.setIdContrato(idContrato);
+        documentoVinculacion.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
+        documentoVinculacion.setFechaCambio(fechaActual);
+
+        documentoVinculacionRepository.save(documentoVinculacion);
+    }
+
+    private void guardarCdpContrato(Long idContrato, Long idCdp, Date fechaActual) {
+        AuthUserDetails usuario = requireUsuario();
+
+        if (cdpContratoRepository.existsByIdContratoAndIdCdp(idContrato, idCdp)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El contrato ya ha sido relacionado con el cdp"
+            );
+        }
+
+        CdpContratoEntity cdpContrato = new CdpContratoEntity();
+        cdpContrato.setIdContrato(idContrato);
+        cdpContrato.setIdCdp(idCdp);
+        cdpContrato.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
+        cdpContrato.setFechaCambio(fechaActual);
+
+        cdpContratoRepository.save(cdpContrato);
+    }
+
+    
+    private void validar(InformacionDocenteContratacionDTO informacion, DatosAnexoDTO datos) {
+        if (informacion == null || informacion.idPersonaGeneral() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No hay información del docente para registrar el contrato");
+        }
+        if (informacion.fechaInicio() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente no tiene fecha de inicio, no se puede registrar el contrato");
+        }
+        if (informacion.idModalidadContratacion() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente no tiene modalidad de contratación");
+        }
+        if (informacion.idUnidadRegional() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente no tiene unidad regional");
+        }
+        if (datos == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Faltan los datos del anexo para registrar el contrato");
+        }
     }
 
     private BigDecimal resolverCuantia(BigDecimal valorContrato, BigDecimal valorCarga) {

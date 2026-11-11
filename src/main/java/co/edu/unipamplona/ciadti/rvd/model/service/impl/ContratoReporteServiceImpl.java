@@ -147,7 +147,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         LocalDate fechaIngresoDocente = contratoRepository.findFechaIngresoComoDocente(idPersonaGeneral)
             .map(ContratoEntity::getFechaInicio)
             .map(this::toLocalDate)
-            .orElse(null);
+            .orElse(toLocalDate(informacion.fechaInicio()));
 
         TipoContratoDocente tipo = tipoForzado != null
                 ? tipoForzado
@@ -173,7 +173,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                         ? FUNCIONES_COORDINADOR
                         : List.of());
 
-        registrarContrato(informacion, valores, body);
+        registrarContrato(informacion, valores, cdp, body);
 
         byte[] content = contratoPdfExporter.export(reporte, tipo);
         String fileName = buildFileName(tipo, informacion.documentoIdentidad());
@@ -186,13 +186,15 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     }
 
     /**
-     * Guarda el contrato en CONTRATOS.CONTRATO con los datos del anexo. No
+     * Guarda el contrato en la base de datos persistiendo las tablas necesarias
+     * para finalizar el proceso de contratación con los datos del anexo. No
      * tumba la descarga del PDF si el registro falla: se deja traza y se
      * propaga la excepción solo cuando el dato es obligatorio y no existe.
      */
     private void registrarContrato(
             InformacionDocenteContratacionDTO informacion,
             HiringValuesInformationDTO valores,
+            HiringCdpInformationDTO cdp,
             DatosAnexoDTO body) {
         ValorContratacionDTO valorContratacion = valores != null && valores.valorContratacion() != null
                 ? valores.valorContratacion()
@@ -200,6 +202,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         contratoRegistroService.registrarContrato(
                 informacion,
                 valorContratacion,
+                cdp != null ? cdp.idCdp() : null,
                 body);
     }
 

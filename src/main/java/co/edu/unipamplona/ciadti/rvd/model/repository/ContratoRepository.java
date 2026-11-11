@@ -19,12 +19,6 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
 public interface ContratoRepository extends JpaRepository<ContratoEntity, Long> {
 
     /**
-     * Contrato registrado con un número de anexo, para no duplicar el registro
-     * cuando el usuario vuelve a diligenciar el mismo contrato.
-     */
-    Optional<ContratoEntity> findFirstByNumeroOrderByIdDesc(String numero);
-
-    /**
      * Primer contrato realizado por un contratista dentro del contexto de 'RVD' (como docente)
      */
     @Query(value = """
