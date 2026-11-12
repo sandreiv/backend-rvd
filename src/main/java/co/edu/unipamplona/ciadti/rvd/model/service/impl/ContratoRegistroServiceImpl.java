@@ -249,23 +249,15 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         trabajadorLabor.setIdPersonaGeneral(informacion.idPersonaGeneral());
         trabajadorLabor.setIdLabor(idLabor);
         trabajadorLabor.setIdDocumentoVinculacion(idDocenteVinculacion);
-        // Esperar confirmacion
-        trabajadorLabor.setIdSubtipoTrabajador(null);
         trabajadorLabor.setIdClasificacionDocente(restriccionCarga.getIdClasificacionDocente());
         trabajadorLabor.setIdDedicacionDocente(restriccionCarga.getIdDedicacionDocente());
         trabajadorLabor.setIdEstadoTrabajador(idEstadoTrabajador);
         trabajadorLabor.setFechaInicial(informacion.fechaInicio());
         trabajadorLabor.setFechaFinal(informacion.fechaFin());
-        // Esperar confirmacion
-        trabajadorLabor.setFechaPosesion(null);
-        trabajadorLabor.setFechaInicioEstado(null);
-        trabajadorLabor.setIdJornada(null);
-        trabajadorLabor.setIdTipoNombramiento(null);
-        trabajadorLabor.setFechaLiquidacion(null);
-        trabajadorLabor.setFechaHistorica(null);
-        trabajadorLabor.setFechaInicialAjustada(null);
-        trabajadorLabor.setFechaPeriodoVacaciones(null);
-        trabajadorLabor.setExpuestoPoliticamente(null);
+        trabajadorLabor.setFechaPosesion(informacion.fechaInicio());
+        trabajadorLabor.setFechaInicioEstado(informacion.fechaInicio());
+        trabajadorLabor.setFechaInicialAjustada(informacion.fechaInicio());
+        trabajadorLabor.setFechaPeriodoVacaciones(informacion.fechaInicio());
         trabajadorLabor.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
         trabajadorLabor.setFechaCambio(fechaActual);
 
