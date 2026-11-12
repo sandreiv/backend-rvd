@@ -39,7 +39,7 @@ public class TrabajadorLaborEntity implements Serializable, Cloneable {
     private Long idSubtipoTrabajador;
 
     @Column(name = "CLDO_ID")
-    private Long idClaseDocumento;
+    private Long idClasificacionDocente;
 
     @Column(name = "DEDO_ID")
     private Long idDedicacionDocente;
@@ -69,7 +69,7 @@ public class TrabajadorLaborEntity implements Serializable, Cloneable {
     private Long idJornada;
 
     @Column(name = "TNOM_ID")
-    private Long idTipoNomina;
+    private Long idTipoNombramiento;
 
     @Column(name = "NOVS_ID")
     private Long idNovedad;
@@ -110,7 +110,7 @@ public class TrabajadorLaborEntity implements Serializable, Cloneable {
                 ", idLabor=" + idLabor +
                 ", idDocumentoVinculacion=" + idDocumentoVinculacion +
                 ", idSubtipoTrabajador=" + idSubtipoTrabajador +
-                ", idClaseDocumento=" + idClaseDocumento +
+                ", idClasificacionDocente=" + idClasificacionDocente +
                 ", idDedicacionDocente=" + idDedicacionDocente +
                 ", idEstadoTrabajador=" + idEstadoTrabajador +
                 ", fechaInicial=" + fechaInicial +
@@ -120,7 +120,7 @@ public class TrabajadorLaborEntity implements Serializable, Cloneable {
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 ", idJornada=" + idJornada +
-                ", idTipoNomina=" + idTipoNomina +
+                ", idTipoNombramiento=" + idTipoNombramiento +
                 ", idNovedad=" + idNovedad +
                 ", idTipoVinculacionDocente=" + idTipoVinculacionDocente +
                 ", fechaLiquidacion=" + fechaLiquidacion +

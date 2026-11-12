@@ -23,10 +23,10 @@ public interface ContratoRepository extends JpaRepository<ContratoEntity, Long> 
      */
     @Query(value = """
             SELECT *
-            FROM CONTRATOS.CONTRATO
-            WHERE PEGE_IDCONTRATISTA = :idPersona
-                AND CONT_ORIGEN = 'RVD'
-            ORDER BY CONT_FECHAINICIO ASC
+            FROM CONTRATOS.CONTRATO CONT
+            WHERE CONT.PEGE_IDCONTRATISTA = :idPersona
+                AND CONT.CONT_ORIGEN = 'RVD'
+            ORDER BY CONT.CONT_FECHAINICIO ASC
             FETCH FIRST 1 ROW ONLY
             """, nativeQuery = true)
     Optional<ContratoEntity> findFechaIngresoComoDocente(Long idPersona);

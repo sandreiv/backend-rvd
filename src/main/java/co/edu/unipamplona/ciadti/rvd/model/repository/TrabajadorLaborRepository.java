@@ -24,5 +24,7 @@ public interface TrabajadorLaborRepository extends JpaRepository<TrabajadorLabor
                 AND (trla.fechaFinal IS NULL OR trla.fechaFinal >= CURRENT_DATE)
             """)
     boolean existsVigenteByIdPersonaGeneral(@Param("idPersonaGeneral") Long idPersonaGeneral);
+
+    boolean existsByIdPersonaGeneralAndIdDocumentoVinculacionAndIdLabor(Long idPersonaGeneral, Long idDocumentoVinculacion, Long idLabor);
 }
 /* 16/10/2026 @:Sebastian Jaimes */

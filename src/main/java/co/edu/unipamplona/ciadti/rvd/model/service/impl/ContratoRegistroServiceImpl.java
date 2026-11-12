@@ -8,6 +8,7 @@
  * 04/11/2026 - Creación inicial
  * 10/11/2026 - Andrés Hernández - Ajuste inicial de los valores que se almacenan del contrato
  * 11/11/2026 - Andrés Hernández - Avance en el llenado de tablas relacionadas con la contratacion (DOVI, CDCO)
+ * 12/11/2026 - Andrés Hernández - Avance en el llenado de tablas relacionadas con la contratacion (TRLA)
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -30,9 +31,15 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CdpContratoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocumentoVinculacionEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.EstadoTrabajadorEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CdpContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocumentoVinculacionRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoTrabajadorRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +88,9 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private final ContratoRepository contratoRepository;
     private final DocumentoVinculacionRepository documentoVinculacionRepository;
     private final CdpContratoRepository cdpContratoRepository;
+    private final RestriccionCargaRepository restriccionCargaRepository;
+    private final EstadoTrabajadorRepository estadoTrabajadorRepository;
+    private final TrabajadorLaborRepository trabajadorLaborRepository;
 
     @Override
     @Transactional
@@ -105,7 +115,10 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         guardarCdpContrato(newContrato.getId(), idCdp, fechaActual);
 
         // Guardar en TALENTOV3.DOCUMENTOVINCULACION
-        guardarDocumentoVinculacion(newContrato.getId(), fechaActual);
+        Long idDovi = guardarDocumentoVinculacion(newContrato.getId(), fechaActual);
+
+        // Guardar en TALENTOV3.TRABAJADORLABOR
+        guardarTrabajadorLabor(informacion, datos.idLabor(), idDovi, fechaActual);
 
 
         log.info(
@@ -129,9 +142,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         AuthUserDetails usuario = requireUsuario();
 
         contrato.setIdModalidadContratacion(informacion.idModalidadContratacion());
-        // Que unidad se pone
         contrato.setIdUnidad(informacion.idUnidadRegional());
-        // Que ciudad se pone
         contrato.setIdCiudad(informacion.idCiudadUnidadRegional());
 
         contrato.setIdPersonaContratista(informacion.idPersonaGeneral());
@@ -152,7 +163,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         contrato.setValorSalario(resolverSalario(valorContratacion.salario(), informacion.valorContratoTotal()));
         contrato.setDuracionContrato(calcularDuracion(informacion.fechaInicio(), informacion.fechaFin()));
 
-        contrato.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
+        contrato.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
         contrato.setFechaCambio(fechaActual);
 
         contrato.setTipoDias(TIPO_DIAS_CALENDARIO);
@@ -167,7 +178,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         contrato.setDescripcion(datos.descripcion());
     }
 
-    private void guardarDocumentoVinculacion(Long idContrato, Date fechaActual) {
+    private Long guardarDocumentoVinculacion(Long idContrato, Date fechaActual) {
         AuthUserDetails usuario = requireUsuario();
 
         if (documentoVinculacionRepository.existsByIdContrato(idContrato)) {
@@ -179,10 +190,11 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
 
         DocumentoVinculacionEntity documentoVinculacion = new DocumentoVinculacionEntity();
         documentoVinculacion.setIdContrato(idContrato);
-        documentoVinculacion.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
+        documentoVinculacion.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
         documentoVinculacion.setFechaCambio(fechaActual);
 
-        documentoVinculacionRepository.save(documentoVinculacion);
+        DocumentoVinculacionEntity newDovi = documentoVinculacionRepository.save(documentoVinculacion);
+        return newDovi.getId();
     }
 
     private void guardarCdpContrato(Long idContrato, Long idCdp, Date fechaActual) {
@@ -198,10 +210,66 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         CdpContratoEntity cdpContrato = new CdpContratoEntity();
         cdpContrato.setIdContrato(idContrato);
         cdpContrato.setIdCdp(idCdp);
-        cdpContrato.setRegistradoPor(truncar(usuario.getUsername(), LONGITUD_REGISTRADOPOR));
+        cdpContrato.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
         cdpContrato.setFechaCambio(fechaActual);
 
         cdpContratoRepository.save(cdpContrato);
+    }
+
+    private void guardarTrabajadorLabor(InformacionDocenteContratacionDTO informacion, Long idLabor, Long idDocenteVinculacion, Date fechaActual) {
+        AuthUserDetails usuario = requireUsuario();
+
+        if (trabajadorLaborRepository.existsByIdPersonaGeneralAndIdDocumentoVinculacionAndIdLabor(informacion.idPersonaGeneral(), idDocenteVinculacion, idLabor)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El contrato ya ha sido relacionado con un trabajador labor"
+            );
+        }
+
+        RestriccionCargaEntity restriccionCarga = restriccionCargaRepository.findById(informacion.idModalidadContratacion())
+            .orElseThrow(() -> new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La modalidad de contratación no tiene una restricción de carga asociada"
+            ));
+        if ((restriccionCarga.getIdDedicacionDocente() == null) || (restriccionCarga.getIdClasificacionDocente() == null)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La modalidad de contratación no tiene clasificación o dedicación del docente"
+            );
+        }
+
+        Long idEstadoTrabajador = estadoTrabajadorRepository.findEstadoInicialTrabajador()
+            .map(EstadoTrabajadorEntity::getId)
+            .orElseThrow(() -> new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No existe un estado inicial que asignar al trabajador"
+            ));
+        
+        TrabajadorLaborEntity trabajadorLabor = new TrabajadorLaborEntity();
+        trabajadorLabor.setIdPersonaGeneral(informacion.idPersonaGeneral());
+        trabajadorLabor.setIdLabor(idLabor);
+        trabajadorLabor.setIdDocumentoVinculacion(idDocenteVinculacion);
+        // Esperar confirmacion
+        trabajadorLabor.setIdSubtipoTrabajador(null);
+        trabajadorLabor.setIdClasificacionDocente(restriccionCarga.getIdClasificacionDocente());
+        trabajadorLabor.setIdDedicacionDocente(restriccionCarga.getIdDedicacionDocente());
+        trabajadorLabor.setIdEstadoTrabajador(idEstadoTrabajador);
+        trabajadorLabor.setFechaInicial(informacion.fechaInicio());
+        trabajadorLabor.setFechaFinal(informacion.fechaFin());
+        // Esperar confirmacion
+        trabajadorLabor.setFechaPosesion(null);
+        trabajadorLabor.setFechaInicioEstado(null);
+        trabajadorLabor.setIdJornada(null);
+        trabajadorLabor.setIdTipoNombramiento(null);
+        trabajadorLabor.setFechaLiquidacion(null);
+        trabajadorLabor.setFechaHistorica(null);
+        trabajadorLabor.setFechaInicialAjustada(null);
+        trabajadorLabor.setFechaPeriodoVacaciones(null);
+        trabajadorLabor.setExpuestoPoliticamente(null);
+        trabajadorLabor.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
+        trabajadorLabor.setFechaCambio(fechaActual);
+
+        trabajadorLaborRepository.save(trabajadorLabor);
     }
 
     
@@ -283,11 +351,8 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         }
     }
 
-    private String truncar(String valor, int longitud) {
-        if (valor == null) {
-            return null;
-        }
-        return valor.length() <= longitud ? valor : valor.substring(0, longitud);
+    private String formatRegistradoPor(Long valor, int longitud) {
+        return valor != null ? String.valueOf(valor) : null;
     }
 
     private Date toDate(LocalDate fecha) {
