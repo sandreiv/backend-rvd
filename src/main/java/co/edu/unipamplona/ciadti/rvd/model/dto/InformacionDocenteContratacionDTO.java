@@ -53,6 +53,7 @@ public record InformacionDocenteContratacionDTO(
     String onceMeses,
     Long idModalidadContratacion,
     Long idUnidadRegional,
+    Long idUnidadArea,
     Long idCiudadUnidadRegional,
     BigDecimal valorContratoTotal,
     Long idConvocatoriaContratacion,

@@ -90,6 +90,8 @@ public interface InformacionDocenteContratacionProjection {
 
     Long getIdUnidadRegional();
 
+    Long getIdUnidadArea();
+
     Long getIdCiudadUnidadRegional();
 
     BigDecimal getValorContratoTotal();

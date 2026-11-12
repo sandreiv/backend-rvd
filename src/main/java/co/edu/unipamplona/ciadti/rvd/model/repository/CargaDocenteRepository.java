@@ -1205,6 +1205,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 COALESCE(DATOS.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS onceMeses,
                 COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID) AS idModalidadContratacion,
                 COOR.UNID_IDREGIONAL AS idUnidadRegional,
+                COOR.UNID_IDAREA AS idUnidadArea,
                 UNID_REG.CIGE_ID AS idCiudadUnidadRegional,
                 COALESCE(DATOS.NOCD_TOTALCONTRATO, CADO.CADO_TOTALCONTRATO) AS valorContratoTotal,
                 (

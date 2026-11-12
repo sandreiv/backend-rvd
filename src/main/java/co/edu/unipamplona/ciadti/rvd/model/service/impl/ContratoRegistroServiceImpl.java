@@ -34,12 +34,14 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.DocumentoVinculacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EstadoTrabajadorEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborUnidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CdpContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocumentoVinculacionRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoTrabajadorRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborUnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,6 +83,8 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private static final String NO = "0";
     private static final String SI = "1";
     private static final BigDecimal CERO = BigDecimal.ZERO;
+    private static final String TRABAJADOR_ASIGNACION_PROPIEDAD = "P";
+    private static final String TRABAJADOR_LABOR_UNIDAD_ESTADO = "ACTIVO";
 
     /** Longitud real de CONTRATO.CONT_REGISTRADOPOR. */
     private static final int LONGITUD_REGISTRADOPOR = 30;
@@ -91,6 +95,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private final RestriccionCargaRepository restriccionCargaRepository;
     private final EstadoTrabajadorRepository estadoTrabajadorRepository;
     private final TrabajadorLaborRepository trabajadorLaborRepository;
+    private final TrabajadorLaborUnidadRepository trabajadorLaborUnidadRepository;
 
     @Override
     @Transactional
@@ -119,6 +124,9 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
 
         // Guardar en TALENTOV3.TRABAJADORLABOR
         guardarTrabajadorLabor(informacion, datos.idLabor(), idDovi, fechaActual);
+
+        // Guardar en TALENTOV3.TRABAJADORLABORUNIDAD
+        guardarTrabajadorLaborUnidad(informacion, datos.idLabor(), idDovi, fechaActual);
 
 
         log.info(
@@ -216,10 +224,10 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         cdpContratoRepository.save(cdpContrato);
     }
 
-    private void guardarTrabajadorLabor(InformacionDocenteContratacionDTO informacion, Long idLabor, Long idDocenteVinculacion, Date fechaActual) {
+    private void guardarTrabajadorLabor(InformacionDocenteContratacionDTO informacion, Long idLabor, Long idDocumentoVinculacion, Date fechaActual) {
         AuthUserDetails usuario = requireUsuario();
 
-        if (trabajadorLaborRepository.existsByIdPersonaGeneralAndIdDocumentoVinculacionAndIdLabor(informacion.idPersonaGeneral(), idDocenteVinculacion, idLabor)) {
+        if (trabajadorLaborRepository.existsByIdPersonaGeneralAndIdDocumentoVinculacionAndIdLabor(informacion.idPersonaGeneral(), idDocumentoVinculacion, idLabor)) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "El contrato ya ha sido relacionado con un trabajador labor"
@@ -248,7 +256,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         TrabajadorLaborEntity trabajadorLabor = new TrabajadorLaborEntity();
         trabajadorLabor.setIdPersonaGeneral(informacion.idPersonaGeneral());
         trabajadorLabor.setIdLabor(idLabor);
-        trabajadorLabor.setIdDocumentoVinculacion(idDocenteVinculacion);
+        trabajadorLabor.setIdDocumentoVinculacion(idDocumentoVinculacion);
         trabajadorLabor.setIdClasificacionDocente(restriccionCarga.getIdClasificacionDocente());
         trabajadorLabor.setIdDedicacionDocente(restriccionCarga.getIdDedicacionDocente());
         trabajadorLabor.setIdEstadoTrabajador(idEstadoTrabajador);
@@ -262,6 +270,32 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         trabajadorLabor.setFechaCambio(fechaActual);
 
         trabajadorLaborRepository.save(trabajadorLabor);
+    }
+
+    private void guardarTrabajadorLaborUnidad(InformacionDocenteContratacionDTO informacion, Long idLabor, Long idDocumentoVinculacion, Date fechaActual) {
+        AuthUserDetails usuario = requireUsuario();
+
+        if (trabajadorLaborUnidadRepository.existsByIdPersonaGeneralAndIdDocumentoVinculacionAndIdLaborAndIdUnidad(informacion.idPersonaGeneral(), idDocumentoVinculacion, idLabor, informacion.idUnidadArea())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El contrato ya ha sido relacionado con un trabajador labor unidad"
+            );
+        }
+
+        TrabajadorLaborUnidadEntity trabajadorLaborUnidad = new TrabajadorLaborUnidadEntity();
+        trabajadorLaborUnidad.setIdPersonaGeneral(informacion.idPersonaGeneral());
+        trabajadorLaborUnidad.setIdLabor(idLabor);
+        trabajadorLaborUnidad.setIdUnidad(informacion.idUnidadArea());      // La facultad de la coordinación
+        trabajadorLaborUnidad.setIdDocumentoVinculacion(idDocumentoVinculacion);
+        trabajadorLaborUnidad.setFechaInicioEstado(informacion.fechaInicio());
+        trabajadorLaborUnidad.setTipoAsignacion(TRABAJADOR_ASIGNACION_PROPIEDAD);
+        trabajadorLaborUnidad.setEstado(TRABAJADOR_LABOR_UNIDAD_ESTADO);
+        trabajadorLaborUnidad.setFechaInicial(informacion.fechaInicio());
+        trabajadorLaborUnidad.setFechaFinal(informacion.fechaFin());
+        trabajadorLaborUnidad.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
+        trabajadorLaborUnidad.setFechaCambio(fechaActual);
+
+        trabajadorLaborUnidadRepository.save(trabajadorLaborUnidad);
     }
 
     
@@ -285,6 +319,11 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "La carga docente no tiene unidad regional");
+        }
+        if (informacion.idUnidadArea() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La carga docente no tiene unidad de area");
         }
         if (datos == null) {
             throw new ApiException(
