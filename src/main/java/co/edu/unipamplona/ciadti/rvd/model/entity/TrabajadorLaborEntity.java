@@ -89,6 +89,15 @@ public class TrabajadorLaborEntity implements Serializable, Cloneable {
     @Column(name = "CAAS_ID")
     private Long idCargaAcademica;
 
+    @Column(name = "TRLA_FECHAINICIALAJUSTADA", nullable = false)
+    private Date fechaInicialAjustada;
+
+    @Column(name = "TRLA_FECHAPERIODOVACACIONES")
+    private Date fechaPeriodoVacaciones;
+
+    @Column(name = "TRLA_EXPUESTOPOLITICAMENTE")
+    private String expuestoPoliticamente;
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
@@ -118,6 +127,9 @@ public class TrabajadorLaborEntity implements Serializable, Cloneable {
                 ", cargaAcademica=" + cargaAcademica +
                 ", fechaHistorica=" + fechaHistorica +
                 ", idCargaAcademica=" + idCargaAcademica +
+                ", fechaInicialAjustada=" + fechaInicialAjustada +
+                ", fechaPeriodoVacaciones=" + fechaPeriodoVacaciones +
+                ", expuestoPoliticamente=" + expuestoPoliticamente +
                 '}';
     }
 }
