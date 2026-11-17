@@ -1213,7 +1213,10 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                     FROM RVD.CONVOCATORIA CONTR
                     WHERE CONTR.CONV_IDRELACION = CONV.CONV_ID
                         AND CONTR.CONV_CONTRATACION = '1'
-                ) AS idConvocatoriaContratacion
+                ) AS idConvocatoriaContratacion,
+                CADO.CADO_CONTRATACIONVINCULADO AS contratacionVinculado,
+                CADO.CADO_CONTRATACIONSINCRONIZADO AS contratacionSincronizado,
+                CADO.CADO_NUMEROCONTRATO AS numeroContrato
             FROM RVD.CARGADOCENTE CADO
             LEFT JOIN NOVEDADES_VALIDAS DATOS
                 ON DATOS.CADO_ID = CADO.CADO_ID

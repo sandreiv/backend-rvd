@@ -126,6 +126,15 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
     @Column(name = "CADO_CREADOENNOVEDAD")
     private String creadoEnNovedad;
 
+    @Column(name = "CADO_CONTRATACIONVINCULADO")
+    private String contratacionVinculado;
+
+    @Column(name = "CADO_CONTRATACIONSINCRONIZADO")
+    private String contratacionSincronizado;
+
+    @Column(name = "CADO_NUMEROCONTRATO")
+    private String numeroContrato;
+
     @Column(name = "CADO_REGISTRADOPOR")
     private String registradoPor;
 
@@ -186,6 +195,9 @@ public class CargaDocenteEntity implements Serializable, Cloneable {
                 ", momento=" + momento +
                 ", onceMeses=" + onceMeses +
                 ", creadoEnNovedad=" + creadoEnNovedad +
+                ", contratacionVinculado=" + contratacionVinculado +
+                ", contratacionSincronizado=" + contratacionSincronizado +
+                ", numeroContrato=" + numeroContrato +
                 ", registradoPor=" + registradoPor +
                 ", fechaCambio=" + fechaCambio +
                 '}';

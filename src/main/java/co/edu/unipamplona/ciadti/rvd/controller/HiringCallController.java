@@ -215,12 +215,17 @@ public class HiringCallController {
             permite forzar cualquiera de los dos. numeroAnexo, fechaIngreso, formaPago
             y tipoObjeto son los datos que el usuario diligencia en el modal; con ellos
             se registra el contrato en CONTRATOS.CONTRATO antes de devolver el PDF.
+            El parametro operacion identifica si se esta generando el contrato para
+            asignar el numero de anexo y esperar aprobación, o vincular al docente con
+            el número de anexo almacenado en la base de datos. De manera que primero se
+            diligencia el número de anexo para habilitar la vinculación
             """
     )
-    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}")
+    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}/{operacion}")
     public ResponseEntity<byte[]> generateContractPdf(
             @PathVariable Long idCargaDocente,
             @PathVariable String numeroPeriodo,
+            @PathVariable String operacion,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
             @RequestParam(required = false) String fechaFirma,
@@ -238,6 +243,7 @@ public class HiringCallController {
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
                 numeroPeriodo,
+                operacion,
                 parseTipoContrato(tipo),
                 body);
         return ResponseEntity.ok()

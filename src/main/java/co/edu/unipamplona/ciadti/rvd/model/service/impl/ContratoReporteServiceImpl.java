@@ -7,6 +7,7 @@
  * Modificaciones:
  * 30/10/2026 - Creación inicial (anexo de contratación en PDF: 4 meses y con funciones administrativas)
  * 10/11/2026 - Andrés Hernández - Ajuste de datos en la construcción del PDF
+ * 13/11/2026 - Andrés Hernández - Separar la generación del contrato y la vinculación del docente
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -47,7 +48,9 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.ContratoPresupuestoD
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.ContratoRemuneracionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.ContratoSuscripcionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TituloPersonaNaturalGeneralRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.PublicAcademicTrainingProjection;
@@ -71,6 +74,8 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     private static final String CODIGO_CTEI = "CTEI";
     private static final String CODIGO_ISU = "ISU";
     private static final String CODIGO_AC = "AC";
+    private static final String OPERACION_VINCULACION_DOCENTE = "VINCULAR";
+    private static final String OPERACION_GENERACION_CONTRATO = "GENERAR";
 
     /**
      * Funciones del docente ocasional tiempo completo con funciones
@@ -107,6 +112,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     private final PlanTrabajoDigitalService planTrabajoDigitalService;
     private final TituloPersonaNaturalGeneralRepository tituloPersonaNaturalGeneralRepository;
     private final ContratoRepository contratoRepository;
+    private final CargaDocenteRepository cargaDocenteRepository;
     private final ContratoPdfExporter contratoPdfExporter;
     private final ContratoRegistroService contratoRegistroService;
 
@@ -115,6 +121,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     public FileDTO generateContractPdf(
             Long idCargaDocente,
             String numeroPeriodo,
+            String operacion,
             TipoContratoDocente tipoForzado,
             DatosAnexoDTO body) {
         log.debug(
@@ -127,6 +134,10 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         if (idCargaDocente == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "El id de la carga docente es obligatorio");
         }
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
 
         InformacionDocenteContratacionDTO informacion =
                 coordinacionService.findProfessorInformation(idCargaDocente);
@@ -173,7 +184,22 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                         ? FUNCIONES_COORDINADOR
                         : List.of());
 
-        registrarContrato(informacion, valores, cdp, body);
+        // Generar el número de anexo solo guarda el número enviado
+        if (OPERACION_GENERACION_CONTRATO.equals(operacion)) {
+            cargaDocente.setNumeroContrato(body.numeroAnexo());
+            cargaDocenteRepository.save(cargaDocente);
+        }
+        // Vincular docente llena sus tablas de contratación con el número de anexo de la carga docente
+        if (OPERACION_VINCULACION_DOCENTE.equals(operacion)) {
+            if (!body.numeroAnexo().equals(cargaDocente.getNumeroContrato())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El número de anexo enviado no corresponde al almacenado");
+            }
+            if ("1".equals(cargaDocente.getContratacionVinculado())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "El docente ya ha sido vinculado");
+            }
+            
+            registrarContrato(informacion, idCargaDocente, valores, cdp, body);
+        }
 
         byte[] content = contratoPdfExporter.export(reporte, tipo);
         String fileName = buildFileName(tipo, informacion.documentoIdentidad());
@@ -193,6 +219,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
      */
     private void registrarContrato(
             InformacionDocenteContratacionDTO informacion,
+            Long idCargaDocente,
             HiringValuesInformationDTO valores,
             HiringCdpInformationDTO cdp,
             DatosAnexoDTO body) {
@@ -201,6 +228,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 : null;
         contratoRegistroService.registrarContrato(
                 informacion,
+                idCargaDocente,
                 valorContratacion,
                 cdp != null ? cdp.idCdp() : null,
                 body);

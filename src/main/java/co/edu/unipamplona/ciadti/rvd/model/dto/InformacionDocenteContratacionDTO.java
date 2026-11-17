@@ -57,5 +57,8 @@ public record InformacionDocenteContratacionDTO(
     Long idCiudadUnidadRegional,
     BigDecimal valorContratoTotal,
     Long idConvocatoriaContratacion,
+    String contratacionVinculado,
+    String contratacionSincronizado,
+    String numeroContrato,
     List<ActividadHorasResumenDTO> horasActividades
 ) {}

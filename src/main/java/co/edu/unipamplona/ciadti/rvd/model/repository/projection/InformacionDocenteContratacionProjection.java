@@ -97,4 +97,10 @@ public interface InformacionDocenteContratacionProjection {
     BigDecimal getValorContratoTotal();
 
     Long getIdConvocatoriaContratacion();
+
+    String getContratacionVinculado();
+
+    String getContratacionSincronizado();
+
+    String getNumeroContrato();
 }

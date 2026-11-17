@@ -75,6 +75,9 @@ public interface InformacionDocenteContratacionMapper {
                 base.idCiudadUnidadRegional(),
                 base.valorContratoTotal(),
                 base.idConvocatoriaContratacion(),
+                base.contratacionVinculado(),
+                base.contratacionSincronizado(),
+                base.numeroContrato(),
                 horasActividades == null ? List.of() : horasActividades);
 
     }

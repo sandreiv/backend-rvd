@@ -21,6 +21,7 @@ public interface ContratoRegistroService {
      * anexo se actualiza en vez de duplicarlo.
      *
      * @param informacion        datos del docente y de la carga (misma fuente del anexo)
+     * @param idCargaDocente     id de la cargaDocente para actualizar su campo de vinculacion
      * @param valorTotalContrato total del contrato; si llega nulo se usa el de la carga
      * @param idCdp              TESORERIAV3.CDP.CDP_ID del CDP de la coordinación y periodo
      * @param datos              número de anexo, fecha de ingreso, objeto, descripción, forma de pago, tipo de objeto y forma de inicio de contrato
@@ -28,6 +29,7 @@ public interface ContratoRegistroService {
      */
     Long registrarContrato(
             InformacionDocenteContratacionDTO informacion,
+            Long idCargaDocente,
             ValorContratacionDTO valorTotalContrato,
             Long idCdp,
             DatosAnexoDTO datos);

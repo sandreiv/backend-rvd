@@ -9,6 +9,7 @@
  * 10/11/2026 - Andrés Hernández - Ajuste inicial de los valores que se almacenan del contrato
  * 11/11/2026 - Andrés Hernández - Avance en el llenado de tablas relacionadas con la contratacion (DOVI, CDCO)
  * 12/11/2026 - Andrés Hernández - Avance en el llenado de tablas relacionadas con la contratacion (TRLA, TRLU, DOUN)
+ * 13/11/2026 - Andrés Hernández - Actualizar la carga docente cuando acaba el proceso de vinculación
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -29,6 +30,7 @@ import co.edu.unipamplona.ciadti.rvd.exception.ApiException;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
+import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CdpContratoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocenteUnidadEntity;
@@ -37,6 +39,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.EstadoTrabajadorEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborUnidadEntity;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CdpContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.ContratoRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.DocenteUnidadRepository;
@@ -46,6 +49,8 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborUnidadRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
+import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,6 +89,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private static final String ORIGEN_RVD = "RVD";
     private static final String TIPO_DIAS_CALENDARIO = "CALENDARIO";
     private static final String NO = "0";
+    private static final String SI = "1";
     private static final BigDecimal CERO = BigDecimal.ZERO;
     private static final String TRABAJADOR_ASIGNACION_PROPIEDAD = "P";
     private static final String TRABAJADOR_LABOR_UNIDAD_ESTADO = "ACTIVO";
@@ -99,11 +105,13 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private final TrabajadorLaborRepository trabajadorLaborRepository;
     private final TrabajadorLaborUnidadRepository trabajadorLaborUnidadRepository;
     private final DocenteUnidadRepository docenteUnidadRepository;
+    private final CargaDocenteRepository cargaDocenteRepository;
 
     @Override
     @Transactional
     public Long registrarContrato(
             InformacionDocenteContratacionDTO informacion,
+            Long idCargaDocente,
             ValorContratacionDTO valorContratacion,
             Long idCdp,
             DatosAnexoDTO datos) {
@@ -133,6 +141,9 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
 
         // Guardar en ACADEMICO.DOCENTEUNIDAD
         guardarDocenteUnidad(informacion, datos.idLabor(), idDovi, idTrlu, fechaActual);
+
+        // Actualiza el estado de la carga docente vinculación a 1
+        actualizarVinculacionCargaDocente(idCargaDocente, fechaActual);
 
 
         log.info(
@@ -326,6 +337,18 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         docenteUnidadRegional.setFechaCambio(fechaActual);
 
         docenteUnidadRepository.saveAll(List.of(docenteUnidadArea, docenteUnidadRegional));
+    }
+
+    private void actualizarVinculacionCargaDocente(Long idCargaDocente, Date fechaActual) {
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+        
+        cargaDocente.setContratacionVinculado(SI);
+        cargaDocente.setRegistradoPor(RegistradoPorUtils.value(Accion.INSERT));
+        cargaDocente.setFechaCambio(fechaActual);
+        cargaDocenteRepository.save(cargaDocente);
     }
 
     
