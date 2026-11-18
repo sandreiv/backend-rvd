@@ -15,6 +15,7 @@ import java.time.LocalDate;
  * Datos del anexo de un contrato ya generado, para poder mostrarlos al
  * diligenciar la vinculación docente sin volver a capturarlos.
  *
+ * @param idCargaDocente carga docente del docente (null en la consulta de un docente)
  * @param numeroAnexo número de anexo (CONTRATO.CONT_NUMERO)
  * @param fechaFirma fecha de firma del contrato (CONTRATO.CONT_FECHAFIRMA)
  * @param idFormaPago BIENESV3.FORMAPAGO (CONTRATO.FOPA_ID)
@@ -24,6 +25,7 @@ import java.time.LocalDate;
  * @param descripcion descripción del objeto del contrato (CONTRATO.CONT_DESCRIPCION)
  */
 public record ContratoAnexoDTO(
+    Long idCargaDocente,
     String numeroAnexo,
     LocalDate fechaFirma,
     Long idFormaPago,

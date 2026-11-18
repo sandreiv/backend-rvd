@@ -276,6 +276,24 @@ public class HiringCallController {
     }
 
     @Operation(
+        summary = "Datos del anexo de los contratos ya generados (vinculación masiva)",
+        description = """
+            Devuelve una lista con los datos del anexo (número de anexo, fecha de firma,
+            forma de pago, tipo de objeto, forma de inicio del contrato, objeto y
+            descripción) de los contratos ya generados de las cargas docentes indicadas.
+            Es la consulta que usa la vinculación masiva: un elemento por carga docente
+            que ya tiene contrato generado. Las cargas docentes sin contrato generado
+            no aparecen en la lista.
+            """
+    )
+    @GetMapping("/contract-anexo/listar")
+    public ResponseEntity<List<ContratoAnexoDTO>> contractAnexoListar(
+            @RequestParam List<Long> idsCargaDocente) {
+        List<ContratoAnexoDTO> anexos = contratoRegistroService.findAnexosGenerados(idsCargaDocente);
+        return ResponseEntity.ok(anexos);
+    }
+
+    @Operation(
         summary = "Catálogos del panel de datos del anexo",
         description = """
             Devuelve en una sola petición los catálogos que el usuario

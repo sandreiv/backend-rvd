@@ -18,9 +18,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -153,6 +157,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
 
         ContratoEntity entity = contrato.get();
         return new ContratoAnexoDTO(
+                idCargaDocente,
                 entity.getNumero(),
                 toLocalDate(entity.getFechaFirma()),
                 entity.getIdFormaPago(),
@@ -160,6 +165,75 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
                 entity.getIdFormaInicioContrato(),
                 entity.getObjeto(),
                 entity.getDescripcion());
+    }
+
+    /**
+     * Datos del anexo de los contratos ya generados de varias cargas docentes.
+     * Es la consulta de la vinculación masiva: devuelve un elemento por carga
+     * docente que ya tiene contrato generado.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ContratoAnexoDTO> findAnexosGenerados(List<Long> idsCargaDocente) {
+        if (idsCargaDocente == null || idsCargaDocente.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> ids = idsCargaDocente.stream()
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+
+        List<Object[]> association = contratoRepository.findContratosPorCargasDocente(ids);
+        if (association.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> idsContrato = association.stream()
+                .map(row -> toLong(row[1]))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        Map<Long, ContratoEntity> contratos = contratoRepository.findAllById(idsContrato).stream()
+                .collect(Collectors.toMap(ContratoEntity::getId, Function.identity()));
+
+        List<ContratoAnexoDTO> anexos = new ArrayList<>();
+        for (Object[] row : association) {
+            Long idCargaDocente = toLong(row[0]);
+            ContratoEntity entity = contratos.get(toLong(row[1]));
+            if (idCargaDocente == null || entity == null) {
+                continue;
+            }
+
+            anexos.add(new ContratoAnexoDTO(
+                    idCargaDocente,
+                    entity.getNumero(),
+                    toLocalDate(entity.getFechaFirma()),
+                    entity.getIdFormaPago(),
+                    entity.getIdTipoObjeto(),
+                    entity.getIdFormaInicioContrato(),
+                    entity.getObjeto(),
+                    entity.getDescripcion()));
+        }
+
+        return anexos;
+    }
+
+    /**
+     * Convierte el valor numérico de una columna de una native query a Long.
+     */
+    private Long toLong(Object valor) {
+        if (valor instanceof Number number) {
+            return number.longValue();
+        }
+        if (valor == null) {
+            return null;
+        }
+        return Long.valueOf(valor.toString());
     }
 
     /**

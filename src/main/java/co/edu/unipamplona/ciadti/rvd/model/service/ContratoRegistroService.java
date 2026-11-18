@@ -10,6 +10,8 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.service;
 
+import java.util.List;
+
 import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO;
@@ -25,6 +27,17 @@ public interface ContratoRegistroService {
      * @return los datos del anexo, o null si el docente todavía no tiene contrato generado
      */
     ContratoAnexoDTO findAnexoGenerado(Long idCargaDocente);
+
+    /**
+     * Datos del anexo de los contratos ya generados de varias cargas docentes.
+     * Es la consulta que usa la vinculación masiva: devuelve una lista con un
+     * elemento por carga docente que ya tiene contrato generado. Las cargas
+     * docentes sin contrato generado no aparecen en la lista.
+     *
+     * @param idsCargaDocente ids de las cargas docentes consultadas
+     * @return lista de datos del anexo, uno por carga docente con contrato generado
+     */
+    List<ContratoAnexoDTO> findAnexosGenerados(List<Long> idsCargaDocente);
 
     /**
      * Registra los datos del contrato del docente en CONTRATOS.CONTRATO cuando
