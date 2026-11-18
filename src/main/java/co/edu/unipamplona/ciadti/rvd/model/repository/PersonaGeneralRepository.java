@@ -220,8 +220,8 @@ public interface PersonaGeneralRepository
             INNER JOIN TALENTOV3.TRABAJADORLABOR TRLA
                 ON TRLA.PEGE_ID = PENG.PEGE_ID
             WHERE PEGE.PEGE_DOCUMENTOIDENTIDAD IS NOT NULL
-                AND TRLA.CLDO_ID IS NULL
-                AND TRLA.DEDO_ID IS NULL
+                AND TRLA.CLDO_ID IS NOT NULL
+                AND TRLA.DEDO_ID IS NOT NULL
                 AND TRLA.TRLA_FECHAFINAL IS NULL
             ORDER BY PENG.PENG_PRIMERAPELLIDO,
                     PENG.PENG_SEGUNDOAPELLIDO,
