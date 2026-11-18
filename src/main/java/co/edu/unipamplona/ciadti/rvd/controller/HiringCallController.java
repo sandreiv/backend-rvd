@@ -44,6 +44,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
@@ -62,6 +63,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoReporteService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -82,6 +84,7 @@ public class HiringCallController {
     private final PtdiDocumentoService ptdiDocumentoService;
     private final ContratacionService contratacionService;
     private final ContratoReporteService contratoReporteService;
+    private final ContratoRegistroService contratoRegistroService;
     private final CatalogoContratoService catalogoContratoService;
 
     @Operation(
@@ -212,13 +215,14 @@ public class HiringCallController {
             programa) se usa el anexo con funciones administrativas; si es de 4 meses
             se usa el anexo de pregrado.
             El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
-            permite forzar cualquiera de los dos. numeroAnexo, fechaIngreso, formaPago
-            y tipoObjeto son los datos que el usuario diligencia en el modal; con ellos
-            se registra el contrato en CONTRATOS.CONTRATO antes de devolver el PDF.
-            El parametro operacion identifica si se esta generando el contrato para
-            asignar el numero de anexo y esperar aprobación, o vincular al docente con
-            el número de anexo almacenado en la base de datos. De manera que primero se
-            diligencia el número de anexo para habilitar la vinculación
+            permite forzar cualquiera de los dos.
+            El parametro operacion identifica el paso del proceso:
+            GENERAR guarda el número de anexo en la carga docente y registra el
+            contrato con los datos del anexo (fecha de firma, forma de pago, tipo
+            de objeto, forma de inicio del contrato, objeto y descripción);
+            VINCULAR toma el contrato ya generado y completa la vinculación del
+            docente (documento de vinculación, tablas de labor) con el número de
+            anexo almacenado en la base de datos.
             """
     )
     @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}/{operacion}")
@@ -252,6 +256,23 @@ public class HiringCallController {
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
+    }
+
+    @Operation(
+        summary = "Datos del anexo del contrato ya generado",
+        description = """
+            Devuelve los datos del anexo (número de anexo, fecha de firma, forma de pago,
+            tipo de objeto, forma de inicio del contrato, objeto y descripción) del
+            contrato que el docente ya tiene generado, para mostrarlos al diligenciar
+            la vinculación docente sin volver a capturarlos.
+            """
+    )
+    @GetMapping("/contract-anexo/{idCargaDocente}")
+    public ResponseEntity<ContratoAnexoDTO> contractAnexo(@PathVariable Long idCargaDocente) {
+        ContratoAnexoDTO anexo = contratoRegistroService.findAnexoGenerado(idCargaDocente);
+        return anexo == null
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(anexo);
     }
 
     @Operation(

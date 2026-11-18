@@ -188,6 +188,7 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         if (OPERACION_GENERACION_CONTRATO.equals(operacion)) {
             cargaDocente.setNumeroContrato(body.numeroAnexo());
             cargaDocenteRepository.save(cargaDocente);
+            registrarContrato(informacion, idCargaDocente, valores, cdp, body);
         }
         // Vincular docente llena sus tablas de contratación con el número de anexo de la carga docente
         if (OPERACION_VINCULACION_DOCENTE.equals(operacion)) {
@@ -197,8 +198,8 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
             if ("1".equals(cargaDocente.getContratacionVinculado())) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "El docente ya ha sido vinculado");
             }
-            
-            registrarContrato(informacion, idCargaDocente, valores, cdp, body);
+
+            vincularDocente(informacion, idCargaDocente, valores, cdp, body);
         }
 
         byte[] content = contratoPdfExporter.export(reporte, tipo);
@@ -213,9 +214,9 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
 
     /**
      * Guarda el contrato en la base de datos persistiendo las tablas necesarias
-     * para finalizar el proceso de contratación con los datos del anexo. No
-     * tumba la descarga del PDF si el registro falla: se deja traza y se
-     * propaga la excepción solo cuando el dato es obligatorio y no existe.
+     * con los datos del anexo. Es el paso de generación del contrato: deja
+     * el contrato listo con su número de anexo, fecha de firma, forma de pago,
+     * tipo de objeto, forma de inicio, objeto y descripción.
      */
     private void registrarContrato(
             InformacionDocenteContratacionDTO informacion,
@@ -227,6 +228,28 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 ? valores.valorContratacion()
                 : null;
         contratoRegistroService.registrarContrato(
+                informacion,
+                idCargaDocente,
+                valorContratacion,
+                cdp != null ? cdp.idCdp() : null,
+                body);
+    }
+
+    /**
+     * Completa la vinculación docente con el contrato ya generado: crea el
+     * documento de vinculación, las tablas de labor y marca la carga docente
+     * como vinculada.
+     */
+    private void vincularDocente(
+            InformacionDocenteContratacionDTO informacion,
+            Long idCargaDocente,
+            HiringValuesInformationDTO valores,
+            HiringCdpInformationDTO cdp,
+            DatosAnexoDTO body) {
+        ValorContratacionDTO valorContratacion = valores != null && valores.valorContratacion() != null
+                ? valores.valorContratacion()
+                : null;
+        contratoRegistroService.vincularDocente(
                 informacion,
                 idCargaDocente,
                 valorContratacion,
