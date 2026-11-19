@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Objects;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceContext;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -55,7 +62,10 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoTrabajadorRepository
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborUnidadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.LaborRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
+import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils.Accion;
 import lombok.RequiredArgsConstructor;
@@ -120,12 +130,17 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private final ContratoRepository contratoRepository;
     private final DocumentoVinculacionRepository documentoVinculacionRepository;
     private final CdpContratoRepository cdpContratoRepository;
+    private final CargaDocenteRepository cargaDocenteRepository;
     private final RestriccionCargaRepository restriccionCargaRepository;
     private final EstadoTrabajadorRepository estadoTrabajadorRepository;
     private final TrabajadorLaborRepository trabajadorLaborRepository;
     private final TrabajadorLaborUnidadRepository trabajadorLaborUnidadRepository;
     private final DocenteUnidadRepository docenteUnidadRepository;
-    private final CargaDocenteRepository cargaDocenteRepository;
+    private final LaborRepository laborRepository;
+    private final CoordinacionService coordinacionService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Datos del anexo del contrato ya generado por el docente. Se usa para
@@ -327,6 +342,220 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
                 datos.idLabor());
 
         return idContrato;
+    }
+
+    @Override
+    @Transactional
+    public int vincularDocentesMasivamente(
+            List<Long> idsCargaDocente,
+            Long idLabor) {
+
+        if (idsCargaDocente == null || idsCargaDocente.isEmpty()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Debe seleccionar al menos un docente");
+        }
+
+        if (idsCargaDocente.stream()
+                .anyMatch(id -> id == null || id <= 0)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La lista contiene identificadores inválidos");
+        }
+
+        List<Long> ids = idsCargaDocente.stream()
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (ids.size() > 200) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Se permiten máximo 200 docentes por operación");
+        }
+
+        if (idLabor == null || !laborRepository.findById(idLabor)
+                .map(labor -> "1".equals(labor.getDocente()))
+                .orElse(false)) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La labor docente seleccionada no es válida");
+        }
+
+        Map<Long, Long> contratosPorCarga = new HashMap<>();
+
+        for (Object[] fila :
+                contratoRepository.findContratosPorCargasDocente(ids)) {
+
+            contratosPorCarga.put(
+                    toLong(fila[0]),
+                    toLong(fila[1]));
+        }
+
+        if (contratosPorCarga.size() != ids.size()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Uno o varios docentes no tienen contrato generado");
+        }
+
+        if (new HashSet<>(contratosPorCarga.values()).size()
+                != ids.size()) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Existen cargas docentes asociadas al mismo contrato");
+        }
+        record Pendiente(
+                Long idCargaDocente,
+                Long idContrato,
+                InformacionDocenteContratacionDTO informacion
+        ) {}
+
+        List<Pendiente> pendientes = new ArrayList<>();
+
+        for (Long idCargaDocente : ids) {
+
+            CargaDocenteEntity carga = entityManager.find(
+                    CargaDocenteEntity.class,
+                    idCargaDocente,
+                    LockModeType.PESSIMISTIC_WRITE);
+
+            if (carga == null) {
+                throw new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente " + idCargaDocente);
+            }
+
+            if ("1".equals(carga.getContratacionVinculado())) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El docente de la carga " + idCargaDocente
+                                + " ya está vinculado");
+            }
+
+            if (!"4".equals(carga.getEstado())) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "La carga docente " + idCargaDocente
+                                + " no está aprobada");
+            }
+
+            if (carga.getNumeroContrato() == null
+                    || carga.getNumeroContrato().isBlank()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "La carga docente " + idCargaDocente
+                                + " no tiene número de contrato");
+            }
+
+            Long idContrato = contratosPorCarga.get(idCargaDocente);
+
+            ContratoEntity contrato = contratoRepository
+                    .findById(idContrato)
+                    .orElseThrow(() -> new ApiException(
+                            HttpStatus.BAD_REQUEST,
+                            "No existe el contrato de la carga "
+                                    + idCargaDocente));
+
+            if (!Objects.equals(
+                        contrato.getIdPersonaContratista(),
+                        carga.getIdPersonaGeneral())
+                    || !Objects.equals(
+                        contrato.getNumero(),
+                        carga.getNumeroContrato())) {
+
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El contrato no corresponde a la carga "
+                                + idCargaDocente);
+            }
+
+            if (documentoVinculacionRepository
+                    .existsByIdContrato(idContrato)) {
+
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "El contrato de la carga " + idCargaDocente
+                                + " ya tiene documento de vinculación");
+            }
+
+            InformacionDocenteContratacionDTO informacion =
+                    coordinacionService.findProfessorInformation(
+                            idCargaDocente);
+
+            if (informacion == null
+                    || !Objects.equals(
+                            informacion.idPersonaGeneral(),
+                            carga.getIdPersonaGeneral())) {
+
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "No se pudo validar la información del docente "
+                                + idCargaDocente);
+            }
+
+            validar(
+                    informacion,
+                    new DatosAnexoDTO(
+                            contrato.getNumero(),
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            contrato.getIdFormaInicioContrato(),
+                            idLabor));
+
+            pendientes.add(new Pendiente(
+                    idCargaDocente,
+                    idContrato,
+                    informacion));
+        }
+
+        Date fechaActual = new Date();
+
+        for (Pendiente pendiente : pendientes) {
+
+            InformacionDocenteContratacionDTO informacion =
+                    pendiente.informacion();
+
+            Long idContrato = pendiente.idContrato();
+
+            Long idDovi = guardarDocumentoVinculacion(
+                    idContrato,
+                    fechaActual);
+
+            guardarTrabajadorLabor(
+                    informacion,
+                    idLabor,
+                    idDovi,
+                    fechaActual);
+
+            Long idTrlu = guardarTrabajadorLaborUnidad(
+                    informacion,
+                    idLabor,
+                    idDovi,
+                    fechaActual);
+
+            guardarDocenteUnidad(
+                    informacion,
+                    idLabor,
+                    idDovi,
+                    idTrlu,
+                    fechaActual);
+
+            actualizarVinculacionCargaDocente(
+                    pendiente.idCargaDocente(),
+                    fechaActual);
+        }
+
+        log.info(
+                "Vinculación masiva completada: {} docentes, labor {}",
+                pendientes.size(),
+                idLabor);
+
+        return pendientes.size();
     }
 
     /**
