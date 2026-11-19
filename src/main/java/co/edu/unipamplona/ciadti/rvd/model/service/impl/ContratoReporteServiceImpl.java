@@ -184,11 +184,13 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                         ? FUNCIONES_COORDINADOR
                         : List.of());
 
-        // Generar el número de anexo solo guarda el número enviado
+        // Generar contrato: primero se registra el contrato (para que pueda
+        // actualizar el que ya existe en vez de duplicarlo) y después se
+        // guarda el número de anexo en la carga docente.
         if (OPERACION_GENERACION_CONTRATO.equals(operacion)) {
+            registrarContrato(informacion, idCargaDocente, valores, cdp, body);
             cargaDocente.setNumeroContrato(body.numeroAnexo());
             cargaDocenteRepository.save(cargaDocente);
-            registrarContrato(informacion, idCargaDocente, valores, cdp, body);
         }
         // Vincular docente llena sus tablas de contratación con el número de anexo de la carga docente
         if (OPERACION_VINCULACION_DOCENTE.equals(operacion)) {

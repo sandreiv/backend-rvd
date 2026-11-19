@@ -254,7 +254,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         Date fechaActual = new Date();
         String numeroAnexo = datos.numeroAnexo() == null ? null : datos.numeroAnexo().trim();
 
-        ContratoEntity contrato = resolverContrato(informacion, numeroAnexo);
+        ContratoEntity contrato = resolverContrato(informacion, idCargaDocente, numeroAnexo);
         boolean contratoExistente = contrato.getId() != null;
 
         // Guardar en CONTRATOS.CONTRATO
@@ -289,20 +289,18 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             Long idCdp,
             DatosAnexoDTO datos) {
 
-        validar(informacion, datos);
-
-        if (datos.idLabor() == null) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "La labor docente es obligatoria para vincular al docente");
-        }
+        validarLabor(datos);
 
         Date fechaActual = new Date();
 
-        // El contrato se genera o actualiza con los datos del anexo: si el
-        // docente ya tiene un contrato con el mismo número de anexo se
-        // actualiza en vez de duplicarlo.
-        Long idContrato = registrarContrato(informacion, idCargaDocente, valorContratacion, idCdp, datos);
+        // El contrato ya generado se respeta tal como quedó: al vincular solo
+        // se completa la labor del docente. Si el docente no tiene contrato
+        // generado se registra en este paso para no dejar la vinculación a medias.
+        Long idContrato = resolverIdContratoExistente(informacion, idCargaDocente, datos);
+        if (idContrato == null) {
+            validar(informacion, datos);
+            idContrato = registrarContrato(informacion, idCargaDocente, valorContratacion, idCdp, datos);
+        }
 
         // Guardar en TALENTOV3.DOCUMENTOVINCULACION
         Long idDovi = guardarDocumentoVinculacion(idContrato, fechaActual);
@@ -330,21 +328,78 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     }
 
     /**
-     * Contrato del docente para el número de anexo indicado. Si no existe se
-     * crea uno nuevo (vacío) para que el llamador lo actualice.
+     * Id del contrato ya generado por el docente, si existe. Se usa al
+     * vincular: el contrato se respeta tal como quedó en el paso de
+     * generación y solo se le agrega la información de la labor.
+     */
+    private Long resolverIdContratoExistente(
+            InformacionDocenteContratacionDTO informacion,
+            Long idCargaDocente,
+            DatosAnexoDTO datos) {
+
+        String numeroAnexo = datos.numeroAnexo() == null ? null : datos.numeroAnexo().trim();
+        if (numeroAnexo == null || numeroAnexo.isBlank()) {
+            return null;
+        }
+
+        return contratoRepository
+                .findByDocenteYNumero(informacion.idPersonaGeneral(), numeroAnexo)
+                .map(ContratoEntity::getId)
+                .orElse(null);
+    }
+
+    /**
+     * Contrato del docente para el número de anexo indicado.
+     *
+     * <p>Si el docente ya tiene un contrato de esta carga docente pero con otro
+     * número de anexo (porque el usuario cambió el número al volver a diligenciar
+     * el contrato), se reutiliza ese mismo contrato en vez de crear uno nuevo:
+     * así el docente nunca queda con dos contratos abiertos.</p>
      */
     private ContratoEntity resolverContrato(
             InformacionDocenteContratacionDTO informacion,
+            Long idCargaDocente,
             String numeroAnexo) {
 
         if (numeroAnexo == null) {
             return new ContratoEntity();
         }
 
-        Optional<ContratoEntity> existente =
-                contratoRepository.findByDocenteYNumero(informacion.idPersonaGeneral(), numeroAnexo);
+        // El contrato que ya tiene esta carga docente manda: si el docente ya
+        // fue diligenciado y el usuario cambia el número de anexo, se actualiza
+        // ese mismo contrato en vez de crear uno nuevo.
+        String numeroAnterior = resolverNumeroAnterior(idCargaDocente);
+        if (numeroAnterior != null && !numeroAnterior.equals(numeroAnexo)) {
+            Optional<ContratoEntity> porNumeroAnterior =
+                    contratoRepository.findByDocenteYNumero(informacion.idPersonaGeneral(), numeroAnterior);
+            if (porNumeroAnterior.isPresent()) {
+                return porNumeroAnterior.get();
+            }
+        }
 
-        return existente.orElseGet(ContratoEntity::new);
+        Optional<ContratoEntity> porNumero =
+                contratoRepository.findByDocenteYNumero(informacion.idPersonaGeneral(), numeroAnexo);
+        if (porNumero.isPresent()) {
+            return porNumero.get();
+        }
+
+        return new ContratoEntity();
+    }
+
+    /**
+     * Número de anexo que tiene guardado la carga docente antes de esta
+     * diligenciación (CARGADOCENTE.CADO_NUMEROCONTRATO).
+     */
+    private String resolverNumeroAnterior(Long idCargaDocente) {
+        if (idCargaDocente == null) {
+            return null;
+        }
+
+        return cargaDocenteRepository.findById(idCargaDocente)
+                .map(CargaDocenteEntity::getNumeroContrato)
+                .filter(numero -> numero != null && !numero.isBlank())
+                .map(String::trim)
+                .orElse(null);
     }
 
     private void aplicarDatosContrato(
@@ -544,6 +599,25 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         cargaDocenteRepository.save(cargaDocente);
     }
 
+
+    /**
+     * La labor docente es el único dato que se diligencia en el paso de
+     * vinculación: el resto del anexo ya quedó diligenciado al generar el
+     * contrato.
+     */
+    private void validarLabor(DatosAnexoDTO datos) {
+        if (datos == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "Faltan los datos del anexo para vincular al docente");
+        }
+
+        if (datos.idLabor() == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La labor docente es obligatoria para vincular al docente");
+        }
+    }
 
     private void validar(InformacionDocenteContratacionDTO informacion, DatosAnexoDTO datos) {
         if (informacion == null || informacion.idPersonaGeneral() == null) {
