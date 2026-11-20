@@ -46,9 +46,12 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.DocenteUnidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocumentoVinculacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EstadoTrabajadorEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.LaborEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborUnidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CdpContratoRepository;
@@ -58,7 +61,9 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.DocumentoVinculacionReposi
 import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoTrabajadorRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.LaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborUnidadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -67,6 +72,7 @@ class ContratoRegistroServiceImplTest {
     private static final Long CADO_ID = 523L;
     private static final Long ID_PERSONA = 99L;
     private static final String NUMERO_ANTERIOR = "13";
+    private static final Long ID_LABOR = 2L;
 
     @Mock
     private ContratoRepository contratoRepository;
@@ -94,6 +100,12 @@ class ContratoRegistroServiceImplTest {
 
     @Mock
     private CargaDocenteRepository cargaDocenteRepository;
+
+    @Mock
+    private CoordinacionService coordinacionService;
+
+    @Mock
+    private LaborRepository laborRepository;
 
     @Captor
     private ArgumentCaptor<ContratoEntity> contratoCaptor;
@@ -169,6 +181,11 @@ class ContratoRegistroServiceImplTest {
         cargaDocente.setId(CADO_ID);
         cargaDocente.setIdPersonaGeneral(ID_PERSONA);
         cargaDocente.setNumeroContrato(NUMERO_ANTERIOR);
+
+        LaborEntity labor = new LaborEntity();
+        labor.setId(ID_LABOR);
+        labor.setDocente("1");
+        when(laborRepository.findById(ID_LABOR)).thenReturn(Optional.of(labor));
 
         AuthUserDetails usuario = new AuthUserDetails(77L, "prueba", List.of(), List.of());
         SecurityContextHolder.getContext().setAuthentication(
@@ -303,6 +320,103 @@ class ContratoRegistroServiceImplTest {
 
         // Sin CDP no se debe registrar ningún contrato.
         verify(contratoRepository, never()).save(any(ContratoEntity.class));
+    }
+
+
+    @Test
+    void debeVincularElDocenteSinGenerarContratoNiPdf() {
+        when(cargaDocenteRepository.findById(CADO_ID)).thenReturn(Optional.of(cargaDocente));
+        when(coordinacionService.findProfessorInformation(CADO_ID)).thenReturn(informacion);
+
+        ContratoEntity contrato = new ContratoEntity();
+        contrato.setId(55L);
+        contrato.setNumero(NUMERO_ANTERIOR);
+        when(contratoRepository.findByDocenteYNumero(ID_PERSONA, NUMERO_ANTERIOR))
+                .thenReturn(Optional.of(contrato));
+        when(documentoVinculacionRepository.save(any(DocumentoVinculacionEntity.class)))
+                .thenAnswer(invocation -> {
+                    DocumentoVinculacionEntity entity = invocation.getArgument(0);
+                    entity.setId(70L);
+                    return entity;
+                });
+        when(trabajadorLaborRepository.save(any(TrabajadorLaborEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(trabajadorLaborUnidadRepository.save(any(TrabajadorLaborUnidadEntity.class)))
+                .thenAnswer(invocation -> {
+                    TrabajadorLaborUnidadEntity entity = invocation.getArgument(0);
+                    entity.setId(80L);
+                    return entity;
+                });
+        when(restriccionCargaRepository.findById(any()))
+                .thenReturn(Optional.of(restriccionCarga()));
+        when(estadoTrabajadorRepository.findEstadoInicialTrabajador())
+                .thenReturn(Optional.of(estadoTrabajador()));
+
+        Long idContrato = service.vincularDocentePorCargaDocente(CADO_ID, "2026-1", ID_LABOR);
+
+        assertNotNull(idContrato);
+        assertEquals(55L, idContrato);
+
+        // La vinculacion reutiliza el contrato generado: no registra otro.
+        verify(contratoRepository, never()).save(any(ContratoEntity.class));
+        verify(documentoVinculacionRepository).save(any(DocumentoVinculacionEntity.class));
+        verify(trabajadorLaborRepository).save(any(TrabajadorLaborEntity.class));
+        verify(trabajadorLaborUnidadRepository).save(any(TrabajadorLaborUnidadEntity.class));
+        verify(docenteUnidadRepository).saveAll(any());
+    }
+
+    @Test
+    void debeExigirLaLaborDocenteParaVincularPorCargaDocente() {
+        when(cargaDocenteRepository.findById(CADO_ID)).thenReturn(Optional.of(cargaDocente));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> service.vincularDocentePorCargaDocente(CADO_ID, "2026-1", null));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        verify(documentoVinculacionRepository, never()).save(any(DocumentoVinculacionEntity.class));
+    }
+
+    @Test
+    void debeExigirContratoGeneradoParaVincularPorCargaDocente() {
+        CargaDocenteEntity sinContrato = new CargaDocenteEntity();
+        sinContrato.setId(CADO_ID);
+        sinContrato.setIdPersonaGeneral(ID_PERSONA);
+        when(cargaDocenteRepository.findById(CADO_ID)).thenReturn(Optional.of(sinContrato));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> service.vincularDocentePorCargaDocente(CADO_ID, "2026-1", 7L));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("contrato generado"));
+        verify(documentoVinculacionRepository, never()).save(any(DocumentoVinculacionEntity.class));
+    }
+
+    @Test
+    void debeRechazarLaVinculacionDeUnDocenteYaVinculado() {
+        cargaDocente.setContratacionVinculado("1");
+        when(cargaDocenteRepository.findById(CADO_ID)).thenReturn(Optional.of(cargaDocente));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> service.vincularDocentePorCargaDocente(CADO_ID, "2026-1", 7L));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("ya ha sido vinculado"));
+    }
+
+    private RestriccionCargaEntity restriccionCarga() {
+        RestriccionCargaEntity restriccion = new RestriccionCargaEntity();
+        restriccion.setIdDedicacionDocente(1L);
+        restriccion.setIdClasificacionDocente(1L);
+        return restriccion;
+    }
+
+    private EstadoTrabajadorEntity estadoTrabajador() {
+        EstadoTrabajadorEntity estado = new EstadoTrabajadorEntity();
+        estado.setId(1L);
+        return estado;
     }
 
     @Test

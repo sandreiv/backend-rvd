@@ -61,6 +61,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.VinculacionDocenteRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.VinculacionMasivaRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
@@ -218,20 +219,20 @@ public class HiringCallController {
             se usa el anexo de pregrado.
             El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
             permite forzar cualquiera de los dos.
-            El parametro operacion identifica el paso del proceso:
-            GENERAR guarda el número de anexo en la carga docente y registra el
-            contrato con los datos del anexo (fecha de firma, forma de pago, tipo
-            de objeto, forma de inicio del contrato, objeto y descripción);
-            VINCULAR toma el contrato ya generado y completa la vinculación del
-            docente (documento de vinculación, tablas de labor) con el número de
-            anexo almacenado en la base de datos.
+            Este endpoint es el paso de generacion del contrato: guarda el
+            número de anexo en la carga docente y registra el contrato con los
+            datos del anexo (fecha de firma, forma de pago, tipo de objeto,
+            forma de inicio del contrato, objeto y descripción).
+
+            La vinculacion del docente es un endpoint aparte
+            (POST /vincular-docente/{idCargaDocente}) porque no produce el
+            anexo en PDF.
             """
     )
-    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}/{operacion}")
+    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}")
     public ResponseEntity<byte[]> generateContractPdf(
             @PathVariable Long idCargaDocente,
             @PathVariable String numeroPeriodo,
-            @PathVariable String operacion,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
             @RequestParam(required = false) String fechaFirma,
@@ -249,7 +250,6 @@ public class HiringCallController {
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
                 numeroPeriodo,
-                operacion,
                 parseTipoContrato(tipo),
                 body);
         return ResponseEntity.ok()
@@ -313,6 +313,38 @@ public class HiringCallController {
 
         return ResponseEntity.ok(
                 Map.of("totalVinculados", totalVinculados));
+    }
+
+    @Operation(
+        summary = "Vincula un docente con su contrato ya generado",
+        description = """
+            Vincula al docente de una carga docente con el contrato que ya fue
+            generado en el paso anterior (Diligenciar número de contrato).
+
+            A diferencia de la generación del contrato, este paso no produce el
+            anexo en PDF: completa el documento de vinculación, las tablas de
+            labor (TRABAJADORLABOR, TRABAJADORLABORUNIDAD y DOCENTEUNIDAD) y
+            marca la carga docente como vinculada.
+
+            El número de anexo es el que ya quedó almacenado en la carga
+            docente; el único dato que diligencia el usuario en este paso es la
+            labor docente.
+            """
+    )
+    @PostMapping("/vincular-docente/{idCargaDocente}")
+    public ResponseEntity<Map<String, Object>> vincularDocente(
+            @PathVariable Long idCargaDocente,
+            @RequestBody VinculacionDocenteRequestDTO solicitud) {
+
+        Long idContrato = contratoRegistroService.vincularDocentePorCargaDocente(
+                idCargaDocente,
+                solicitud.numeroPeriodo(),
+                solicitud.anexo() != null ? solicitud.anexo().idLabor() : null);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "idContrato", idContrato,
+                        "idCargaDocente", idCargaDocente));
     }
 
     @Operation(

@@ -344,6 +344,118 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         return idContrato;
     }
 
+    /**
+     * Vincula al docente de una carga docente con su contrato ya generado.
+     *
+     * <p>Es el paso de vinculación del proceso: completa el documento de
+     * vinculación, las tablas de labor y marca la carga docente como
+     * vinculada. No genera el anexo en PDF (eso es del paso de generación).</p>
+     *
+     * @param idCargaDocente carga docente del docente a vincular (CADO_ID)
+     * @param numeroPeriodo  periodo de la carga docente
+     * @param labor          labor docente a asignar (LABO_ID)
+     * @return id del contrato vinculado (CONT_ID)
+     */
+    @Override
+    @Transactional
+    public Long vincularDocentePorCargaDocente(
+            Long idCargaDocente,
+            String numeroPeriodo,
+            Long labor) {
+
+        if (idCargaDocente == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id de la carga docente es obligatorio");
+        }
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        if ("1".equals(cargaDocente.getContratacionVinculado())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El docente ya ha sido vinculado");
+        }
+
+        if (cargaDocente.getNumeroContrato() == null
+                || cargaDocente.getNumeroContrato().isBlank()) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El docente no tiene contrato generado, "
+                            + "primero se debe diligenciar el número de contrato");
+        }
+
+        if (labor == null
+                || !laborRepository.findById(labor)
+                        .map(laborDocente -> "1".equals(laborDocente.getDocente()))
+                        .orElse(false)) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La labor docente seleccionada no es válida");
+        }
+
+        InformacionDocenteContratacionDTO informacion =
+                coordinacionService.findProfessorInformation(idCargaDocente);
+
+        if (informacion == null) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe información del docente para la carga docente "
+                            + idCargaDocente);
+        }
+
+        // El número de anexo es el que ya quedó generado en la carga docente:
+        // al vincular no se vuelve a diligenciar el anexo.
+        String numeroAnexo = cargaDocente.getNumeroContrato().trim();
+
+        DatosAnexoDTO datos = new DatosAnexoDTO(
+                numeroAnexo,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                labor);
+
+        // El contrato tiene que existir: la vinculación reutiliza el contrato
+        // ya generado en el paso anterior. Si no existe es un estado
+        // inconsistente y se informa con claridad en vez de registrar otro
+        // contrato con datos incompletos.
+        Long idContrato = resolverIdContratoExistente(
+                informacion,
+                idCargaDocente,
+                datos);
+
+        if (idContrato == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El docente no tiene un contrato generado con el número de anexo "
+                            + numeroAnexo
+                            + ", primero se debe diligenciar el número de contrato");
+        }
+
+        vincularDocente(
+                informacion,
+                idCargaDocente,
+                null,
+                null,
+                datos);
+
+        log.info(
+                "vincularDocentePorCargaDocente ===> CADO_ID={}, CONT_ID={}, labor={}",
+                idCargaDocente,
+                idContrato,
+                labor);
+
+        return idContrato;
+    }
+
     @Override
     @Transactional
     public int vincularDocentesMasivamente(
