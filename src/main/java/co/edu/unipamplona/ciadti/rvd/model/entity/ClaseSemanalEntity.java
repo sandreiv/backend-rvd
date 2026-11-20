@@ -37,10 +37,10 @@ public class ClaseSemanalEntity {
     @Column(name = "GRUP_ID")
     private Long idGrupo;
 
-    @Column(name = "BHLO_IDINICIAL")
+    @Column(name = "BLHO_IDINICIAL")
     private Long idBlhoInicial;
 
-    @Column(name = "BHLO_IDFINAL")
+    @Column(name = "BLHO_IDFINAL")
     private Long idBlhoFinal;
 
     @Column(name = "CLSE_DIA")

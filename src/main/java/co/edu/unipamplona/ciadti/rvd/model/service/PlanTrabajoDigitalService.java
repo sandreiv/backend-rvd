@@ -25,7 +25,7 @@ public interface PlanTrabajoDigitalService {
 
     PtdInfoWithWeightsDTO getInfoPtdWithWeights(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario);
 
-    List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario);
+    List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario, Long idCarga);
 
     PtdiDocumentoContenidoDTO getPtdAttachments(Long idPersonaGeneral, Long idCargaDocente, Long idPeriodoUniversitario);
 

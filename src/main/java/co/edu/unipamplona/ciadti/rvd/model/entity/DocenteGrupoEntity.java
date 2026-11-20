@@ -14,9 +14,8 @@ import java.util.Date;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -27,14 +26,15 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "DOCENTEGRUPO", schema = "ACADEMICO")
+@IdClass(DocenteGrupoEntityId.class)
 public class DocenteGrupoEntity {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "DOGR_ID", nullable = false)
-    private Long id;
+    @Column(name = "GRUP_ID", nullable = false)
+    private Long idGrupo;
 
-    @Column(name = "DOUN_ID")
+    @Id
+    @Column(name = "DOUN_ID", nullable = false)
     private Long idDocenteUnidad;
 
     @Column(name = "TCVE_ID")
@@ -90,7 +90,7 @@ public class DocenteGrupoEntity {
     @Override
     public String toString() {
         return "DocenteGrupoEntity{" +
-                "id=" + id +
+                "idGrupo=" + idGrupo +
                 ", idDocenteUnidad=" + idDocenteUnidad +
                 ", idTcve=" + idTcve +
                 ", idNormaGeneral=" + idNormaGeneral +

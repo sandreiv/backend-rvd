@@ -21,6 +21,7 @@
  * 07/10/2026 - Andrés Hernández - Eliminación de métodos para consultar docentes aprobados
  * 07/10/2026 - Sebastian Jaimes - Información del docente para contratación
  * 08/10/2026 - Andrés Hernández - Uso de docentes aprobados para generar el CDP
+ * 19/11/2026 - Andrés Hernández - Buscar docentes validos para la sincronización
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
@@ -37,6 +38,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteCargaCoordinacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoCoordinacionProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteEfectivoSincronizacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.InformacionDocenteContratacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocentePreasignacionReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DocenteVerificacionPendienteProjection;
@@ -1574,5 +1576,124 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
             Long idPersonaGeneral
     );
 
+    @Query(value = """
+            SELECT CASE
+                WHEN COUNT(*) = :cantidad THEN 1
+                ELSE 0
+            END
+            FROM RVD.CARGADOCENTE CADO
+            WHERE CADO.CARG_ID = :idCarga
+                AND CADO.CADO_ID IN (:idsCargaDocente)
+            """, nativeQuery = true)
+    Integer allProfessorsInCall(@Param("idsCargaDocente") List<Long> idsCargaDocente, @Param("idCarga") Long idCarga, @Param("cantidad") Integer cantidad);
 
+
+    @Query(value = """
+            WITH NOVEDADES_VALIDAS AS (
+                SELECT
+                    NOCD.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY NOCD.CADO_ID
+                        ORDER BY NOCD.NOCD_FECHACAMBIO DESC, NOCD.NOCD_ID DESC
+                    ) AS RN
+                FROM RVD.NOVEDADCARGADOCENTE NOCD
+                WHERE NOCD.NOCD_ESTADONOVEDAD = '1'
+            ),
+            CARGAS_RESUELTAS AS (
+                SELECT
+                    CADO.CADO_ID,
+
+                    COALESCE(DATOS.PEGE_ID, CADO.PEGE_ID) AS PEGE_ID,
+                    COALESCE(DATOS.CARG_ID, CADO.CARG_ID) AS CARG_ID,
+                    COALESCE(DATOS.MOCO_ID, CADO.MOCO_ID) AS MOCO_ID,
+                    COALESCE(DATOS.CACA_ID, CADO.CACA_ID) AS CACA_ID,
+
+                    COALESCE(DATOS.NOCD_FECHAINICIO, CADO.CADO_FECHAINICIO) AS CADO_FECHAINICIO,
+                    COALESCE(DATOS.NOCD_FECHAFIN, CADO.CADO_FECHAFIN) AS CADO_FECHAFIN,
+                    COALESCE(DATOS.NOCD_ONCEMESES, CADO.CADO_ONCEMESES) AS CADO_ONCEMESES,
+
+                    CADO.CADO_ESTADO,
+                    CADO.CADO_CONTRATACIONVINCULADO,
+                    CADO.CADO_CONTRATACIONSINCRONIZADO,
+                    CADO.CADO_NUMEROCONTRATO,
+
+                    DATOS.NOCD_ID,
+
+                    NVL(DATOS.NOCD_ESTADOELIMINADO, '0') AS ESTADO_ELIMINADO
+
+                FROM RVD.CARGADOCENTE CADO
+
+                LEFT JOIN NOVEDADES_VALIDAS DATOS
+                    ON DATOS.CADO_ID = CADO.CADO_ID
+                    AND DATOS.RN = 1
+
+                WHERE CADO.CADO_ID IN (:idsCargaDocente)
+            )
+
+            SELECT
+                CR.NOCD_ID AS idNovedadCargaDocente,
+                CR.CADO_ID AS idCargaDocente,
+                PEGE.PEGE_ID AS idPersonaGeneral,
+
+                TRIM(
+                    TRIM(
+                        PENG.PENG_PRIMERNOMBRE
+                        || ' '
+                        || PENG.PENG_SEGUNDONOMBRE
+                    )
+                    || ' ' ||
+                    TRIM(
+                        PENG.PENG_PRIMERAPELLIDO
+                        || ' '
+                        || PENG.PENG_SEGUNDOAPELLIDO
+                    )
+                ) AS nombreCompleto,
+
+                CR.CADO_ESTADO AS estado,
+                CR.CARG_ID AS idCarga,
+                COOR.UNID_IDAREA AS idUnidadArea,
+                CR.MOCO_ID AS idModalidadContratacion,
+                CR.CACA_ID AS idCategoriaCatedratico,
+
+                CR.CADO_FECHAINICIO AS cargaFechaInicio,
+                CR.CADO_FECHAFIN AS cargaFechaFin,
+                CR.CADO_ONCEMESES AS onceMeses,
+
+                CR.CADO_CONTRATACIONVINCULADO AS contratacionVinculado,
+                CR.CADO_CONTRATACIONSINCRONIZADO AS contratacionSincronizado,
+                CR.CADO_NUMEROCONTRATO AS numeroContrato
+
+            FROM CARGAS_RESUELTAS CR
+
+            LEFT JOIN GENERAL.PERSONAGENERAL PEGE
+                ON PEGE.PEGE_ID = CR.PEGE_ID
+
+            LEFT JOIN GENERAL.PERSONANATURALGENERAL PENG
+                ON PENG.PEGE_ID = PEGE.PEGE_ID
+            
+            LEFT JOIN RVD.CARGA CARG
+                ON CARG.CARG_ID = CR.CARG_ID
+
+            LEFT JOIN RVD.COORDINACIONES COOR
+                ON COOR.COOR_ID = CARG.COOR_ID
+
+            WHERE CR.ESTADO_ELIMINADO = '0'
+
+            ORDER BY UPPER(
+                TRIM(
+                    TRIM(
+                        PENG.PENG_PRIMERNOMBRE
+                        || ' '
+                        || PENG.PENG_SEGUNDONOMBRE
+                    )
+                    || ' ' ||
+                    TRIM(
+                        PENG.PENG_PRIMERAPELLIDO
+                        || ' '
+                        || PENG.PENG_SEGUNDOAPELLIDO
+                    )
+                )
+            ) NULLS LAST
+            """, nativeQuery = true)
+    List<DocenteEfectivoSincronizacionProjection> findSyncEffectiveProfessorsByCargaDocenteIds(@Param("idsCargaDocente") List<Long> idsCargaDocente);
 }

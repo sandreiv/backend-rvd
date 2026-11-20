@@ -13,6 +13,7 @@
  * 08/10/2026 - Sebastian Jaimes - Información del docente con actividades PTD
  * 14/10/2026 - Andrés Hernández - Almacenamiento del PTD
  * 26/10/2026 - Andrés Hernández - Gestión del PTD por Talento humano
+ * 19/11/2026 - Andrés Hernández - Creación del método de sincronización
  */
 package co.edu.unipamplona.ciadti.rvd.controller;
 
@@ -72,6 +73,7 @@ import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PlanTrabajoDigitalService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PtdiDocumentoService;
+import co.edu.unipamplona.ciadti.rvd.model.service.SyncProfessorService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
@@ -89,6 +91,7 @@ public class HiringCallController {
     private final ContratoReporteService contratoReporteService;
     private final ContratoRegistroService contratoRegistroService;
     private final CatalogoContratoService catalogoContratoService;
+    private final SyncProfessorService syncProfessorService;
 
     @Operation(
         summary = "Obtiene la lista de periodos de universidad",
@@ -418,8 +421,8 @@ public class HiringCallController {
         description = "Lista que entrega el estado del ptd para las personas de cierto periodo. Util para bloquear o mostrar información según su estado"
     )
     @GetMapping("/get-ptd-states-professors")
-    public ResponseEntity<List<PtdStatesProfessorsDTO>> getPtdStatesProfessors(@RequestParam Long idPeriodoUniversitario) {
-        List<PtdStatesProfessorsDTO> states = planTrabajoDigitalService.getPtdStatesProfessors(idPeriodoUniversitario);
+    public ResponseEntity<List<PtdStatesProfessorsDTO>> getPtdStatesProfessors(@RequestParam Long idPeriodoUniversitario, @RequestParam Long idCarga) {
+        List<PtdStatesProfessorsDTO> states = planTrabajoDigitalService.getPtdStatesProfessors(idPeriodoUniversitario, idCarga);
         return new ResponseEntity<>(states, HttpStatus.OK);
     }
 
@@ -514,5 +517,20 @@ public class HiringCallController {
     public ResponseEntity<Void> declinePtdByTh(@RequestBody RejectPtdRequestDTO dto) {
         planTrabajoDigitalService.declinePtdByTh(dto);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Sincroniza los detalles de los docentes dentro de la contratación",
+        description = """
+            Realiza el llenado de las tablas relacionadas con la sincronización (DOCENTEGRUPO,
+            MATERIADOCENTEUNIDAD, DOCENTECLASESEMANAL) para mantener actualizada la carga academica
+            del docente despues de la realización del contrato
+            """
+    )
+    @PutMapping("/sync-professors/{idCarga}")
+    public ResponseEntity<Map<String, Integer>> syncProfessors(@PathVariable Long idCarga, @RequestBody List<Long> idsCargaDocente) {
+        int totalSincronizados = syncProfessorService.syncProfessors(idCarga, idsCargaDocente);
+
+        return ResponseEntity.ok(Map.of("totalSincronizados", totalSincronizados));
     }
 }

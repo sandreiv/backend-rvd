@@ -9,6 +9,8 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,5 +28,13 @@ public interface TrabajadorLaborRepository extends JpaRepository<TrabajadorLabor
     boolean existsVigenteByIdPersonaGeneral(@Param("idPersonaGeneral") Long idPersonaGeneral);
 
     boolean existsByIdPersonaGeneralAndIdDocumentoVinculacionAndIdLabor(Long idPersonaGeneral, Long idDocumentoVinculacion, Long idLabor);
+
+    @Query(value = """
+            SELECT TRLA.*
+            FROM TALENTOV3.TRABAJADORLABOR TRLA
+            WHERE TRLA.PEGE_ID = :idPersonaGeneral
+                AND (TRLA.TRLA_FECHAFINAL IS NULL OR TRLA.TRLA_FECHAFINAL >= CURRENT_DATE)
+            """, nativeQuery = true)
+    Optional<TrabajadorLaborEntity> findTrlaVigenteByIdPersonaGeneral(@Param("idPersonaGeneral") Long idPersonaGeneral);
 }
 /* 16/10/2026 @:Sebastian Jaimes */

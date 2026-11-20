@@ -61,11 +61,28 @@ public interface PlanTrabajoDigitalRepository extends JpaRepository<PlanTrabajoD
                         ORDER BY PTDI.PTDI_ID
                     ) AS rn
                 FROM RVD.PLANTRABAJODIGITAL PTDI
+
+                LEFT JOIN RVD.DETALLECARGADOCENTE DECD
+                    ON DECD.DECD_ID = PTDI.DECD_ID
+
+                LEFT JOIN RVD.CARGADOCENTE CADO
+                    ON CADO.CADO_ID = DECD.CADO_ID
+
+                LEFT JOIN RVD.DETALLENOVEDADCARGADOCENTE DNCD
+                    ON DNCD.DNCD_ID = PTDI.DNCD_ID
+
+                LEFT JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                    ON NOCD.NOCD_ID = DNCD.NOCD_ID
+
                 WHERE PTDI.PEUN_ID = :idPeriodoUniversitario
+                AND (
+                    CADO.CARG_ID = :idCarga
+                    OR NOCD.CARG_ID = :idCarga
+                )
             )
             WHERE rn = 1
             """, nativeQuery = true)
-    List<PlanTrabajoDigitalEntity> findPtdStatesByPeriod(@Param("idPeriodoUniversitario") Long idPeriodoUniversitario);
+    List<PlanTrabajoDigitalEntity> findPtdStatesByPeriod(@Param("idPeriodoUniversitario") Long idPeriodoUniversitario, @Param("idCarga") Long idCarga);
 
     @Modifying
     @Query(value = """

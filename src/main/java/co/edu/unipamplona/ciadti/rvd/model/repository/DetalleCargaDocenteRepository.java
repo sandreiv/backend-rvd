@@ -14,6 +14,7 @@
  * 07/10/2026 - Andrés Hernández - Adición de detalles efectivos como método general
  * 08/10/2026 - Andrés Hernández - Uso de detalles aprobados para generar el CDP
  * 08/10/2026 - Sebastian Jaimes - Detalles vigentes PTD (DNCD_VIGENTE = 1 o carga)
+ * 19/11/2026 - Andrés Hernández - Buscar detalles validos para la sincronización
  */
 
 package co.edu.unipamplona.ciadti.rvd.model.repository;
@@ -28,6 +29,7 @@ import org.springframework.data.repository.query.Param;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DetalleCargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleCargaDocenteListadoProjection;
+import co.edu.unipamplona.ciadti.rvd.model.repository.projection.DetalleDirectoEfectivoSincronizacionProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.GrupoCuposReporteProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasActividadPadreProjection;
 import co.edu.unipamplona.ciadti.rvd.model.repository.projection.HorasCodigoActividadReporteProjection;
@@ -630,6 +632,90 @@ public interface DetalleCargaDocenteRepository
             """, nativeQuery = true)
     List<DetalleCargaDocenteListadoProjection> findVigenteDetailsByIdCargaDocente(
             @Param("idCargaDocente") Long idCargaDocente);
+    
+    @Query(value = """
+        WITH DETALLES_NOVEDAD AS (
+            SELECT
+                DNCD.DNCD_ID,
+                NOCD.CADO_ID,
+                DNCD.PROG_ID,
+                DNCD.GRUP_ID,
+                DNCD.TIAC_ID,
+                DNCD.DNCD_HORAS
+            FROM RVD.DETALLENOVEDADCARGADOCENTE DNCD
+            INNER JOIN RVD.NOVEDADCARGADOCENTE NOCD
+                ON NOCD.NOCD_ID = DNCD.NOCD_ID
+            WHERE NOCD.CADO_ID IN (:idsCargaDocente)
+                AND DNCD.DNCD_VIGENTE = '1'
+        ),
+        DETALLES_CARGA AS (
+            SELECT
+                DECD.DECD_ID,
+                DECD.CADO_ID,
+                DECD.PROG_ID,
+                DECD.GRUP_ID,
+                DECD.TIAC_ID,
+                DECD.DECD_HORAS
+            FROM RVD.DETALLECARGADOCENTE DECD
+            WHERE DECD.CADO_ID IN (:idsCargaDocente)
+        ),
+        DETALLES_RESUELTOS AS (
+            SELECT
+                DN.DNCD_ID,
+                NULL AS DECD_ID,
+                DN.CADO_ID,
+                DN.PROG_ID,
+                DN.GRUP_ID,
+                DN.TIAC_ID,
+                DN.DNCD_HORAS AS HORAS,
+                1 AS ESNOVEDAD
+            FROM DETALLES_NOVEDAD DN
+
+            UNION ALL
+
+            SELECT
+                NULL AS DNCD_ID,
+                DC.DECD_ID,
+                DC.CADO_ID,
+                DC.PROG_ID,
+                DC.GRUP_ID,
+                DC.TIAC_ID,
+                DC.DECD_HORAS AS HORAS,
+                0 AS ESNOVEDAD
+            FROM DETALLES_CARGA DC
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM DETALLES_NOVEDAD DN
+                WHERE DN.CADO_ID = DC.CADO_ID
+            )
+        )
+        SELECT
+            DR.CADO_ID AS idCargaDocente,
+            COALESCE(DR.DECD_ID, DR.DNCD_ID) AS idDetalleCargaDocente,
+            DR.ESNOVEDAD AS esDeNovedad,
+            TIAC.TIAC_ID AS idTipoActividadResuelto,
+            TIAC.TIAC_NOMBRE AS nombreTipoActividad,
+            TIAC.TIAC_CODIGO AS codigoTipoActividad,
+            PROG.PROG_ID AS idPrograma,
+            PROG.PROG_NOMBRE AS nombrePrograma,
+            GRUP.GRUP_ID AS idGrupo,
+            GRUP.GRUP_NOMBRE AS nombreGrupo,
+            GRUP.MATE_CODIGOMATERIA AS codigoMateria,
+            MATE.MATE_NOMBRE AS nombreMateria
+        FROM DETALLES_RESUELTOS DR
+        LEFT JOIN RVD.TIPOACTIVIDADES TIAC
+            ON TIAC.TIAC_ID = DR.TIAC_ID
+        LEFT JOIN ACADEMICO.GRUPO GRUP
+            ON GRUP.GRUP_ID = DR.GRUP_ID
+        LEFT JOIN ACADEMICO.MATERIA MATE
+            ON MATE.MATE_CODIGOMATERIA = GRUP.MATE_CODIGOMATERIA
+        LEFT JOIN ACADEMICO.PROGRAMA PROG
+            ON PROG.PROG_ID = DR.PROG_ID
+        WHERE TIAC.TIAC_CODIGO = 'FAD'
+        ORDER BY
+            COALESCE(DR.DECD_ID, DR.DNCD_ID)
+        """, nativeQuery = true)
+    List<DetalleDirectoEfectivoSincronizacionProjection> findSyncEffectiveDirectActivitiesDetailByCargaDocenteIds(@Param("idsCargaDocente") List<Long> idsCargaDocente);
 }
 
 /* 17/07/2026 @:Daniel Arias */

@@ -9,10 +9,18 @@
  */
 package co.edu.unipamplona.ciadti.rvd.model.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocenteUnidadEntity;
 
 public interface DocenteUnidadRepository extends JpaRepository<DocenteUnidadEntity, Long> {
     
+    Optional<DocenteUnidadEntity> findByIdPersonaGeneralAndIdLaborAndIdDocumentoVinculacionAndIdUnidad(
+        Long idPersonaGeneral,
+        Long idLabor,
+        Long idDocumentoVinculacion,
+        Long idUnidad
+    );
 }

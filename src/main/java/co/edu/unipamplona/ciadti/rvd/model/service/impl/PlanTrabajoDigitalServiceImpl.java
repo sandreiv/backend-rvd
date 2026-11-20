@@ -168,11 +168,11 @@ public class PlanTrabajoDigitalServiceImpl implements PlanTrabajoDigitalService{
 
     @Override
     @Transactional(readOnly = true)
-    public List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario) {
-        log.info("getPtdStatesProfessors ===> Obteniendo estados del PTD por persona. idPeriodo={}", idPeriodoUniversitario);
+    public List<PtdStatesProfessorsDTO> getPtdStatesProfessors(Long idPeriodoUniversitario, Long idCarga) {
+        log.info("getPtdStatesProfessors ===> Obteniendo estados del PTD por persona. idPeriodo={}, idCarga={}", idPeriodoUniversitario, idCarga);
 
         List<PtdStatesProfessorsDTO> states = planTrabajoDigitalRepository
-            .findPtdStatesByPeriod(idPeriodoUniversitario)
+            .findPtdStatesByPeriod(idPeriodoUniversitario, idCarga)
             .stream()
             .map(planTrabajoDigitalMapper::toPtdStatesProfessorsDTO)
             .toList();
