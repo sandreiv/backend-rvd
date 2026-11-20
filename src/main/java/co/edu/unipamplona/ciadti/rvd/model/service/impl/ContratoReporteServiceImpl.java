@@ -74,8 +74,6 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     private static final String CODIGO_CTEI = "CTEI";
     private static final String CODIGO_ISU = "ISU";
     private static final String CODIGO_AC = "AC";
-    private static final String OPERACION_VINCULACION_DOCENTE = "VINCULAR";
-    private static final String OPERACION_GENERACION_CONTRATO = "GENERAR";
 
     /**
      * Funciones del docente ocasional tiempo completo con funciones
@@ -121,7 +119,6 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
     public FileDTO generateContractPdf(
             Long idCargaDocente,
             String numeroPeriodo,
-            String operacion,
             TipoContratoDocente tipoForzado,
             DatosAnexoDTO body) {
         log.debug(
@@ -187,22 +184,11 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
         // Generar contrato: primero se registra el contrato (para que pueda
         // actualizar el que ya existe en vez de duplicarlo) y después se
         // guarda el número de anexo en la carga docente.
-        if (OPERACION_GENERACION_CONTRATO.equals(operacion)) {
-            registrarContrato(informacion, idCargaDocente, valores, cdp, body);
-            cargaDocente.setNumeroContrato(body.numeroAnexo());
-            cargaDocenteRepository.save(cargaDocente);
-        }
-        // Vincular docente llena sus tablas de contratación con el número de anexo de la carga docente
-        if (OPERACION_VINCULACION_DOCENTE.equals(operacion)) {
-            if (!body.numeroAnexo().equals(cargaDocente.getNumeroContrato())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "El número de anexo enviado no corresponde al almacenado");
-            }
-            if ("1".equals(cargaDocente.getContratacionVinculado())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "El docente ya ha sido vinculado");
-            }
-
-            vincularDocente(informacion, idCargaDocente, valores, cdp, body);
-        }
+        registrarContrato(informacion, idCargaDocente, valores, cdp, body);
+        cargaDocente.setNumeroContrato(body.numeroAnexo());
+        cargaDocenteRepository.save(cargaDocente);
+        // Vincular docente NO pasa por aquí: es un endpoint aparte
+        // (POST /vincular-docente) porque no produce el anexo en PDF.
 
         byte[] content = contratoPdfExporter.export(reporte, tipo);
         String fileName = buildFileName(tipo, informacion.documentoIdentidad());
@@ -230,28 +216,6 @@ public class ContratoReporteServiceImpl implements ContratoReporteService {
                 ? valores.valorContratacion()
                 : null;
         contratoRegistroService.registrarContrato(
-                informacion,
-                idCargaDocente,
-                valorContratacion,
-                cdp != null ? cdp.idCdp() : null,
-                body);
-    }
-
-    /**
-     * Completa la vinculación docente con el contrato ya generado: crea el
-     * documento de vinculación, las tablas de labor y marca la carga docente
-     * como vinculada.
-     */
-    private void vincularDocente(
-            InformacionDocenteContratacionDTO informacion,
-            Long idCargaDocente,
-            HiringValuesInformationDTO valores,
-            HiringCdpInformationDTO cdp,
-            DatosAnexoDTO body) {
-        ValorContratacionDTO valorContratacion = valores != null && valores.valorContratacion() != null
-                ? valores.valorContratacion()
-                : null;
-        contratoRegistroService.vincularDocente(
                 informacion,
                 idCargaDocente,
                 valorContratacion,

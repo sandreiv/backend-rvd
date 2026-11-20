@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -265,6 +266,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             DatosAnexoDTO datos) {
 
         validar(informacion, datos);
+        validarCdp(idCdp);
 
         Date fechaActual = new Date();
         String numeroAnexo = datos.numeroAnexo() == null ? null : datos.numeroAnexo().trim();
@@ -338,6 +340,118 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
                 informacion.idPersonaGeneral(),
                 idDovi,
                 datos.idLabor());
+
+        return idContrato;
+    }
+
+    /**
+     * Vincula al docente de una carga docente con su contrato ya generado.
+     *
+     * <p>Es el paso de vinculación del proceso: completa el documento de
+     * vinculación, las tablas de labor y marca la carga docente como
+     * vinculada. No genera el anexo en PDF (eso es del paso de generación).</p>
+     *
+     * @param idCargaDocente carga docente del docente a vincular (CADO_ID)
+     * @param numeroPeriodo  periodo de la carga docente
+     * @param labor          labor docente a asignar (LABO_ID)
+     * @return id del contrato vinculado (CONT_ID)
+     */
+    @Override
+    @Transactional
+    public Long vincularDocentePorCargaDocente(
+            Long idCargaDocente,
+            String numeroPeriodo,
+            Long labor) {
+
+        if (idCargaDocente == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El id de la carga docente es obligatorio");
+        }
+
+        CargaDocenteEntity cargaDocente = cargaDocenteRepository.findById(idCargaDocente)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la carga docente con id " + idCargaDocente));
+
+        if ("1".equals(cargaDocente.getContratacionVinculado())) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El docente ya ha sido vinculado");
+        }
+
+        if (cargaDocente.getNumeroContrato() == null
+                || cargaDocente.getNumeroContrato().isBlank()) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El docente no tiene contrato generado, "
+                            + "primero se debe diligenciar el número de contrato");
+        }
+
+        if (labor == null
+                || !laborRepository.findById(labor)
+                        .map(laborDocente -> "1".equals(laborDocente.getDocente()))
+                        .orElse(false)) {
+
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "La labor docente seleccionada no es válida");
+        }
+
+        InformacionDocenteContratacionDTO informacion =
+                coordinacionService.findProfessorInformation(idCargaDocente);
+
+        if (informacion == null) {
+            throw new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "No existe información del docente para la carga docente "
+                            + idCargaDocente);
+        }
+
+        // El número de anexo es el que ya quedó generado en la carga docente:
+        // al vincular no se vuelve a diligenciar el anexo.
+        String numeroAnexo = cargaDocente.getNumeroContrato().trim();
+
+        DatosAnexoDTO datos = new DatosAnexoDTO(
+                numeroAnexo,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                labor);
+
+        // El contrato tiene que existir: la vinculación reutiliza el contrato
+        // ya generado en el paso anterior. Si no existe es un estado
+        // inconsistente y se informa con claridad en vez de registrar otro
+        // contrato con datos incompletos.
+        Long idContrato = resolverIdContratoExistente(
+                informacion,
+                idCargaDocente,
+                datos);
+
+        if (idContrato == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "El docente no tiene un contrato generado con el número de anexo "
+                            + numeroAnexo
+                            + ", primero se debe diligenciar el número de contrato");
+        }
+
+        vincularDocente(
+                informacion,
+                idCargaDocente,
+                null,
+                null,
+                datos);
+
+        log.info(
+                "vincularDocentePorCargaDocente ===> CADO_ID={}, CONT_ID={}, labor={}",
+                idCargaDocente,
+                idContrato,
+                labor);
 
         return idContrato;
     }
@@ -698,9 +812,9 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     }
 
     private void guardarCdpContrato(Long idContrato, Long idCdp, Date fechaActual) {
-        if (idCdp == null) {
-            return;
-        }
+        // El CDP es obligatorio: registrarContrato ya lo validó. Si llegara null
+        // sería un error de programación, no un caso de negocio silencioso.
+        Objects.requireNonNull(idCdp, "El CDP es obligatorio para asociar el contrato");
 
         if (cdpContratoRepository.existsByIdContratoAndIdCdp(idContrato, idCdp)) {
             return;
@@ -883,6 +997,26 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "La forma de inicio del contrato es obligatoria para registrar el contrato");
+        }
+    }
+
+    /**
+     * El CDP es obligatorio para registrar el contrato: sin él el contrato
+     * queda sin asociación presupuestal en CONTRATOS.CDPCONTRATO y el anexo
+     * se genera con los datos de presupuesto vacíos.
+     *
+     * <p>El CDP se resuelve a partir del periodo y la coordinación de la carga
+     * docente (RVD.SOLICITUDCDP + TESORERIAV3.CDP). Si esa búsqueda no
+     * encuentra CDP se detiene el registro en lugar de guardar el contrato
+     * incompleto.</p>
+     */
+    private void validarCdp(Long idCdp) {
+        if (idCdp == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No se encontró un CDP asociado a la carga docente, "
+                            + "no se puede registrar el contrato sin CDP"
+            );
         }
     }
 

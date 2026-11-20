@@ -86,6 +86,25 @@ public interface ContratoRegistroService {
             Long idCdp,
             DatosAnexoDTO datos);
 
+    /**
+     * Vincula al docente de una carga docente con su contrato ya generado.
+     *
+     * <p>Es el paso de vinculación del proceso de contratación: completa el
+     * documento de vinculación, las tablas de labor y marca la carga docente
+     * como vinculada. No genera el anexo en PDF: esa corresponde al paso
+     * de generación del contrato.</p>
+     *
+     * @param idCargaDocente  carga docente del docente a vincular (CADO_ID)
+     * @param numeroPeriodo   periodo de la carga docente; se usa para resolver
+     *                        los valores de contratación
+     * @param labor           labor docente a asignar (LABO_ID)
+     * @return id del contrato vinculado (CONT_ID)
+     */
+    Long vincularDocentePorCargaDocente(
+            Long idCargaDocente,
+            String numeroPeriodo,
+            Long labor);
+
 
     int vincularDocentesMasivamente(
             List<Long> idsCargaDocente,
