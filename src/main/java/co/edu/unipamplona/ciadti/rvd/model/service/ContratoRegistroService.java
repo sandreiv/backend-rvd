@@ -85,4 +85,9 @@ public interface ContratoRegistroService {
             ValorContratacionDTO valorTotalContrato,
             Long idCdp,
             DatosAnexoDTO datos);
+
+
+    int vincularDocentesMasivamente(
+            List<Long> idsCargaDocente,
+            Long idLabor);        
 }

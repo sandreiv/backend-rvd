@@ -21,6 +21,7 @@ import java.util.List;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
@@ -60,6 +61,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.VinculacionMasivaRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoReporteService;
@@ -291,6 +293,26 @@ public class HiringCallController {
             @RequestParam List<Long> idsCargaDocente) {
         List<ContratoAnexoDTO> anexos = contratoRegistroService.findAnexosGenerados(idsCargaDocente);
         return ResponseEntity.ok(anexos);
+    }
+
+    @Operation(
+        summary = "Vincular docentes masivamente",
+        description = """
+            Vincula múltiples docentes utilizando los contratos
+            previamente generados y una labor docente compartida.
+            """
+    )
+    @PostMapping("/vincular-masivo")
+    public ResponseEntity<Map<String, Integer>> vincularMasivo(
+            @RequestBody VinculacionMasivaRequestDTO solicitud) {
+
+        int totalVinculados =
+                contratoRegistroService.vincularDocentesMasivamente(
+                        solicitud.idsCargaDocente(),
+                        solicitud.idLabor());
+
+        return ResponseEntity.ok(
+                Map.of("totalVinculados", totalVinculados));
     }
 
     @Operation(
