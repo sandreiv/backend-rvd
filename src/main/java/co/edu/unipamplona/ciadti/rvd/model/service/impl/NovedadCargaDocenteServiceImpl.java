@@ -1435,8 +1435,13 @@ public class NovedadCargaDocenteServiceImpl implements NovedadCargaDocenteServic
 
     private BigDecimal resolveDetallesHorasFromNoveltyActivityChanges(GuardarNovedadesDetallesProyectosDTO dto, List<DetalleCargaDocenteDTO> detallesBase) {
         BigDecimal total = BigDecimal.ZERO;
-        Optional<Integer> esDeNovedad = detallesBase.get(0).esDeNovedad();
-        Boolean fromNovelty = esDeNovedad != null && esDeNovedad.orElse(0) == 1;
+
+        Optional<Integer> esDeNovedad = detallesBase.isEmpty()
+                ? Optional.empty()
+                : detallesBase.get(0).esDeNovedad();
+
+        Boolean fromNovelty = esDeNovedad != null
+                && esDeNovedad.orElse(0) == 1;
 
         // Si los detalles no vienen de novedades, su total es cero porque la primera vez el dto tiene todas las actividades
         // Si los detalles vienen de novedades, su total es la suma de actividades que se trae de la base de datos (que es la misma que se mostró en el front)

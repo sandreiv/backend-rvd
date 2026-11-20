@@ -21,6 +21,7 @@ import java.util.List;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
@@ -44,6 +45,7 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.FileDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ApprovePtdRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ConvocatoriaDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoAnexoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.ContratoCatalogosDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.CoordinacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.DatosAnexoDTO;
@@ -59,9 +61,12 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoArchivoDescargaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoCategoriaDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.PtdiDocumentoContenidoDTO;
 import co.edu.unipamplona.ciadti.rvd.model.dto.RejectPtdRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.VinculacionDocenteRequestDTO;
+import co.edu.unipamplona.ciadti.rvd.model.dto.VinculacionMasivaRequestDTO;
 import co.edu.unipamplona.ciadti.rvd.model.service.CatalogoContratoService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoReporteService;
+import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import co.edu.unipamplona.ciadti.rvd.model.service.ConvocatoriaPrecargaService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.model.service.PeriodoUniversidadService;
@@ -82,6 +87,7 @@ public class HiringCallController {
     private final PtdiDocumentoService ptdiDocumentoService;
     private final ContratacionService contratacionService;
     private final ContratoReporteService contratoReporteService;
+    private final ContratoRegistroService contratoRegistroService;
     private final CatalogoContratoService catalogoContratoService;
 
     @Operation(
@@ -212,20 +218,21 @@ public class HiringCallController {
             programa) se usa el anexo con funciones administrativas; si es de 4 meses
             se usa el anexo de pregrado.
             El parámetro opcional tipo (CUATRO_MESES | CON_FUNCIONES_ADMINISTRATIVAS)
-            permite forzar cualquiera de los dos. numeroAnexo, fechaIngreso, formaPago
-            y tipoObjeto son los datos que el usuario diligencia en el modal; con ellos
-            se registra el contrato en CONTRATOS.CONTRATO antes de devolver el PDF.
-            El parametro operacion identifica si se esta generando el contrato para
-            asignar el numero de anexo y esperar aprobación, o vincular al docente con
-            el número de anexo almacenado en la base de datos. De manera que primero se
-            diligencia el número de anexo para habilitar la vinculación
+            permite forzar cualquiera de los dos.
+            Este endpoint es el paso de generacion del contrato: guarda el
+            número de anexo en la carga docente y registra el contrato con los
+            datos del anexo (fecha de firma, forma de pago, tipo de objeto,
+            forma de inicio del contrato, objeto y descripción).
+
+            La vinculacion del docente es un endpoint aparte
+            (POST /vincular-docente/{idCargaDocente}) porque no produce el
+            anexo en PDF.
             """
     )
-    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}/{operacion}")
+    @GetMapping("/contract-pdf-report/{idCargaDocente}/{numeroPeriodo}")
     public ResponseEntity<byte[]> generateContractPdf(
             @PathVariable Long idCargaDocente,
             @PathVariable String numeroPeriodo,
-            @PathVariable String operacion,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String numeroAnexo,
             @RequestParam(required = false) String fechaFirma,
@@ -243,7 +250,6 @@ public class HiringCallController {
         FileDTO file = contratoReporteService.generateContractPdf(
                 idCargaDocente,
                 numeroPeriodo,
-                operacion,
                 parseTipoContrato(tipo),
                 body);
         return ResponseEntity.ok()
@@ -252,6 +258,93 @@ public class HiringCallController {
                         "attachment; filename=\"" + file.fileName() + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file.content());
+    }
+
+    @Operation(
+        summary = "Datos del anexo del contrato ya generado",
+        description = """
+            Devuelve los datos del anexo (número de anexo, fecha de firma, forma de pago,
+            tipo de objeto, forma de inicio del contrato, objeto y descripción) del
+            contrato que el docente ya tiene generado, para mostrarlos al diligenciar
+            la vinculación docente sin volver a capturarlos.
+            """
+    )
+    @GetMapping("/contract-anexo/{idCargaDocente}")
+    public ResponseEntity<ContratoAnexoDTO> contractAnexo(@PathVariable Long idCargaDocente) {
+        ContratoAnexoDTO anexo = contratoRegistroService.findAnexoGenerado(idCargaDocente);
+        return anexo == null
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(anexo);
+    }
+
+    @Operation(
+        summary = "Datos del anexo de los contratos ya generados (vinculación masiva)",
+        description = """
+            Devuelve una lista con los datos del anexo (número de anexo, fecha de firma,
+            forma de pago, tipo de objeto, forma de inicio del contrato, objeto y
+            descripción) de los contratos ya generados de las cargas docentes indicadas.
+            Es la consulta que usa la vinculación masiva: un elemento por carga docente
+            que ya tiene contrato generado. Las cargas docentes sin contrato generado
+            no aparecen en la lista.
+            """
+    )
+    @GetMapping("/contract-anexo/listar")
+    public ResponseEntity<List<ContratoAnexoDTO>> contractAnexoListar(
+            @RequestParam List<Long> idsCargaDocente) {
+        List<ContratoAnexoDTO> anexos = contratoRegistroService.findAnexosGenerados(idsCargaDocente);
+        return ResponseEntity.ok(anexos);
+    }
+
+    @Operation(
+        summary = "Vincular docentes masivamente",
+        description = """
+            Vincula múltiples docentes utilizando los contratos
+            previamente generados y una labor docente compartida.
+            """
+    )
+    @PostMapping("/vincular-masivo")
+    public ResponseEntity<Map<String, Integer>> vincularMasivo(
+            @RequestBody VinculacionMasivaRequestDTO solicitud) {
+
+        int totalVinculados =
+                contratoRegistroService.vincularDocentesMasivamente(
+                        solicitud.idsCargaDocente(),
+                        solicitud.idLabor());
+
+        return ResponseEntity.ok(
+                Map.of("totalVinculados", totalVinculados));
+    }
+
+    @Operation(
+        summary = "Vincula un docente con su contrato ya generado",
+        description = """
+            Vincula al docente de una carga docente con el contrato que ya fue
+            generado en el paso anterior (Diligenciar número de contrato).
+
+            A diferencia de la generación del contrato, este paso no produce el
+            anexo en PDF: completa el documento de vinculación, las tablas de
+            labor (TRABAJADORLABOR, TRABAJADORLABORUNIDAD y DOCENTEUNIDAD) y
+            marca la carga docente como vinculada.
+
+            El número de anexo es el que ya quedó almacenado en la carga
+            docente; el único dato que diligencia el usuario en este paso es la
+            labor docente.
+            """
+    )
+    @PostMapping("/vincular-docente/{idCargaDocente}")
+    public ResponseEntity<Map<String, Object>> vincularDocente(
+            @PathVariable Long idCargaDocente,
+            @RequestBody VinculacionDocenteRequestDTO solicitud) {
+
+        Long idContrato = contratoRegistroService.vincularDocentePorCargaDocente(
+                idCargaDocente,
+                solicitud.numeroPeriodo(),
+                solicitud.anexo() != null ? solicitud.anexo().idLabor() : null);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "idContrato", idContrato,
+                        "idCargaDocente", idCargaDocente));
     }
 
     @Operation(

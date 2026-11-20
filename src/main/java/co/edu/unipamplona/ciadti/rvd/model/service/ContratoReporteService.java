@@ -16,12 +16,15 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.contratacion.TipoContratoDocente;
 public interface ContratoReporteService {
 
     /**
-     * Genera el anexo de contratación del docente.
+     * Genera el anexo de contratación del docente y registra el contrato con
+     * los datos diligenciados en el panel del anexo.
+     *
+     * <p>Es el paso de generación del contrato. La vinculación del docente es
+     * un paso aparte ({@code POST /vincular-docente}) porque no produce el
+     * anexo en PDF.</p>
      *
      * @param idCargaDocente carga docente (CADO_ID)
      * @param numeroPeriodo  número del periodo en que se encuentra (1 o 2)
-     * @param operacion      opearción de generación de contrato y número de anexo, o
-     *                       vinculación del docente en base de datos
      * @param tipoForzado    fuerza el tipo de anexo; si llega nulo se decide por
      *                       la regla de negocio (coordinador del programa)
      * @param body           número de anexo, fecha de ingreso, objeto, descripción,
@@ -30,7 +33,6 @@ public interface ContratoReporteService {
     FileDTO generateContractPdf(
             Long idCargaDocente,
             String numeroPeriodo,
-            String operacion,
             TipoContratoDocente tipoForzado,
             DatosAnexoDTO body);
 }
