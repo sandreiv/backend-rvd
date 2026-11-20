@@ -12,6 +12,7 @@ package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -284,6 +285,24 @@ class ContratoRegistroServiceImplTest {
                         datosAnexo(NUMERO_ANTERIOR, null)));
 
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    }
+
+    @Test
+    void debeExigirElCdpParaRegistrarElContrato() {
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> service.registrarContrato(
+                        informacion,
+                        CADO_ID,
+                        valorContratacion,
+                        null,
+                        datosAnexo(NUMERO_ANTERIOR, null)));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+        assertTrue(exception.getMessage().contains("CDP"));
+
+        // Sin CDP no se debe registrar ningún contrato.
+        verify(contratoRepository, never()).save(any(ContratoEntity.class));
     }
 
     @Test

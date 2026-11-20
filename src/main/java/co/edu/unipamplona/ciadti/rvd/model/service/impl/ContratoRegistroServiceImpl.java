@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -250,6 +251,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             DatosAnexoDTO datos) {
 
         validar(informacion, datos);
+        validarCdp(idCdp);
 
         Date fechaActual = new Date();
         String numeroAnexo = datos.numeroAnexo() == null ? null : datos.numeroAnexo().trim();
@@ -469,9 +471,9 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     }
 
     private void guardarCdpContrato(Long idContrato, Long idCdp, Date fechaActual) {
-        if (idCdp == null) {
-            return;
-        }
+        // El CDP es obligatorio: registrarContrato ya lo validó. Si llegara null
+        // sería un error de programación, no un caso de negocio silencioso.
+        Objects.requireNonNull(idCdp, "El CDP es obligatorio para asociar el contrato");
 
         if (cdpContratoRepository.existsByIdContratoAndIdCdp(idContrato, idCdp)) {
             return;
@@ -654,6 +656,26 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
                     "La forma de inicio del contrato es obligatoria para registrar el contrato");
+        }
+    }
+
+    /**
+     * El CDP es obligatorio para registrar el contrato: sin él el contrato
+     * queda sin asociación presupuestal en CONTRATOS.CDPCONTRATO y el anexo
+     * se genera con los datos de presupuesto vacíos.
+     *
+     * <p>El CDP se resuelve a partir del periodo y la coordinación de la carga
+     * docente (RVD.SOLICITUDCDP + TESORERIAV3.CDP). Si esa búsqueda no
+     * encuentra CDP se detiene el registro en lugar de guardar el contrato
+     * incompleto.</p>
+     */
+    private void validarCdp(Long idCdp) {
+        if (idCdp == null) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "No se encontró un CDP asociado a la carga docente, "
+                            + "no se puede registrar el contrato sin CDP"
+            );
         }
     }
 
