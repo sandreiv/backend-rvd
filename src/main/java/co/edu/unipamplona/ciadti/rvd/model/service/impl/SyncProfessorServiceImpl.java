@@ -153,17 +153,17 @@ public class SyncProfessorServiceImpl implements SyncProfessorService {
 
                 registrarPrimeraSincronizacionMateriasDocenteUnidad(detallesActuales, idDocenteUnidad, fechaActual, registradoPor);
 
-                registrarPrimeraSincronizacionClasesSemanales(docente, detallesActuales, fechaActual, registradoPor);
+                registrarPrimeraSincronizacionDocenteClasesSemanales(docente, detallesActuales, fechaActual, registradoPor);
 
                 cantidadSincronizada++;
             } else {
 
             }
 
-            //actualizarSincronizacionCargaDocente(docente.getIdCargaDocente(), fechaActual);
+            actualizarSincronizacionCargaDocente(docente.getIdCargaDocente(), fechaActual);
         }
 
-        //sincronizarResponsablesGrupos(titularPorGrupo, fechaActual, registradoPor);
+        sincronizarResponsablesGrupos(titularPorGrupo, fechaActual, registradoPor);
 
         return cantidadSincronizada;
     }
@@ -189,17 +189,7 @@ public class SyncProfessorServiceImpl implements SyncProfessorService {
             })
             .collect(Collectors.toList());
 
-        //docenteGrupoRepository.saveAll(docenteGrupos);
-        System.out.println("\n========== DOCENTE GRUPOS ==========");
-        docenteGrupos.forEach(entity -> {
-            System.out.println("ID Grupo: " + entity.getIdGrupo());
-            System.out.println("ID Docente Unidad: " + entity.getIdDocenteUnidad());
-            System.out.println("Responsable: " + entity.getResponsable());
-            System.out.println("Fecha Cambio: " + entity.getFechaCambio());
-            System.out.println("Registrado Por: " + entity.getRegistradoPor());
-            System.out.println("------------------------------------");
-        });
-        System.out.println("Total registros: " + docenteGrupos.size());
+        docenteGrupoRepository.saveAll(docenteGrupos);
     }
 
     private void registrarPrimeraSincronizacionMateriasDocenteUnidad(
@@ -222,19 +212,10 @@ public class SyncProfessorServiceImpl implements SyncProfessorService {
             })
             .collect(Collectors.toList());
 
-        //materiaDocenteUnidadRepository.saveAll(materias);
-        System.out.println("\n========== MATERIAS DOCENTE UNIDAD ==========");
-        materias.forEach(entity -> {
-            System.out.println("Código Materia: " + entity.getCodigoMateria());
-            System.out.println("ID Docente Unidad: " + entity.getIdDocenteUnidad());
-            System.out.println("Fecha Cambio: " + entity.getFechaCambio());
-            System.out.println("Registrado Por: " + entity.getRegistradoPor());
-            System.out.println("---------------------------------------------");
-        });
-        System.out.println("Total registros: " + materias.size());
+        materiaDocenteUnidadRepository.saveAll(materias);
     }
 
-    private void registrarPrimeraSincronizacionClasesSemanales(
+    private void registrarPrimeraSincronizacionDocenteClasesSemanales(
         DocenteEfectivoSincronizacionProjection docente,
         List<DetalleDirectoEfectivoSincronizacionProjection> detalles,
         Date fechaActual,
@@ -263,17 +244,7 @@ public class SyncProfessorServiceImpl implements SyncProfessorService {
             })
             .collect(Collectors.toList());
 
-        //docenteClaseSemanalRepository.saveAll(docenteClases);
-        System.out.println("\n========== DOCENTE CLASES SEMANALES ==========");
-        docenteClases.forEach(entity -> {
-            System.out.println("ID Persona General: " + entity.getIdPersonaGeneral());
-            System.out.println("ID Clase Semanal: " + entity.getIdClaseSemanal());
-            System.out.println("Sobrecarga: " + entity.getSobrecarga());
-            System.out.println("Fecha Cambio: " + entity.getFechaCambio());
-            System.out.println("Registrado Por: " + entity.getRegistradoPor());
-            System.out.println("----------------------------------------------");
-        });
-        System.out.println("Total registros: " + docenteClases.size());
+        docenteClaseSemanalRepository.saveAll(docenteClases);
     }
 
 
@@ -417,8 +388,6 @@ public class SyncProfessorServiceImpl implements SyncProfessorService {
         boolean ptdAceptado = ESTADO_PTD_ACEPTADO.equals(estadosPtdPorPersona.get(docente.getIdPersonaGeneral()));
 
         boolean esDocentePlanta = idsDocentesPlanta.contains(docente.getIdPersonaGeneral());
-
-        System.out.println("Holaaaaa " + idsDocentesPlanta);
 
         return !tieneContrato && ptdAceptado && esDocentePlanta;
     }
