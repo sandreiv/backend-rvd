@@ -46,7 +46,6 @@ import co.edu.unipamplona.ciadti.rvd.model.dto.InformacionDocenteContratacionDTO
 import co.edu.unipamplona.ciadti.rvd.model.dto.ValorContratacionDTO;
 import co.edu.unipamplona.ciadti.rvd.model.entity.CargaDocenteEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.ContratoEntity;
-import co.edu.unipamplona.ciadti.rvd.model.entity.DocenteUnidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocumentoVinculacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EstadoTrabajadorEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.LaborEntity;
@@ -63,6 +62,7 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.LaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborUnidadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,6 +88,9 @@ class ContratoRegistroServiceImplTest {
 
     @Mock
     private EstadoTrabajadorRepository estadoTrabajadorRepository;
+
+    @Mock
+    private TrabajadorRepository trabajadorRepository;
 
     @Mock
     private TrabajadorLaborRepository trabajadorLaborRepository;
@@ -133,7 +136,8 @@ class ContratoRegistroServiceImplTest {
                 "A",
                 BigDecimal.valueOf(1000),
                 "40",
-                "DOCENTE",
+                1L,
+                "NIVEL ASOCIADO",
                 "10",
                 null,
                 null,
@@ -271,6 +275,7 @@ class ContratoRegistroServiceImplTest {
                     documento.setId(30L);
                     return documento;
                 });
+        when(trabajadorRepository.existsById(ID_PERSONA)).thenReturn(true);
         when(trabajadorLaborUnidadRepository.save(any(TrabajadorLaborUnidadEntity.class)))
                 .thenAnswer(invocacion -> {
                     TrabajadorLaborUnidadEntity unidad = invocacion.getArgument(0);
@@ -339,6 +344,7 @@ class ContratoRegistroServiceImplTest {
                     entity.setId(70L);
                     return entity;
                 });
+        when(trabajadorRepository.existsById(ID_PERSONA)).thenReturn(true);
         when(trabajadorLaborRepository.save(any(TrabajadorLaborEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(trabajadorLaborUnidadRepository.save(any(TrabajadorLaborUnidadEntity.class)))

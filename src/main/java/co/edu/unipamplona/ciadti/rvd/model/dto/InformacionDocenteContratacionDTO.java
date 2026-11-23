@@ -28,6 +28,7 @@ public record InformacionDocenteContratacionDTO(
     String estadoCategorizacion,
     BigDecimal asignacionSalarial,
     String horas,
+    Long idCategoriaDocente,
     String categoriaDocente,
     String puntos,
     String expedidoEn,

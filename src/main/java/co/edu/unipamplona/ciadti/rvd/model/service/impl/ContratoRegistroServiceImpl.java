@@ -11,6 +11,7 @@
  * 12/11/2026 - Andrés Hernández - Avance en el llenado de tablas relacionadas con la contratacion (TRLA, TRLU, DOUN)
  * 13/11/2026 - Andrés Hernández - Actualizar la carga docente cuando acaba el proceso de vinculación
  * 18/11/2026 - Juan Diego Florez Vera - Separar la generación del contrato de la vinculación docente
+ * 23/11/2026 - Andrés Hernández - Crear el registro en TRABAJADOR cuando no existe al momento de vincularlo
  */
 package co.edu.unipamplona.ciadti.rvd.model.service.impl;
 
@@ -28,7 +29,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -52,6 +52,7 @@ import co.edu.unipamplona.ciadti.rvd.model.entity.DocenteUnidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.DocumentoVinculacionEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.EstadoTrabajadorEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.RestriccionCargaEntity;
+import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborEntity;
 import co.edu.unipamplona.ciadti.rvd.model.entity.TrabajadorLaborUnidadEntity;
 import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
@@ -63,8 +64,8 @@ import co.edu.unipamplona.ciadti.rvd.model.repository.EstadoTrabajadorRepository
 import co.edu.unipamplona.ciadti.rvd.model.repository.RestriccionCargaRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorLaborUnidadRepository;
+import co.edu.unipamplona.ciadti.rvd.model.repository.TrabajadorRepository;
 import co.edu.unipamplona.ciadti.rvd.model.repository.LaborRepository;
-import co.edu.unipamplona.ciadti.rvd.model.repository.CargaDocenteRepository;
 import co.edu.unipamplona.ciadti.rvd.model.service.ContratoRegistroService;
 import co.edu.unipamplona.ciadti.rvd.model.service.CoordinacionService;
 import co.edu.unipamplona.ciadti.rvd.util.RegistradoPorUtils;
@@ -122,7 +123,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private static final String NO = "0";
     private static final String SI = "1";
     private static final BigDecimal CERO = BigDecimal.ZERO;
-    private static final String TRABAJADOR_ASIGNACION_PROPIEDAD = "P";
+    private static final String TRABAJADOR_ASIGNACION_PROPIEDAD = "T";
     private static final String TRABAJADOR_LABOR_UNIDAD_ESTADO = "ACTIVO";
 
     /** Longitud real de CONTRATO.CONT_REGISTRADOPOR. */
@@ -134,6 +135,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
     private final CargaDocenteRepository cargaDocenteRepository;
     private final RestriccionCargaRepository restriccionCargaRepository;
     private final EstadoTrabajadorRepository estadoTrabajadorRepository;
+    private final TrabajadorRepository trabajadorRepository;
     private final TrabajadorLaborRepository trabajadorLaborRepository;
     private final TrabajadorLaborUnidadRepository trabajadorLaborUnidadRepository;
     private final DocenteUnidadRepository docenteUnidadRepository;
@@ -321,6 +323,11 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
 
         // Guardar en TALENTOV3.DOCUMENTOVINCULACION
         Long idDovi = guardarDocumentoVinculacion(idContrato, fechaActual);
+
+        // Crear un trabajador cuando no exista, para relacionarlo con su TRLA
+        if (!trabajadorRepository.existsById(informacion.idPersonaGeneral())) {
+            crearTrabajadorPrimeraVez(informacion.idPersonaGeneral(), informacion.idCategoriaDocente(), fechaActual);
+        }
 
         // Guardar en TALENTOV3.TRABAJADORLABOR
         guardarTrabajadorLabor(informacion, datos.idLabor(), idDovi, fechaActual);
@@ -637,6 +644,10 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
             Long idDovi = guardarDocumentoVinculacion(
                     idContrato,
                     fechaActual);
+            
+            if (!trabajadorRepository.existsById(informacion.idPersonaGeneral())) {
+                crearTrabajadorPrimeraVez(informacion.idPersonaGeneral(), informacion.idCategoriaDocente(), fechaActual);
+            }
 
             guardarTrabajadorLabor(
                     informacion,
@@ -831,6 +842,20 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         cdpContratoRepository.save(cdpContrato);
     }
 
+    private void crearTrabajadorPrimeraVez(Long idPersona, Long idCategoriaCatedratico, Date fechaActual) {
+        AuthUserDetails usuario = requireUsuario();
+
+        TrabajadorEntity trabajador = new TrabajadorEntity();
+        trabajador.setIdPersonaGeneral(idPersona);
+        trabajador.setGrado(NO);
+        trabajador.setAsimilacionOficial(NO);
+        trabajador.setIdCategoriaCatedratico(idCategoriaCatedratico);
+        trabajador.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
+        trabajador.setFechaCambio(fechaActual);
+
+        trabajadorRepository.save(trabajador);
+    }
+
     private void guardarTrabajadorLabor(InformacionDocenteContratacionDTO informacion, Long idLabor, Long idDocumentoVinculacion, Date fechaActual) {
         AuthUserDetails usuario = requireUsuario();
 
@@ -923,7 +948,7 @@ public class ContratoRegistroServiceImpl implements ContratoRegistroService {
         docenteUnidadRegional.setIdUnidad(informacion.idUnidadRegional());
         docenteUnidadRegional.setIdLabor(idLabor);
         docenteUnidadRegional.setIdDocumentoVinculacion(idDocumentoVinculacion);
-        docenteUnidadRegional.setIdTrabajadorLaborUnidad(idTrabajadorLaborUnidad);
+        docenteUnidadRegional.setIdTrabajadorLaborUnidad(null);     // Null cuando es la unidad regional
         docenteUnidadRegional.setRegistradoPor(formatRegistradoPor(usuario.getIdPersonaGeneral(), LONGITUD_REGISTRADOPOR));
         docenteUnidadRegional.setFechaCambio(fechaActual);
 

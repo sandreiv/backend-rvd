@@ -1173,6 +1173,7 @@ public interface CargaDocenteRepository extends JpaRepository<CargaDocenteEntity
                 END AS estadoCategorizacion,
                 COALESCE(DATOS.NOCD_SALARIO, CADO.CADO_SALARIO) AS asignacionSalarial,
                 COALESCE(DATOS.NOCD_HORAS, CADO.CADO_HORAS) AS horas,
+                CACA.CACA_ID AS idCategoriaDocente,
                 CACA.CACA_DESCRIPCION AS categoriaDocente,
                 CASE
                     WHEN DATOS.NOCD_ID IS NOT NULL THEN DATOS.NOCD_PUNTOS

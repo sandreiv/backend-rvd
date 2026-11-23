@@ -40,6 +40,8 @@ public interface InformacionDocenteContratacionProjection {
     
     String getHoras();
 
+    Long getIdCategoriaDocente();
+
     String getCategoriaDocente();
 
     String getPuntos();

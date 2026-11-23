@@ -125,15 +125,16 @@ public class SyncProfessorServiceImpl implements SyncProfessorService {
         for (DocenteEfectivoSincronizacionProjection docente : docentes) {
             List<DetalleDirectoEfectivoSincronizacionProjection> detallesActuales = detallesPorDocente.getOrDefault(docente.getIdCargaDocente(), List.of());
 
+            // Como una persona solo puede tener un contrato activo a la vez, se salta directamente de TRLA a DOUN
             TrabajadorLaborEntity trabajadorLabor = trabajadorLaborRepository.findTrlaVigenteByIdPersonaGeneral(docente.getIdPersonaGeneral())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe una labor activa para el trabajador con id " + docente.getIdPersonaGeneral()));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No existe una labor activa unica para el trabajador con id " + docente.getIdPersonaGeneral()));
 
             DocenteUnidadEntity docenteUnidad = docenteUnidadRepository.findByIdPersonaGeneralAndIdLaborAndIdDocumentoVinculacionAndIdUnidad(
                 trabajadorLabor.getIdPersonaGeneral(),
                 trabajadorLabor.getIdLabor(),
                 trabajadorLabor.getIdDocumentoVinculacion(),
                 docente.getIdUnidadArea()
-            ).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "El docente no esta relacionado a la facultad con los datos de Trabajador Labor"));
+            ).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "El docente no esta relacionado de manera unica a la facultad con los datos de Trabajador Labor"));
             Long idDocenteUnidad = docenteUnidad.getId();
 
             // Guardar el ultimo docente sincronizado por grupo para marcarlo como TITULAR

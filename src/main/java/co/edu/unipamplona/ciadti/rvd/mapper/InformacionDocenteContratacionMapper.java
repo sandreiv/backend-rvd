@@ -46,6 +46,7 @@ public interface InformacionDocenteContratacionMapper {
                 base.estadoCategorizacion(),
                 base.asignacionSalarial(),
                 base.horas(),
+                base.idCategoriaDocente(),
                 base.categoriaDocente(),
                 base.puntos(),
                 base.expedidoEn(),
